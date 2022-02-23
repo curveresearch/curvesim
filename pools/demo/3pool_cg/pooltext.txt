@@ -1,0 +1,2 @@
+Simulation period: 12/23/21 to 02/22/22
+CAUTION: Trade volume limiting may be less accurate for CoinGecko data.
