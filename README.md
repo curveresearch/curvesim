@@ -77,8 +77,8 @@ import CurveSim
 res = CurveSim.autosim('3pool', D=10000000000, fee=[.0003])
 
 #For metapools, specifying D effects the deposit in the metapool, but not the basepool
-#Simulate BUSDv2 metapool assuming total deposit of $10B, fee = 0.03%
-res = CurveSim.autosim('busdv2', D=10000000000, fee=[.0003])
+#Simulate BUSDv2 metapool assuming total deposit of $1B, fee = 0.03%
+res = CurveSim.autosim('busdv2', D=1000000000, fee=[.0003])
 
 #Simulate 3pool, limiting volume to 75% of market volume, fee = 0.03% 
 #Note: it is not reccomended to adjust this parameter, try vol_mode instead (see below)
