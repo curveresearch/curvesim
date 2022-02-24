@@ -1,5 +1,6 @@
 import requests
 import pandas as pd
+import numpy as np
 from datetime import datetime, timedelta, timezone
 from itertools import combinations
 from time import sleep
@@ -43,6 +44,8 @@ def poolprices(coins, vs_currency, days):
     
     qprices = pd.concat(qprices,axis=1)
     qvolumes = pd.concat(qvolumes,axis=1)
+    
+    qvolumes = qvolumes/np.array(qprices)
     
     #Compute prices by coin pairs
     combos = list(combinations(range(len(coins)),2))
