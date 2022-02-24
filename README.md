@@ -22,9 +22,9 @@ res = CurveSim.autosim('3pool')
 Plots of the results will be saved to the "pools/poolname" (e.g., pools/3pool) directory. The output dictionary, "res", contains pandas dataframes for all of the data plotted in the figures:
 
 * **ar**: annualized returns
-* **bal**: balance parameter over time bal=1 when in perfect balance, and bal=0 when all holdings are in 1 coin
+* **bal**: balance parameter over time, bal=1 when in perfect balance, and bal=0 when all holdings are in 1 coin
 * **pool_value**: time series of pool's value (based on virtual price)
-* **depth**: time series of price depth, averaged across pool's coin
+* **depth**: time series of price depth, averaged across pool's coins
 * **volume**: time series of pool volume
 * **log_returns**: log returns over time
 * **err**: time series of absolute price errors, (dy-fee)/dx - p, summed accros coin pairs
@@ -109,6 +109,8 @@ Because CoinGecko and Nomics use different naming conventions for each coin, we 
 
 #### Note on CoinGecko vs. Nomics Data
 While Nomics provides 30-minute-interval data for each specific coin-pair, CoinGecko provides prices *per coin* in 1-hour intervals. Each coin's price is computed relative to all its trading pairs and converted to a quote currency (e.g., USD), with volume summed across all trading pairs. Therefore, market volume taken from CoinGecko is often much higher than one can expect for a specific coin-pair. This issue is largely ameloriated by our volume limiting approach, with CoinGecko results typically mirroring Nomics results qualitatively, but it should be noted that CoinGecko data may be less reliable than Nomics data for certain simulations.
+
+For comparison, compare 3pool_cg and 3pool_nomics results in the pools/demo direectory.
 
 ### Technical Parameters
 Additionally, one can specify:
