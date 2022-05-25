@@ -52,11 +52,16 @@ class pool:
 
             if r:
                 self.p[0] = r
+                self.r = True
+            else:
+                self.r = False
 
             if isinstance(D[0], list):
                 self.x = D[0]
             else:
-                self.x = [D[0] // n[0] * 10**18 // _p for _p in self.p]
+                rates = self.p[:]
+                rates[self.max_coin] = self.basepool.get_virtual_price()
+                self.x = [D[0] // n[0] * 10**18 // _p for _p in rates]
 
             self.ismeta = True
             self.n_total = n[0] + n[1] - 1
@@ -84,6 +89,7 @@ class pool:
                 self.tokens = tokens
             self.feemul = feemul
             self.ismeta = False
+            self.r = False
             self.n_total = self.n
 
     def xp(self):
@@ -321,19 +327,22 @@ class pool:
 
                 # Convert all to real units
                 # Works for both pool coins and real coins
+                dy_nofee = dy * 10**18 // rates[meta_j]
                 dy = (dy - dy_fee) * 10**18 // rates[meta_j]
-
+                
                 self.x[meta_j] -= dy
 
                 # Withdraw from the base pool if needed
                 if base_j >= 0:
                     dy = self.basepool.remove_liquidity_one_coin(dy, base_j)
+                    dy_nofee = self.basepool.calc_withdraw_one_coin(dy_nofee, base_j, fee=False)
+                    dy_fee = dy_nofee - dy
 
             else:
                 # If both are from the base pool
-                dy = self.basepool.exchange(base_i, base_j, dx)
+                dy, dy_fee = self.basepool.exchange(base_i, base_j, dx)
 
-            return dy
+            return dy, dy_fee
 
         else:  # if not meta-pool, normal exchange
             xp = self.xp()
@@ -351,7 +360,7 @@ class pool:
             assert dy > 0
             self.x[i] = x * 10**18 // self.p[i]
             self.x[j] = (y + fee) * 10**18 // self.p[j]
-            return dy - fee
+            return dy - fee, fee
 
     def remove_liquidity_imbalance(self, amounts):
         _fee = self.fee * self.n // (4 * (self.n - 1))
@@ -378,9 +387,9 @@ class pool:
 
         return token_amount
 
-    def calc_withdraw_one_coin(self, token_amount, i):
+    def calc_withdraw_one_coin(self, token_amount, i, fee=True):
         xp = self.xp()
-        if self.fee:
+        if self.fee and fee:
             fee = self.fee - self.fee * xp[i] // sum(xp) + 5 * 10**5
         else:
             fee = 0
@@ -676,19 +685,19 @@ class pool:
         else:
             ismeta = False
 
-        xp = self.xp()
+        sumxp = sum(self.xp())
 
         depth = []
         for i, j in combos:
             trade, error, res = self.optarb(
                 i, j, self.dydxfee(i, j, 10**12) * (1 - size)
             )
-            depth.append(trade[2] / xp[i])
+            depth.append(trade[2] / sumxp)
 
             trade, error, res = self.optarb(
                 j, i, self.dydxfee(j, i, 10**12) * (1 - size)
             )
-            depth.append(trade[2] / xp[j])
+            depth.append(trade[2] / sumxp)
 
         if ismeta:
             self.p = p_before
@@ -716,7 +725,7 @@ class pool:
             j = trade[1]
             dx = trade[2]
 
-            dy = self.exchange(i, j, dx)
+            dy, dy_fee = self.exchange(i, j, dx)
             trades_done.append((i, j, dx, dy))
 
             if self.ismeta:
@@ -726,6 +735,131 @@ class pool:
                 volume += dx * p[i] // 10**18  # in "DAI" units
 
         return trades_done, volume
+        
+    def orderbook(self, i, j, width=.1, reso=10**23, show=True):
+        
+        #if j == 'b', get orderbook against basepool token
+        p_mult = 1 
+        if j == 'b':
+            if i >= self.max_coin:
+                raise ValueError("Coin i must be in the metapool for 'b' option")
+            self.ismeta = False  # pretend a normal pool to exchange for basepool LP token
+            p0 = self.p[:]
+            self.p[self.max_coin] = self.basepool.get_virtual_price() # use virtual price for LP token precision
+            j = 1
+            metaRevert = True
+            
+            if self.r:
+                p_mult = self.p[i]
+        else:
+            metaRevert = False
+            
+        #Store initial state
+        x0 = self.x[:]
+        if self.ismeta:
+            x0_base = self.basepool.x[:]
+            t0_base = self.basepool.tokens
+        
+        #Bids
+        bids = [(self.dydx(i,j,10**12) * p_mult, 10**12/10**18)] #tuples: price, depth
+        size = 0
+        
+        while bids[-1][0] > bids[0][0]*(1-width):
+            size += reso
+            self.exchange(i,j,size)
+            price = self.dydx(i,j,10**12)
+            bids.append((price * p_mult, size/10**18))
+            
+            #Return to initial state
+            self.x = x0[:]
+            if self.ismeta:
+                self.basepool.x = x0_base[:]
+                self.basepool.tokens = t0_base
+        
+        #Asks     
+        asks = [(1/self.dydx(j,i,10**12) * p_mult, 10**12/10**18)] #tuples: price, depth
+        size = 0
+        
+        while asks[-1][0] < asks[0][0]*(1+width):
+            size += reso
+            dy, fee = self.exchange(j,i,size)
+            price = 1/self.dydx(j,i,10**12)
+            asks.append((price * p_mult, dy/10**18))
+
+            #Return to initial state
+            self.x = x0[:]
+            if self.ismeta:
+                self.basepool.x = x0_base[:]
+                self.basepool.tokens = t0_base 
+        
+        #Format DataFrames
+        bids = pd.DataFrame(bids, columns = ['price', 'depth']).set_index('price') 
+        asks = pd.DataFrame(asks, columns = ['price', 'depth']).set_index('price') 
+        
+        if metaRevert:
+            self.p[:] = p0[:]
+            self.ismeta = True
+        
+        if show:
+            plt.plot(bids, color='red')
+            plt.plot(asks, color='green')
+            plt.xlabel('Price')
+            plt.ylabel('Depth')
+            plt.show()
+        return bids, asks
+    
+    def bcurve(self, xs=None, show=True):
+        if self.ismeta:
+            combos = [(0,1)]
+            labels = ['Metapool Token', 'Basepool LP Token']
+            
+        else:
+            combos = list(combinations(range(self.n),2))
+            labels = list(range(self.n))
+            labels = ['Coin %s' % str(l) for l in labels]
+        
+        plt_n = 0
+        xs_out = []
+        ys_out = []
+        for combo in combos:
+            i = combo[0]
+            j = combo[1]
+        
+            if xs is None:
+                xs_i = np.linspace(int(self.D()*.0001),self.y(j,i,int(self.D()*.0001)), 1000).round()
+            else:
+                xs_i = xs
+                
+        
+            ys_i = []  
+            for x in xs_i:
+                ys_i.append(self.y(i,j,int(x))/10**18)
+            
+            xs_i = xs_i/10**18
+            xs_out.append(xs_i)
+            ys_out.append(ys_i)
+        
+            xp = self.xp()[:]
+            
+            if show: 
+                if plt_n == 0:
+                    fig, axs = plt.subplots(1, len(combos), constrained_layout=True)
+                    
+                if len(combos) == 1:
+                    ax = axs
+                else:
+                    ax = axs[plt_n]
+                    
+                ax.plot(xs_i, ys_i, color='black')
+                ax.scatter(xp[i]/10**18, xp[j]/10**18, s=40, color='black')
+                ax.set_xlabel(labels[i])
+                ax.set_ylabel(labels[j])
+                plt_n += 1
+        
+        if show:
+            plt.show()
+            
+        return xs_out, ys_out
 
 
 ##Simulation functions
@@ -791,7 +925,7 @@ def sim(A, D, n, fee, prices, volumes, tokens=None, feemul=None, vol_mult=1, r=N
             volume.append(0)
 
         err.append(sum(abs(errors)))
-        depth.append(np.average(pl.pricedepth()))
+        depth.append(np.sum(pl.pricedepth())/2)
 
         if pl.ismeta:
             # Pool Value
@@ -859,6 +993,8 @@ def psim(A_list, D, n, fee_list, prices, volumes, A_base=None, fee_base=None, to
     # Format inputs
     A_list = [int(round(A)) for A in A_list]
     fee_list = [int(round(fee)) for fee in fee_list]
+    A_list_orig = A_list
+    fee_list_orig = fee_list
 
     p_list = list(product(A_list, fee_list))
 
@@ -889,8 +1025,11 @@ def psim(A_list, D, n, fee_list, prices, volumes, A_base=None, fee_base=None, to
     volume = pd.DataFrame(volume, index=p_list, columns=prices.index)
 
     log_returns = pd.DataFrame(np.log(pool_value).diff(axis=1).iloc[:, 1:])
-
-    freq = prices.index.freq / timedelta(minutes=1)
+    
+    try:
+        freq = prices.index.freq / timedelta(minutes=1)
+    except:
+        freq = 30
     yearmult = 60 / freq * 24 * 365
     ar = pd.DataFrame(np.exp(log_returns.mean(axis=1) * yearmult) - 1)
 
@@ -900,9 +1039,9 @@ def psim(A_list, D, n, fee_list, prices, volumes, A_base=None, fee_base=None, to
     # Plotting
     if plot:
         if len(fee_list) > 1:
-            plotsimsfee(A_list, fee_list, ar, bal, depth, volume, err)
+            plotsimsfee(A_list_orig, fee_list_orig, ar, bal, depth, volume, err)
         else:
-            plotsims(A_list, ar, bal, pool_value, depth, log_returns, log_returns_hold, err)
+            plotsims(A_list_orig, ar, bal, pool_value, depth, volume, log_returns, err)
 
     res = {
         "ar": ar,
@@ -926,7 +1065,7 @@ def autosim(poolname, test=False, A=None, D=None, fee=None, vol_mult=None, vol_m
     
     Requires an entry for "poolname" in poolDF.csv
 
-    A, D, n, fee, vol_mult, & feemul can be used to override default values and/or fetched data. 
+    A, D, fee, vol_mult, & feemul can be used to override default values and/or fetched data. 
     D & fee should be provided in "natural" units (i.e., not 10**18 or 10**10 precision). A & fee must be lists/np.arrays.
     
     If test==True, uses a limited number of A/fee values
@@ -954,19 +1093,23 @@ def autosim(poolname, test=False, A=None, D=None, fee=None, vol_mult=None, vol_m
     else:
         csv = "poolDF_nomics.csv"
         
-    D_curr, coins, n, A_base, fee_base, tokens, feemul_curr, histvolume, r = pooldata(poolname, csv=csv)
+    pldata = pooldata(poolname, csv=csv, balanced=True)
+    
+    histvolume = pldata["histvolume"]
+    coins = pldata["coins"]
+    n = pldata["n"]
 
     # Over-ride D & feemul if necessary
-    if D is not None:
+    if D is None:
+        D = pldata["D"]
+    else:
         D = int(D * 10**18)
-        if isinstance(D_curr, list):  # if metapool
-            D_curr[0] = D
-        else:
-            D_curr = D
-    D = D_curr
+        if isinstance(pldata["D"], list):  # if metapool
+            pldata["D"][0] = D
+            D = pldata["D"]
     
     if feemul is None:
-        feemul = feemul_curr
+        feemul = pldata["feemul"]
     
     # Update and load price data
     if src == "nomics":
@@ -974,6 +1117,7 @@ def autosim(poolname, test=False, A=None, D=None, fee=None, vol_mult=None, vol_m
         # update CSVs
         t_end = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
         t_start = t_end - timedelta(days=60)
+        print('Timerange: %s to %s' % (str(t_start), str(t_end)))
         nomics.update(coins, None, t_start, t_end)
 
         # Load data
@@ -1014,7 +1158,9 @@ def autosim(poolname, test=False, A=None, D=None, fee=None, vol_mult=None, vol_m
             if vol_mode == 3:
                 print('Vol_mode=3 only available for meta-pools. Reverting to vol_mode=1')
                 vol_mult = histvolume/volumes.sum().sum()
-
+    print('Volume multipliers:')
+    print(vol_mult)
+    
     # Default ranges of A and fee values
     if A is None:
         A_list = 2 ** (np.array(range(12, 28)) / 2)
@@ -1042,12 +1188,12 @@ def autosim(poolname, test=False, A=None, D=None, fee=None, vol_mult=None, vol_m
         fee_list,
         prices,
         volumes,
-        A_base=A_base,
-        fee_base=fee_base,
-        tokens=tokens,
+        A_base = pldata["A_base"],
+        fee_base = pldata["fee_base"],
+        tokens = pldata["tokens"],
         feemul=feemul,
-        vol_mult=vol_mult,
-        r=r,
+        vol_mult = vol_mult,
+        r = pldata["r"],
         plot=False,
         ncpu=ncpu,
     )
@@ -1097,30 +1243,43 @@ def autosim(poolname, test=False, A=None, D=None, fee=None, vol_mult=None, vol_m
     return res
 
 
-def pooltest(poolname, D=None, A=1000, fee=4 * 10**6, r=None):
+def getpool(poolname, D=None, src='cg', balanced=False):
     # Get current pool data
     print("[" + poolname + "] Fetching pool data...")
-    D_curr, coins, n, A_base, fee_base, tokens, feemul, histvolume, r_curr = pooldata(
-        poolname
-    )
+    if src == 'cg':
+        csv = "poolDF_cg.csv"
+    else:
+        csv = "poolDF_nomics.csv"
+        
+    pldata = pooldata(poolname, csv=csv, balanced=balanced)
 
     # Over-ride D if necessary
-    if D is not None:
-        if isinstance(D_curr, list):  # if metapool
-            D_curr[0] = D
-        else:
-            D_curr = D
-    D = D_curr
+    if D is None:
+        D = pldata["D"]
+    else:
+        D = int(D * 10**18)
+        if isinstance(pldata["D"], list):  # if metapool
+            pldata["D"][0] = D
+            D = pldata["D"]
 
-    if A_base is not None:
-        A = [A, A_base]
-    if fee_base is not None:
-        fee = [fee, fee_base]
+    if pldata["A_base"] is not None:
+        A = [pldata["A"], pldata["A_base"]]
+    else:
+        A = pldata["A"]
+        
+    if pldata["fee_base"] is not None:
+        fee = [pldata["fee"], pldata["fee_base"]]
+    else:
+        fee = pldata["fee"]
+        
+    if pldata["r"] is not None:
+        r = int(pldata["r"].price[-1])
+    else:
+        r = None
 
-    if r is None and r_curr is not None:
-        r = int(r.price[-1])
-
-    pl = pool(A, D, n, fee=fee, tokens=tokens, feemul=feemul, r=r)
+    pl = pool(A, D, pldata["n"], fee=fee, tokens=pldata["tokens"], feemul=pldata["feemul"], r=r)
+    pl.histvolume = pldata["histvolume"]
+    pl.coins = pldata["coins"]
 
     return pl
 
@@ -1128,7 +1287,7 @@ def pooltest(poolname, D=None, A=1000, fee=4 * 10**6, r=None):
 ##Functions to get pool data
 
 
-def pooldata(poolname, csv="poolDF.csv"):
+def pooldata(poolname, csv="poolDF_cg.csv", balanced=False):
     w3 = Web3(
         Web3.HTTPProvider(
             "https://mainnet.infura.io/v3/aae0ec63797d4548bfe5c98c4f9aa230"
@@ -1146,7 +1305,7 @@ def pooldata(poolname, csv="poolDF.csv"):
             "tokentype": literal_eval,
         },
     )
-    pool = pools.loc[poolname]
+    p = pools.loc[poolname]
 
     ABItypes = ["uint256", "int128"]  # some old contracts used int128
     for ABItype in ABItypes:
@@ -1157,55 +1316,66 @@ def pooldata(poolname, csv="poolDF.csv"):
             + ABItype
             + '","name":"arg0"}],"stateMutability":"view","type":"function","gas":2310}]'
         )
-        contract = w3.eth.contract(address=pool.address, abi=abi)
+        contract = w3.eth.contract(address=p.address, abi=abi)
         try:
             contract.functions.balances(0).call()
             break
         except:
             pass
 
-    coins = pool.coins
+    coins = p.coins
 
-    if pool.feemul == "None":
+    if p.feemul == "None":
         feemul = None
     else:
-        feemul = int(pool.feemul)
+        feemul = int(p.feemul)
 
-    if pool.precmul[0] == "r":
+    if p.precmul[0] == "r":
         # load redemption price data as r
         # update precmul based on redemption price
         r = redemptionprices(1000)
-        pool.precmul = [r.price[-1] / 10**18]
+        p.precmul = [r.price[-1] / 10**18]
     else:
         r = None
+    
+    A = contract.functions.A().call()
+    fee = contract.functions.fee().call()
 
-    if pool.basepool == "None":  # normal pool
-        D = 0
-        for i in range(len(pool.coins)):
-            if pool.tokentype:  # if any assets are ctokens/ytokens
-                if pool.tokentype[i]:  # if asset[i] is ctoken/ytoken
+    if p.basepool == "None":  # normal pool
+
+        D = []
+        for i in range(len(p.coins)):
+            if p.tokentype:  # if any assets are ctokens/ytokens
+                if p.tokentype[i]:  # if asset[i] is ctoken/ytoken
                     cAddress = contract.functions.coins(i).call()
-                    rate = tokenrate(pool.tokentype[i], cAddress)
+                    rate = tokenrate(p.tokentype[i], cAddress)
                 else:
                     rate = 10**18
             else:
                 rate = 10**18
 
-            D += (
+            D.append(
                 contract.functions.balances(i).call()
-                * pool.precmul[i]
+                * p.precmul[i]
                 * rate
                 // 10**18
             )
-
+        
         n = len(coins)
         A_base = None
         fee_base = None
-        tokens = None
-        addresses = [pool.address.lower()]
+        addresses = [p.address.lower()]
+        
+        pl = pool(A,D,n)
+        D_balanced = pl.D()
+        tokens = D_balanced * 10**18 // contract.functions.get_virtual_price().call()
+        
+        if balanced:
+            D = D_balanced
+        
 
     else:  # meta-pool
-        basepool = pools.loc[pool.basepool]
+        basepool = pools.loc[p.basepool]
         
         for ABItype in ABItypes:
             abi = (
@@ -1215,48 +1385,61 @@ def pooldata(poolname, csv="poolDF.csv"):
             + ABItype
             + '","name":"arg0"}],"stateMutability":"view","type":"function","gas":2310}]'
             )
-            contract = w3.eth.contract(address=basepool.address, abi=abi)
+            base_contract = w3.eth.contract(address=basepool.address, abi=abi)
             try:
-                contract.functions.balances(0).call()
+                base_contract.functions.balances(0).call()
                 break
             except:
                 pass
-        
-        base_contract = w3.eth.contract(address=basepool.address, abi=abi)
 
-        D = 0
-        precmul = pool.precmul
-        precmul.append(1)
-        for i in range(len(pool.coins) + 1):
-            D += int(contract.functions.balances(i).call() * precmul[i])
 
-        D_base = 0
+        D = []
+        precmul = p.precmul
+        precmul.append(base_contract.functions.get_virtual_price().call() / 10**18)
+        for i in range(len(p.coins) + 1):
+            D.append(int(contract.functions.balances(i).call() * precmul[i]))
+
+
+        D_base = []
         for i in range(len(basepool.coins)):
-            D_base += base_contract.functions.balances(i).call() * basepool.precmul[i]
+            D_base.append(int(base_contract.functions.balances(i).call() * basepool.precmul[i]))
 
         D = [D, D_base]
-        n = [len(pool.coins) + 1, len(basepool.coins)]
+        n = [len(p.coins) + 1, len(basepool.coins)]
         coins.extend(basepool.coins)
         A_base = base_contract.functions.A().call()
         fee_base = base_contract.functions.fee().call()
-        tokens = D_base * 10**18 // base_contract.functions.get_virtual_price().call()
-        addresses = [pool.address.lower(), basepool.address.lower()]
+        addresses = [p.address.lower(), basepool.address.lower()]
+        
+        pl = pool([A, A_base], D, n)
+        D_base_balanced = pl.basepool.D()
+        tokens = D_base_balanced * 10**18 // base_contract.functions.get_virtual_price().call()
+        
+        if balanced:
+            pl = pool([A, A_base], D, n, tokens = tokens)
+            rates = pl.p[:]
+            rates[pl.max_coin] = pl.basepool.get_virtual_price()
+            if r is not None:
+                rates[pl.max_coin - 1] = int(r.price[-1])
+            xp = [x * p // 10**18 for x, p in zip(pl.x, rates)]
+            D_balanced = pl.D(xp=xp)
+            D = [D_balanced, D_base_balanced]
 
     # Get historical volume
-    url = "https://api.thegraph.com/subgraphs/name/curvefi/curve"  #'https://api.thegraph.com/subgraphs/name/sistemico/curve'
+    url = "https://api.thegraph.com/subgraphs/name/convex-community/volume-mainnet" #"https://api.thegraph.com/subgraphs/name/curvefi/curve"
 
     histvolume = []
     for address in addresses:
         query = (
 """{
-  dailyVolumes(where: {pool: "%s"}, orderBy: timestamp, orderDirection: desc, first:60) {
+  dailySwapVolumeSnapshots(where: {pool: "%s"}, orderBy: timestamp, orderDirection: desc, first:60) {
     volume
   }
 }""" % address)
         req = requests.post(url, json={"query": query})
         try:
             volume = pd.DataFrame(
-                req.json()["data"]["dailyVolumes"], dtype="float"
+                req.json()["data"]["dailySwapVolumeSnapshots"], dtype="float"
             ).sum()[0]
         except:
             print("[" + poolname + "] No historical volume info from Curve Subgraph.")
@@ -1266,8 +1449,23 @@ def pooldata(poolname, csv="poolDF.csv"):
         histvolume.append(volume)
 
     histvolume = np.array(histvolume)
+    
+    #Format output as dict
+    data = {
+        "D": D,
+        "coins": coins,
+        "n": n,
+        "A": A,
+        "A_base": A_base,
+        "fee": fee,
+        "fee_base": fee_base,
+        "tokens": tokens,
+        "feemul": feemul,
+        "histvolume": histvolume,
+        "r": r
+    }
 
-    return D, coins, n, A_base, fee_base, tokens, feemul, histvolume, r
+    return data
 
 
 def tokenrate(tokentype, address):
