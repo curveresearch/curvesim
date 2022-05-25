@@ -48,7 +48,10 @@ def get_mkt(market, t_start, t_end):
         data = pd.DataFrame(columns=['price','volume'])
     data.index = pd.to_datetime(data.index)
     data['price'] = pd.to_numeric(data['price'])**market[2] #take reciprocal when base/quote reversed
-    data['volume'] = pd.to_numeric(data['volume'])
+    if market[2] == 1:
+        data['volume'] = pd.to_numeric(data['volume'])
+    elif market[2] == -1:
+        data['volume'] = pd.to_numeric(data['volume'])/data['price']
     
     #Fill in missing data with zeros
     t_samples = pd.date_range(start=t_start, end=t_end, freq='30min', tz=timezone.utc)
@@ -99,7 +102,10 @@ def get_agg(coins, t_start, t_end, exp=1):
         
     data.index = pd.to_datetime(data.index)
     data['price'] = pd.to_numeric(data['price'])**exp #take reciprocal when base/quote reversed
-    data['volume'] = pd.to_numeric(data['volume'])
+    if exp == 1:
+        data['volume'] = pd.to_numeric(data['volume'])
+    elif exp == -1:
+        data['volume'] = pd.to_numeric(data['volume'])/data['price']
     
     #Fill in missing data with zeros
     t_samples = pd.date_range(start=t_start, end=t_end, freq='30min', tz=timezone.utc)
@@ -153,15 +159,20 @@ def vwap_agg(coins, t_start, t_end):
     
     return data
     
-def update(coins, quote, t_start, t_end):
+def update(coins, quote, t_start, t_end, pairs=False):
     t_start = t_start.replace(tzinfo=timezone.utc)
     t_start_orig = t_start
     t_end = t_end.replace(tzinfo=timezone.utc)
     
     #If no quote, get prices for each pair of coins
     if quote is None:
-        combos=list(combinations(coins,2))
+        if pairs is False:
+            combos = list(combinations(coins,2))
+        else:
+            combos = coins
+
         for pair in combos:
+            print('Downloading '+pair[0]+'-'+pair[1])
             try:
                 curr_file = pd.read_csv('data/'+pair[0]+'-'+pair[1]+'.csv', index_col=0)
                 curr_file.index = pd.to_datetime(curr_file.index)
@@ -204,7 +215,7 @@ def update(coins, quote, t_start, t_end):
                 data = vwap_agg(curr_coins, t_start_orig, t_end)
                 data.to_csv('data/'+coin+'-'+quote+'.csv')
                 
-def poolprices(coins, quote=None, quotediv=False, t_start=None, t_end=None, resample=None):
+def poolprices(coins, quote=None, quotediv=False, t_start=None, t_end=None, resample=None, pairs=False):
     """
     Loads and formats price/volume data from CSVs. 
     
@@ -223,7 +234,10 @@ def poolprices(coins, quote=None, quotediv=False, t_start=None, t_end=None, resa
     
     #If no quote, get prices for each pair of coins
     if quote is None:
-        combos = list(combinations(coins,2))
+        if pairs is False:
+            combos = list(combinations(coins,2))
+        else:
+            combos = coins
     
         for pair in combos:
             curr_file = 'data/'+pair[0]+'-'+pair[1]+'.csv'
@@ -282,7 +296,3 @@ def poolprices(coins, quote=None, quotediv=False, t_start=None, t_end=None, resa
         volumes.index.freq = pd.infer_freq(volumes.index)
         
     return prices, volumes, pzero
-        
-
-    
-
