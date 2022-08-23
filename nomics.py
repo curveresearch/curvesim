@@ -1,8 +1,9 @@
-import requests
-import pandas as pd
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from itertools import combinations
 from time import sleep
+
+import pandas as pd
+import requests
 
 key = ""
 

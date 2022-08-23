@@ -1,18 +1,22 @@
-from itertools import combinations, product
-from scipy.optimize import root_scalar, least_squares
-from math import factorial
 import os
-import numpy as np
-import pandas as pd
+from ast import literal_eval
+from datetime import datetime, timedelta
+from functools import partial
+from itertools import combinations, product
+from math import factorial
+from multiprocessing import Pool
+
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
+import numpy as np
+import pandas as pd
+import requests
 from matplotlib.lines import Line2D
-import nomics, coingecko, requests
+from scipy.optimize import least_squares, root_scalar
 from web3 import Web3
-from ast import literal_eval
-from datetime import datetime, timedelta, timezone
-from functools import partial
-from multiprocessing import Pool
+
+import coingecko
+import nomics
 
 
 class pool:

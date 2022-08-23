@@ -1,9 +1,10 @@
-import requests
-import pandas as pd
-import numpy as np
 from datetime import datetime, timedelta, timezone
 from itertools import combinations
 from time import sleep
+
+import numpy as np
+import pandas as pd
+import requests
 
 
 def get(id, vs_currency, days):
