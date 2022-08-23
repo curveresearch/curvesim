@@ -6,6 +6,7 @@ from itertools import combinations, product
 from math import factorial
 from multiprocessing import Pool
 
+from gmpy2 import mpz
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 import numpy as np
@@ -114,14 +115,15 @@ class pool:
             xp = self.xp()
         S = sum(xp)
         D = S
-        Ann = self.A * self.n
+        Ann = mpz(self.A * self.n)
         while abs(D - Dprev) > 1:
-            D_P = D
+            D_P = mpz(D)
             for x in xp:
                 D_P = D_P * D // (self.n * x)
             Dprev = D
             D = (Ann * S + D_P * self.n) * D // ((Ann - 1) * D + (self.n + 1) * D_P)
 
+        D = int(D)
         return D
 
     def y(self, i, j, x, xp=None):
@@ -139,7 +141,7 @@ class pool:
             xx = self.xp()
         else:
             xx = xp[:]
-        D = self.D(xx)
+        D = mpz(self.D(xx))
         xx[i] = x  # x is quantity of underlying asset brought to 1e18 precision
         xx = [xx[k] for k in range(self.n) if k != j]
         Ann = self.A * self.n
@@ -153,6 +155,7 @@ class pool:
         while abs(y - y_prev) > 1:
             y_prev = y
             y = (y**2 + c) // (2 * y + b)
+        y = int(y)
         return y  # the result is in underlying units too
 
     def y_underlying(self, i, j, x):
