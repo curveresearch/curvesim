@@ -6,6 +6,7 @@ from itertools import combinations, product
 from math import factorial
 from multiprocessing import Pool
 
+from gmpy2 import mpz
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 import numpy as np
@@ -115,6 +116,8 @@ class pool:
         S = sum(xp)
         D = S
         Ann = self.A * self.n
+        D = mpz(D)
+        Ann = mpz(Ann) 
         while abs(D - Dprev) > 1:
             D_P = D
             for x in xp:
@@ -122,6 +125,7 @@ class pool:
             Dprev = D
             D = (Ann * S + D_P * self.n) * D // ((Ann - 1) * D + (self.n + 1) * D_P)
 
+        D = int(D)
         return D
 
     def y(self, i, j, x, xp=None):
@@ -140,6 +144,7 @@ class pool:
         else:
             xx = xp[:]
         D = self.D(xx)
+        D = mpz(D)
         xx[i] = x  # x is quantity of underlying asset brought to 1e18 precision
         xx = [xx[k] for k in range(self.n) if k != j]
         Ann = self.A * self.n
@@ -153,6 +158,7 @@ class pool:
         while abs(y - y_prev) > 1:
             y_prev = y
             y = (y**2 + c) // (2 * y + b)
+        y = int(y)
         return y  # the result is in underlying units too
 
     def y_underlying(self, i, j, x):
@@ -1437,7 +1443,7 @@ def pooldata(poolname, csv="poolDF_cg.csv", balanced=False):
     for address in addresses:
         query = (
             """{
-  swapVolumeSnapshots(where: {pool: "%s", period: 86400}, orderBy: timestamp, orderDirection: desc, first:60) {
+  dailySwapVolumeSnapshots(where: {pool: "%s"}, orderBy: timestamp, orderDirection: desc, first:60) {
     volume
   }
 }"""
@@ -1445,7 +1451,7 @@ def pooldata(poolname, csv="poolDF_cg.csv", balanced=False):
         )
         req = requests.post(url, json={"query": query})
         try:
-            volume = pd.DataFrame(req.json()["data"]["swapVolumeSnapshots"], dtype="float").sum()[0]
+            volume = pd.DataFrame(req.json()["data"]["dailySwapVolumeSnapshots"], dtype="float").sum()[0]
         except:
             print("[" + poolname + "] No historical volume info from Curve Subgraph.")
             volume = float(input("[" + poolname + "] Please input estimated volume for 2 months: "))
