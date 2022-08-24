@@ -1006,15 +1006,18 @@ def psim(
         fee_list = [[fee, fee_base] for fee in fee_list]
 
     # Run sims
-    clust = Pool(ncpu)
     simmapfunc = partial(sim, tokens=tokens, feemul=feemul, vol_mult=vol_mult, r=r)
-
-    pl, err, bal, pool_value, depth, volume, xs, ps = zip(
-        *clust.starmap(
-            simmapfunc,
-            [(A, D, n, fee, prices, volumes) for A in A_list for fee in fee_list],
-        )
-    )
+    if ncpu > 1:
+        with Pool(ncpu) as clust:
+            pl, err, bal, pool_value, depth, volume, xs, ps = zip(
+                *clust.starmap(
+                    simmapfunc,
+                    [(A, D, n, fee, prices, volumes) for A in A_list for fee in fee_list],
+                )
+            )
+    else:
+        params_list = zip(*[(A, D, n, fee, prices, volumes) for A in A_list for fee in fee_list])
+        pl, err, bal, pool_value, depth, volume, xs, ps = zip(*map(simmapfunc, *params_list))
 
     # Output as DataFrames
     p_list = pd.MultiIndex.from_tuples(p_list, names=["A", "fee"])
