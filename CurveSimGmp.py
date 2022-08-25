@@ -3,7 +3,7 @@ from ast import literal_eval
 from datetime import datetime, timedelta
 from functools import partial
 from itertools import combinations, product
-from math import factorial
+from math import factorial, prod
 from multiprocessing import Pool
 
 from gmpy2 import mpz
@@ -487,7 +487,7 @@ class pool:
         dy = self.dy(i, j, dx)
         return dy / dx
 
-    def dydxfee(self, i, j, dx):
+    def old_dydxfee(self, i, j, dx):
         """
         Returns price with fee, (dy[j]-fee)/dx[i]) given some dx[i]
         """
@@ -506,6 +506,31 @@ class pool:
 
             dy = dy - fee
         return dy / dx
+
+    def dydxfee(self, i, j, dx):
+        """
+        Returns price with fee, (dy[j]-fee)/dx[i]) given some dx[i]
+        """
+        xp = [mpz(x) for x in self.xp()]
+        xi = xp[i]
+        xj = xp[j]
+        n = self.n
+        A = self.A
+        D_pow = mpz(self.D()) ** (n + 1)
+        x_prod = prod(xp)
+        A_pow = A * n ** (n + 1)
+        dydx = int(xj * (xi * A_pow * x_prod + D_pow)) / int(xi * (xj * A_pow * x_prod + D_pow))
+
+        new_dydxfee = dydx * (1 - self.fee / 10**10)
+
+        dy = self.dy(i, j, dx)
+        fee = dy * self.fee // 10**10
+        old_dydxfee = (dy - fee) / dx
+        # print("Old dydx fee:", old_dydxfee)
+        # print("New dydx fee:", new_dydxfee)
+        # print("New dydx:", dydx)
+        # print("Difference:", abs(old_dydxfee - new_dydxfee))
+        return new_dydxfee
 
     def optarb(self, i, j, p):
         """
