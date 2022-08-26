@@ -523,9 +523,9 @@ class pool:
 
         new_dydxfee = dydx * (1 - self.fee / 10**10)
 
-        dy = self.dy(i, j, dx)
-        fee = dy * self.fee // 10**10
-        old_dydxfee = (dy - fee) / dx
+        # dy = self.dy(i, j, dx)
+        # fee = dy * self.fee // 10**10
+        # old_dydxfee = (dy - fee) / dx
         # print("Old dydx fee:", old_dydxfee)
         # print("New dydx fee:", new_dydxfee)
         # print("New dydx:", dydx)
