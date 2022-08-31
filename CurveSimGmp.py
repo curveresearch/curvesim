@@ -531,20 +531,24 @@ class pool:
         D_pow = mpz(self.D()) ** (n + 1)
         x_prod = prod(xp)
         A_pow = A * n ** (n + 1)
-        dydx = int(xj * (xi * A_pow * x_prod + D_pow)) / int(xi * (xj * A_pow * x_prod + D_pow))
+        dydx = (xj * (xi * A_pow * x_prod + D_pow)) / (xi * (xj * A_pow * x_prod + D_pow))
 
-        new_dydxfee = dydx * (1 - self.fee / 10**10)
+        if self.feemul is None:
+            fee_factor = self.fee / 10**10
+        else:
+            fee_factor = self.dynamic_fee(xi + dx // 2, xj - int(dydx * dx) // 2) / 10**10
 
-        dy = self.dy(i, j, dx)
-        fee = dy * self.fee // 10**10
-        old_dydxfee = (dy - fee) / dx
-        diff = abs(old_dydxfee - new_dydxfee)
-        if diff > 3e-12:
-            print("Old dydx fee:", old_dydxfee)
-            print("New dydx fee:", new_dydxfee)
-            print("New dydx:", dydx)
-            print("Difference:", diff)
-            print("------------")
+        new_dydxfee = dydx * (1 - fee_factor)
+        new_dydxfee = float(new_dydxfee)
+
+        # old_dydxfee = self.old_dydxfee(i, j, dx)
+        # diff = abs(old_dydxfee - new_dydxfee)
+        # if diff > 3e-12:
+        #     print("Old dydx fee:", old_dydxfee)
+        #     print("New dydx fee:", new_dydxfee)
+        #     print("New dydx:", dydx)
+        #     print("Difference:", diff)
+        #     print("------------")
         return new_dydxfee
 
     def optarb(self, i, j, p):
