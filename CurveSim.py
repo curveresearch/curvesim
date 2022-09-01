@@ -1434,7 +1434,7 @@ def pooldata(poolname, csv="poolDF_cg.csv", balanced=False):
     for address in addresses:
         query = (
             """{
-  dailySwapVolumeSnapshots(where: {pool: "%s"}, orderBy: timestamp, orderDirection: desc, first:60) {
+  swapVolumeSnapshots(where: {pool: "%s", period: 86400}, orderBy: timestamp, orderDirection: desc, first:60) {
     volume
   }
 }"""
@@ -1442,7 +1442,7 @@ def pooldata(poolname, csv="poolDF_cg.csv", balanced=False):
         )
         req = requests.post(url, json={"query": query})
         try:
-            volume = pd.DataFrame(req.json()["data"]["dailySwapVolumeSnapshots"], dtype="float").sum()[0]
+            volume = pd.DataFrame(req.json()["data"]["swapVolumeSnapshots"], dtype="float").sum()[0]
         except:
             print("[" + poolname + "] No historical volume info from Curve Subgraph.")
             volume = float(input("[" + poolname + "] Please input estimated volume for 2 months: "))
