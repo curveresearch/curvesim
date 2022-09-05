@@ -117,7 +117,7 @@ class pool:
         D = S
         Ann = self.A * self.n
         D = mpz(D)
-        Ann = mpz(Ann) 
+        Ann = mpz(Ann)
         while abs(D - Dprev) > 1:
             D_P = D
             for x in xp:
@@ -491,8 +491,8 @@ class pool:
         """
         Returns price with fee, (dy[j]-fee)/dx[i]) given some dx[i]
         """
-        if self.ismeta: 
-            dy = self.dy(i, j, dx) # fees already included
+        if self.ismeta:
+            dy = self.dy(i, j, dx)  # fees already included
             return dy / dx
         else:
             return self._dydxfee(i, j, dx)
@@ -574,7 +574,7 @@ class pool:
 
         return trade, error, res
 
-    def optarbs(self, prices, limits):
+    def optarbs(self, prices, limits):  # noqa: C901
         """
         Estimates trades to optimally arbitrage all coins in a pool, given prices and volume limits
 
@@ -602,7 +602,7 @@ class pool:
                 try:
                     trade, error, res = self.optarb(i, j, prices[k])
                     x0.append(min(trade[2], int(limits[k] * 10**18)))
-                except:
+                except Exception:
                     x0.append(0)
 
                 lo.append(0)
@@ -614,7 +614,7 @@ class pool:
                 try:
                     trade, error, res = self.optarb(j, i, 1 / prices[k])
                     x0.append(min(trade[2], int(limits[k] * 10**18)))
-                except:
+                except Exception:
                     x0.append(0)
 
                 lo.append(0)
@@ -666,7 +666,7 @@ class pool:
 
             errors = res.fun
 
-        except:
+        except Exception:
             print(
                 "[Error: Optarbs] x0: "
                 + str(x0)
@@ -744,7 +744,7 @@ class pool:
 
         return trades_done, volume
 
-    def orderbook(self, i, j, width=0.1, reso=10**23, show=True):
+    def orderbook(self, i, j, width=0.1, reso=10**23, show=True):  # noqa: C901
 
         # if j == 'b', get orderbook against basepool token
         p_mult = 1
@@ -826,7 +826,7 @@ class pool:
         else:
             combos = list(combinations(range(self.n), 2))
             labels = list(range(self.n))
-            labels = ["Coin %s" % str(l) for l in labels]
+            labels = ["Coin %s" % str(label) for label in labels]
 
         plt_n = 0
         xs_out = []
@@ -871,7 +871,7 @@ class pool:
         return xs_out, ys_out
 
 
-##Simulation functions
+# Simulation functions
 def sim(A, D, n, fee, prices, volumes, tokens=None, feemul=None, vol_mult=1, r=None):
     """
     Simulates a pool with parameters A, D, n, and fee, given time series of prices and volumes
@@ -1055,7 +1055,7 @@ def psim(
 
     try:
         freq = prices.index.freq / timedelta(minutes=1)
-    except:
+    except Exception:
         freq = 30
     yearmult = 60 / freq * 24 * 365
     ar = pd.DataFrame(np.exp(log_returns.mean(axis=1) * yearmult) - 1)
@@ -1085,7 +1085,7 @@ def psim(
     return res
 
 
-def autosim(
+def autosim(  # noqa: C901
     poolname,
     test=False,
     A=None,
@@ -1105,7 +1105,8 @@ def autosim(
     Requires an entry for "poolname" in poolDF.csv
 
     A, D, fee, vol_mult, & feemul can be used to override default values and/or fetched data.
-    D & fee should be provided in "natural" units (i.e., not 10**18 or 10**10 precision). A & fee must be lists/np.arrays.
+    D & fee should be provided in "natural" units (i.e., not 10**18 or 10**10 precision).
+    A & fee must be lists/np.arrays.
 
     If test==True, uses a limited number of A/fee values
 
@@ -1324,10 +1325,10 @@ def getpool(poolname, D=None, src="cg", balanced=False):
     return pl
 
 
-##Functions to get pool data
+# Functions to get pool data
 
 
-def pooldata(poolname, csv="poolDF_cg.csv", balanced=False):
+def pooldata(poolname, csv="poolDF_cg.csv", balanced=False):  # noqa: C901
     w3 = Web3(Web3.HTTPProvider("https://mainnet.infura.io/v3/aae0ec63797d4548bfe5c98c4f9aa230"))
 
     pools = pd.read_csv(
@@ -1346,9 +1347,9 @@ def pooldata(poolname, csv="poolDF_cg.csv", balanced=False):
     ABItypes = ["uint256", "int128"]  # some old contracts used int128
     for ABItype in ABItypes:
         abi = (
-            '[{"name":"A","outputs":[{"type":"uint256","name":""}],"inputs":[],"stateMutability":"view","type":"function","gas":5227},{"name":"balances","outputs":[{"type":"uint256","name":""}],"inputs":[{"type":"'
+            '[{"name":"A","outputs":[{"type":"uint256","name":""}],"inputs":[],"stateMutability":"view","type":"function","gas":5227},{"name":"balances","outputs":[{"type":"uint256","name":""}],"inputs":[{"type":"'  # noqa: E501
             + ABItype
-            + '","name":"arg0"}],"stateMutability":"view","type":"function","gas":2250},{"name":"fee","outputs":[{"type":"uint256","name":""}],"inputs":[],"stateMutability":"view","type":"function","gas":2171},{"name":"get_virtual_price","outputs":[{"type":"uint256","name":""}],"inputs":[],"stateMutability":"view","type":"function","gas":1133537},{"name":"coins","outputs":[{"type":"address","name":""}],"inputs":[{"type":"'
+            + '","name":"arg0"}],"stateMutability":"view","type":"function","gas":2250},{"name":"fee","outputs":[{"type":"uint256","name":""}],"inputs":[],"stateMutability":"view","type":"function","gas":2171},{"name":"get_virtual_price","outputs":[{"type":"uint256","name":""}],"inputs":[],"stateMutability":"view","type":"function","gas":1133537},{"name":"coins","outputs":[{"type":"address","name":""}],"inputs":[{"type":"'  # noqa: E501
             + ABItype
             + '","name":"arg0"}],"stateMutability":"view","type":"function","gas":2310}]'
         )
@@ -1356,7 +1357,7 @@ def pooldata(poolname, csv="poolDF_cg.csv", balanced=False):
         try:
             contract.functions.balances(0).call()
             break
-        except:
+        except Exception:
             pass
 
     coins = p.coins
@@ -1409,9 +1410,9 @@ def pooldata(poolname, csv="poolDF_cg.csv", balanced=False):
 
         for ABItype in ABItypes:
             abi = (
-                '[{"name":"A","outputs":[{"type":"uint256","name":""}],"inputs":[],"stateMutability":"view","type":"function","gas":5227},{"name":"balances","outputs":[{"type":"uint256","name":""}],"inputs":[{"type":"'
+                '[{"name":"A","outputs":[{"type":"uint256","name":""}],"inputs":[],"stateMutability":"view","type":"function","gas":5227},{"name":"balances","outputs":[{"type":"uint256","name":""}],"inputs":[{"type":"'  # noqa: E501
                 + ABItype
-                + '","name":"arg0"}],"stateMutability":"view","type":"function","gas":2250},{"name":"fee","outputs":[{"type":"uint256","name":""}],"inputs":[],"stateMutability":"view","type":"function","gas":2171},{"name":"get_virtual_price","outputs":[{"type":"uint256","name":""}],"inputs":[],"stateMutability":"view","type":"function","gas":1133537},{"name":"coins","outputs":[{"type":"address","name":""}],"inputs":[{"type":"'
+                + '","name":"arg0"}],"stateMutability":"view","type":"function","gas":2250},{"name":"fee","outputs":[{"type":"uint256","name":""}],"inputs":[],"stateMutability":"view","type":"function","gas":2171},{"name":"get_virtual_price","outputs":[{"type":"uint256","name":""}],"inputs":[],"stateMutability":"view","type":"function","gas":1133537},{"name":"coins","outputs":[{"type":"address","name":""}],"inputs":[{"type":"'  # noqa: E501
                 + ABItype
                 + '","name":"arg0"}],"stateMutability":"view","type":"function","gas":2310}]'
             )
@@ -1419,7 +1420,7 @@ def pooldata(poolname, csv="poolDF_cg.csv", balanced=False):
             try:
                 base_contract.functions.balances(0).call()
                 break
-            except:
+            except Exception:
                 pass
 
         D = []
@@ -1454,13 +1455,18 @@ def pooldata(poolname, csv="poolDF_cg.csv", balanced=False):
             D = [D_balanced, D_base_balanced]
 
     # Get historical volume
-    url = "https://api.thegraph.com/subgraphs/name/convex-community/volume-mainnet"  # "https://api.thegraph.com/subgraphs/name/curvefi/curve"
+    url = "https://api.thegraph.com/subgraphs/name/convex-community/volume-mainnet"
 
     histvolume = []
     for address in addresses:
         query = (
             """{
-  swapVolumeSnapshots(where: {pool: "%s", period: 86400}, orderBy: timestamp, orderDirection: desc, first:60) {
+  swapVolumeSnapshots(
+    where: {pool: "%s", period: 86400},
+    orderBy: timestamp,
+    orderDirection: desc,
+    first:60
+  ) {
     volume
   }
 }"""
@@ -1469,7 +1475,7 @@ def pooldata(poolname, csv="poolDF_cg.csv", balanced=False):
         req = requests.post(url, json={"query": query})
         try:
             volume = pd.DataFrame(req.json()["data"]["swapVolumeSnapshots"], dtype="float").sum()[0]
-        except:
+        except Exception:
             print("[" + poolname + "] No historical volume info from Curve Subgraph.")
             volume = float(input("[" + poolname + "] Please input estimated volume for 2 months: "))
         histvolume.append(volume)
@@ -1498,12 +1504,12 @@ def tokenrate(tokentype, address):
     w3 = Web3(Web3.HTTPProvider("https://mainnet.infura.io/v3/aae0ec63797d4548bfe5c98c4f9aa230"))
 
     if tokentype == "c":
-        abi = '[{"constant":true,"inputs":[],"name":"exchangeRateStored","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"payable":false,"stateMutability":"view","type":"function"}]'
+        abi = '[{"constant":true,"inputs":[],"name":"exchangeRateStored","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"payable":false,"stateMutability":"view","type":"function"}]'  # noqa: E501
         contract = w3.eth.contract(address=address, abi=abi)
         rate = contract.functions.exchangeRateStored().call()
 
     elif tokentype == "y":
-        abi = '[{"constant":true,"inputs":[],"name":"getPricePerFullShare","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"payable":false,"stateMutability":"view","type":"function"}]'
+        abi = '[{"constant":true,"inputs":[],"name":"getPricePerFullShare","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"payable":false,"stateMutability":"view","type":"function"}]'  # noqa: E501
         contract = w3.eth.contract(address=address, abi=abi)
         rate = contract.functions.getPricePerFullShare().call()
 
@@ -1534,7 +1540,7 @@ def redemptionprices(n=100):
     return data
 
 
-##Plotters
+# Plotters
 
 
 def plotsims(A_list, ar, bal, pool_value, depth, volume, log_returns, err, show=True, saveas=False):
@@ -1545,7 +1551,7 @@ def plotsims(A_list, ar, bal, pool_value, depth, volume, log_returns, err, show=
 
     colors = plt.cm.viridis(np.linspace(0, 1, len(A_list)))
 
-    ##Summary stats
+    # Summary stats
     fig, axs = plt.subplots(2, 3, constrained_layout=True, figsize=(8, 5))
 
     axs[0, 0].plot(ar.unstack(level=1) * 100, "k", zorder=1)
@@ -1578,7 +1584,7 @@ def plotsims(A_list, ar, bal, pool_value, depth, volume, log_returns, err, show=
     axs[1, 0].set_ylabel("Daily Volume")
 
     axs[1, 1].plot(A_list, err.median(axis=1), "k", zorder=1)
-    scatter = axs[1, 1].scatter(A_list, err.median(axis=1), c=colors, zorder=2)
+    axs[1, 1].scatter(A_list, err.median(axis=1), c=colors, zorder=2)
     axs[1, 1].set_xlabel("Amplitude (A)")
     axs[1, 1].set_ylabel("Median Price Error")
 
@@ -1602,7 +1608,7 @@ def plotsims(A_list, ar, bal, pool_value, depth, volume, log_returns, err, show=
     if saveas:
         plt.savefig(saveas + "_1.png")
 
-    ##Time-series Data
+    # Time-series Data
     fig, axs = plt.subplots(3, 2, constrained_layout=True, figsize=(8, 5))
 
     # Pool value
@@ -1777,7 +1783,7 @@ def saveplots(poolname, A_list, fee_list, ar, bal, depth, volume, pool_value, lo
         plt.close("all")
 
 
-##Error functions for optarb and optarbs
+# Error functions for optarb and optarbs
 def arberror(dx, pool, i, j, p):
     dx = int(dx)
 

@@ -165,7 +165,7 @@ def vwap_agg(coins, t_start, t_end):
     return data
 
 
-def update(coins, quote, t_start, t_end, pairs=False):
+def update(coins, quote, t_start, t_end, pairs=False):  # noqa: C901
     t_start = t_start.replace(tzinfo=timezone.utc)
     t_start_orig = t_start
     t_end = t_end.replace(tzinfo=timezone.utc)
