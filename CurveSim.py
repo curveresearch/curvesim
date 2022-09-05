@@ -3,9 +3,10 @@ from ast import literal_eval
 from datetime import datetime, timedelta
 from functools import partial
 from itertools import combinations, product
-from math import factorial
+from math import factorial, prod
 from multiprocessing import Pool
 
+from gmpy2 import mpz
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 import numpy as np
@@ -115,6 +116,8 @@ class pool:
         S = sum(xp)
         D = S
         Ann = self.A * self.n
+        D = mpz(D)
+        Ann = mpz(Ann) 
         while abs(D - Dprev) > 1:
             D_P = D
             for x in xp:
@@ -122,6 +125,7 @@ class pool:
             Dprev = D
             D = (Ann * S + D_P * self.n) * D // ((Ann - 1) * D + (self.n + 1) * D_P)
 
+        D = int(D)
         return D
 
     def y(self, i, j, x, xp=None):
@@ -140,6 +144,7 @@ class pool:
         else:
             xx = xp[:]
         D = self.D(xx)
+        D = mpz(D)
         xx[i] = x  # x is quantity of underlying asset brought to 1e18 precision
         xx = [xx[k] for k in range(self.n) if k != j]
         Ann = self.A * self.n
@@ -153,6 +158,7 @@ class pool:
         while abs(y - y_prev) > 1:
             y_prev = y
             y = (y**2 + c) // (2 * y + b)
+        y = int(y)
         return y  # the result is in underlying units too
 
     def y_underlying(self, i, j, x):
@@ -485,21 +491,65 @@ class pool:
         """
         Returns price with fee, (dy[j]-fee)/dx[i]) given some dx[i]
         """
-        if self.ismeta:  # fees already included
-            dy = self.dy(i, j, dx)
+        if self.ismeta: 
+            dy = self.dy(i, j, dx) # fees already included
+            return dy / dx
         else:
-            if self.feemul is None:  # if not dynamic fee pool
-                dy = self.dy(i, j, dx)
-                fee = dy * self.fee // 10**10
-            else:  # if dynamic fee pool
-                xp = self.xp()
-                x = xp[i] + dx
-                y = self.y(i, j, x)
-                dy = xp[j] - y
-                fee = dy * self.dynamic_fee((xp[i] + x) // 2, (xp[j] + y) // 2) // 10**10
+            return self._dydxfee(i, j, dx)
 
-            dy = dy - fee
+    def old_dydxfee(self, i, j, dx):
+        """
+        For testing only.  This is the old regular pool calc.
+
+        Returns price with fee, (dy[j]-fee)/dx[i]) given some dx[i]
+        """
+        if self.feemul is None:  # if not dynamic fee pool
+            dy = self.dy(i, j, dx)
+            fee = dy * self.fee // 10**10
+        else:  # if dynamic fee pool
+            xp = self.xp()
+            x = xp[i] + dx
+            y = self.y(i, j, x)
+            dy = xp[j] - y
+            fee = dy * self.dynamic_fee((xp[i] + x) // 2, (xp[j] + y) // 2) // 10**10
+
+        dy = dy - fee
         return dy / dx
+
+    def _dydxfee(self, i, j, dx):
+        """
+        Returns price with fee, (dy[j]-fee)/dx[i]) given some dx[i]
+        """
+        if self.ismeta:
+            raise NotImplementedError("Not intended for metapools yet.")
+
+        xp = [mpz(x) for x in self.xp()]
+        xi = xp[i]
+        xj = xp[j]
+        n = self.n
+        A = self.A
+        D_pow = mpz(self.D()) ** (n + 1)
+        x_prod = prod(xp)
+        A_pow = A * n ** (n + 1)
+        dydx = (xj * (xi * A_pow * x_prod + D_pow)) / (xi * (xj * A_pow * x_prod + D_pow))
+
+        if self.feemul is None:
+            fee_factor = self.fee / 10**10
+        else:
+            fee_factor = self.dynamic_fee(xi + dx // 2, xj - int(dydx * dx) // 2) / 10**10
+
+        new_dydxfee = dydx * (1 - fee_factor)
+        new_dydxfee = float(new_dydxfee)
+
+        # old_dydxfee = self.old_dydxfee(i, j, dx)
+        # diff = abs(old_dydxfee - new_dydxfee)
+        # if diff > 3e-12:
+        #     print("Old dydx fee:", old_dydxfee)
+        #     print("New dydx fee:", new_dydxfee)
+        #     print("New dydx:", dydx)
+        #     print("Difference:", diff)
+        #     print("------------")
+        return new_dydxfee
 
     def optarb(self, i, j, p):
         """
