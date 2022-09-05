@@ -497,25 +497,6 @@ class pool:
         else:
             return self._dydxfee(i, j, dx)
 
-    def old_dydxfee(self, i, j, dx):
-        """
-        For testing only.  This is the old regular pool calc.
-
-        Returns price with fee, (dy[j]-fee)/dx[i]) given some dx[i]
-        """
-        if self.feemul is None:  # if not dynamic fee pool
-            dy = self.dy(i, j, dx)
-            fee = dy * self.fee // 10**10
-        else:  # if dynamic fee pool
-            xp = self.xp()
-            x = xp[i] + dx
-            y = self.y(i, j, x)
-            dy = xp[j] - y
-            fee = dy * self.dynamic_fee((xp[i] + x) // 2, (xp[j] + y) // 2) // 10**10
-
-        dy = dy - fee
-        return dy / dx
-
     def _dydxfee(self, i, j, dx):
         """
         Returns price with fee, (dy[j]-fee)/dx[i]) given some dx[i]
@@ -538,18 +519,10 @@ class pool:
         else:
             fee_factor = self.dynamic_fee(xi + dx // 2, xj - int(dydx * dx) // 2) / 10**10
 
-        new_dydxfee = dydx * (1 - fee_factor)
-        new_dydxfee = float(new_dydxfee)
+        dydxfee = dydx * (1 - fee_factor)
+        dydxfee = float(dydxfee)
 
-        # old_dydxfee = self.old_dydxfee(i, j, dx)
-        # diff = abs(old_dydxfee - new_dydxfee)
-        # if diff > 3e-12:
-        #     print("Old dydx fee:", old_dydxfee)
-        #     print("New dydx fee:", new_dydxfee)
-        #     print("New dydx:", dydx)
-        #     print("Difference:", diff)
-        #     print("------------")
-        return new_dydxfee
+        return dydxfee
 
     def optarb(self, i, j, p):
         """
