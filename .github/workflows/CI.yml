@@ -35,3 +35,8 @@ jobs:
         run: |
           black --version
           black . --check
+
+      - name: Test
+        run: |
+          python hello_world.py
+
