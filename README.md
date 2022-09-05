@@ -114,7 +114,7 @@ For comparison, compare 3pool_cg and 3pool_nomics results in the pools/demo dire
 
 ### Technical Parameters
 Additionally, one can specify:
-* **ncpu**: number of CPUs to use for parallel processing (default: 4)
+* **ncpu**: number of CPUs to use for parallel processing (default: 4); for use with profilers, e.g. `cProfile`, use `ncpu=1`.
 * **trunc**: a pair of indicies to truncate price/volume data to [trunc[0]:trunc[1]]
 
 ## Adding Pools
