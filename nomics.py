@@ -194,7 +194,7 @@ def update(coins, quote, t_start, t_end, pairs=False):
                     data = curr_file.append(data)
                     data = data[data.index >= t_start_orig]
                     data.to_csv("data/" + pair[0] + "-" + pair[1] + ".csv")
-            except:
+            except Exception:
                 data = vwap_agg(pair, t_start_orig, t_end)
                 data.to_csv("data/" + pair[0] + "-" + pair[1] + ".csv")
 
@@ -217,7 +217,7 @@ def update(coins, quote, t_start, t_end, pairs=False):
                     data = curr_file.append(data)
                     data = data[data.index >= t_start_orig]
                     data.to_csv("data/" + coin + "-" + quote + ".csv")
-            except:
+            except Exception:
                 data = vwap_agg(curr_coins, t_start_orig, t_end)
                 data.to_csv("data/" + coin + "-" + quote + ".csv")
 
@@ -228,7 +228,7 @@ def poolprices(coins, quote=None, quotediv=False, t_start=None, t_end=None, resa
 
     coins: list of coins to load (e.g., ['DAI', 'USDC', 'USDT'])
     quote: if string, name of quote currency to load (e.g., 'USD')
-    quotediv: determine pairwise coin prices using a third currency (e.g., ETH-SUSD/SETH-SUSD, instead of ETH-SETH)
+    quotediv: determine pairwise coin prices using third currency (e.g., ETH-SUSD/SETH-SUSD for ETH-SETH)
     t_start/t_end: used to truncate input time series
     resample: used to downsample input time series
 
