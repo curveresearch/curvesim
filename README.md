@@ -2,7 +2,11 @@
 CurveSim simulates Curve finance pools with optimal arbitrageurs trading against them. It's primary use is to determine optimal amplitude (A) and fee parameters given historical price and volume feeds.
 
 #### Dependencies:
-Python3, scipy, numpy, pandas, Web3, matplotlib, requests
+The maintainers use Python 3.8 or above.  Likely the code should be fine for Python versions from 3.6 onward.
+
+Primary package dependencies: scipy, numpy, pandas, Web3, matplotlib, requests, gmpy2
+
+To avoid dependency issues, it is recommended to use the included `requirements.txt` file in a Python virtual environment (`venv`).
 
 
 ## Basic Use: Autosim
