@@ -1,7 +1,13 @@
+# python
 __pycache__/
 *.py[cod]
 
+# vim
 *.swp
 *.swo
 
+# Mac
 .DS_Store
+
+# virtualenv
+/env

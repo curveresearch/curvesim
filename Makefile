@@ -12,8 +12,7 @@ help:
 	@echo "hooks                  install Git hooks"
 	@echo ""
 
-VENV_NAME := CurveSim
-VENV_PATH := $(HOME)/.virtualenvs/$(VENV_NAME)
+VENV_PATH := $(PWD)/env
 
 .PHONY: venv
 venv:
