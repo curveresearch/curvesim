@@ -1340,7 +1340,8 @@ def autosim(  # noqa: C901
             if vol_mode == 1:
                 vol_mult = histvolume / volumes.sum().sum()
             if vol_mode == 2:
-                vol_mult = histvolume.repeat(n) / n / volumes.sum()
+                sumvol = volumes.sum()
+                vol_mult = histvolume.repeat(len(sumvol)) / len(sumvol) / sumvol
             if vol_mode == 3:
                 print("Vol_mode=3 only available for meta-pools. Reverting to vol_mode=1")
                 vol_mult = histvolume / volumes.sum().sum()
