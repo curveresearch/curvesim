@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+for file in `git diff --name-only --cached --diff-filter=d | grep '\.py$'`; do
+    echo "whitespace: processing $file"
+    if `git diff --quiet "$file"`; then
+        # no dirty version in working tree,
+        # edit the file directly and git-add
+        # 1. remove trailing whitespace
+        sed -i '' -E 's/[[:space:]]*$//' "$file"
+        # 2. replace tabs with 4 spaces
+        sed -i '' $'s/\t/    /g' "$file"
+        # 3. check file ends with two newlines
+        # TODO
+        git add --verbose "$file"
+    else
+        # need to leave working tree untouched, so 
+        # save staged contents of file to temp file
+        # and process that
+        git show ":$file" > "$file.ws.tmp"
+        sed -i '' -E 's/[[:space:]]*$//' "$file.ws.tmp"
+        sed -i '' $'s/\t/    /g' "$file.ws.tmp"
+        # manually create the blob from modified temp
+        # file and update the original file in the index
+        hash=`git hash-object -w "$file.ws.tmp"`
+        git update-index --add --verbose --cacheinfo 100644 "$hash" "$file"
+        # cleanup after yourself!
+        rm "$file.ws.tmp"
+    fi
+done
+
+# If no files left in index after formatting - fail
+ret=0
+if `git diff --staged --quiet`; then
+    1>&2 echo "whitespace: No files to commit after trimming whitespace."
+    exit 1
+fi
+
