@@ -523,11 +523,11 @@ class pool:
             # z: primary coin balance
             # w: basepool virtual balance
             # x_i: basepool coin balances
-            # 
+            #
             # dz/dx_i = dz/dw  * dw/dx_i = dz/dw * dD/dx_i = dz/dw * D'
             # where D refers to the basepool
-            # 
-            # D' = -1 * ( A * n ** (n+1) * prod(x_k) + D ** (n+1) / x_i) 
+            #
+            # D' = -1 * ( A * n ** (n+1) * prod(x_k) + D ** (n+1) / x_i)
             #          / ( n ** n * prod(x_k) - A * n ** (n+1) * prod(x_k) - (n + 1) * D ** n
             rates = self.p[:]
             rates[self.max_coin] = self.basepool.get_virtual_price()
@@ -549,7 +549,11 @@ class pool:
 
                 if base_i < 0:  # i is primary
                     xj = base_xp[base_j]
-                    D_prime = -1 * (A_pow * x_prod + D_pow / xj) / (n ** n * x_prod - A_pow * x_prod - (n+1) * D ** n)
+                    D_prime = (
+                        -1
+                        * (A_pow * x_prod + D_pow / xj)
+                        / (n**n * x_prod - A_pow * x_prod - (n + 1) * D**n)
+                    )
                     D_prime = float(D_prime)
 
                     dwdz = self._dydxfee(0, self.max_coin, xp)
@@ -559,7 +563,7 @@ class pool:
                         fee = bp.fee - bp.fee * xj // sum(base_xp) + 5 * 10**5
                     else:
                         fee = 0
-                    new_dydxfee *= (1 - fee / 10 ** 10)
+                    new_dydxfee *= 1 - fee / 10**10
 
                     # old_dydxfee = self.old_dydxfee(i, j, dx)
                     # diff = abs(old_dydxfee - new_dydxfee)
@@ -632,7 +636,7 @@ class pool:
         if self.feemul is None:
             fee_factor = self.fee / 10**10
         else:
-            dx = 10 ** 12
+            dx = 10**12
             fee_factor = self.dynamic_fee(xi + dx // 2, xj - int(dydx * dx) // 2) / 10**10
 
         new_dydxfee = dydx * (1 - fee_factor)
@@ -640,7 +644,7 @@ class pool:
 
         # dx = 10 ** 12
         # y = self.y(i, j, xi + dx, xp=xp)
-        # dy = xj - y 
+        # dy = xj - y
         # if self.feemul:
         #     x = xi + dx
         #     fee = dy * self.dynamic_fee((xi + x) // 2, (xj + y) // 2) // 10**10
