@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+
+DEBUG=0
+
+debug_echo() {
+    if [ "$DEBUG" -ne "0" ]; then
+        echo "$*"
+    fi
+}
+
+trap cleanup EXIT SIGHUP SIGINT SIGTERM
+
+temp_files=()
+
+cleanup() {
+    # cleanup after yourself!
+    debug_echo "deleting ${temp_files[@]}"
+    rm -f "${temp_files[@]}"
+}
+
+executable=$1
+
+# tweaked the answer from
+# https://stackoverflow.com/a/49265008/1175053
+for file in `git diff --name-only --cached --diff-filter=d | grep '\.py$'`; do
+    debug_echo "$executable: processing $file"
+    if `git diff --quiet "$file"`; then
+        # no dirty version in working tree,
+        # modify the file directly and git-add
+        $executable --quiet "$file"
+        git add "$file"
+    else
+        # need to leave working tree untouched, so 
+        # save staged contents of file to temp file
+        # and process that
+        temp_and_orig_files=(`git checkout-index --temp "$file"`)
+        temp_file=${temp_and_orig_files[0]}
+        temp_files+=("$temp_file")
+        $executable --quiet "$temp_file"
+        # manually create the blob from modified temp
+        # file and update the original file in the index
+        hash=`git hash-object -w "$temp_file"`
+        git update-index --add --cacheinfo 100644 "$hash" "$file"
+    fi
+done
+
+# If no files left in index after formatting - fail
+if `git diff --staged --quiet`; then
+    1>&2 echo "$executable: No files to commit after reformatting"
+    exit 1
+fi
+ 

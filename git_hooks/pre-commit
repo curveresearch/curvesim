@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+
+######################
+# ---- SETTINGS ---- #
+######################
+
+VENV_PATH="./env"
+
+# run these hooks in this order
+hook_names=(
+    'isort'
+    'whitespace'
+    'flake8'
+    'black'
+)
+
+
+#### END SETTINGS ####
+
+# check if commit just edits commit message,
+# i.e. is a "REWORD", and if so, skip checks
+if git diff --staged --quiet ; then
+    exit 0
+fi
+
+# if not inside virtual env, this will ensure
+# it activates, so hooks will run correctly,
+# e.g. isort hook needs to run inside the
+# virtual env so it can properly identify
+# 3rd party packages
+if [ -z "$VIRTUAL_ENV" ]; then
+    source "${VENV_PATH}/bin/activate"
+fi
+
+exit_codes=()
+
+# run each hook, storing the exit status, so
+# we identify all issues
+for hook_name in "${hook_names[@]}"; do
+    hook=".git/hooks/pre-commit-${hook_name}"
+    if [ -x "$hook" ]; then
+        "./$hook"
+        exit_codes+=($?)
+    else
+        echo "$hook is not executable"
+        exit_codes+=(1)
+        continue
+    fi
+done
+
+for status in "${exit_codes[@]}"; do
+  [ "$status" -eq 0 ] || exit "$status"
+done
+
+exit 0

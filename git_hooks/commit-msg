@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+
+# This hook ensures we follow Tim Pope's guidelines here:
+# https://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html
+
+trap cleanup EXIT SIGHUP SIGINT SIGTERM
+
+cleanup() {
+    rm clean_msg_file.tmp
+}
+
+# Git will pass the commit message to the hook as a file
+# MSG_FILE="$1"
+# Husky does not pass arguments to hooks, so we
+# use this workaround instead.
+MSG_FILE='.git/COMMIT_EDITMSG'
+
+# define the expected format of message
+SUMMARY_MAX=50
+BODY_MAX=72
+E_SUMMARY_MSG="❌ Violation: summary length exceeds $SUMMARY_MAX chars"
+E_SUMMARY=1 
+E_SEPARATOR_MSG="❌ Violation: no blank line separates summary from body"
+E_SEPARATOR=2
+E_BODY_MSG="❌ Violation: body width exceeds $BODY_MAX chars"
+E_BODY=3 
+E_ONLY_COMMENTS_MSG="❌ Error: message contains only comments"
+E_ONLY_COMMENTS=4
+
+RETVAL=0
+
+grep -v '^#' "$MSG_FILE" > clean_msg_file.tmp
+if ! grep -v -q '^[[:space:]]*$' clean_msg_file.tmp; then
+     # nothing for our hook to check
+     echo "$E_ONLY_COMMENTS_MSG"
+     exit $E_ONLY_COMMENTS
+fi
+
+summary_length=`head -1 clean_msg_file.tmp | wc -m`  # always use 'm' option with wc to count characters not bytes
+if [ $summary_length -gt $SUMMARY_MAX ]; then
+    echo "$E_SUMMARY_MSG"
+    RETVAL=$E_SUMMARY
+fi
+
+num_lines=`wc -l < clean_msg_file.tmp`
+
+if [ "$num_lines" -gt 1 ]; then
+    if ! head -2 clean_msg_file.tmp | tail -1 | grep -q '^[[:space:]]*$'; then
+        echo "$E_SEPARATOR_MSG"
+        RETVAL=$E_SEPARATOR
+    fi
+fi
+
+if [ "$num_lines" -gt 2 ]; then
+    while read line; do
+        num_chars=`echo $line | wc -m`
+        if [ $num_chars -gt $BODY_MAX ]; then
+            echo "$E_BODY_MSG"
+            RETVAL=$E_BODY
+            break
+        fi
+    done < <(tail -n +3 clean_msg_file.tmp)
+fi
+
+exit $RETVAL
