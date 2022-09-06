@@ -487,29 +487,148 @@ class pool:
         dy = self.dy(i, j, dx)
         return dy / dx
 
+    def old_dydxfee(self, i, j, dx):
+        """
+        For testing only.  This is the old calc.
+
+        Returns price with fee, (dy[j]-fee)/dx[i]) given some dx[i]
+        """
+        if self.ismeta:  # fees already included
+            dy = self.dy(i, j, dx)
+        else:
+            if self.feemul is None:  # if not dynamic fee pool
+                dy = self.dy(i, j, dx)
+                fee = dy * self.fee // 10**10
+            else:  # if dynamic fee pool
+                xp = self.xp()
+                x = xp[i] + dx
+                y = self.y(i, j, x)
+                dy = xp[j] - y
+                fee = dy * self.dynamic_fee((xp[i] + x) // 2, (xp[j] + y) // 2) // 10**10
+
+            dy = dy - fee
+        return dy / dx
+
     def dydxfee(self, i, j, dx):
         """
         Returns price with fee, (dy[j]-fee)/dx[i]) given some dx[i]
+
+        For metapools, the indices are assumed to include base pool
+        underlyer indices.
         """
-        if self.ismeta:
-            dy = self.dy(i, j, dx)  # fees already included
-            return dy / dx
+        if self.ismeta:  # fees already included
+            # --------------------------------
+            # -- Metapool pricing formula ----
+            # --------------------------------
+            # z: primary coin balance
+            # w: basepool virtual balance
+            # x_i: basepool coin balances
+            #
+            # dz/dx_i = dz/dw  * dw/dx_i = dz/dw * dD/dx_i = dz/dw * D'
+            # where D refers to the basepool
+            #
+            # D' = -1 * ( A * n ** (n+1) * prod(x_k) + D ** (n+1) / x_i)
+            #          / ( n ** n * prod(x_k) - A * n ** (n+1) * prod(x_k) - (n + 1) * D ** n
+            rates = self.p[:]
+            rates[self.max_coin] = self.basepool.get_virtual_price()
+            xp = [mpz(x) * p // 10**18 for x, p in zip(self.x, rates)]
+
+            # Use base_i or base_j if they are >= 0
+            base_i = i - self.max_coin
+            base_j = j - self.max_coin
+
+            if base_i < 0 or base_j < 0:  # if i or j not in basepool
+                bp = self.basepool
+                base_xp = [mpz(x) * p // 10**18 for x, p in zip(bp.x, bp.p)]
+                x_prod = prod(base_xp)
+                n = bp.n
+                A = bp.A
+                D = mpz(bp.D())
+                D_pow = D ** (n + 1)
+                A_pow = A * n ** (n + 1)
+
+                if base_i < 0:  # i is primary
+                    xj = base_xp[base_j]
+                    D_prime = (
+                        -1
+                        * (A_pow * x_prod + D_pow / xj)
+                        / (n**n * x_prod - A_pow * x_prod - (n + 1) * D**n)
+                    )
+                    D_prime = float(D_prime)
+
+                    dwdz = self._dydxfee(0, self.max_coin, xp)
+                    new_dydxfee = dwdz / D_prime
+
+                    if bp.fee:
+                        fee = bp.fee - bp.fee * xj // sum(base_xp) + 5 * 10**5
+                    else:
+                        fee = 0
+                    new_dydxfee *= 1 - fee / 10**10
+
+                    # old_dydxfee = self.old_dydxfee(i, j, dx)
+                    # diff = abs(old_dydxfee - new_dydxfee)
+                    # if diff > 4e-12:
+                    #     print("meta - primary to base")
+                    #     print("Old dydx fee:", old_dydxfee)
+                    #     print("New dydx fee:", new_dydxfee)
+                    #     print("Difference:", diff)
+                    #     print("    D':", D_prime)
+                    #     print("    dwdz:", dwdz)
+                    #     print("    fee factor:", (1 - fee / 10 ** 10))
+                    #     print("-------------")
+
+                else:  # i is from basepool
+                    base_inputs = [0] * self.basepool.n
+                    base_inputs[base_i] = dx
+
+                    dw = self.basepool.calc_token_amount(base_inputs)
+                    # Convert lp token amount to virtual units
+                    dw = dw * rates[self.max_coin] // 10**18
+                    x = xp[self.max_coin] + dw
+
+                    meta_i = self.max_coin
+                    meta_j = j
+                    y = self.y(meta_i, meta_j, x, xp)
+
+                    dy = xp[meta_j] - y - 1
+                    dy_fee = dy * self.fee // 10**10
+
+                    # Convert to real units
+                    dy = (dy - dy_fee) * 10**18 // rates[meta_j]
+
+                    new_dydxfee = dy / dx
+
+                    # old_dydxfee = self.old_dydxfee(i, j, dx)
+                    # diff = abs(old_dydxfee - new_dydxfee)
+                    # if diff > 4e-12:
+                    #     print("meta - base to primary")
+                    #     print("Old dydx fee:", old_dydxfee)
+                    #     print("New dydx fee:", new_dydxfee)
+                    #     print("Difference:", diff)
+                    #     print("-------------")
+
+            else:
+                # Both are from the base pool
+                new_dydxfee = self.basepool.dydxfee(base_i, base_j, dx)
+
         else:
-            return self._dydxfee(i, j, dx)
+            new_dydxfee = self._dydxfee(i, j)
 
-    def _dydxfee(self, i, j, dx):
-        """
-        Returns price with fee, (dy[j]-fee)/dx[i]) given some dx[i]
-        """
-        if self.ismeta:
-            raise NotImplementedError("Not intended for metapools yet.")
+        return float(new_dydxfee)
 
-        xp = [mpz(x) for x in self.xp()]
+    def _dydxfee(self, i, j, xp=None):
+        """
+        Treats indices as applying to the "top-level" pool if a metapool.
+        Basically this is the "regular" pricing calc with no special metapool handling.
+        """
+        xp = xp or [mpz(x) for x in self.xp()]
+
         xi = xp[i]
         xj = xp[j]
         n = self.n
         A = self.A
-        D_pow = mpz(self.D()) ** (n + 1)
+        D = self.D(xp)
+        D_pow = mpz(D) ** (n + 1)
         x_prod = prod(xp)
         A_pow = A * n ** (n + 1)
         dydx = (xj * (xi * A_pow * x_prod + D_pow)) / (xi * (xj * A_pow * x_prod + D_pow))
@@ -517,12 +636,31 @@ class pool:
         if self.feemul is None:
             fee_factor = self.fee / 10**10
         else:
+            dx = 10**12
             fee_factor = self.dynamic_fee(xi + dx // 2, xj - int(dydx * dx) // 2) / 10**10
 
-        dydxfee = dydx * (1 - fee_factor)
-        dydxfee = float(dydxfee)
+        new_dydxfee = dydx * (1 - fee_factor)
+        new_dydxfee = float(new_dydxfee)
 
-        return dydxfee
+        # dx = 10 ** 12
+        # y = self.y(i, j, xi + dx, xp=xp)
+        # dy = xj - y
+        # if self.feemul:
+        #     x = xi + dx
+        #     fee = dy * self.dynamic_fee((xi + x) // 2, (xj + y) // 2) // 10**10
+        # else:
+        #     fee = dy * self.fee // 10**10
+        # old_dydxfee = (dy - fee) / dx
+        # diff = abs(old_dydxfee - new_dydxfee)
+        # if diff > 3e-12:
+        #     print("Old dydx fee:", old_dydxfee)
+        #     print("New dydx fee:", new_dydxfee)
+        #     print("Difference:", diff)
+        #     print("Old dydx:", dy / dx)
+        #     print("New dydx:", dydx)
+        #     print("Difference:", abs(dydx - dy/dx))
+        #     print("------------")
+        return new_dydxfee
 
     def optarb(self, i, j, p):
         """
