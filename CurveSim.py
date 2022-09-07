@@ -6,12 +6,12 @@ from itertools import combinations, product
 from math import factorial, prod
 from multiprocessing import Pool
 
-from gmpy2 import mpz
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 import numpy as np
 import pandas as pd
 import requests
+from gmpy2 import mpz
 from matplotlib.lines import Line2D
 from scipy.optimize import least_squares, root_scalar
 from web3 import Web3
@@ -565,18 +565,6 @@ class pool:
                         fee = 0
                     new_dydxfee *= 1 - fee / 10**10
 
-                    # old_dydxfee = self.old_dydxfee(i, j, dx)
-                    # diff = abs(old_dydxfee - new_dydxfee)
-                    # if diff > 4e-12:
-                    #     print("meta - primary to base")
-                    #     print("Old dydx fee:", old_dydxfee)
-                    #     print("New dydx fee:", new_dydxfee)
-                    #     print("Difference:", diff)
-                    #     print("    D':", D_prime)
-                    #     print("    dwdz:", dwdz)
-                    #     print("    fee factor:", (1 - fee / 10 ** 10))
-                    #     print("-------------")
-
                 else:  # i is from basepool
                     base_inputs = [0] * self.basepool.n
                     base_inputs[base_i] = dx
@@ -597,15 +585,6 @@ class pool:
                     dy = (dy - dy_fee) * 10**18 // rates[meta_j]
 
                     new_dydxfee = dy / dx
-
-                    # old_dydxfee = self.old_dydxfee(i, j, dx)
-                    # diff = abs(old_dydxfee - new_dydxfee)
-                    # if diff > 4e-12:
-                    #     print("meta - base to primary")
-                    #     print("Old dydx fee:", old_dydxfee)
-                    #     print("New dydx fee:", new_dydxfee)
-                    #     print("Difference:", diff)
-                    #     print("-------------")
 
             else:
                 # Both are from the base pool
@@ -642,24 +621,6 @@ class pool:
         new_dydxfee = dydx * (1 - fee_factor)
         new_dydxfee = float(new_dydxfee)
 
-        # dx = 10 ** 12
-        # y = self.y(i, j, xi + dx, xp=xp)
-        # dy = xj - y
-        # if self.feemul:
-        #     x = xi + dx
-        #     fee = dy * self.dynamic_fee((xi + x) // 2, (xj + y) // 2) // 10**10
-        # else:
-        #     fee = dy * self.fee // 10**10
-        # old_dydxfee = (dy - fee) / dx
-        # diff = abs(old_dydxfee - new_dydxfee)
-        # if diff > 3e-12:
-        #     print("Old dydx fee:", old_dydxfee)
-        #     print("New dydx fee:", new_dydxfee)
-        #     print("Difference:", diff)
-        #     print("Old dydx:", dy / dx)
-        #     print("New dydx:", dydx)
-        #     print("Difference:", abs(dydx - dy/dx))
-        #     print("------------")
         return new_dydxfee
 
     def optarb(self, i, j, p):
