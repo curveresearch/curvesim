@@ -1196,6 +1196,7 @@ def autosim(  # noqa: C901
     src="cg",
     ncpu=4,
     trunc=None,
+    pool_data=None,
 ):
     """
     Simplified function to simulate existing Curve pools.
@@ -1232,7 +1233,7 @@ def autosim(  # noqa: C901
     else:
         csv = "poolDF_nomics.csv"
 
-    pldata = pooldata(poolname, csv=csv, balanced=True)
+    pldata = pool_data or pooldata(poolname, csv=csv, balanced=True)
 
     histvolume = pldata["histvolume"]
     coins = pldata["coins"]
