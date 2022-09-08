@@ -224,7 +224,7 @@ def update(coins, quote, t_start, t_end, pairs=False):  # noqa: C901
 
 
 def poolprices(  # noqa: C901
-    coins, quote=None, quotediv=False, t_start=None, t_end=None, resample=None, pairs=False
+    coins, quote=None, quotediv=False, t_start=None, t_end=None, resample=None, pairs=False, data_dir="data"
 ):
     """
     Loads and formats price/volume data from CSVs.
@@ -256,7 +256,7 @@ def poolprices(  # noqa: C901
         symbol_pairs = list(combinations(coins, 2))
 
     for (sym_1, sym_2) in symbol_pairs:
-        filename = os.path.join("data", f"{sym_1}-{sym_2}.csv")
+        filename = os.path.join(data_dir, f"{sym_1}-{sym_2}.csv")
         data_df = pd.read_csv(filename, index_col=0)
         prices.append(data_df["price"])
         volumes.append(data_df["volume"])
