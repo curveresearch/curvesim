@@ -11,3 +11,6 @@ __pycache__/
 
 # virtualenv
 /env
+
+# env vars file
+/.env
