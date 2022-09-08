@@ -1197,6 +1197,7 @@ def autosim(  # noqa: C901
     ncpu=4,
     trunc=None,
     pool_data=None,
+    data_dir="data",
 ):
     """
     Simplified function to simulate existing Curve pools.
@@ -1268,7 +1269,7 @@ def autosim(  # noqa: C901
 
     elif src == "local":
         print("[" + poolname + "] Fetching local price data...")
-        prices, volumes, pzero = nomics.poolprices(coins)
+        prices, volumes, pzero = nomics.poolprices(coins, data_dir=data_dir)
 
     elif src == "cg":
         print("[" + poolname + "] Fetching CoinGecko price data...")
