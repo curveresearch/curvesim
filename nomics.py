@@ -226,7 +226,7 @@ def update(coins, quote, t_start, t_end, pairs=False):  # noqa: C901
 
 
 def poolprices(  # noqa: C901
-    coins, quote=None, quotediv=False, t_start=None, t_end=None, resample=None, pairs=False, data_dir="data"
+    coins=[], quote=None, quotediv=False, t_start=None, t_end=None, resample=None, pairs=[], data_dir="data"
 ):
     """
     Loads and formats price/volume data from CSVs.
@@ -236,27 +236,27 @@ def poolprices(  # noqa: C901
     quotediv: determine pairwise coin prices using third currency (e.g., ETH-SUSD/SETH-SUSD for ETH-SETH)
     t_start/t_end: used to truncate input time series
     resample: used to downsample input time series
+    pairs: list of coin pairs to load (e.g., ['DAI-USDC', 'USDC-USDT'])
+    data_dir: base directory name for price csv files
 
     Returns exchange rates/volumes for each coin pair in order of list(itertools.combinations(coins,2))
 
     """
+    if pairs and coins:
+        raise ValueError("Use only 'coins' or 'pairs', not both.")
+
+    if coins:
+        if quote:
+            symbol_pairs = zip(coins, [quote] * len(coins))
+        else:
+            symbol_pairs = list(combinations(coins, 2))
+    elif pairs:
+        symbol_pairs = pairs
+    else:
+        raise ValueError("Must use one of 'coins' or 'pairs'.")
 
     prices = []
     volumes = []
-
-    if quote:  # quote given, generate pairs with quote
-        if not all(isinstance(c, str) for c in coins):
-            raise ValueError("'coins' should be list of symbols")
-        symbol_pairs = zip(coins, [quote] * len(coins))
-    elif pairs:  # quote not given, use given pairs
-        if not all(not isinstance(c, str) and len(c) == 2 for c in coins):
-            raise ValueError("'coins' should be list of pairs of symbols")
-        symbol_pairs = coins
-    else:  # generate all pairs from list of symbols
-        if not all(isinstance(c, str) for c in coins):
-            raise ValueError("'coins' should be list of symbols")
-        symbol_pairs = list(combinations(coins, 2))
-
     for (sym_1, sym_2) in symbol_pairs:
         filename = os.path.join(data_dir, f"{sym_1}-{sym_2}.csv")
         data_df = pd.read_csv(filename, index_col=0)
