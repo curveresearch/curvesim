@@ -8,6 +8,7 @@ gmpy2==2.1.2
 matplotlib==3.5.3
 web3==5.30.0
 requests==2.28.1
+python-dotenv==0.21.0
 # dev dependencies
 black==22.6.0
 flake8==5.0.4
