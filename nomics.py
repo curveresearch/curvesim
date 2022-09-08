@@ -5,8 +5,10 @@ from time import sleep
 
 import pandas as pd
 import requests
+from dotenv import load_dotenv
 
-key = ""
+load_dotenv()
+key = os.environ.get("NOMICS_API_KEY")
 
 
 def get_mkt(market, t_start, t_end):
