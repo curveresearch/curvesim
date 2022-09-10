@@ -16,7 +16,7 @@ if __name__ == "__main__":  # noqa: C901
         "err": 0.01,
         "log_returns": 0,
         "p": 1e15,
-        "pool_value": 1e6,
+        "pool_value": 50000,
         "volume": 0,
         "x": 0,
     }
