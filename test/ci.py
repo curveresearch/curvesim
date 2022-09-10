@@ -23,22 +23,21 @@ if __name__ == "__main__":
     rel_tolerances = {}
 
     skipped = ["log_returns", "volume", "x"]
-    # skipped = []
 
     for pool_name in pool_names:
         with open(os.path.join(data_dir, f"{pool_name}-pooldata.pickle"), "rb") as f:
             pool_data = pickle.load(f)
 
-        # res = CurveSim.autosim(
-        #     pool_name,
-        #     test=True,
-        #     ncpu=1,
-        #     src="local",
-        #     data_dir=data_dir,
-        #     pool_data=pool_data,
-        # )
-        with open(os.path.join(data_dir, f"{pool_name}-res-test.pickle"), "rb") as f:
-            res = pickle.load(f)
+        res = CurveSim.autosim(
+            pool_name,
+            test=True,
+            ncpu=1,
+            src="local",
+            data_dir=data_dir,
+            pool_data=pool_data,
+        )
+        # with open(os.path.join(data_dir, f"{pool_name}-res-test.pickle"), "rb") as f:
+        #     res = pickle.load(f)
 
         with open(os.path.join(data_dir, f"{pool_name}-res.pickle"), "rb") as f:
             res_pkl = pickle.load(f)
