@@ -5,7 +5,7 @@ import numpy as np
 
 import CurveSim
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # noqa: C901
     data_dir = os.path.join("test", "data")
     pool_names = ["3pool", "aave", "frax", "mim"]
 
