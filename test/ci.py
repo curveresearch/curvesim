@@ -3,7 +3,7 @@ import pickle
 
 import numpy as np
 
-import CurveSim
+import curvesim
 
 if __name__ == "__main__":  # noqa: C901
     data_dir = os.path.join("test", "data")
@@ -28,7 +28,7 @@ if __name__ == "__main__":  # noqa: C901
         with open(os.path.join(data_dir, f"{pool_name}-pooldata.pickle"), "rb") as f:
             pool_data = pickle.load(f)
 
-        res = CurveSim.autosim(
+        res = curvesim.autosim(
             pool_name,
             test=True,
             ncpu=1,
