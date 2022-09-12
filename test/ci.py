@@ -35,9 +35,8 @@ if __name__ == "__main__":  # noqa: C901
             src="local",
             data_dir=data_dir,
             pool_data=pool_data,
+            fee_mul=1,
         )
-        # with open(os.path.join(data_dir, f"{pool_name}-res-test.pickle"), "rb") as f:
-        #     res = pickle.load(f)
 
         with open(os.path.join(data_dir, f"{pool_name}-res.pickle"), "rb") as f:
             res_pkl = pickle.load(f)
