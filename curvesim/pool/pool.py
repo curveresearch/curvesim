@@ -8,7 +8,7 @@ from gmpy2 import mpz
 from scipy.optimize import least_squares, root_scalar
 
 
-class pool:
+class Pool:
 
     """
     Python model of Curve pool math.
@@ -34,7 +34,7 @@ class pool:
                 fee = [fee] * n[0]
             self.fee = fee[0]
 
-            self.basepool = pool(A[1], D[1], n[1], fee=fee[1], tokens=tokens)
+            self.basepool = Pool(A[1], D[1], n[1], fee=fee[1], tokens=tokens)
 
             if p:
                 self.p = p

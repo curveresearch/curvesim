@@ -1,4 +1,4 @@
 from .data import getpool, pooldata
-from .pool import pool
+from .pool import Pool
 
-__all__ = ["pool", "getpool", "pooldata"]
+__all__ = ["Pool", "getpool", "pooldata"]

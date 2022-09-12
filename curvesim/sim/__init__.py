@@ -1,15 +1,15 @@
+import multiprocessing
 from datetime import datetime, timedelta
 from functools import partial
 from itertools import combinations, product
 from math import factorial
-from multiprocessing import Pool
 
 import numpy as np
 import pandas as pd
 
 from curvesim.data import coingecko, nomics
 from curvesim.plot import plotsims, plotsimsfee, saveplots
-from curvesim.pool import pool, pooldata
+from curvesim.pool import Pool, pooldata
 
 
 def sim(A, D, n, fee, prices, volumes, tokens=None, feemul=None, vol_mult=1, r=None):
@@ -49,7 +49,7 @@ def sim(A, D, n, fee, prices, volumes, tokens=None, feemul=None, vol_mult=1, r=N
         r0 = None
 
     # Initiate pool
-    pl = pool(A, D, n, fee=fee, tokens=tokens, feemul=feemul, r=r0)
+    pl = Pool(A, D, n, fee=fee, tokens=tokens, feemul=feemul, r=r0)
 
     # Loop through timepoints and do optimal arb trades
     err = []
@@ -171,7 +171,7 @@ def psim(
     # Run sims
     simmapfunc = partial(sim, tokens=tokens, feemul=feemul, vol_mult=vol_mult, r=r)
     if ncpu > 1:
-        with Pool(ncpu) as clust:
+        with multiprocessing.Pool(ncpu) as clust:
             pl, err, bal, pool_value, depth, volume, xs, ps = zip(
                 *clust.starmap(
                     simmapfunc,
