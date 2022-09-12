@@ -38,5 +38,6 @@ jobs:
 
       - name: Test
         run: |
-          python hello_world.py
+          # python hello_world.py
+          python -m test.ci
 

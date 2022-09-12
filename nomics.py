@@ -1,11 +1,14 @@
+import os
 from datetime import timedelta, timezone
 from itertools import combinations
 from time import sleep
 
 import pandas as pd
 import requests
+from dotenv import load_dotenv
 
-key = ""
+load_dotenv()
+key = os.environ.get("NOMICS_API_KEY")
 
 
 def get_mkt(market, t_start, t_end):
@@ -222,7 +225,9 @@ def update(coins, quote, t_start, t_end, pairs=False):  # noqa: C901
                 data.to_csv("data/" + coin + "-" + quote + ".csv")
 
 
-def poolprices(coins, quote=None, quotediv=False, t_start=None, t_end=None, resample=None, pairs=False):
+def poolprices(  # noqa: C901
+    coins=[], quote=None, quotediv=False, t_start=None, t_end=None, resample=None, pairs=[], data_dir="data"
+):
     """
     Loads and formats price/volume data from CSVs.
 
@@ -231,34 +236,32 @@ def poolprices(coins, quote=None, quotediv=False, t_start=None, t_end=None, resa
     quotediv: determine pairwise coin prices using third currency (e.g., ETH-SUSD/SETH-SUSD for ETH-SETH)
     t_start/t_end: used to truncate input time series
     resample: used to downsample input time series
+    pairs: list of coin pairs to load (e.g., ['DAI-USDC', 'USDC-USDT'])
+    data_dir: base directory name for price csv files
 
     Returns exchange rates/volumes for each coin pair in order of list(itertools.combinations(coins,2))
 
     """
+    if pairs and coins:
+        raise ValueError("Use only 'coins' or 'pairs', not both.")
+
+    if coins:
+        if quote:
+            symbol_pairs = zip(coins, [quote] * len(coins))
+        else:
+            symbol_pairs = list(combinations(coins, 2))
+    elif pairs:
+        symbol_pairs = pairs
+    else:
+        raise ValueError("Must use one of 'coins' or 'pairs'.")
 
     prices = []
     volumes = []
-
-    # If no quote, get prices for each pair of coins
-    if quote is None:
-        if pairs is False:
-            combos = list(combinations(coins, 2))
-        else:
-            combos = coins
-
-        for pair in combos:
-            curr_file = "data/" + pair[0] + "-" + pair[1] + ".csv"
-            curr_file = pd.read_csv(curr_file, index_col=0)
-            prices.append(curr_file["price"])
-            volumes.append(curr_file["volume"])
-
-    # If quote given, get prices for each coin in quote currency
-    else:
-        for coin in coins:
-            curr_file = "data/" + coin + "-" + quote + ".csv"
-            curr_file = pd.read_csv(curr_file, index_col=0)
-            prices.append(curr_file["price"])
-            volumes.append(curr_file["volume"])
+    for (sym_1, sym_2) in symbol_pairs:
+        filename = os.path.join(data_dir, f"{sym_1}-{sym_2}.csv")
+        data_df = pd.read_csv(filename, index_col=0)
+        prices.append(data_df["price"])
+        volumes.append(data_df["volume"])
 
     prices = pd.concat(prices, axis=1)
     volumes = pd.concat(volumes, axis=1)

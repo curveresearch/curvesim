@@ -1196,6 +1196,8 @@ def autosim(  # noqa: C901
     src="cg",
     ncpu=4,
     trunc=None,
+    pool_data=None,
+    data_dir="data",
 ):
     """
     Simplified function to simulate existing Curve pools.
@@ -1227,12 +1229,15 @@ def autosim(  # noqa: C901
 
     # Get current pool data
     print("[" + poolname + "] Fetching pool data...")
+    src = src.lower().strip()
     if src == "cg":
         csv = "poolDF_cg.csv"
-    else:
+    elif src in ["nomics", "local"]:
         csv = "poolDF_nomics.csv"
+    else:
+        raise ValueError("'src' must be one of 'cg', 'nomics', 'local'.")
 
-    pldata = pooldata(poolname, csv=csv, balanced=True)
+    pldata = pool_data or pooldata(poolname, csv=csv, balanced=True)
 
     histvolume = pldata["histvolume"]
     coins = pldata["coins"]
@@ -1264,7 +1269,7 @@ def autosim(  # noqa: C901
 
     elif src == "local":
         print("[" + poolname + "] Fetching local price data...")
-        prices, volumes, pzero = nomics.poolprices(coins)
+        prices, volumes, pzero = nomics.poolprices(coins, data_dir=data_dir)
 
     elif src == "cg":
         print("[" + poolname + "] Fetching CoinGecko price data...")
