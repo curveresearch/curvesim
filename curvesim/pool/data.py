@@ -42,7 +42,7 @@ def getpool(poolname, D=None, src="cg", balanced=False):
     else:
         r = None
 
-    pl = pool(A, D, pldata["n"], fee=fee, tokens=pldata["tokens"], feemul=pldata["feemul"], r=r)
+    pl = Pool(A, D, pldata["n"], fee=fee, tokens=pldata["tokens"], feemul=pldata["feemul"], r=r)
     pl.histvolume = pldata["histvolume"]
     pl.coins = pldata["coins"]
 
@@ -119,7 +119,7 @@ def pooldata(poolname, csv="poolDF_cg.csv", balanced=False):  # noqa: C901
         fee_base = None
         addresses = [p.address.lower()]
 
-        pl = pool(A, D, n)
+        pl = Pool(A, D, n)
         D_balanced = pl.D()
         tokens = D_balanced * 10**18 // contract.functions.get_virtual_price().call()
 
@@ -161,12 +161,12 @@ def pooldata(poolname, csv="poolDF_cg.csv", balanced=False):  # noqa: C901
         fee_base = base_contract.functions.fee().call()
         addresses = [p.address.lower(), basepool.address.lower()]
 
-        pl = pool([A, A_base], D, n)
+        pl = Pool([A, A_base], D, n)
         D_base_balanced = pl.basepool.D()
         tokens = D_base_balanced * 10**18 // base_contract.functions.get_virtual_price().call()
 
         if balanced:
-            pl = pool([A, A_base], D, n, tokens=tokens)
+            pl = Pool([A, A_base], D, n, tokens=tokens)
             rates = pl.p[:]
             rates[pl.max_coin] = pl.basepool.get_virtual_price()
             if r is not None:
