@@ -43,4 +43,5 @@ changelog_entry:
 
 .PHONY: changelog_update
 changelog_update:
-	scriv collect
+	@VERSION=`python -c "from curvesim import __version__; print(__version__)"`; \
+	scriv collect --version=$${VERSION}
