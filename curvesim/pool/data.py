@@ -5,7 +5,7 @@ import pandas as pd
 import requests
 from web3 import Web3
 
-from .pool import pool
+from .pool import Pool
 
 
 def getpool(poolname, D=None, src="cg", balanced=False):
