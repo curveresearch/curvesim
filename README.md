@@ -18,8 +18,8 @@ Any pool with an entry in poolDF_cg.csv (if using CoinGecko data) or poolDF_nomi
 For example, to simulate 3pool with the default configuration, simply run:
 
 ```python
-import CurveSim
-res = CurveSim.autosim('3pool')
+import curvesim
+res = curvesim.autosim('3pool')
 ```
 
 ### Results:
@@ -49,22 +49,22 @@ However, all of these can be altered using optional keyword arguments.
 Custom A and fee ranges can be specified using the "A" and "fee" arguments. Inputs must be lists or numpy arrays containing lists:
 
 ```python
-import CurveSim
+import curvesim
 import numpy as np
 
 #Specify A values:
-res = CurveSim.autosim('3pool', A=np.linspace(1000,20000,20))
+res = curvesim.autosim('3pool', A=np.linspace(1000,20000,20))
 
 #Specify fees (0.04% and 0.05%):
-res = CurveSim.autosim('3pool', fee=[.0003, .0004])
+res = curvesim.autosim('3pool', fee=[.0003, .0004])
 
 #Specify custom A range and 0.03% fee
 #Note that single fee must still be a list
-res = CurveSim.autosim('3pool', A=np.linspace(1000,20000,20), fee=[.0003])
+res = curvesim.autosim('3pool', A=np.linspace(1000,20000,20), fee=[.0003])
 ```
 Additionally, a small number of A/fee values (2 each) can be set for testing purposes: 
 ```python
-res = CurveSim.autosim('3pool', test=True)
+res = curvesim.autosim('3pool', test=True)
 ```
 
 
@@ -75,21 +75,21 @@ The following parameters are automatically specified by autosim(), but can be ov
 * **feemul**: fee multiplier used in dynamic fee pools; default: specified in poolDF_\*.csv
 
 ```python
-import CurveSim
+import curvesim
 
 #Simulate 3pool assuming total deposit of $10B, fee = 0.03%
-res = CurveSim.autosim('3pool', D=10000000000, fee=[.0003])
+res = curvesim.autosim('3pool', D=10000000000, fee=[.0003])
 
 #For metapools, specifying D effects the deposit in the metapool, but not the basepool
 #Simulate BUSDv2 metapool assuming total deposit of $1B, fee = 0.03%
-res = CurveSim.autosim('busdv2', D=1000000000, fee=[.0003])
+res = curvesim.autosim('busdv2', D=1000000000, fee=[.0003])
 
 #Simulate 3pool, limiting volume to 75% of market volume, fee = 0.03% 
 #Note: it is not reccomended to adjust this parameter, try vol_mode instead (see below)
-res = CurveSim.autosim('3pool', vol_mult=.75, fee=[.0003])
+res = curvesim.autosim('3pool', vol_mult=.75, fee=[.0003])
 
 #Simulate hypothetical 3pool with dynamic fee like AAVE pool, fee = 0.03% 
-res = CurveSim.autosim('3pool', feemul=2*10**10, fee=[.0003])
+res = curvesim.autosim('3pool', feemul=2*10**10, fee=[.0003])
 ```
 
 ### Volume Limits
