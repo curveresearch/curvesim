@@ -1,3 +1,4 @@
-from .sim import autosim
+__all__ = ["autosim", "__version__", "__version_info__"]
 
-__all__ = ["autosim"]
+from .sim import autosim
+from .version import __version__, __version_info__

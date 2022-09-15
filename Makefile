@@ -6,8 +6,8 @@ help:
 	@echo "venv                   create python virtual env"
 	@echo "requirements           generate requirements file from base requirements"
 	@echo ""
-	@echo "changelog_entry"       create changelog entry
-	@echo "changelog_update"      update changelog from recent entries
+	@echo "changelog_entry        create changelog entry"
+	@echo "changelog_update       update changelog from recent entries"
 	@echo ""
 	@echo "hooks                  install Git hooks"
 	@echo ""
@@ -43,4 +43,5 @@ changelog_entry:
 
 .PHONY: changelog_update
 changelog_update:
-	scriv collect
+	@VERSION=`python -c "from curvesim import __version__; print(__version__)"`; \
+	scriv collect --version=$${VERSION}
