@@ -106,10 +106,10 @@ We reccomend using the default vol_mode 1 in most cases. However, if that return
 ### Data Sources
 The "src" argument can be used to choose between 3 different data sources:
 * **src = "cg"**: CoinGecko API (free); default
-* **src = "nomics"**: Nomics API (paid); must input API key in nomics.py
+* **src = "nomics"**: Nomics API (paid); set `NOMICS_API_KEY` as env variable or in `.env` file.
 * **src = "local"**: local data stored in the "data" folder
 
-Because CoinGecko and Nomics use different naming conventions for each coin, we provide poolDF_cg.csv and poolDF_nomics.csv specifying coin names for each source. The "local" option uses poolDF_nomics.
+Because CoinGecko and Nomics use different naming conventions for each coin, we provide `poolDF_cg.csv` and `poolDF_nomics.csv` specifying coin names for each source. The "local" option uses `poolDF_nomics`.
 
 #### Note on CoinGecko vs. Nomics Data
 While Nomics provides 30-minute-interval data for each specific coin-pair, CoinGecko provides prices *per coin* in 1-hour intervals. Each coin's price is computed relative to all its trading pairs and converted to a quote currency (e.g., USD), with volume summed across all trading pairs. Therefore, market volume taken from CoinGecko is often much higher than one can expect for a specific coin-pair. This issue is largely ameloriated by our volume limiting approach, with CoinGecko results typically mirroring Nomics results qualitatively, but it should be noted that CoinGecko data may be less reliable than Nomics data for certain simulations.
