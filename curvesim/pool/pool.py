@@ -475,7 +475,7 @@ class Pool:
         dy = self.dy(i, j, dx)
         return dy / dx
 
-    def dydxfee(self, i, j, dx):
+    def dydxfee(self, i, j, dx=10**12):
         """
         Returns price with fee, (dy[j]-fee)/dx[i]) given some dx[i]
 
@@ -554,7 +554,7 @@ class Pool:
 
             else:
                 # Both are from the base pool
-                new_dydxfee = self.basepool.dydxfee(base_i, base_j, dx)
+                new_dydxfee = self.basepool.dydxfee(base_i, base_j)
 
         else:
             new_dydxfee = self._dydxfee(i, j)
@@ -766,10 +766,10 @@ class Pool:
 
         depth = []
         for i, j in combos:
-            trade, error, res = self.optarb(i, j, self.dydxfee(i, j, 10**12) * (1 - size))
+            trade, error, res = self.optarb(i, j, self.dydxfee(i, j) * (1 - size))
             depth.append(trade[2] / sumxp)
 
-            trade, error, res = self.optarb(j, i, self.dydxfee(j, i, 10**12) * (1 - size))
+            trade, error, res = self.optarb(j, i, self.dydxfee(j, i) * (1 - size))
             depth.append(trade[2] / sumxp)
 
         if ismeta:
@@ -949,7 +949,7 @@ def arberror(dx, pool, i, j, p):
 
     # Check price error after trade
     # Error = pool price (dy/dx) - external price (p);
-    error = pool.dydxfee(i, j, 10**12) - p
+    error = pool.dydxfee(i, j) - p
 
     pool.x = x_old
     if pool.ismeta:
@@ -988,7 +988,7 @@ def arberrors(dxs, pool, price_targs, coins):
         i = pair[0]
         j = pair[1]
         p = price_targs[k]
-        errors.append(pool.dydxfee(i, j, 10**12) - p)
+        errors.append(pool.dydxfee(i, j) - p)
         k += 1
 
     pool.x = x_old
