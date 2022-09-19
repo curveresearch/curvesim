@@ -31,7 +31,7 @@ if __name__ == "__main__":  # noqa: C901
         res = curvesim.autosim(
             pool_name,
             test=True,
-            ncpu=1,
+            ncpu=4,
             src="local",
             data_dir=data_dir,
             pool_data=pool_data,
