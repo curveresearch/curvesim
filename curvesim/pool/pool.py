@@ -843,7 +843,7 @@ class Pool:
             t0_base = self.basepool.tokens
 
         # Bids
-        bids = [(self.dydx(i, j) * p_mult, 10**12 / 10**18)]  # tuples: price, depth
+        bids = [(self.dydx(i, j) * p_mult, 0)]  # tuples: price, depth
         size = 0
 
         while bids[-1][0] > bids[0][0] * (1 - width):
@@ -859,7 +859,7 @@ class Pool:
                 self.basepool.tokens = t0_base
 
         # Asks
-        asks = [(1 / self.dydx(j, i) * p_mult, 10**12 / 10**18)]  # tuples: price, depth
+        asks = [(1 / self.dydx(j, i) * p_mult, 0)]  # tuples: price, depth
         size = 0
 
         while asks[-1][0] < asks[0][0] * (1 + width):
