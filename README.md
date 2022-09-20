@@ -18,8 +18,8 @@ Any pool with an entry in poolDF_cg.csv (if using CoinGecko data) or poolDF_nomi
 For example, to simulate 3pool with the default configuration, simply run:
 
 ```python
-import CurveSim
-res = CurveSim.autosim('3pool')
+import curvesim
+res = curvesim.autosim('3pool')
 ```
 
 ### Results:
@@ -49,22 +49,22 @@ However, all of these can be altered using optional keyword arguments.
 Custom A and fee ranges can be specified using the "A" and "fee" arguments. Inputs must be lists or numpy arrays containing lists:
 
 ```python
-import CurveSim
+import curvesim
 import numpy as np
 
 #Specify A values:
-res = CurveSim.autosim('3pool', A=np.linspace(1000,20000,20))
+res = curvesim.autosim('3pool', A=np.linspace(1000,20000,20))
 
 #Specify fees (0.04% and 0.05%):
-res = CurveSim.autosim('3pool', fee=[.0003, .0004])
+res = curvesim.autosim('3pool', fee=[.0003, .0004])
 
 #Specify custom A range and 0.03% fee
 #Note that single fee must still be a list
-res = CurveSim.autosim('3pool', A=np.linspace(1000,20000,20), fee=[.0003])
+res = curvesim.autosim('3pool', A=np.linspace(1000,20000,20), fee=[.0003])
 ```
 Additionally, a small number of A/fee values (2 each) can be set for testing purposes: 
 ```python
-res = CurveSim.autosim('3pool', test=True)
+res = curvesim.autosim('3pool', test=True)
 ```
 
 
@@ -75,21 +75,21 @@ The following parameters are automatically specified by autosim(), but can be ov
 * **feemul**: fee multiplier used in dynamic fee pools; default: specified in poolDF_\*.csv
 
 ```python
-import CurveSim
+import curvesim
 
 #Simulate 3pool assuming total deposit of $10B, fee = 0.03%
-res = CurveSim.autosim('3pool', D=10000000000, fee=[.0003])
+res = curvesim.autosim('3pool', D=10000000000, fee=[.0003])
 
 #For metapools, specifying D effects the deposit in the metapool, but not the basepool
 #Simulate BUSDv2 metapool assuming total deposit of $1B, fee = 0.03%
-res = CurveSim.autosim('busdv2', D=1000000000, fee=[.0003])
+res = curvesim.autosim('busdv2', D=1000000000, fee=[.0003])
 
 #Simulate 3pool, limiting volume to 75% of market volume, fee = 0.03% 
 #Note: it is not reccomended to adjust this parameter, try vol_mode instead (see below)
-res = CurveSim.autosim('3pool', vol_mult=.75, fee=[.0003])
+res = curvesim.autosim('3pool', vol_mult=.75, fee=[.0003])
 
 #Simulate hypothetical 3pool with dynamic fee like AAVE pool, fee = 0.03% 
-res = CurveSim.autosim('3pool', feemul=2*10**10, fee=[.0003])
+res = curvesim.autosim('3pool', feemul=2*10**10, fee=[.0003])
 ```
 
 ### Volume Limits
@@ -106,10 +106,10 @@ We reccomend using the default vol_mode 1 in most cases. However, if that return
 ### Data Sources
 The "src" argument can be used to choose between 3 different data sources:
 * **src = "cg"**: CoinGecko API (free); default
-* **src = "nomics"**: Nomics API (paid); must input API key in nomics.py
+* **src = "nomics"**: Nomics API (paid); set `NOMICS_API_KEY` as env variable or in `.env` file.
 * **src = "local"**: local data stored in the "data" folder
 
-Because CoinGecko and Nomics use different naming conventions for each coin, we provide poolDF_cg.csv and poolDF_nomics.csv specifying coin names for each source. The "local" option uses poolDF_nomics.
+Because CoinGecko and Nomics use different naming conventions for each coin, we provide `poolDF_cg.csv` and `poolDF_nomics.csv` specifying coin names for each source. The "local" option uses `poolDF_nomics`.
 
 #### Note on CoinGecko vs. Nomics Data
 While Nomics provides 30-minute-interval data for each specific coin-pair, CoinGecko provides prices *per coin* in 1-hour intervals. Each coin's price is computed relative to all its trading pairs and converted to a quote currency (e.g., USD), with volume summed across all trading pairs. Therefore, market volume taken from CoinGecko is often much higher than one can expect for a specific coin-pair. This issue is largely ameloriated by our volume limiting approach, with CoinGecko results typically mirroring Nomics results qualitatively, but it should be noted that CoinGecko data may be less reliable than Nomics data for certain simulations.
