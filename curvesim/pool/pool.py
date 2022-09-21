@@ -468,38 +468,18 @@ class Pool:
         xps2 *= xps2  # Doing just ** 2 can overflow apparently
         return (self.feemul * self.fee) // ((self.feemul - 10**10) * 4 * xpi * xpj // xps2 + 10**10)
 
-    def dydx(self, i, j, dx):
+    def dydxfee(self, i, j, dx=10**12):
+        """
+        Returns price with fee, (dy[j]-fee)/dx[i]) given some dx[i]
+
+        For metapools, the indices are assumed to include base pool
+        underlyer indices.
+        """
+        return self.dydx(i, j, dx, use_fee=True)
+
+    def dydx(self, i, j, dx=10**12, use_fee=False):
         """
         Returns price, dy[j]/dx[i], given some dx[i]
-        """
-        dy = self.dy(i, j, dx)
-        return dy / dx
-
-    def old_dydxfee(self, i, j, dx):
-        """
-        For testing only.  This is the old calc.
-
-        Returns price with fee, (dy[j]-fee)/dx[i]) given some dx[i]
-        """
-        if self.ismeta:  # fees already included
-            dy = self.dy(i, j, dx)
-        else:
-            if self.feemul is None:  # if not dynamic fee pool
-                dy = self.dy(i, j, dx)
-                fee = dy * self.fee // 10**10
-            else:  # if dynamic fee pool
-                xp = self.xp()
-                x = xp[i] + dx
-                y = self.y(i, j, x)
-                dy = xp[j] - y
-                fee = dy * self.dynamic_fee((xp[i] + x) // 2, (xp[j] + y) // 2) // 10**10
-
-            dy = dy - fee
-        return dy / dx
-
-    def dydxfee(self, i, j, dx):
-        """
-        Returns price with fee, (dy[j]-fee)/dx[i]) given some dx[i]
 
         For metapools, the indices are assumed to include base pool
         underlyer indices.
@@ -544,14 +524,14 @@ class Pool:
                     )
                     D_prime = float(D_prime)
 
-                    dwdz = self._dydxfee(0, self.max_coin, xp)
-                    new_dydxfee = dwdz / D_prime
+                    dwdz = self._dydx(0, self.max_coin, xp, use_fee)
+                    _dydx = dwdz / D_prime
 
-                    if bp.fee:
+                    if use_fee and bp.fee:
                         fee = bp.fee - bp.fee * xj // sum(base_xp) + 5 * 10**5
                     else:
                         fee = 0
-                    new_dydxfee *= 1 - fee / 10**10
+                    _dydx *= 1 - fee / 10**10
 
                 else:  # i is from basepool
                     base_inputs = [0] * self.basepool.n
@@ -567,23 +547,26 @@ class Pool:
                     y = self.y(meta_i, meta_j, x, xp)
 
                     dy = xp[meta_j] - y - 1
-                    dy_fee = dy * self.fee // 10**10
+                    if use_fee:
+                        dy_fee = dy * self.fee // 10**10
+                    else:
+                        dy_fee = 0
 
                     # Convert to real units
                     dy = (dy - dy_fee) * 10**18 // rates[meta_j]
 
-                    new_dydxfee = dy / dx
+                    _dydx = dy / dx
 
             else:
                 # Both are from the base pool
-                new_dydxfee = self.basepool.dydxfee(base_i, base_j, dx)
+                _dydx = self.basepool.dydx(base_i, base_j, use_fee=use_fee)
 
         else:
-            new_dydxfee = self._dydxfee(i, j)
+            _dydx = self._dydx(i, j, use_fee=use_fee)
 
-        return float(new_dydxfee)
+        return float(_dydx)
 
-    def _dydxfee(self, i, j, xp=None):
+    def _dydx(self, i, j, xp=None, use_fee=False):
         """
         Treats indices as applying to the "top-level" pool if a metapool.
         Basically this is the "regular" pricing calc with no special metapool handling.
@@ -600,16 +583,18 @@ class Pool:
         A_pow = A * n ** (n + 1)
         dydx = (xj * (xi * A_pow * x_prod + D_pow)) / (xi * (xj * A_pow * x_prod + D_pow))
 
-        if self.feemul is None:
-            fee_factor = self.fee / 10**10
+        if use_fee:
+            if self.feemul is None:
+                fee_factor = self.fee / 10**10
+            else:
+                dx = 10**12
+                fee_factor = self.dynamic_fee(xi + dx // 2, xj - int(dydx * dx) // 2) / 10**10
         else:
-            dx = 10**12
-            fee_factor = self.dynamic_fee(xi + dx // 2, xj - int(dydx * dx) // 2) / 10**10
+            fee_factor = 0
 
-        new_dydxfee = dydx * (1 - fee_factor)
-        new_dydxfee = float(new_dydxfee)
+        dydx *= 1 - fee_factor
 
-        return new_dydxfee
+        return float(dydx)
 
     def optarb(self, i, j, p):
         """
@@ -788,10 +773,10 @@ class Pool:
 
         depth = []
         for i, j in combos:
-            trade, error, res = self.optarb(i, j, self.dydxfee(i, j, 10**12) * (1 - size))
+            trade, error, res = self.optarb(i, j, self.dydxfee(i, j) * (1 - size))
             depth.append(trade[2] / sumxp)
 
-            trade, error, res = self.optarb(j, i, self.dydxfee(j, i, 10**12) * (1 - size))
+            trade, error, res = self.optarb(j, i, self.dydxfee(j, i) * (1 - size))
             depth.append(trade[2] / sumxp)
 
         if ismeta:
@@ -858,13 +843,13 @@ class Pool:
             t0_base = self.basepool.tokens
 
         # Bids
-        bids = [(self.dydx(i, j, 10**12) * p_mult, 10**12 / 10**18)]  # tuples: price, depth
+        bids = [(self.dydx(i, j) * p_mult, 0)]  # tuples: price, depth
         size = 0
 
         while bids[-1][0] > bids[0][0] * (1 - width):
             size += reso
             self.exchange(i, j, size)
-            price = self.dydx(i, j, 10**12)
+            price = self.dydx(i, j)
             bids.append((price * p_mult, size / 10**18))
 
             # Return to initial state
@@ -874,13 +859,13 @@ class Pool:
                 self.basepool.tokens = t0_base
 
         # Asks
-        asks = [(1 / self.dydx(j, i, 10**12) * p_mult, 10**12 / 10**18)]  # tuples: price, depth
+        asks = [(1 / self.dydx(j, i) * p_mult, 0)]  # tuples: price, depth
         size = 0
 
         while asks[-1][0] < asks[0][0] * (1 + width):
             size += reso
             dy, fee = self.exchange(j, i, size)
-            price = 1 / self.dydx(j, i, 10**12)
+            price = 1 / self.dydx(j, i)
             asks.append((price * p_mult, dy / 10**18))
 
             # Return to initial state
@@ -971,7 +956,7 @@ def arberror(dx, pool, i, j, p):
 
     # Check price error after trade
     # Error = pool price (dy/dx) - external price (p);
-    error = pool.dydxfee(i, j, 10**12) - p
+    error = pool.dydxfee(i, j) - p
 
     pool.x = x_old
     if pool.ismeta:
@@ -1010,7 +995,7 @@ def arberrors(dxs, pool, price_targs, coins):
         i = pair[0]
         j = pair[1]
         p = price_targs[k]
-        errors.append(pool.dydxfee(i, j, 10**12) - p)
+        errors.append(pool.dydxfee(i, j) - p)
         k += 1
 
     pool.x = x_old
