@@ -1,7 +1,18 @@
 N_COINS: constant(uint256) = 3
 
+initial_A: public(uint256)
+future_A: public(uint256)
+initial_A_time: public(uint256)
+future_A_time: public(uint256)
+
+
 @pure
 @external
+def D(xp: uint256[N_COINS], amp: uint256) -> uint256:
+    return self.get_D(xp, amp)
+
+@pure
+@internal
 def get_D(xp: uint256[N_COINS], amp: uint256) -> uint256:
     S: uint256 = 0
     for _x in xp:
@@ -26,3 +37,69 @@ def get_D(xp: uint256[N_COINS], amp: uint256) -> uint256:
             if Dprev - D <= 1:
                 break
     return D
+
+@view
+@external
+def get_y(i: uint256, j: uint256, x: uint256, xp_: uint256[N_COINS]) -> uint256:
+    # x in the input is converted to the same price/precision
+
+    assert i != j       # dev: same coin
+    assert j >= 0       # dev: j below zero
+    assert j < N_COINS  # dev: j above N_COINS
+
+    # should be unreachable, but good for safety
+    assert i >= 0
+    assert i < N_COINS
+
+    amp: uint256 = self._A()
+    D: uint256 = self.get_D(xp_, amp)
+    c: uint256 = D
+    S_: uint256 = 0
+    Ann: uint256 = amp * N_COINS
+
+    _x: uint256 = 0
+    for _i in range(N_COINS):
+        if _i == i:
+            _x = x
+        elif _i != j:
+            _x = xp_[_i]
+        else:
+            continue
+        S_ += _x
+        c = c * D / (_x * N_COINS)
+    c = c * D / (Ann * N_COINS)
+    b: uint256 = S_ + D / Ann  # - D
+    y_prev: uint256 = 0
+    y: uint256 = D
+    for _i in range(255):
+        y_prev = y
+        y = (y*y + c) / (2 * y + b - D)
+        # Equality with the precision of 1
+        if y > y_prev:
+            if y - y_prev <= 1:
+                break
+        else:
+            if y_prev - y <= 1:
+                break
+    return y
+
+@view
+@internal
+def _A() -> uint256:
+    """
+    Handle ramping A up or down
+    """
+    t1: uint256 = self.future_A_time
+    A1: uint256 = self.future_A
+
+    if block.timestamp < t1:
+        A0: uint256 = self.initial_A
+        t0: uint256 = self.initial_A_time
+        # Expressions in uint256 cannot have negative numbers, thus "if"
+        if A1 > A0:
+            return A0 + (A1 - A0) * (block.timestamp - t0) / (t1 - t0)
+        else:
+            return A0 - (A0 - A1) * (block.timestamp - t0) / (t1 - t0)
+
+    else:  # when t1 == 0 or block.timestamp >= t1
+        return A1

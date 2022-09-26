@@ -14,7 +14,7 @@ def test_get_D_against_prod(vyper_3pool, mainnet_3pool_state):
 
     # Compare against virtual price since that's exposed externally
     # while `get_D` is internal in the contract.
-    D = vyper_3pool.get_D(virtual_balances, A)
+    D = vyper_3pool.D(virtual_balances, A)
     virtual_price = _calc_virtual_price(D, total_supply)
 
     expected_virtual_price = mainnet_3pool_state["virtual_price"]
@@ -26,7 +26,7 @@ def test_get_D(vyper_3pool, mainnet_3pool_state):
 
     virtual_balances = mainnet_3pool_state["virtual_balances"]
     A = mainnet_3pool_state["A"]
-    expected_D = vyper_3pool.get_D(virtual_balances, A)
+    expected_D = vyper_3pool.D(virtual_balances, A)
 
     balances = mainnet_3pool_state["balances"]
     p = mainnet_3pool_state["p"]
