@@ -5,6 +5,7 @@ future_A: public(uint256)
 initial_A_time: public(uint256)
 future_A_time: public(uint256)
 
+balances: public(uint256[N_COINS])
 
 @pure
 @external
