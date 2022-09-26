@@ -6,13 +6,6 @@ import pytest
 _base_dir = os.path.dirname(__file__)
 
 
-@pytest.fixture(scope="function")
-def vyper_3pool():
-    print(_base_dir)
-    filepath = os.path.join(_base_dir, "fixtures", "calcs_for_3pool.vy")
-    return boa.load(filepath)
-
-
 @pytest.fixture(scope="session")
 def mainnet_3pool_state():
     """Snapshot of Mainnet 3Pool values"""
@@ -33,3 +26,13 @@ def mainnet_3pool_state():
         "lp_tokens": 849743149250065202008212976,
         "virtual_price": 1022038799187029697,
     }
+
+
+@pytest.fixture(scope="function")
+def vyper_3pool(mainnet_3pool_state):
+    filepath = os.path.join(_base_dir, "fixtures", "calcs_for_3pool.vy")
+    pool = boa.load(filepath)
+
+    A = mainnet_3pool_state["A"]
+    pool.eval(f"self.future_A={A}")
+    return pool
