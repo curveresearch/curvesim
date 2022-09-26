@@ -36,3 +36,25 @@ def test_get_D(vyper_3pool, mainnet_3pool_state):
     D = pool.D()
 
     assert D == expected_D
+
+
+def test_get_D_balanced():
+    """Sanity check for when pool is perfectly balanced"""
+
+    # create balanced pool
+    balances = [
+        295949605740077000000000000,
+        295949605740077,
+        295949605740077,
+    ]
+    p = [10**18, 10**30, 10**30]
+    n_coins = 3
+    A = 5858
+
+    pool = Pool(A, D=balances, n=n_coins, p=p)
+    D = pool.D()
+
+    virtualized_balances = [b * p // 10**18 for b, p in zip(balances, p)]
+    expected_D = sum(virtualized_balances)
+
+    assert D == expected_D
