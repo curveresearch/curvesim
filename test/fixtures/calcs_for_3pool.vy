@@ -110,3 +110,50 @@ def _A() -> uint256:
 
     else:  # when t1 == 0 or block.timestamp >= t1
         return A1
+def y_D(A_: uint256, i: uint256, xp: uint256[N_COINS], D: uint256) -> uint256:
+    return self.get_y_D(A_, i, xp, D)
+
+
+@view
+@internal
+def get_y_D(A_: uint256, i: uint256, xp: uint256[N_COINS], D: uint256) -> uint256:
+    """
+    Calculate x[i] if one reduces D from being calculated for xp to D
+    Done by solving quadratic equation iteratively.
+    x_1**2 + x1 * (sum' - (A*n**n - 1) * D / (A * n**n)) = D ** (n + 1) / (n ** (2 * n) * prod' * A)
+    x_1**2 + b*x_1 = c
+    x_1 = (x_1**2 + c) / (2*x_1 + b)
+    """
+    # x in the input is converted to the same price/precision
+
+    assert i >= 0  # dev: i below zero
+    assert i < N_COINS  # dev: i above N_COINS
+
+    c: uint256 = D
+    S_: uint256 = 0
+    Ann: uint256 = A_ * N_COINS
+
+    _x: uint256 = 0
+    for _i in range(N_COINS):
+        if _i != i:
+            _x = xp[_i]
+        else:
+            continue
+        S_ += _x
+        c = c * D / (_x * N_COINS)
+    c = c * D / (Ann * N_COINS)
+    b: uint256 = S_ + D / Ann
+    y_prev: uint256 = 0
+    y: uint256 = D
+    for _i in range(255):
+        y_prev = y
+        y = (y*y + c) / (2 * y + b - D)
+        # Equality with the precision of 1
+        if y > y_prev:
+            if y - y_prev <= 1:
+                break
+        else:
+            if y_prev - y <= 1:
+                break
+    return y
+
