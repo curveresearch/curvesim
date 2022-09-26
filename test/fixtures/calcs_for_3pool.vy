@@ -110,6 +110,10 @@ def _A() -> uint256:
 
     else:  # when t1 == 0 or block.timestamp >= t1
         return A1
+
+
+@view
+@external
 def y_D(A_: uint256, i: uint256, xp: uint256[N_COINS], D: uint256) -> uint256:
     return self.get_y_D(A_, i, xp, D)
 
