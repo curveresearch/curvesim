@@ -196,7 +196,9 @@ class Pool:
 
                 D0 = self.basepool.D()
                 D1 = D0 - dy * D0 // self.basepool.tokens
-                y = self.y_D(base_j, D1)
+                A = self.basepool.A
+                xp = self.basepool.xp()
+                y = self.basepool.y_D(A, base_j, xp, D1)
 
         else:
             # If both are from the base pool
@@ -204,7 +206,7 @@ class Pool:
 
         return y
 
-    def y_D(self, i, _D):
+    def y_D(self, A, i, xp, D):
         """
         Calculate x[j] if one makes x[i] = x
 
@@ -214,20 +216,19 @@ class Pool:
 
         x_1 = (x_1**2 + c) / (2*x_1 + b)
         """
-        xx = self.xp()
-        xx = [xx[k] for k in range(self.n) if k != i]
+        xx = [xp[k] for k in range(self.n) if k != i]
         S = sum(xx)
-        Ann = self.A * self.n
-        c = _D
+        Ann = A * self.n
+        c = D
         for y in xx:
-            c = c * _D // (y * self.n)
-        c = c * _D // (self.n * Ann)
-        b = S + _D // Ann
+            c = c * D // (y * self.n)
+        c = c * D // (self.n * Ann)
+        b = S + D // Ann
         y_prev = 0
-        y = _D
+        y = D
         while abs(y - y_prev) > 1:
             y_prev = y
-            y = (y**2 + c) // (2 * y + b - _D)
+            y = (y**2 + c) // (2 * y + b - D)
         return y  # the result is in underlying units too
 
     def dy(self, i, j, dx):
@@ -402,7 +403,8 @@ class Pool:
 
         D0 = self.D()
         D1 = D0 - token_amount * D0 // self.tokens
-        dy = xp[i] - self.y_D(i, D1)
+        A = self.A
+        dy = xp[i] - self.y_D(A, i, xp, D1)
 
         return dy - dy * fee // 10**10
 
