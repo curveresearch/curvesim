@@ -4,6 +4,7 @@ from curvesim.pool import Pool
 
 
 def test_get_D_against_prod():
+    """Test boa value against live contract."""
 
     vyper_pool = boa.load("test/unit/pool_calcs.vy")
     A = 2000
@@ -23,6 +24,8 @@ def test_get_D_against_prod():
 
 
 def test_get_D():
+    """Test D calculation against vyper implementation."""
+
     vyper_pool = boa.load("test/unit/pool_calcs.vy")
     A = 2000
     balances = [
