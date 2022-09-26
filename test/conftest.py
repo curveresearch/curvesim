@@ -35,4 +35,7 @@ def vyper_3pool(mainnet_3pool_state):
 
     A = mainnet_3pool_state["A"]
     pool.eval(f"self.future_A={A}")
+
+    balances = mainnet_3pool_state["balances"]
+    pool.eval(f"self.balances={balances}")
     return pool
