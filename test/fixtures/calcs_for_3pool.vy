@@ -41,6 +41,12 @@ def get_D(xp: uint256[N_COINS], amp: uint256) -> uint256:
 
 @view
 @external
+def y(i: uint256, j: uint256, x: uint256, xp_: uint256[N_COINS]) -> uint256:
+    return self.get_y(i, j, x, xp_)
+
+
+@view
+@internal
 def get_y(i: uint256, j: uint256, x: uint256, xp_: uint256[N_COINS]) -> uint256:
     # x in the input is converted to the same price/precision
 
