@@ -24,9 +24,7 @@ def test_get_D_against_prod(vyper_3pool, mainnet_3pool_state):
     assert virtual_price == expected_virtual_price
 
 
-@given(st.integers(), st.integers(), st.integers())
-@settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
-def test_get_D(vyper_3pool, mainnet_3pool_state, x0, x1, x2):
+def test_get_D_mainnet(vyper_3pool, mainnet_3pool_state):
     """Test D calculation against vyper implementation."""
 
     virtual_balances = mainnet_3pool_state["virtual_balances"]
@@ -37,6 +35,34 @@ def test_get_D(vyper_3pool, mainnet_3pool_state, x0, x1, x2):
     p = mainnet_3pool_state["p"]
     n_coins = mainnet_3pool_state["N_COINS"]
 
+    pool = Pool(A, D=balances, n=n_coins, p=p)
+    D = pool.D()
+
+    assert D == expected_D
+
+
+# We can assume the contract works on more extreme values; we only need
+# to be reasonably certain our results are consistent, so we can check
+# a smaller range.
+#
+# With 18 decimal precision, it seems reasonable to pick these bounds
+D_UNIT = 10**18
+positive_balance = st.integers(min_value=10**5 * D_UNIT, max_value=10**10 * D_UNIT)
+
+
+@given(positive_balance, positive_balance, positive_balance)
+@settings(suppress_health_check=[HealthCheck.function_scoped_fixture], max_examples=10)
+def test_get_D(vyper_3pool, x0, x1, x2):
+    """Test D calculation against vyper implementation."""
+    A = 585
+    p = [10**18, 10**30, 10**30]
+    _balances = [x0, x1, x2]
+    balances = [x * 10**18 // p for x, p in zip(_balances, p)]
+    virtual_balances = [x * p // 10**18 for x, p in zip(balances, p)]
+
+    expected_D = vyper_3pool.D(virtual_balances, A)
+
+    n_coins = len(balances)
     pool = Pool(A, D=balances, n=n_coins, p=p)
     D = pool.D()
 
