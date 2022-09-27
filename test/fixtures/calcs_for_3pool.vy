@@ -1,16 +1,66 @@
+interface CurveToken:
+    def totalSupply() -> uint256: view
+    def mint(_to: address, _value: uint256) -> bool: nonpayable
+    def burnFrom(_to: address, _value: uint256) -> bool: nonpayable
+
 N_COINS: constant(uint256) = 3
+
+LENDING_PRECISION: constant(uint256) = 10 ** 18
+PRECISION: constant(uint256) = 10 ** 18  # The precision to convert to
+RATES: constant(uint256[N_COINS]) = [1000000000000000000, 1000000000000000000000000000000, 1000000000000000000000000000000]
+
+owner: public(address)
+token: CurveToken
 
 initial_A: public(uint256)
 future_A: public(uint256)
 initial_A_time: public(uint256)
 future_A_time: public(uint256)
 
+coins: public(address[N_COINS])
 balances: public(uint256[N_COINS])
+fee: public(uint256)  # fee * 1e10
+admin_fee: public(uint256)  # admin_fee * 1e10
+
+kill_deadline: uint256
+KILL_DEADLINE_DT: constant(uint256) = 2 * 30 * 86400
+
+
+@external
+def __init__(
+    _owner: address,
+    _coins: address[N_COINS],
+    _pool_token: address,
+    _A: uint256,
+    _fee: uint256,
+    _admin_fee: uint256
+):
+    """
+    @notice Contract constructor
+    @param _owner Contract owner address
+    @param _coins Addresses of ERC20 conracts of coins
+    @param _pool_token Address of the token representing LP share
+    @param _A Amplification coefficient multiplied by n * (n - 1)
+    @param _fee Fee to charge for exchanges
+    @param _admin_fee Admin fee
+    """
+    for i in range(N_COINS):
+        assert _coins[i] != ZERO_ADDRESS
+    self.coins = _coins
+    self.initial_A = _A
+    self.future_A = _A
+    self.fee = _fee
+    self.admin_fee = _admin_fee
+    self.owner = _owner
+    self.kill_deadline = block.timestamp + KILL_DEADLINE_DT
+    self.token = CurveToken(_pool_token)
+
 
 @pure
 @external
 def D(xp: uint256[N_COINS], amp: uint256) -> uint256:
     return self.get_D(xp, amp)
+
 
 @pure
 @internal
@@ -38,6 +88,54 @@ def get_D(xp: uint256[N_COINS], amp: uint256) -> uint256:
             if Dprev - D <= 1:
                 break
     return D
+
+
+@view
+@internal
+def get_D_mem(_balances: uint256[N_COINS], amp: uint256) -> uint256:
+    return self.get_D(self._xp_mem(_balances), amp)
+
+
+@view
+@external
+def get_virtual_price() -> uint256:
+    """
+    Returns portfolio virtual price (for calculating profit)
+    scaled up by 1e18
+    """
+    D: uint256 = self.get_D(self._xp(), self._A())
+    # D is in the units similar to DAI (e.g. converted to precision 1e18)
+    # When balanced, D = n * x_u - total virtual value of the portfolio
+    token_supply: uint256 = self.token.totalSupply()
+    return D * PRECISION / token_supply
+
+
+@view
+@external
+def calc_token_amount(amounts: uint256[N_COINS], deposit: bool) -> uint256:
+    """
+    Simplified method to calculate addition or reduction in token supply at
+    deposit or withdrawal without taking fees into account (but looking at
+    slippage).
+    Needed to prevent front-running, not for precise calculations!
+    """
+    _balances: uint256[N_COINS] = self.balances
+    amp: uint256 = self._A()
+    D0: uint256 = self.get_D_mem(_balances, amp)
+    for i in range(N_COINS):
+        if deposit:
+            _balances[i] += amounts[i]
+        else:
+            _balances[i] -= amounts[i]
+    D1: uint256 = self.get_D_mem(_balances, amp)
+    token_amount: uint256 = self.token.totalSupply()
+    diff: uint256 = 0
+    if deposit:
+        diff = D1 - D0
+    else:
+        diff = D0 - D1
+    return diff * token_amount / D0
+
 
 @view
 @external
@@ -161,3 +259,20 @@ def get_y_D(A_: uint256, i: uint256, xp: uint256[N_COINS], D: uint256) -> uint25
                 break
     return y
 
+
+@view
+@internal
+def _xp() -> uint256[N_COINS]:
+    result: uint256[N_COINS] = RATES
+    for i in range(N_COINS):
+        result[i] = result[i] * self.balances[i] / LENDING_PRECISION
+    return result
+
+
+@pure
+@internal
+def _xp_mem(_balances: uint256[N_COINS]) -> uint256[N_COINS]:
+    result: uint256[N_COINS] = RATES
+    for i in range(N_COINS):
+        result[i] = result[i] * _balances[i] / PRECISION
+    return result

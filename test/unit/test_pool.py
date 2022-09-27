@@ -60,6 +60,19 @@ def test_get_D_balanced():
     assert D == expected_D
 
 
+def test_get_virtual_price(vyper_3pool, mainnet_3pool_state):
+    A = mainnet_3pool_state["A"]
+    balances = mainnet_3pool_state["balances"]
+    n_coins = mainnet_3pool_state["N_COINS"]
+    p = mainnet_3pool_state["p"]
+
+    pool = Pool(A, D=balances, n=n_coins, p=p)
+    virtual_price = pool.get_virtual_price()
+
+    expected_virtual_price = vyper_3pool.get_virtual_price()
+    assert virtual_price == expected_virtual_price
+
+
 def test_get_y(vyper_3pool, mainnet_3pool_state):
     """Test y calculation against vyper implementation"""
     virtual_balances = mainnet_3pool_state["virtual_balances"]
