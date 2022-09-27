@@ -116,7 +116,7 @@ class Pool:
         D = int(D)
         return D
 
-    def y(self, i, j, x, xp=None):
+    def y(self, i, j, x, xp):
         """
         Calculate x[j] if one makes x[i] = x
 
@@ -126,11 +126,7 @@ class Pool:
 
         x_1 = (x_1**2 + c) / (2*x_1 + b)
         """
-
-        if xp is None:
-            xx = self.xp()
-        else:
-            xx = xp[:]
+        xx = xp[:]
         D = self.D(xx)
         D = mpz(D)
         xx[i] = x  # x is quantity of underlying asset brought to 1e18 precision
@@ -147,7 +143,7 @@ class Pool:
             y_prev = y
             y = (y**2 + c) // (2 * y + b)
         y = int(y)
-        return y  # the result is in underlying units too
+        return y  # result is in units for D
 
     def y_underlying(self, i, j, x):
         # For meta-pool
@@ -175,7 +171,7 @@ class Pool:
                 base_inputs[base_i] = dx
 
                 dx = self.basepool.calc_token_amount(base_inputs)
-                # Need to convert pool token to "virtual" units using rates
+                # Convert pool token to proper value in units of D
                 x = dx * rates[self.max_coin] // 10**18
                 # Adding number of pool tokens
                 x += xp[self.max_coin]
@@ -197,8 +193,9 @@ class Pool:
                 y = self.basepool.y_D(A, base_j, xp, D1)
 
         else:
-            # If both are from the base pool
-            y = self.basepool.y(base_i, base_j, x)
+            # both are from the base pool
+            xp = self.basepool.xp()
+            y = self.basepool.y(base_i, base_j, x, xp)
 
         return y
 
@@ -225,13 +222,13 @@ class Pool:
         while abs(y - y_prev) > 1:
             y_prev = y
             y = (y**2 + c) // (2 * y + b - D)
-        return y  # the result is in underlying units too
+        return y  # result is in units for D
 
     def dy(self, i, j, dx):
         if not self.ismeta:
-            # dx and dy are in underlying units
+            # dx and dy are in proper units for D
             xp = self.xp()
-            return xp[j] - self.y(i, j, xp[i] + dx)
+            return xp[j] - self.y(i, j, xp[i] + dx, xp)
 
         # note that fees are already included
         rates = self.p[:]
@@ -288,7 +285,7 @@ class Pool:
         if not self.ismeta:
             xp = self.xp()
             x = xp[i] + dx
-            y = self.y(i, j, x)
+            y = self.y(i, j, x, xp)
             dy = xp[j] - y
             if self.fee_mul is None:  # if not dynamic fee pool
                 fee = dy * self.fee // 10**10
@@ -624,20 +621,18 @@ class Pool:
                 rates = self.p[:]
                 rates[self.max_coin] = self.basepool.get_virtual_price()
                 xp = [x * p // 10**18 for x, p in zip(self.x, rates)]
-
-                hi = self.y(meta_j, meta_i, int(xp[meta_j] * 0.01), xp) - self.xp()[meta_i]
+                hi = self.y(meta_j, meta_i, int(xp[meta_j] * 0.01), xp) - xp[meta_i]
             else:
-                hi = (
-                    self.basepool.y(base_j, base_i, int(self.basepool.xp()[base_j] * 0.01))
-                    - self.basepool.xp()[base_i]
-                )
+                base_xp = self.basepool.xp()
+                hi = self.basepool.y(base_j, base_i, int(base_xp[base_j] * 0.01), base_xp) - base_xp[base_i]
 
             bounds = (10**12, hi)
 
         else:
+            xp = self.xp()
             bounds = (
                 10**12,
-                self.y(j, i, int(self.xp()[j] * 0.01)) - self.xp()[i],
+                self.y(j, i, int(xp[j] * 0.01), xp) - xp[i],
             )  # Lo: 1, Hi: enough coin[i] to leave 1% of coin[j]
 
         res = root_scalar(arberror, args=(self, i, j, p), bracket=bounds, method="brentq")
@@ -909,20 +904,22 @@ class Pool:
             i = combo[0]
             j = combo[1]
 
+            xp = self.xp()
+
             if xs is None:
-                xs_i = np.linspace(int(self.D() * 0.0001), self.y(j, i, int(self.D() * 0.0001)), 1000).round()
+                xs_i = np.linspace(
+                    int(self.D() * 0.0001), self.y(j, i, int(self.D() * 0.0001), xp), 1000
+                ).round()
             else:
                 xs_i = xs
 
             ys_i = []
             for x in xs_i:
-                ys_i.append(self.y(i, j, int(x)) / 10**18)
+                ys_i.append(self.y(i, j, int(x)) / 10**18, xp)
 
             xs_i = xs_i / 10**18
             xs_out.append(xs_i)
             ys_out.append(ys_i)
-
-            xp = self.xp()[:]
 
             if show:
                 if plt_n == 0:
