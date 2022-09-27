@@ -24,6 +24,7 @@ scriv==0.16.0
 bump2version==1.0.1
 
 pytest==7.1.3
+hypothesis[numpy,pandas]==6.54.6
 
 # specify versions for titanboa as it doesn't provide bounds and this makes
 # pip choke on its dependency resolution
