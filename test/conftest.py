@@ -3,6 +3,8 @@ import os
 import boa
 import pytest
 
+from curvesim.pool import Pool
+
 _base_dir = os.path.dirname(__file__)
 
 
@@ -48,4 +50,16 @@ def vyper_3pool(mainnet_3pool_state):
     balances = mainnet_3pool_state["balances"]
     pool.eval(f"self.balances={balances}")
 
+    return pool
+
+
+@pytest.fixture(scope="function")
+def python_3pool(mainnet_3pool_state):
+    A = mainnet_3pool_state["A"]
+    balances = mainnet_3pool_state["balances"]
+    n_coins = mainnet_3pool_state["N_COINS"]
+    p = mainnet_3pool_state["p"]
+    lp_tokens = mainnet_3pool_state["lp_tokens"]
+
+    pool = Pool(A, D=balances, n=n_coins, p=p, tokens=lp_tokens)
     return pool
