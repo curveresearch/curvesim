@@ -1,3 +1,6 @@
+from hypothesis import HealthCheck, given, settings
+from hypothesis import strategies as st
+
 from curvesim.pool import Pool
 
 
@@ -21,7 +24,9 @@ def test_get_D_against_prod(vyper_3pool, mainnet_3pool_state):
     assert virtual_price == expected_virtual_price
 
 
-def test_get_D(vyper_3pool, mainnet_3pool_state):
+@given(st.integers(), st.integers(), st.integers())
+@settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
+def test_get_D(vyper_3pool, mainnet_3pool_state, x0, x1, x2):
     """Test D calculation against vyper implementation."""
 
     virtual_balances = mainnet_3pool_state["virtual_balances"]
