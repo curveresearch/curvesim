@@ -17,6 +17,7 @@ astroid==2.11.7
 scriv==0.16.0
 bump2version==1.0.1
 pytest==7.1.3
+hypothesis==6.54.6
 # specify versions for titanboa as it doesn't provide bounds and this makes
 # pip choke on its dependency resolution
 titanoboa @ git+https://github.com/vyperlang/titanoboa@ad59fd9a9dc72057dfffdbb6db455ae0ff0f96e8
@@ -46,6 +47,7 @@ eth-keys==0.3.4
 eth-rlp==0.2.1
 eth-typing==2.3.0
 eth-utils==1.10.0
+exceptiongroup==1.0.0rc9
 fonttools==4.37.3
 frozenlist==1.3.1
 hexbytes==0.2.3
@@ -83,7 +85,7 @@ pyrsistent==0.18.1
 python-dateutil==2.8.2
 pytz==2022.2.1
 rlp==2.0.1
-semantic-version==2.8.5
+semantic-version==2.10.0
 six==1.16.0
 sortedcontainers==2.4.0
 tomli==2.0.1
@@ -93,7 +95,7 @@ trie==2.0.0a5
 typing-extensions==3.10.0.2
 urllib3==1.26.12
 varint==1.0.2
-vyper==0.3.6
+vyper==0.3.7
 websockets==9.1
 wrapt==1.14.1
 yarl==1.8.1
