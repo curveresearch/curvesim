@@ -114,7 +114,7 @@ def test_get_y(vyper_3pool, mainnet_3pool_state):
     expected_y = vyper_3pool.eval(f"self.get_y({i}, {j}, {x}, {virtual_balances})")
 
     python_3pool = initialize_pool(vyper_3pool)
-    y = python_3pool.y(i, j, x, virtual_balances)
+    y = python_3pool.get_y(i, j, x, virtual_balances)
     assert y == expected_y
 
 
@@ -132,5 +132,5 @@ def test_get_y_D(vyper_3pool):
     virtual_balances[j] += dx
     expected_y = vyper_3pool.eval(f"self.get_y_D({A}, {i}, {virtual_balances}, {D})")
 
-    y = python_3pool.y_D(A, i, virtual_balances, D)
+    y = python_3pool.get_y_D(A, i, virtual_balances, D)
     assert y == expected_y
