@@ -9,7 +9,8 @@ def initialize_pool(vyper_pool):
     n_coins = vyper_pool.N_COINS()
     balances = [vyper_pool.balances(i) for i in range(n_coins)]
     p = [vyper_pool.rates(i) for i in range(n_coins)]
-    pool = Pool(A, D=balances, n=n_coins, p=p)
+    lp_total_supply = vyper_pool.totalSupply()
+    pool = Pool(A, D=balances, n=n_coins, p=p, tokens=lp_total_supply)
     return pool
 
 

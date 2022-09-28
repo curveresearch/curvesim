@@ -293,3 +293,11 @@ def _xp_mem(_balances: uint256[N_COINS]) -> uint256[N_COINS]:
     for i in range(N_COINS):
         result[i] = result[i] * _balances[i] / PRECISION
     return result
+
+
+# sim: added function for pool sim testing
+@view
+@external
+def totalSupply() -> uint256:
+    return self.token.totalSupply()
+
