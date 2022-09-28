@@ -80,7 +80,7 @@ def pool_prices(coins, vs_currency, days):
 
 async def coin_id_from_address(address, chain):
     address = address.lower()
-    chain = PLATFORMS[chain]
+    chain = PLATFORMS[chain.lower()]
     url = URL + f"coins/{chain}/contract/{address}"
 
     r = await HTTP.get(url)
@@ -101,8 +101,8 @@ async def coin_ids_from_addresses(addresses, chain):
 
 
 async def coin_info_from_id(ID, chain, chain_out="mainnet"):
-    chain = PLATFORMS[chain]
-    chain_out = PLATFORMS[chain_out]
+    chain = PLATFORMS[chain.lower()]
+    chain_out = PLATFORMS[chain_out.lower()]
     url = URL + f"coins/{ID}"
 
     r = await HTTP.get(url)
@@ -129,13 +129,12 @@ async def crosschain_coin_address(address, chain_in, chain_out):
         return address
 
     address = address.lower()
-    chain_in = PLATFORMS[chain_in]
-    chain_out = PLATFORMS[chain_out]
+    chain_in = PLATFORMS[chain_in.lower()]
+    chain_out = PLATFORMS[chain_out.lower()]
     url = URL + f"coins/{chain_in}/contract/{address}"
 
     r = await HTTP.get(url)
 
-    chain_out = PLATFORMS[chain_out]
     address = r["platforms"][chain_out]
 
     return address
@@ -156,4 +155,8 @@ PLATFORMS = {
     "arbitrum": "arbitrum-one",
     "polygon": "polygon-pos",
     "optimism": "optimistic-ethereum",
+    "xdai": "xdai",
+    "fantom": "fantom",
+    "avalanche": "avalanche",
+    "matic:": "polygon-pos",
 }
