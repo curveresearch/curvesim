@@ -92,15 +92,16 @@ def test_get_D_balanced():
     assert D == expected_D
 
 
-def test_get_virtual_price(vyper_3pool, python_3pool):
+def test_get_virtual_price(vyper_3pool):
     """Test `get_virtual_price` against vyper implementation."""
 
+    python_3pool = initialize_pool(vyper_3pool)
     virtual_price = python_3pool.get_virtual_price()
     expected_virtual_price = vyper_3pool.get_virtual_price()
     assert virtual_price == expected_virtual_price
 
 
-def test_get_y(vyper_3pool, python_3pool, mainnet_3pool_state):
+def test_get_y(vyper_3pool, mainnet_3pool_state):
     """Test y calculation against vyper implementation"""
 
     virtual_balances = mainnet_3pool_state["virtual_balances"]
@@ -110,6 +111,7 @@ def test_get_y(vyper_3pool, python_3pool, mainnet_3pool_state):
     x = 516 * 10**18
     expected_y = vyper_3pool.y(i, j, x, virtual_balances)
 
+    python_3pool = initialize_pool(vyper_3pool)
     y = python_3pool.y(i, j, x, virtual_balances)
     assert y == expected_y
 
