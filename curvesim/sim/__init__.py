@@ -305,7 +305,7 @@ def autosim(  # noqa: C901
 
     elif src == "local":
         print("[" + poolname + "] Fetching local price data...")
-        prices, volumes, pzero = nomics.pool_prices(coins, data_dir=data_dir)
+        prices, volumes, pzero = nomics.local_pool_prices(coins, data_dir=data_dir)
 
     elif src == "cg":
         print("[" + poolname + "] Fetching CoinGecko price data...")

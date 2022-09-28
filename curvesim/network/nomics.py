@@ -302,6 +302,92 @@ def pool_prices(  # noqa: C901
     return prices, volumes, pzero
 
 
+def local_pool_prices(  # noqa: C901
+    coins=[], quote=None, quotediv=False, t_start=None, t_end=None, resample=None, pairs=[], data_dir="data"
+):
+    """
+    Loads and formats price/volume data from CSVs.
+
+    coins: list of coins to load (e.g., ['DAI', 'USDC', 'USDT'])
+    quote: if string, name of quote currency to load (e.g., 'USD')
+    quotediv: determine pairwise coin prices using third currency (e.g., ETH-SUSD/SETH-SUSD for ETH-SETH)
+    t_start/t_end: used to truncate input time series
+    resample: used to downsample input time series
+    pairs: list of coin pairs to load (e.g., ['DAI-USDC', 'USDC-USDT'])
+    data_dir: base directory name for price csv files
+
+    Returns exchange rates/volumes for each coin pair in order of list(itertools.combinations(coins,2))
+
+    """
+
+    if pairs and coins:
+        raise ValueError("Use only 'coins' or 'pairs', not both.")
+
+    if coins:
+        if quote:
+            symbol_pairs = zip(coins, [quote] * len(coins))
+        else:
+            symbol_pairs = list(combinations(coins, 2))
+    elif pairs:
+        symbol_pairs = pairs
+    else:
+        raise ValueError("Must use one of 'coins' or 'pairs'.")
+
+    prices = []
+    volumes = []
+    for (sym_1, sym_2) in symbol_pairs:
+        filename = os.path.join(data_dir, f"{sym_1}-{sym_2}.csv")
+        data_df = pd.read_csv(filename, index_col=0)
+        prices.append(data_df["price"])
+        volumes.append(data_df["volume"])
+
+    prices = pd.concat(prices, axis=1)
+    volumes = pd.concat(volumes, axis=1)
+
+    pzero = (prices == 0).mean()
+
+    prices = prices.replace(to_replace=0, method="ffill")  # replace price=0 with previous price
+    prices = prices.replace(
+        to_replace=0, method="bfill"
+    )  # replace any price=0 at beginning with subsequent price
+
+    # If quotediv, calc prices for each coin pair from prices in quote currency
+    if quotediv:
+        combos = list(combinations(range(len(coins)), 2))
+        prices_tmp = []
+        volumes_tmp = []
+
+        for pair in combos:
+            prices_tmp.append(prices.iloc[:, pair[0]] / prices.iloc[:, pair[1]])  # divide prices
+            volumes_tmp.append(volumes.iloc[:, pair[0]] + volumes.iloc[:, pair[1]])  # sum volumes
+
+        prices = pd.concat(prices_tmp, axis=1)
+        volumes = pd.concat(volumes_tmp, axis=1)
+
+    # Index as date-time type
+    prices.index = pd.to_datetime(prices.index)
+    volumes.index = pd.to_datetime(volumes.index)
+
+    # Trim to t_start and/or t_end
+    if t_start is not None:
+        prices = prices.loc[t_start:]
+        volumes = volumes.loc[t_start:]
+
+    if t_end is not None:
+        prices = prices.loc[:t_end]
+        volumes = prices.loc[:t_end]
+
+    # Resample times
+    if resample is not None:
+        prices = prices.resample(resample).first()
+        volumes = volumes.resample(resample).sum()
+    else:
+        prices.index.freq = pd.infer_freq(prices.index)
+        volumes.index.freq = pd.infer_freq(volumes.index)
+
+    return prices, volumes, pzero
+
+
 async def coin_id_from_address(address):
     if address == ETH_addr:
         return "ETH"
