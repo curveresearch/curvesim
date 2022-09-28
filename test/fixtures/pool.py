@@ -35,7 +35,7 @@ def vyper_3pool(mainnet_3pool_state):
     lp_total_supply = mainnet_3pool_state["lp_tokens"]
     lp_token = boa.load(erc20_filepath, "Mock 3CRV", "MOCK-3CRV", 18, lp_total_supply)
 
-    pool_filepath = os.path.join(_base_dir, "calcs_for_3pool.vy")
+    pool_filepath = os.path.join(_base_dir, "basepool.vy")
     owner = "0xCAFECAFECAFECAFECAFECAFECAFECAFECAFECAFE"
     dai_mock = boa.load(erc20_filepath, "Mock DAI", "MOCK-DAI", 18, 10**26).address
     usdc_mock = boa.load(erc20_filepath, "Mock USDC", "MOCK-USDC", 6, 10**26).address
