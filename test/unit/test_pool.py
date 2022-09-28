@@ -134,3 +134,15 @@ def test_get_y_D(vyper_3pool):
 
     y = python_3pool.get_y_D(A, i, virtual_balances, D)
     assert y == expected_y
+
+
+@given(positive_balance, positive_balance, positive_balance)
+@settings(suppress_health_check=[HealthCheck.function_scoped_fixture], max_examples=10)
+def test_calc_token_amount(vyper_3pool, x0, x1, x2):
+    balances = [x0, x1, x2]
+    expected_lp_amount = vyper_3pool.calc_token_amount(balances, deposit=True)
+
+    python_3pool = initialize_pool(vyper_3pool)
+    lp_amount = python_3pool.calc_token_amount(balances)
+
+    assert lp_amount == expected_lp_amount
