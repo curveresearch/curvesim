@@ -3,7 +3,8 @@ interface CurveToken:
     def mint(_to: address, _value: uint256) -> bool: nonpayable
     def burnFrom(_to: address, _value: uint256) -> bool: nonpayable
 
-N_COINS: constant(uint256) = 3
+# sim: made public for pool sim testing
+N_COINS: public(constant(uint256)) = 3
 
 LENDING_PRECISION: constant(uint256) = 10 ** 18
 PRECISION: constant(uint256) = 10 ** 18  # The precision to convert to
@@ -56,10 +57,20 @@ def __init__(
     self.token = CurveToken(_pool_token)
 
 
+# sim: function added for pool sim testing
 @pure
 @external
-def D(xp: uint256[N_COINS], amp: uint256) -> uint256:
-    return self.get_D(xp, amp)
+def rates(i: uint256) -> uint256:
+    return RATES[i]
+
+
+# sim: function added for pool sim testing
+@view
+@external
+def D() -> uint256:
+    A: uint256 = self._A()
+    xp: uint256[N_COINS] = self._xp()
+    return self.get_D(xp, A)
 
 
 @pure
@@ -258,6 +269,12 @@ def get_y_D(A_: uint256, i: uint256, xp: uint256[N_COINS], D: uint256) -> uint25
             if y_prev - y <= 1:
                 break
     return y
+
+
+@view
+@external
+def A() -> uint256:
+    return self._A()
 
 
 @view
