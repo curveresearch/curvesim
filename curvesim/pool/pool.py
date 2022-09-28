@@ -14,7 +14,7 @@ class Pool:
     Python model of Curve pool math.
     """
 
-    def __init__(self, A, D, n, p=None, tokens=None, fee=4 * 10**6, feemul=None, r=None):
+    def __init__(self, A, D, n, p=None, tokens=None, fee=4 * 10**6, fee_mul=None, r=None):
         """
         A: Amplification coefficient
         D: Total deposit size
@@ -22,7 +22,7 @@ class Pool:
         p: precision
         tokens: # of tokens; if meta-pool, this sets # of basepool tokens
         fee: fee with 10**10 precision (default = .004%)
-        feemul: fee multiplier for dynamic fee pools
+        fee_mul: fee multiplier for dynamic fee pools
         r: initial redemption price for RAI-like pools
         """
 
@@ -34,7 +34,7 @@ class Pool:
                 fee = [fee] * n[0]
             self.fee = fee[0]
 
-            self.basepool = Pool(A[1], D[1], n[1], fee=fee[1], tokens=tokens)
+            self.basepool = Pool(A[1], D[1], n[1], fee=fee[1], fee_mul=fee_mul[1], tokens=tokens[1])
 
             if p:
                 self.p = p
@@ -58,8 +58,8 @@ class Pool:
 
             self.ismeta = True
             self.n_total = n[0] + n[1] - 1
-            self.tokens = self.D()
-            self.feemul = feemul
+            self.tokens = tokens[0]
+            self.fee_mul = fee_mul[0]
 
         else:
             self.A = A  # actually A * n ** (n - 1) because it's an invariant
@@ -80,7 +80,7 @@ class Pool:
                 self.tokens = self.D()
             else:
                 self.tokens = tokens
-            self.feemul = feemul
+            self.fee_mul = fee_mul
             self.ismeta = False
             self.r = False
             self.n_total = self.n
@@ -347,7 +347,7 @@ class Pool:
             x = xp[i] + dx
             y = self.y(i, j, x)
             dy = xp[j] - y
-            if self.feemul is None:  # if not dynamic fee pool
+            if self.fee_mul is None:  # if not dynamic fee pool
                 fee = dy * self.fee // 10**10
             else:  # if dynamic fee pool
                 fee = dy * self.dynamic_fee((xp[i] + x) // 2, (xp[j] + y) // 2) // 10**10
@@ -466,7 +466,7 @@ class Pool:
     def dynamic_fee(self, xpi, xpj):
         xps2 = xpi + xpj
         xps2 *= xps2  # Doing just ** 2 can overflow apparently
-        return (self.feemul * self.fee) // ((self.feemul - 10**10) * 4 * xpi * xpj // xps2 + 10**10)
+        return (self.fee_mul * self.fee) // ((self.fee_mul - 10**10) * 4 * xpi * xpj // xps2 + 10**10)
 
     def dydxfee(self, i, j, dx=10**12):
         """
@@ -584,7 +584,7 @@ class Pool:
         dydx = (xj * (xi * A_pow * x_prod + D_pow)) / (xi * (xj * A_pow * x_prod + D_pow))
 
         if use_fee:
-            if self.feemul is None:
+            if self.fee_mul is None:
                 fee_factor = self.fee / 10**10
             else:
                 dx = 10**12
