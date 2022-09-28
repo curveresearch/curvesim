@@ -170,7 +170,7 @@ class Pool:
                 base_inputs = [0] * self.basepool.n
                 base_inputs[base_i] = dx
 
-                dx = self.basepool.calc_token_amount(base_inputs)
+                dx = self.basepool.calc_token_amount(base_inputs, use_fee=True)
                 # Convert pool token to proper value in units of D
                 x = dx * rates[self.max_coin] // 10**18
                 # Adding number of pool tokens
@@ -255,7 +255,7 @@ class Pool:
                 base_inputs = [0] * self.basepool.n
                 base_inputs[base_i] = dx
 
-                dx = self.basepool.calc_token_amount(base_inputs)
+                dx = self.basepool.calc_token_amount(base_inputs, use_fee=True)
                 # Need to convert pool token to "virtual" units using rates
                 x = dx * rates[self.max_coin] // 10**18
                 # Adding number of pool tokens
@@ -429,10 +429,13 @@ class Pool:
         self.tokens -= token_amount
         return dy
 
-    def calc_token_amount(self, amounts):
-        # Based on add_liquidity (more accurate than calc_token_amount in actual contract)
-        _fee = self.fee * self.n // (4 * (self.n - 1))
+    def calc_token_amount(self, amounts, use_fee=False):
+        """
+        Fee logic is based on add_liquidity, which makes this more accurate than
+        the `calc_token_amount` in the actual contract, which neglects fees.
 
+        By default, it's assumed you want the contract behavior.
+        """
         old_balances = self.x
         new_balances = self.x[:]
         D0 = self.D()
@@ -443,13 +446,17 @@ class Pool:
         D1 = self.D()
         self.x = old_balances
 
-        fees = [0] * self.n
         mint_balances = new_balances[:]
-        for i in range(self.n):
-            ideal_balance = D1 * old_balances[i] // D0
-            difference = abs(ideal_balance - new_balances[i])
-            fees[i] = _fee * difference // 10**10
-            mint_balances[i] -= fees[i]  # used to calculate mint amount
+
+        if use_fee:
+            _fee = self.fee * self.n // (4 * (self.n - 1))
+
+            fees = [0] * self.n
+            for i in range(self.n):
+                ideal_balance = D1 * old_balances[i] // D0
+                difference = abs(ideal_balance - new_balances[i])
+                fees[i] = _fee * difference // 10**10
+                mint_balances[i] -= fees[i]
 
         self.x = mint_balances
         D2 = self.D()
@@ -536,7 +543,7 @@ class Pool:
                     base_inputs = [0] * self.basepool.n
                     base_inputs[base_i] = dx
 
-                    dw = self.basepool.calc_token_amount(base_inputs)
+                    dw = self.basepool.calc_token_amount(base_inputs, use_fee=True)
                     # Convert lp token amount to virtual units
                     dw = dw * rates[self.max_coin] // 10**18
                     x = xp[self.max_coin] + dw
