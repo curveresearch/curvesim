@@ -53,7 +53,7 @@ class PoolData(dict):
                 kwargs.update({"D": reserves})
             return kwargs
 
-        kwargs = bal(self["init_kwargs"], balanced[0])
+        kwargs = bal(self["init_kwargs"].copy(), balanced[0])
 
         if self["basepool"]:
             bp_kwargs = bal(self["basepool"]["init_kwargs"], balanced[1])
