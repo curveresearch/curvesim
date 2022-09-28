@@ -3,8 +3,6 @@ import os
 import boa
 import pytest
 
-from curvesim.pool import Pool
-
 _base_dir = os.path.dirname(__file__)
 
 
@@ -32,6 +30,7 @@ def mainnet_3pool_state():
 
 @pytest.fixture(scope="function")
 def vyper_3pool(mainnet_3pool_state):
+    """Initialize vyper fixture using mainnet values."""
     erc20_filepath = os.path.join(_base_dir, "fixtures", "erc20_mock.vy")
     lp_total_supply = mainnet_3pool_state["lp_tokens"]
     lp_token = boa.load(erc20_filepath, "Mock 3CRV", "MOCK-3CRV", 18, lp_total_supply)
@@ -50,16 +49,4 @@ def vyper_3pool(mainnet_3pool_state):
     balances = mainnet_3pool_state["balances"]
     pool.eval(f"self.balances={balances}")
 
-    return pool
-
-
-@pytest.fixture(scope="function")
-def python_3pool(mainnet_3pool_state):
-    A = mainnet_3pool_state["A"]
-    balances = mainnet_3pool_state["balances"]
-    n_coins = mainnet_3pool_state["N_COINS"]
-    p = mainnet_3pool_state["p"]
-    lp_tokens = mainnet_3pool_state["lp_tokens"]
-
-    pool = Pool(A, D=balances, n=n_coins, p=p, tokens=lp_tokens)
     return pool
