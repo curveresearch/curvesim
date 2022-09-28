@@ -116,7 +116,7 @@ class Pool:
         D = int(D)
         return D
 
-    def y(self, i, j, x, xp):
+    def get_y(self, i, j, x, xp):
         """
         Calculate x[j] if one makes x[i] = x
 
@@ -176,7 +176,7 @@ class Pool:
                 # Adding number of pool tokens
                 x += xp[self.max_coin]
 
-            y = self.y(meta_i, meta_j, x, xp)
+            y = self.get_y(meta_i, meta_j, x, xp)
 
             if base_j >= 0:
                 dy = xp[meta_j] - y - 1
@@ -190,16 +190,16 @@ class Pool:
                 D1 = D0 - dy * D0 // self.basepool.tokens
                 A = self.basepool.A
                 xp = self.basepool.xp()
-                y = self.basepool.y_D(A, base_j, xp, D1)
+                y = self.basepool.get_y_D(A, base_j, xp, D1)
 
         else:
             # both are from the base pool
             xp = self.basepool.xp()
-            y = self.basepool.y(base_i, base_j, x, xp)
+            y = self.basepool.get_y(base_i, base_j, x, xp)
 
         return y
 
-    def y_D(self, A, i, xp, D):
+    def get_y_D(self, A, i, xp, D):
         """
         Calculate x[j] if one makes x[i] = x
 
@@ -224,11 +224,11 @@ class Pool:
             y = (y**2 + c) // (2 * y + b - D)
         return y  # result is in units for D
 
-    def dy(self, i, j, dx):
+    def get_dy(self, i, j, dx):
         if not self.ismeta:
             # dx and dy are in proper units for D
             xp = self.xp()
-            return xp[j] - self.y(i, j, xp[i] + dx, xp)
+            return xp[j] - self.get_y(i, j, xp[i] + dx, xp)
 
         # note that fees are already included
         rates = self.p[:]
@@ -261,7 +261,7 @@ class Pool:
                 # Adding number of pool tokens
                 x += xp[self.max_coin]
 
-            y = self.y(meta_i, meta_j, x, xp)
+            y = self.get_y(meta_i, meta_j, x, xp)
 
             # Either a real coin or token
             dy = xp[meta_j] - y - 1
@@ -276,7 +276,7 @@ class Pool:
 
         else:
             # If both are from the base pool
-            dy = self.basepool.dy(base_i, base_j, dx)
+            dy = self.basepool.get_dy(base_i, base_j, dx)
             dy = dy - dy * self.fee // 10**10
 
         return dy
@@ -285,7 +285,7 @@ class Pool:
         if not self.ismeta:
             xp = self.xp()
             x = xp[i] + dx
-            y = self.y(i, j, x, xp)
+            y = self.get_y(i, j, x, xp)
             dy = xp[j] - y
             if self.fee_mul is None:  # if not dynamic fee pool
                 fee = dy * self.fee // 10**10
@@ -329,7 +329,7 @@ class Pool:
                 # Adding number of pool tokens
                 x += xp[self.max_coin]
 
-            y = self.y(meta_i, meta_j, x, xp)
+            y = self.get_y(meta_i, meta_j, x, xp)
 
             # Either a real coin or token
             dy = xp[meta_j] - y - 1
@@ -389,7 +389,7 @@ class Pool:
         D0 = self.D()
         D1 = D0 - token_amount * D0 // self.tokens
         A = self.A
-        dy = xp[i] - self.y_D(A, i, xp, D1)
+        dy = xp[i] - self.get_y_D(A, i, xp, D1)
 
         return dy - dy * fee // 10**10
 
@@ -543,7 +543,7 @@ class Pool:
 
                     meta_i = self.max_coin
                     meta_j = j
-                    y = self.y(meta_i, meta_j, x, xp)
+                    y = self.get_y(meta_i, meta_j, x, xp)
 
                     dy = xp[meta_j] - y - 1
                     if use_fee:
@@ -621,10 +621,13 @@ class Pool:
                 rates = self.p[:]
                 rates[self.max_coin] = self.basepool.get_virtual_price()
                 xp = [x * p // 10**18 for x, p in zip(self.x, rates)]
-                hi = self.y(meta_j, meta_i, int(xp[meta_j] * 0.01), xp) - xp[meta_i]
+                hi = self.get_y(meta_j, meta_i, int(xp[meta_j] * 0.01), xp) - xp[meta_i]
             else:
                 base_xp = self.basepool.xp()
-                hi = self.basepool.y(base_j, base_i, int(base_xp[base_j] * 0.01), base_xp) - base_xp[base_i]
+                hi = (
+                    self.basepool.get_y(base_j, base_i, int(base_xp[base_j] * 0.01), base_xp)
+                    - base_xp[base_i]
+                )
 
             bounds = (10**12, hi)
 
@@ -632,7 +635,7 @@ class Pool:
             xp = self.xp()
             bounds = (
                 10**12,
-                self.y(j, i, int(xp[j] * 0.01), xp) - xp[i],
+                self.get_y(j, i, int(xp[j] * 0.01), xp) - xp[i],
             )  # Lo: 1, Hi: enough coin[i] to leave 1% of coin[j]
 
         res = root_scalar(arberror, args=(self, i, j, p), bracket=bounds, method="brentq")
@@ -908,14 +911,14 @@ class Pool:
 
             if xs is None:
                 xs_i = np.linspace(
-                    int(self.D() * 0.0001), self.y(j, i, int(self.D() * 0.0001), xp), 1000
+                    int(self.D() * 0.0001), self.get_y(j, i, int(self.D() * 0.0001), xp), 1000
                 ).round()
             else:
                 xs_i = xs
 
             ys_i = []
             for x in xs_i:
-                ys_i.append(self.y(i, j, int(x)) / 10**18, xp)
+                ys_i.append(self.get_y(i, j, int(x)) / 10**18, xp)
 
             xs_i = xs_i / 10**18
             xs_out.append(xs_i)
