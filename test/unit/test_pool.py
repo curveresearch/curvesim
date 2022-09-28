@@ -139,10 +139,13 @@ def test_get_y_D(vyper_3pool):
 @given(positive_balance, positive_balance, positive_balance)
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture], max_examples=10)
 def test_calc_token_amount(vyper_3pool, x0, x1, x2):
-    balances = [x0, x1, x2]
-    expected_lp_amount = vyper_3pool.calc_token_amount(balances, deposit=True)
-
     python_3pool = initialize_pool(vyper_3pool)
+
+    _balances = [x0, x1, x2]
+    rates = [vyper_3pool.rates(i) for i in range(len(_balances))]
+    balances = [b * 10**18 // r for b, r in zip(_balances, rates)]
+
+    expected_lp_amount = vyper_3pool.calc_token_amount(balances, True)
     lp_amount = python_3pool.calc_token_amount(balances)
 
     assert lp_amount == expected_lp_amount
