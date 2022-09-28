@@ -7,12 +7,13 @@ from math import factorial
 import numpy as np
 import pandas as pd
 
-from curvesim.data import coingecko, nomics
+from curvesim.network import coingecko, nomics
 from curvesim.plot import plotsims, plotsimsfee, saveplots
-from curvesim.pool import Pool, pooldata
+from curvesim.pool import Pool
+from curvesim.pool_data import get
 
 
-def sim(A, D, n, fee, prices, volumes, tokens=None, feemul=None, vol_mult=1, r=None):
+def sim(A, D, n, fee, prices, volumes, tokens=None, fee_mul=None, vol_mult=1, r=None):
     """
     Simulates a pool with parameters A, D, n, and fee, given time series of prices and volumes
 
@@ -24,7 +25,7 @@ def sim(A, D, n, fee, prices, volumes, tokens=None, feemul=None, vol_mult=1, r=N
     volumes: time series of pairwise exchange volumes
 
     tokens: # of tokens; if meta-pool, this sets # of basepool tokens
-    feemul: fee multiplier for dynamic fee pools
+    fee_mul: fee multiplier for dynamic fee pools
     vol_mult: scalar or vector (one element per pair) multiplied by market volume to limit trade sizes
     r: time series of redemption prices for RAI-like pools
 
@@ -49,7 +50,7 @@ def sim(A, D, n, fee, prices, volumes, tokens=None, feemul=None, vol_mult=1, r=N
         r0 = None
 
     # Initiate pool
-    pl = Pool(A, D, n, fee=fee, tokens=tokens, feemul=feemul, r=r0)
+    pl = Pool(A, D, n, fee=fee, tokens=tokens, fee_mul=fee_mul, r=r0)
 
     # Loop through timepoints and do optimal arb trades
     err = []
@@ -114,7 +115,7 @@ def psim(
     A_base=None,
     fee_base=None,
     tokens=None,
-    feemul=None,
+    fee_mul=None,
     vol_mult=1,
     r=None,
     plot=False,
@@ -134,7 +135,7 @@ def psim(
     A_base: if metapool, A parameter for basepool
     fee_base: if metapool, fee for basepool
     tokens: # of tokens; if meta-pool, this sets # of basepool tokens
-    feemul: fee multiplier for dynamic fee pools
+    fee_mul: fee multiplier for dynamic fee pools
     vol_mult: scalar or vector (one element per pair) multiplied by market volume to limit trade sizes
     r: time series of redemption prices for RAI-like pools
     plot: if true, plots outputs
@@ -169,7 +170,7 @@ def psim(
         fee_list = [[fee, fee_base] for fee in fee_list]
 
     # Run sims
-    simmapfunc = partial(sim, tokens=tokens, feemul=feemul, vol_mult=vol_mult, r=r)
+    simmapfunc = partial(sim, tokens=tokens, fee_mul=fee_mul, vol_mult=vol_mult, r=r)
     if ncpu > 1:
         with multiprocessing.Pool(ncpu) as clust:
             pl, err, bal, pool_value, depth, volume, xs, ps = zip(
@@ -227,13 +228,14 @@ def psim(
 
 def autosim(  # noqa: C901
     poolname,
+    chain="mainnet",
     test=False,
     A=None,
     D=None,
     fee=None,
     vol_mult=None,
     vol_mode=1,
-    feemul=None,
+    fee_mul=None,
     src="cg",
     ncpu=4,
     trunc=None,
@@ -246,7 +248,7 @@ def autosim(  # noqa: C901
 
     Requires an entry for "poolname" in poolDF.csv
 
-    A, D, fee, vol_mult, & feemul can be used to override default values and/or fetched data.
+    A, D, fee, vol_mult, & fee_mul can be used to override default values and/or fetched data.
     D & fee should be provided in "natural" units (i.e., not 10**18 or 10**10 precision).
     A & fee must be lists/np.arrays.
 
@@ -270,21 +272,14 @@ def autosim(  # noqa: C901
 
     # Get current pool data
     print("[" + poolname + "] Fetching pool data...")
-    src = src.lower().strip()
-    if src == "cg":
-        csv = "poolDF_cg.csv"
-    elif src in ["nomics", "local"]:
-        csv = "poolDF_nomics.csv"
-    else:
-        raise ValueError("'src' must be one of 'cg', 'nomics', 'local'.")
 
-    pldata = pool_data or pooldata(poolname, csv=csv, balanced=True)
+    pldata = pool_data or get(poolname, chain)
 
     histvolume = pldata["histvolume"]
     coins = pldata["coins"]
     n = pldata["n"]
 
-    # Over-ride D & feemul if necessary
+    # Over-ride D & fee_mul if necessary
     if D is None:
         D = pldata["D"]
     else:
@@ -293,8 +288,8 @@ def autosim(  # noqa: C901
             pldata["D"][0] = D
             D = pldata["D"]
 
-    if feemul is None:
-        feemul = pldata["feemul"]
+    if fee_mul is None:
+        fee_mul = pldata["fee_mul"]
 
     # Update and load price data
     if src == "nomics":
@@ -306,15 +301,15 @@ def autosim(  # noqa: C901
         nomics.update(coins, None, t_start, t_end)
 
         # Load data
-        prices, volumes, pzero = nomics.poolprices(coins)
+        prices, volumes, pzero = nomics.pool_prices(coins)
 
     elif src == "local":
         print("[" + poolname + "] Fetching local price data...")
-        prices, volumes, pzero = nomics.poolprices(coins, data_dir=data_dir)
+        prices, volumes, pzero = nomics.pool_prices(coins, data_dir=data_dir)
 
     elif src == "cg":
         print("[" + poolname + "] Fetching CoinGecko price data...")
-        prices, volumes = coingecko.poolprices(coins, "usd", 60)
+        prices, volumes = coingecko.pool_prices(coins, "usd", 60)
 
     # Truncate data if needed
     if trunc is not None:
@@ -385,7 +380,7 @@ def autosim(  # noqa: C901
         A_base=pldata["A_base"],
         fee_base=pldata["fee_base"],
         tokens=pldata["tokens"],
-        feemul=feemul,
+        fee_mul=fee_mul,
         vol_mult=vol_mult,
         r=pldata["r"],
         plot=False,
@@ -422,7 +417,7 @@ def autosim(  # noqa: C901
         if any(pzero > 0.3):
             ps += "CAUTION: Limited price data used in simulation"
 
-    filename = "pools/" + poolname + "/pooltext.txt"
+    filename = "results/" + poolname + "/pooltext.txt"
     with open(filename, "w") as txt_file:
         txt_file.write(txt + "\n")
         txt_file.write(ps)
