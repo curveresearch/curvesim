@@ -1,4 +1,4 @@
-from hypothesis import HealthCheck, given, settings
+from hypothesis import HealthCheck, assume, given, settings
 from hypothesis import strategies as st
 
 from curvesim.pool import Pool
@@ -174,3 +174,18 @@ def test_add_liquidity(vyper_3pool, x0, x1, x2):
     expected_balances = [vyper_3pool.balances(i) for i in range(len(_balances))]
     new_balances = python_3pool.x
     assert new_balances == expected_balances
+
+
+@given(positive_balance, st.integers(min_value=0, max_value=2), st.integers(min_value=0, max_value=2))
+@settings(suppress_health_check=[HealthCheck.function_scoped_fixture], max_examples=10)
+def test_exchange(vyper_3pool, dx, i, j):
+    assume(i != j)
+
+    # convert to real units
+    dx = dx * 10**18 // vyper_3pool.rates(i)
+    python_3pool = initialize_pool(vyper_3pool)
+
+    expected_dy = vyper_3pool.exchange(i, j, dx, 0)
+    dy, _ = python_3pool.exchange(i, j, dx)
+
+    assert dy == expected_dy

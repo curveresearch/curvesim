@@ -320,7 +320,7 @@ def get_y(i: uint256, j: uint256, x: uint256, xp_: uint256[N_COINS]) -> uint256:
 
 @external
 @nonreentrant('lock')
-def exchange(i: uint256, j: uint256, dx: uint256, min_dy: uint256):
+def exchange(i: uint256, j: uint256, dx: uint256, min_dy: uint256) -> uint256:
     rates: uint256[N_COINS] = RATES
 
     old_balances: uint256[N_COINS] = self.balances
@@ -390,6 +390,8 @@ def exchange(i: uint256, j: uint256, dx: uint256, min_dy: uint256):
     #     assert convert(_response, bool)  # dev: failed transfer
 
     log TokenExchange(msg.sender, i, dx, j, dy)
+
+    return dy
 
 @view
 @internal
