@@ -155,6 +155,7 @@ def test_calc_token_amount(vyper_3pool, x0, x1, x2):
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture], max_examples=10)
 def test_add_liquidity(vyper_3pool, x0, x1, x2):
     python_3pool = initialize_pool(vyper_3pool)
+    old_balances = python_3pool.x[:]
 
     _balances = [x0, x1, x2]
     rates = [vyper_3pool.rates(i) for i in range(len(_balances))]
@@ -166,3 +167,7 @@ def test_add_liquidity(vyper_3pool, x0, x1, x2):
 
     lp_amount = python_3pool.add_liquidity(amounts)
     assert lp_amount == expected_lp_amount
+
+    expected_balances = [b + a for b, a in zip(old_balances, amounts)]
+    new_balances = python_3pool.x[:]
+    assert new_balances == expected_balances
