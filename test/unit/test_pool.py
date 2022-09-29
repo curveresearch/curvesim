@@ -160,6 +160,10 @@ def test_add_liquidity(vyper_3pool, x0, x1, x2):
     rates = [vyper_3pool.rates(i) for i in range(len(_balances))]
     amounts = [b * 10**18 // r for b, r in zip(_balances, rates)]
 
+    old_vyper_balances = [vyper_3pool.balances(i) for i in range(len(_balances))]
+    balances = python_3pool.x
+    assert balances == old_vyper_balances
+
     lp_total_supply = vyper_3pool.totalSupply()
     vyper_3pool.add_liquidity(amounts, 0)
     expected_lp_amount = vyper_3pool.totalSupply() - lp_total_supply
@@ -168,5 +172,5 @@ def test_add_liquidity(vyper_3pool, x0, x1, x2):
     assert lp_amount == expected_lp_amount
 
     expected_balances = [vyper_3pool.balances(i) for i in range(len(_balances))]
-    new_balances = python_3pool.x[:]
+    new_balances = python_3pool.x
     assert new_balances == expected_balances
