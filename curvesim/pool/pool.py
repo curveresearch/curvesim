@@ -397,6 +397,10 @@ class Pool:
         mint_amount = self.calc_token_amount(amounts, use_fee=True)
         self.tokens += mint_amount
 
+        old_balances = self.x
+        new_balances = [bal + amt for bal, amt in zip(old_balances, amounts)]
+        self.x = new_balances
+
         return mint_amount
 
     def remove_liquidity_one_coin(self, token_amount, i):
