@@ -394,8 +394,6 @@ class Pool:
         return dy - dy * fee // 10**10
 
     def add_liquidity(self, amounts):
-        _fee = self.fee * self.n // (4 * (self.n - 1))
-
         old_balances = self.x
         new_balances = self.x[:]
         D0 = self.D()
@@ -406,13 +404,16 @@ class Pool:
         D1 = self.D()
         self.x = old_balances
 
-        fees = [0] * self.n
         mint_balances = new_balances[:]
+
+        _fee = self.fee * self.n // (4 * (self.n - 1))
+
+        fees = [0] * self.n
         for i in range(self.n):
             ideal_balance = D1 * old_balances[i] // D0
             difference = abs(ideal_balance - new_balances[i])
             fees[i] = _fee * difference // 10**10
-            mint_balances[i] -= fees[i]  # used to calculate mint amount
+            mint_balances[i] -= fees[i]
 
         self.x = mint_balances
         D2 = self.D()

@@ -4,6 +4,7 @@ import boa
 import pytest
 
 _base_dir = os.path.dirname(__file__)
+_erc20_filepath = os.path.join(_base_dir, "erc20_mock.vy")
 
 
 @pytest.fixture(scope="session")
@@ -29,17 +30,13 @@ def mainnet_3pool_state():
 
 
 @pytest.fixture(scope="function")
-def vyper_3pool(mainnet_3pool_state):
+def vyper_3pool(mainnet_3pool_state, dai_mock, usdc_mock, tether_mock):
     """Initialize vyper fixture using mainnet values."""
-    erc20_filepath = os.path.join(_base_dir, "erc20_mock.vy")
     lp_total_supply = mainnet_3pool_state["lp_tokens"]
-    lp_token = boa.load(erc20_filepath, "Mock 3CRV", "MOCK-3CRV", 18, lp_total_supply)
+    lp_token = boa.load(_erc20_filepath, "Mock 3CRV", "MOCK-3CRV", 18, lp_total_supply)
 
     pool_filepath = os.path.join(_base_dir, "basepool.vy")
     owner = "0xCAFECAFECAFECAFECAFECAFECAFECAFECAFECAFE"
-    dai_mock = boa.load(erc20_filepath, "Mock DAI", "MOCK-DAI", 18, 10**26).address
-    usdc_mock = boa.load(erc20_filepath, "Mock USDC", "MOCK-USDC", 6, 10**26).address
-    tether_mock = boa.load(erc20_filepath, "Mock Tether", "MOCK-UST", 6, 10**26).address
     coins = [dai_mock, usdc_mock, tether_mock]
     A = mainnet_3pool_state["A"]
     fee = 4 * 10**6
@@ -50,3 +47,21 @@ def vyper_3pool(mainnet_3pool_state):
     pool.eval(f"self.balances={balances}")
 
     return pool
+
+
+@pytest.fixture(scope="session")
+def dai_mock():
+    dai_mock = boa.load(_erc20_filepath, "Mock DAI", "MOCK-DAI", 18, 10**26).address
+    return dai_mock
+
+
+@pytest.fixture(scope="session")
+def usdc_mock():
+    usdc_mock = boa.load(_erc20_filepath, "Mock USDC", "MOCK-USDC", 6, 10**14).address
+    return usdc_mock
+
+
+@pytest.fixture(scope="session")
+def tether_mock():
+    tether_mock = boa.load(_erc20_filepath, "Mock Tether", "MOCK-UST", 6, 10**14).address
+    return tether_mock
