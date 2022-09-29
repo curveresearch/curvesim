@@ -14,7 +14,9 @@ class Pool:
     Python model of Curve pool math.
     """
 
-    def __init__(self, A, D, n, p=None, tokens=None, fee=4 * 10**6, fee_mul=None, r=None):
+    def __init__(
+        self, A, D, n, p=None, tokens=None, fee=4 * 10**6, feemul=None, admin_fee=5 * 10**9, r=None
+    ):
         """
         A: Amplification coefficient
         D: Total deposit size
@@ -22,7 +24,8 @@ class Pool:
         p: precision
         tokens: # of tokens; if meta-pool, this sets # of basepool tokens
         fee: fee with 10**10 precision (default = .004%)
-        fee_mul: fee multiplier for dynamic fee pools
+        feemul: fee multiplier for dynamic fee pools
+        admin_fee: percentage of `fee` with 10**10 precision (default = 50%)
         r: initial redemption price for RAI-like pools
         """
 
@@ -58,8 +61,9 @@ class Pool:
 
             self.ismeta = True
             self.n_total = n[0] + n[1] - 1
-            self.tokens = tokens[0]
-            self.fee_mul = fee_mul[0]
+            self.tokens = self.D()
+            self.feemul = feemul
+            self.admin_fee = admin_fee
 
         else:
             self.A = A  # actually A * n ** (n - 1) because it's an invariant
@@ -80,7 +84,8 @@ class Pool:
                 self.tokens = self.D()
             else:
                 self.tokens = tokens
-            self.fee_mul = fee_mul
+            self.feemul = feemul
+            self.admin_fee = admin_fee
             self.ismeta = False
             self.r = False
             self.n_total = self.n
@@ -177,7 +182,7 @@ class Pool:
                 base_inputs = [0] * self.basepool.n
                 base_inputs[base_i] = dx
 
-                dx = self.basepool.calc_token_amount(base_inputs, use_fee=True)
+                dx, _ = self.basepool.calc_token_amount(base_inputs, use_fee=True)
                 # Convert pool token to proper value in units of D
                 x = dx * rates[self.max_coin] // 10**18
                 # Adding number of pool tokens
@@ -262,7 +267,7 @@ class Pool:
                 base_inputs = [0] * self.basepool.n
                 base_inputs[base_i] = dx
 
-                dx = self.basepool.calc_token_amount(base_inputs, use_fee=True)
+                dx, _ = self.basepool.calc_token_amount(base_inputs, use_fee=True)
                 # Need to convert pool token to "virtual" units using rates
                 x = dx * rates[self.max_coin] // 10**18
                 # Adding number of pool tokens
@@ -405,7 +410,8 @@ class Pool:
         self.tokens += mint_amount
 
         balances = self.x
-        admin_fees = [f // 2 for f in fees]  # assume admin fee is half fees
+        afee = self.admin_fee
+        admin_fees = [f * afee // 10**10 for f in fees]
         new_balances = [bal + amt - fee for bal, amt, fee in zip(balances, amounts, admin_fees)]
         self.x = new_balances
 
@@ -530,7 +536,7 @@ class Pool:
                     base_inputs = [0] * self.basepool.n
                     base_inputs[base_i] = dx
 
-                    dw = self.basepool.calc_token_amount(base_inputs, use_fee=True)
+                    dw, _ = self.basepool.calc_token_amount(base_inputs, use_fee=True)
                     # Convert lp token amount to virtual units
                     dw = dw * rates[self.max_coin] // 10**18
                     x = xp[self.max_coin] + dw
