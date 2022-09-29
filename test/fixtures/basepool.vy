@@ -203,9 +203,13 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
         in_amount: uint256 = amounts[i]
         if token_supply == 0:
             assert in_amount > 0  # dev: initial deposit requires all coins
+        # sim: comment-out the interaction with coins.
+        # Life is a lot easier for us if we don't bother traversing
+        # this code path with mocks and such.
+        # ----------------------------------------------------------
         # in_coin: address = self.coins[i]
 
-        # Take coins from the sender
+        # # Take coins from the sender
         # if in_amount > 0:
         #     if i == FEE_INDEX:
         #         in_amount = ERC20(in_coin).balanceOf(self)
