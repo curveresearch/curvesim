@@ -41,7 +41,7 @@ def vyper_3pool(mainnet_3pool_state):
     coins = [FAKE_ADDRESS] * 3
     A = mainnet_3pool_state["A"]
     fee = 4 * 10**6
-    admin_fee = fee // 2
+    admin_fee = 5 * 10**9
     pool = boa.load(pool_filepath, owner, coins, lp_token, A, fee, admin_fee)
 
     balances = mainnet_3pool_state["balances"]
