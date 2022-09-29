@@ -23,9 +23,6 @@ balances: public(uint256[N_COINS])
 fee: public(uint256)  # fee * 1e10
 admin_fee: public(uint256)  # admin_fee * 1e10
 
-kill_deadline: uint256
-KILL_DEADLINE_DT: constant(uint256) = 2 * 30 * 86400
-
 
 @external
 def __init__(
@@ -53,7 +50,6 @@ def __init__(
     self.fee = _fee
     self.admin_fee = _admin_fee
     self.owner = _owner
-    self.kill_deadline = block.timestamp + KILL_DEADLINE_DT
     self.token = CurveToken(_pool_token)
 
 
