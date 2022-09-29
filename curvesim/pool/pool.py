@@ -409,11 +409,12 @@ class Pool:
         return dy - dy * fee // 10**10
 
     def add_liquidity(self, amounts):
-        mint_amount = self.calc_token_amount(amounts, use_fee=True)
+        mint_amount, fees = self.calc_token_amount(amounts, use_fee=True)
         self.tokens += mint_amount
 
-        old_balances = self.x
-        new_balances = [bal + amt for bal, amt in zip(old_balances, amounts)]
+        balances = self.x
+        admin_fees = [f // 2 for f in fees]  # assume admin fee is half fees
+        new_balances = [bal + amt - fee for bal, amt, fee in zip(balances, amounts, admin_fees)]
         self.x = new_balances
 
         return mint_amount
