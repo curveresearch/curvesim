@@ -9,7 +9,6 @@ VENV_PATH="./env"
 # run these hooks in this order
 hook_names=(
     'isort'
-    'whitespace'
     'flake8'
     'black'
 )
