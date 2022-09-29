@@ -54,7 +54,7 @@ positive_balance = st.integers(min_value=10**5 * D_UNIT, max_value=10**10 * D_UN
 
 
 @given(positive_balance, positive_balance, positive_balance)
-@settings(suppress_health_check=[HealthCheck.function_scoped_fixture], max_examples=10)
+@settings(suppress_health_check=[HealthCheck.function_scoped_fixture], max_examples=10, deadline=None)
 def test_get_D(vyper_3pool, x0, x1, x2):
     """Test D calculation against vyper implementation."""
 
@@ -149,3 +149,17 @@ def test_calc_token_amount(vyper_3pool, x0, x1, x2):
     lp_amount = python_3pool.calc_token_amount(balances)
 
     assert lp_amount == expected_lp_amount
+
+
+@given(positive_balance, positive_balance, positive_balance)
+@settings(suppress_health_check=[HealthCheck.function_scoped_fixture], max_examples=10)
+def test_add_liquidity(vyper_3pool, x0, x1, x2):
+    python_3pool = initialize_pool(vyper_3pool)
+
+    _balances = [x0, x1, x2]
+    rates = [vyper_3pool.rates(i) for i in range(len(_balances))]
+    amounts = [b * 10**18 // r for b, r in zip(_balances, rates)]
+
+    vyper_3pool.add_liquidity(amounts, 0)
+
+    assert False

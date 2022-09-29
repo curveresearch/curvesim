@@ -49,6 +49,21 @@ def transferFrom(_from : address, _to : address, _value : uint256) -> bool:
     return True
 
 
+@external
+def mint(_to: address, _value: uint256) -> bool:
+    """
+    @dev Mint an amount of the token and assigns it to an account.
+         This encapsulates the modification of balances such that the
+         proper events are emitted.
+    @param _to The account that will receive the created tokens.
+    @param _value The amount that will be created.
+    """
+    assert _to != empty(address)
+    self.totalSupply += _value
+    self.balanceOf[_to] += _value
+    return True
+
+
 # manually write getters for now; cf. vyper#2903
 @external
 def name() -> String[33]:
