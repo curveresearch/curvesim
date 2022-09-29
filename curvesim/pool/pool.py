@@ -89,6 +89,11 @@ class Pool:
         return [x * p // 10**18 for x, p in zip(self.x, self.p)]
 
     def D(self, xp=None):
+        A = self.A
+        xp = xp or self.xp()
+        return self.get_D(xp, A)
+
+    def get_D(self, xp, A):
         """
         D invariant calculation in non-overflowing integer operations
         iteratively
@@ -99,8 +104,6 @@ class Pool:
         D[j+1] = (A * n**n * sum(x_i) - D[j]**(n+1) / (n**n prod(x_i))) / (A * n**n - 1)
         """
         Dprev = 0
-        if xp is None:
-            xp = self.xp()
         S = sum(xp)
         D = S
         Ann = self.A * self.n
@@ -115,6 +118,10 @@ class Pool:
 
         D = int(D)
         return D
+
+    def get_D_mem(self, balances, A):
+        xp = [x * p // 10**18 for x, p in zip(balances, self.p)]
+        return self.get_D(xp, A)
 
     def get_y(self, i, j, x, xp):
         """
@@ -416,15 +423,14 @@ class Pool:
 
         By default, it's assumed you want the contract behavior.
         """
+        A = self.A
         old_balances = self.x
-        new_balances = self.x[:]
-        D0 = self.D()
+        D0 = self.get_D_mem(old_balances, A)
 
+        new_balances = self.x[:]
         for i in range(self.n):
             new_balances[i] += amounts[i]
-        self.x = new_balances
-        D1 = self.D()
-        self.x = old_balances
+        D1 = self.get_D_mem(new_balances, A)
 
         mint_balances = new_balances[:]
 
@@ -438,13 +444,13 @@ class Pool:
                 fees[i] = _fee * difference // 10**10
                 mint_balances[i] -= fees[i]
 
-        self.x = mint_balances
-        D2 = self.D()
-        self.x = old_balances
+        D2 = self.get_D_mem(mint_balances, A)
 
         mint_amount = self.tokens * (D2 - D0) // D0
-
-        return mint_amount
+        if use_fee:
+            return mint_amount, fees
+        else:
+            return mint_amount
 
     def get_virtual_price(self):
         return self.D() * 10**18 // self.tokens
