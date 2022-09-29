@@ -8,9 +8,9 @@ interface CurveToken:
 # Events
 event TokenExchange:
     buyer: indexed(address)
-    sold_id: int128
+    sold_id: uint256
     tokens_sold: uint256
-    bought_id: int128
+    bought_id: uint256
     tokens_bought: uint256
 
 event AddLiquidity:
@@ -316,6 +316,80 @@ def get_y(i: uint256, j: uint256, x: uint256, xp_: uint256[N_COINS]) -> uint256:
             if y_prev - y <= 1:
                 break
     return y
+
+
+@external
+@nonreentrant('lock')
+def exchange(i: uint256, j: uint256, dx: uint256, min_dy: uint256):
+    rates: uint256[N_COINS] = RATES
+
+    old_balances: uint256[N_COINS] = self.balances
+    xp: uint256[N_COINS] = self._xp_mem(old_balances)
+
+    # Handling an unexpected charge of a fee on transfer (USDT, PAXG)
+    dx_w_fee: uint256 = dx
+    # sim: comment-out the interaction with coins.
+    # Life is a lot easier for us if we don't bother traversing
+    # this code path with mocks and such.
+    # ----------------------------------------------------------
+    # input_coin: address = self.coins[i]
+
+    # if i == FEE_INDEX:
+    #     dx_w_fee = ERC20(input_coin).balanceOf(self)
+
+    # # "safeTransferFrom" which works for ERC20s which return bool or not
+    # _response: Bytes[32] = raw_call(
+    #     input_coin,
+    #     concat(
+    #         method_id("transferFrom(address,address,uint256)"),
+    #         convert(msg.sender, bytes32),
+    #         convert(self, bytes32),
+    #         convert(dx, bytes32),
+    #     ),
+    #     max_outsize=32,
+    # )  # dev: failed transfer
+    # if len(_response) > 0:
+    #     assert convert(_response, bool)  # dev: failed transfer
+
+    # if i == FEE_INDEX:
+    #     dx_w_fee = ERC20(input_coin).balanceOf(self) - dx_w_fee
+
+    x: uint256 = xp[i] + dx_w_fee * rates[i] / PRECISION
+    y: uint256 = self.get_y(i, j, x, xp)
+
+    dy: uint256 = xp[j] - y - 1  # -1 just in case there were some rounding errors
+    dy_fee: uint256 = dy * self.fee / FEE_DENOMINATOR
+
+    # Convert all to real units
+    dy = (dy - dy_fee) * PRECISION / rates[j]
+    assert dy >= min_dy, "Exchange resulted in fewer coins than expected"
+
+    dy_admin_fee: uint256 = dy_fee * self.admin_fee / FEE_DENOMINATOR
+    dy_admin_fee = dy_admin_fee * PRECISION / rates[j]
+
+    # Change balances exactly in same way as we change actual ERC20 coin amounts
+    self.balances[i] = old_balances[i] + dx_w_fee
+    # When rounding errors happen, we undercharge admin fee in favor of LP
+    self.balances[j] = old_balances[j] - dy - dy_admin_fee
+
+    # sim: comment-out the interaction with coins.
+    # Life is a lot easier for us if we don't bother traversing
+    # this code path with mocks and such.
+    # ----------------------------------------------------------
+    # # "safeTransfer" which works for ERC20s which return bool or not
+    # _response = raw_call(
+    #     self.coins[j],
+    #     concat(
+    #         method_id("transfer(address,uint256)"),
+    #         convert(msg.sender, bytes32),
+    #         convert(dy, bytes32),
+    #     ),
+    #     max_outsize=32,
+    # )  # dev: failed transfer
+    # if len(_response) > 0:
+    #     assert convert(_response, bool)  # dev: failed transfer
+
+    log TokenExchange(msg.sender, i, dx, j, dy)
 
 @view
 @internal
