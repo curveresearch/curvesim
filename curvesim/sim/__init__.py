@@ -82,13 +82,17 @@ def sim(A, D, n, fee, prices, volumes, tokens=None, fee_mul=None, vol_mult=1, r=
             rates = pl.p[:]
             rates[pl.max_coin] = pl.basepool.get_virtual_price()
             if r0 is not None:
-                rates[pl.max_coin - 1] = r0  # value pool with redemption price held constant
+                rates[
+                    pl.max_coin - 1
+                ] = r0  # value pool with redemption price held constant
             xp = [x * p // 10**18 for x, p in zip(pl.x, rates)]
             pool_value.append(pl.D(xp=xp))
 
             # Balance
             if r0 is not None:
-                rates[pl.max_coin - 1] = int(r.price[t])  # compute balance with current redemption price
+                rates[pl.max_coin - 1] = int(
+                    r.price[t]
+                )  # compute balance with current redemption price
                 xp = [x * p // 10**18 for x, p in zip(pl.x, rates)]
             xp = np.array(xp)
             bal.append(1 - sum(abs(xp / sum(xp) - 1 / n[0])) / (2 * (n[0] - 1) / n[0]))
@@ -176,12 +180,20 @@ def psim(
             pl, err, bal, pool_value, depth, volume, xs, ps = zip(
                 *clust.starmap(
                     simmapfunc,
-                    [(A, D, n, fee, prices, volumes) for A in A_list for fee in fee_list],
+                    [
+                        (A, D, n, fee, prices, volumes)
+                        for A in A_list
+                        for fee in fee_list
+                    ],
                 )
             )
     else:
-        params_list = zip(*[(A, D, n, fee, prices, volumes) for A in A_list for fee in fee_list])
-        pl, err, bal, pool_value, depth, volume, xs, ps = zip(*map(simmapfunc, *params_list))
+        params_list = zip(
+            *[(A, D, n, fee, prices, volumes) for A in A_list for fee in fee_list]
+        )
+        pl, err, bal, pool_value, depth, volume, xs, ps = zip(
+            *map(simmapfunc, *params_list)
+        )
 
     # Output as DataFrames
     p_list = pd.MultiIndex.from_tuples(p_list, names=["A", "fee"])
@@ -325,17 +337,22 @@ def autosim(  # noqa: C901
                     n[1]
                 )  # trades including meta-pool coin
                 vol_mult = np.append(
-                    vol_mult, histvolume[1] / volumes.sum()[n[1] :].sum().repeat(n_base_pairs)
+                    vol_mult,
+                    histvolume[1] / volumes.sum()[n[1] :].sum().repeat(n_base_pairs),
                 )  # basepool trades
             elif vol_mode == 2:
                 vol_mult = histvolume[0].repeat(n[1]) / n[1] / volumes.sum()[0 : n[1]]
                 vol_mult = np.append(
-                    vol_mult, histvolume[1].repeat(n_base_pairs) / n_base_pairs / volumes.sum()[n[1] :]
+                    vol_mult,
+                    histvolume[1].repeat(n_base_pairs)
+                    / n_base_pairs
+                    / volumes.sum()[n[1] :],
                 )
             elif vol_mode == 3:
                 vol_mult = histvolume[0].repeat(n[1]) / n[1] / volumes.sum()[0 : n[1]]
                 vol_mult = np.append(
-                    vol_mult, histvolume[1] / volumes.sum()[n[1] :].sum().repeat(n_base_pairs)
+                    vol_mult,
+                    histvolume[1] / volumes.sum()[n[1] :].sum().repeat(n_base_pairs),
                 )
 
         else:
@@ -345,7 +362,9 @@ def autosim(  # noqa: C901
                 sumvol = volumes.sum()
                 vol_mult = histvolume.repeat(len(sumvol)) / len(sumvol) / sumvol
             if vol_mode == 3:
-                print("Vol_mode=3 only available for meta-pools. Reverting to vol_mode=1")
+                print(
+                    "Vol_mode=3 only available for meta-pools. Reverting to vol_mode=1"
+                )
                 vol_mult = histvolume / volumes.sum().sum()
     print("Volume multipliers:")
     print(vol_mult)
@@ -412,7 +431,14 @@ def autosim(  # noqa: C901
     else:
         ps = "Data Availability:\n"
         for i in range(len(pzero)):
-            ps += combos[i][0] + "/" + combos[i][1] + ": " + str(round((1 - pzero[i]) * 1000) / 10) + "%\n"
+            ps += (
+                combos[i][0]
+                + "/"
+                + combos[i][1]
+                + ": "
+                + str(round((1 - pzero[i]) * 1000) / 10)
+                + "%\n"
+            )
 
         if any(pzero > 0.3):
             ps += "CAUTION: Limited price data used in simulation"

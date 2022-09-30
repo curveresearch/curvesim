@@ -7,7 +7,12 @@ import curvesim
 
 if __name__ == "__main__":  # noqa: C901
     data_dir = os.path.join("test", "data")
-    pool_names = [("3pool", "3crv"), ("aave", "a3CRV"), ("frax", "FRAX3CRV-f"), ("mim", "MIM-3LP3CRV-f ")]
+    pool_names = [
+        ("3pool", "3crv"),
+        ("aave", "a3CRV"),
+        ("frax", "FRAX3CRV-f"),
+        ("mim", "MIM-3LP3CRV-f "),
+    ]
 
     abs_tolerances = {
         "ar": 1.5e-4,
@@ -56,13 +61,20 @@ if __name__ == "__main__":  # noqa: C901
                 for i in df1:
                     if len(df1[i]) != len(df2[i]):
                         raise AssertionError(f"Different row lengths for row: {i}")
-                    mismatch_indices = np.where(~np.isclose(df1[i], df2[i], atol=atol, rtol=rtol))[0]
+                    mismatch_indices = np.where(
+                        ~np.isclose(df1[i], df2[i], atol=atol, rtol=rtol)
+                    )[0]
                     if len(mismatch_indices) > 0:  # numpy arrays are funny
                         print(f"Mismatch in {key}, {i}")
                         for j in mismatch_indices:
                             array1 = np.array(df1[i])
                             array2 = np.array(df2[i])
-                            print("Diff:", abs(array1[j] - array2[j]), array1[j], array2[j])
+                            print(
+                                "Diff:",
+                                abs(array1[j] - array2[j]),
+                                array1[j],
+                                array2[j],
+                            )
                         raise AssertionError(f"Mismatch in {key}, {i}")
             else:
                 for i in df1:
@@ -72,10 +84,19 @@ if __name__ == "__main__":  # noqa: C901
                         array1 = np.array(array1, dtype=float)
                         array2 = np.array(array2, dtype=float)
                         if len(array1) != len(array2):
-                            raise AssertionError(f"Different array lengths for row: {i}")
-                        mismatch_indices = np.where(~np.isclose(array1, array2, atol=atol, rtol=rtol))[0]
+                            raise AssertionError(
+                                f"Different array lengths for row: {i}"
+                            )
+                        mismatch_indices = np.where(
+                            ~np.isclose(array1, array2, atol=atol, rtol=rtol)
+                        )[0]
                         if len(mismatch_indices) > 0:  # numpy arrays are funny
                             print(f"Mismatch in {key}, {i}")
                             for j in mismatch_indices:
-                                print("Diff:", abs(array1[j] - array2[j]), array1[j], array2[j])
+                                print(
+                                    "Diff:",
+                                    abs(array1[j] - array2[j]),
+                                    array1[j],
+                                    array2[j],
+                                )
                             raise AssertionError(f"Mismatch in {key}, {i}")

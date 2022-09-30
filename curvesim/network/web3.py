@@ -45,7 +45,10 @@ async def ABI(address):
 # Web3.py
 W3 = Web3(
     AsyncHTTPProvider(
-        ("https://eth-mainnet.g.alchemy.com/v2/%s" % "WLcYLj9I1w7wEOgKmzidN1z62sbFILUz"),
+        (
+            "https://eth-mainnet.g.alchemy.com/v2/%s"
+            % "WLcYLj9I1w7wEOgKmzidN1z62sbFILUz"
+        ),
         request_kwargs={"headers": {"Accept-Encoding": "gzip"}},
     ),
     modules={"eth": (AsyncEth,)},

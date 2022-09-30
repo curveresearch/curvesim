@@ -86,7 +86,8 @@ async def vwap_agg(coins, t_start, t_end):
     volumes = []
 
     data = await asyncio.gather(
-        get_agg(coins, t_start, t_end, exp=1), get_agg(coins[::-1], t_start, t_end, exp=1)
+        get_agg(coins, t_start, t_end, exp=1),
+        get_agg(coins[::-1], t_start, t_end, exp=1),
     )
 
     prices = [d["price"] for d in data]
@@ -211,7 +212,14 @@ def update(coins, quote, t_start, t_end, pairs=False):  # noqa: C901
 
 
 def pool_prices(  # noqa: C901
-    coins=[], quote=None, quotediv=False, t_start=None, t_end=None, resample=None, pairs=[], data_dir="data"
+    coins=[],
+    quote=None,
+    quotediv=False,
+    t_start=None,
+    t_end=None,
+    resample=None,
+    pairs=[],
+    data_dir="data",
 ):
     """
     Loads and formats price/volume data from CSVs.
@@ -260,7 +268,9 @@ def pool_prices(  # noqa: C901
 
     pzero = (prices == 0).mean()
 
-    prices = prices.replace(to_replace=0, method="ffill")  # replace price=0 with previous price
+    prices = prices.replace(
+        to_replace=0, method="ffill"
+    )  # replace price=0 with previous price
     prices = prices.replace(
         to_replace=0, method="bfill"
     )  # replace any price=0 at beginning with subsequent price
@@ -272,8 +282,12 @@ def pool_prices(  # noqa: C901
         volumes_tmp = []
 
         for pair in combos:
-            prices_tmp.append(prices.iloc[:, pair[0]] / prices.iloc[:, pair[1]])  # divide prices
-            volumes_tmp.append(volumes.iloc[:, pair[0]] + volumes.iloc[:, pair[1]])  # sum volumes
+            prices_tmp.append(
+                prices.iloc[:, pair[0]] / prices.iloc[:, pair[1]]
+            )  # divide prices
+            volumes_tmp.append(
+                volumes.iloc[:, pair[0]] + volumes.iloc[:, pair[1]]
+            )  # sum volumes
 
         prices = pd.concat(prices_tmp, axis=1)
         volumes = pd.concat(volumes_tmp, axis=1)
@@ -303,7 +317,14 @@ def pool_prices(  # noqa: C901
 
 
 def local_pool_prices(  # noqa: C901
-    coins=[], quote=None, quotediv=False, t_start=None, t_end=None, resample=None, pairs=[], data_dir="data"
+    coins=[],
+    quote=None,
+    quotediv=False,
+    t_start=None,
+    t_end=None,
+    resample=None,
+    pairs=[],
+    data_dir="data",
 ):
     """
     Loads and formats price/volume data from CSVs.
@@ -346,7 +367,9 @@ def local_pool_prices(  # noqa: C901
 
     pzero = (prices == 0).mean()
 
-    prices = prices.replace(to_replace=0, method="ffill")  # replace price=0 with previous price
+    prices = prices.replace(
+        to_replace=0, method="ffill"
+    )  # replace price=0 with previous price
     prices = prices.replace(
         to_replace=0, method="bfill"
     )  # replace any price=0 at beginning with subsequent price
@@ -358,8 +381,12 @@ def local_pool_prices(  # noqa: C901
         volumes_tmp = []
 
         for pair in combos:
-            prices_tmp.append(prices.iloc[:, pair[0]] / prices.iloc[:, pair[1]])  # divide prices
-            volumes_tmp.append(volumes.iloc[:, pair[0]] + volumes.iloc[:, pair[1]])  # sum volumes
+            prices_tmp.append(
+                prices.iloc[:, pair[0]] / prices.iloc[:, pair[1]]
+            )  # divide prices
+            volumes_tmp.append(
+                volumes.iloc[:, pair[0]] + volumes.iloc[:, pair[1]]
+            )  # sum volumes
 
         prices = pd.concat(prices_tmp, axis=1)
         volumes = pd.concat(volumes_tmp, axis=1)
