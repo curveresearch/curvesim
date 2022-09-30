@@ -66,6 +66,7 @@ class Pool:
             self.n_total = n[0] + n[1] - 1
             self.tokens = self.D()
             self.feemul = feemul
+            self.collected_admin_fees = [0] * n[0]
 
         else:
             self.A = A  # actually A * n ** (n - 1) because it's an invariant
@@ -91,6 +92,7 @@ class Pool:
             self.ismeta = False
             self.r = False
             self.n_total = self.n
+            self.collected_admin_fees = [0] * self.n
 
     def xp(self):
         return [x * p // 10**18 for x, p in zip(self.x, self.p)]
