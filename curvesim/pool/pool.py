@@ -295,21 +295,27 @@ class Pool:
 
     def exchange(self, i, j, dx):
         if not self.ismeta:
-            dx = dx * self.p[i] // 10**18
             xp = self.xp()
-            x = xp[i] + dx
+            x = xp[i] + dx * self.p[i] // 10**18
             y = self.get_y(i, j, x, xp)
             dy = xp[j] - y - 1
-            if self.feemul is None:  # if not dynamic fee pool
+
+            if self.feemul is None:
                 fee = dy * self.fee // 10**10
-            else:  # if dynamic fee pool
+            else:
                 fee = dy * self.dynamic_fee((xp[i] + x) // 2, (xp[j] + y) // 2) // 10**10
+
+            admin_fee = fee * self.admin_fee // 10**10
+
             # Convert all to real units
-            self.x[i] = x * 10**18 // self.p[i]
-            self.x[j] = (y + fee) * 10**18 // self.p[j]
-            dy = (dy - fee) * 10**18 // self.p[j]
+            rate = self.p[j]
+            dy = (dy - fee) * 10**18 // rate
+            fee = fee * 10**18 // rate
+            admin_fee = admin_fee * 10**18 // rate
             assert dy > 0
-            fee = fee * 10**18 // self.p[j]
+
+            self.x[i] += dx
+            self.x[j] -= dy + admin_fee
             return dy, fee
 
         # exchange_underlying
