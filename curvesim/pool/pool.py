@@ -35,9 +35,12 @@ class Pool:
             self.max_coin = self.n - 1
             if not isinstance(fee, list):
                 fee = [fee] * n[0]
+            if not isinstance(admin_fee, list):
+                admin_fee = [admin_fee] * n[0]
             self.fee = fee[0]
+            self.admin_fee = admin_fee[0]
 
-            self.basepool = Pool(A[1], D[1], n[1], fee=fee[1], fee_mul=fee_mul[1], tokens=tokens[1])
+            self.basepool = Pool(A[1], D[1], n[1], tokens=tokens, fee=fee[1], admin_fee=admin_fee[1])
 
             if p:
                 self.p = p
@@ -63,7 +66,6 @@ class Pool:
             self.n_total = n[0] + n[1] - 1
             self.tokens = self.D()
             self.feemul = feemul
-            self.admin_fee = admin_fee
 
         else:
             self.A = A  # actually A * n ** (n - 1) because it's an invariant
