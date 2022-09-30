@@ -181,11 +181,20 @@ def test_add_liquidity(vyper_3pool, x0, x1, x2):
 def test_exchange(vyper_3pool, dx, i, j):
     assume(i != j)
 
+    python_3pool = initialize_pool(vyper_3pool)
+
+    old_vyper_balances = [vyper_3pool.balances(i) for i in range(3)]
+    balances = python_3pool.x
+    assert balances == old_vyper_balances
+
     # convert to real units
     dx = dx * 10**18 // vyper_3pool.rates(i)
-    python_3pool = initialize_pool(vyper_3pool)
 
     expected_dy = vyper_3pool.exchange(i, j, dx, 0)
     dy, _ = python_3pool.exchange(i, j, dx)
 
     assert dy == expected_dy
+
+    expected_balances = [vyper_3pool.balances(i) for i in range(3)]
+    new_balances = python_3pool.x
+    assert new_balances == expected_balances
