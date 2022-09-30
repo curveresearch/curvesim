@@ -971,7 +971,12 @@ class Pool:
 
 # Error functions for optarb and optarbs
 def arberror(dx, pool, i, j, p):
-    dx = int(dx)
+    if pool.ismeta and i >= pool.max_coin:
+        base_i = i - pool.max_coin
+        rate = pool.basepool.p[base_i]
+    else:
+        rate = pool.p[i]
+    dx = int(dx) * 10**18 // rate
 
     x_old = pool.x[:]
     if pool.ismeta:
