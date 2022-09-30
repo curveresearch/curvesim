@@ -320,6 +320,7 @@ class Pool:
 
             self.x[i] += dx
             self.x[j] -= dy + admin_fee
+            self.collected_admin_fees[j] += admin_fee
             return dy, fee
 
         # exchange_underlying
@@ -428,6 +429,7 @@ class Pool:
         admin_fees = [f * afee // 10**10 for f in fees]
         new_balances = [bal + amt - fee for bal, amt, fee in zip(balances, amounts, admin_fees)]
         self.x = new_balances
+        self.collected_admin_fees = [t + a for t, a in zip(self.collected_admin_fees, admin_fees)]
 
         return mint_amount
 
