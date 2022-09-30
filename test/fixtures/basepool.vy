@@ -45,6 +45,7 @@ N_COINS: public(constant(uint256)) = 3
 FEE_DENOMINATOR: constant(uint256) = 10 ** 10
 LENDING_PRECISION: constant(uint256) = 10 ** 18
 PRECISION: constant(uint256) = 10 ** 18  # The precision to convert to
+PRECISION_MUL: constant(uint256[N_COINS]) = [1, 1000000000000, 1000000000000]
 RATES: constant(uint256[N_COINS]) = [1000000000000000000, 1000000000000000000000000000000, 1000000000000000000000000000000]
 FEE_INDEX: constant(uint256) = 2  # Which coin may potentially have fees (USDT)
 
@@ -457,6 +458,46 @@ def get_y_D(A_: uint256, i: uint256, xp: uint256[N_COINS], D: uint256) -> uint25
             if y_prev - y <= 1:
                 break
     return y
+
+
+@view
+@internal
+def _calc_withdraw_one_coin(_token_amount: uint256, i: uint256) -> (uint256, uint256):
+    # First, need to calculate
+    # * Get current D
+    # * Solve Eqn against y_i for D - _token_amount
+    amp: uint256 = self._A()
+    _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
+    precisions: uint256[N_COINS] = PRECISION_MUL
+    total_supply: uint256 = self.token.totalSupply()
+
+    xp: uint256[N_COINS] = self._xp()
+
+    D0: uint256 = self.get_D(xp, amp)
+    D1: uint256 = D0 - _token_amount * D0 / total_supply
+    xp_reduced: uint256[N_COINS] = xp
+
+    new_y: uint256 = self.get_y_D(amp, i, xp, D1)
+    dy_0: uint256 = (xp[i] - new_y) / precisions[i]  # w/o fees
+
+    for j in range(N_COINS):
+        dx_expected: uint256 = 0
+        if j == i:
+            dx_expected = xp[j] * D1 / D0 - new_y
+        else:
+            dx_expected = xp[j] - xp[j] * D1 / D0
+        xp_reduced[j] -= _fee * dx_expected / FEE_DENOMINATOR
+
+    dy: uint256 = xp_reduced[i] - self.get_y_D(amp, i, xp_reduced, D1)
+    dy = (dy - 1) / precisions[i]  # Withdraw less to account for rounding errors
+
+    return dy, dy_0 - dy
+
+
+@view
+@external
+def calc_withdraw_one_coin(_token_amount: uint256, i: uint256) -> uint256:
+    return self._calc_withdraw_one_coin(_token_amount, i)[0]
 
 
 @view
