@@ -10,7 +10,9 @@ def initialize_pool(vyper_pool):
     balances = [vyper_pool.balances(i) for i in range(n_coins)]
     p = [vyper_pool.rates(i) for i in range(n_coins)]
     lp_total_supply = vyper_pool.totalSupply()
-    pool = Pool(A, D=balances, n=n_coins, p=p, tokens=lp_total_supply)
+    fee = vyper_pool.fee()
+    admin_fee = vyper_pool.admin_fee()
+    pool = Pool(A, D=balances, n=n_coins, p=p, tokens=lp_total_supply, fee=fee, admin_fee=admin_fee)
     return pool
 
 
