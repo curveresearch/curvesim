@@ -15,7 +15,7 @@ class Pool:
     """
 
     def __init__(
-        self, A, D, n, p=None, tokens=None, fee=4 * 10**6, feemul=None, admin_fee=0 * 10**9, r=None
+        self, A, D, n, p=None, tokens=None, fee=4 * 10**6, fee_mul=None, admin_fee=0 * 10**9, r=None
     ):
         """
         A: Amplification coefficient
@@ -24,7 +24,7 @@ class Pool:
         p: precision
         tokens: # of tokens; if meta-pool, this sets # of basepool tokens
         fee: fee with 10**10 precision (default = .004%)
-        feemul: fee multiplier for dynamic fee pools
+        fee_mul: fee multiplier for dynamic fee pools
         admin_fee: percentage of `fee` with 10**10 precision (default = 50%)
         r: initial redemption price for RAI-like pools
         """
@@ -43,7 +43,9 @@ class Pool:
             self.fee = fee[0]
             self.admin_fee = admin_fee[0]
 
-            self.basepool = Pool(A[1], D[1], n[1], tokens=tokens, fee=fee[1], admin_fee=admin_fee[1])
+            self.basepool = Pool(
+                A[1], D[1], n[1], tokens=tokens[1], fee=fee[1], admin_fee=admin_fee[1], fee_mul=fee_mul[1]
+            )
 
             if p:
                 self.p = p
@@ -67,8 +69,8 @@ class Pool:
 
             self.ismeta = True
             self.n_total = n[0] + n[1] - 1
-            self.tokens = self.D()
-            self.feemul = feemul
+            self.tokens = tokens[0]
+            self.fee_mul = fee_mul[0]
             self.collected_admin_fees = [0] * n[0]
 
         else:
@@ -90,7 +92,7 @@ class Pool:
                 self.tokens = self.D()
             else:
                 self.tokens = tokens
-            self.feemul = feemul
+            self.fee_mul = fee_mul
             self.admin_fee = admin_fee
             self.ismeta = False
             self.r = False
@@ -307,7 +309,7 @@ class Pool:
             y = self.get_y(i, j, x, xp)
             dy = xp[j] - y - 1
 
-            if self.feemul is None:
+            if self.fee_mul is None:
                 fee = dy * self.fee // 10**10
             else:
                 fee = dy * self.dynamic_fee((xp[i] + x) // 2, (xp[j] + y) // 2) // 10**10
