@@ -213,3 +213,19 @@ def test_calc_withdraw_one_token(vyper_3pool, amount):
         expected_coin_amount = vyper_3pool.calc_withdraw_one_coin(amount, i)
         coin_amount = python_3pool.calc_withdraw_one_coin(amount, i)
         assert coin_amount == expected_coin_amount
+
+
+@given(positive_balance)
+@settings(suppress_health_check=[HealthCheck.function_scoped_fixture], max_examples=10)
+def test_remove_liquidity_one_coin(vyper_3pool, amount):
+    """Test `remove_liquidity_one_coin` against vyper implementation."""
+    assume(amount < vyper_3pool.totalSupply())
+
+    python_3pool = initialize_pool(vyper_3pool)
+
+    for i in range(3):
+        coin_balance = vyper_3pool.balances(i)
+        vyper_3pool.remove_liquidity_one_coin(amount, i, 0)
+        expected_coin_amount = vyper_3pool.balances(i) - coin_balance
+        coin_amount = python_3pool.calc_withdraw_one_coin(amount, i)
+        assert coin_amount == expected_coin_amount
