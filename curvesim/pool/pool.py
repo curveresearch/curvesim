@@ -230,6 +230,7 @@ class Pool:
 
         x_1 = (x_1**2 + c) / (2*x_1 + b)
         """
+        D = mpz(D)
         xx = [xp[k] for k in range(self.n) if k != i]
         S = sum(xx)
         Ann = A * self.n
@@ -243,6 +244,7 @@ class Pool:
         while abs(y - y_prev) > 1:
             y_prev = y
             y = (y**2 + c) // (2 * y + b - D)
+        y = int(y)
         return y  # result is in units for D
 
     def get_dy(self, i, j, dx):
