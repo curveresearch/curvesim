@@ -320,7 +320,9 @@ class Pool:
 
     def remove_liquidity_one_coin(self, token_amount, i):
         dy, dy_fee = self.calc_withdraw_one_coin(token_amount, i, use_fee=True)
-        self.x[i] -= dy + dy_fee * self.admin_fee // 10**10
+        admin_fee = dy_fee * self.admin_fee // 10**10
+        self.x[i] -= dy + admin_fee
+        self.collected_admin_fees[i] += admin_fee
         self.tokens -= token_amount
         return dy, dy_fee
 
