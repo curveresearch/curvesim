@@ -260,16 +260,13 @@ class Pool:
 
             # Convert all to real units
             # Works for both pool coins and real coins
-            dy_nofee = dy * 10**18 // rates[meta_j]
             dy = (dy - dy_fee) * 10**18 // rates[meta_j]
 
             self.x[meta_j] -= dy
 
             # Withdraw from the base pool if needed
             if base_j >= 0:
-                dy = self.basepool.remove_liquidity_one_coin(dy, base_j)
-                dy_nofee = self.basepool.calc_withdraw_one_coin(dy_nofee, base_j, fee=False)
-                dy_fee = dy_nofee - dy
+                dy, dy_fee = self.basepool.remove_liquidity_one_coin(dy, base_j)
 
         else:
             # If both are from the base pool
@@ -277,7 +274,7 @@ class Pool:
 
         return dy, dy_fee
 
-    def calc_withdraw_one_coin(self, token_amount, i, fee=True):
+    def calc_withdraw_one_coin(self, token_amount, i, use_fee=True):
         # FIXME: need to update for metapool
         A = self.A
         xp = self.xp()
@@ -288,7 +285,7 @@ class Pool:
         dy_before_fee = (xp[i] - new_y) * 10**18 // self.p[i]
 
         xp_reduced = xp
-        if self.fee and fee:
+        if self.fee and use_fee:
             n_coins = self.n
             _fee = self.fee * n_coins // (4 * (n_coins - 1))
 
@@ -302,7 +299,7 @@ class Pool:
 
         dy = xp[i] - self.get_y_D(A, i, xp_reduced, D1)
         dy = (dy - 1) * 10**18 // self.p[i]
-        if fee:
+        if use_fee:
             dy_fee = dy_before_fee - dy
             return dy, dy_fee
         else:
@@ -322,10 +319,10 @@ class Pool:
         return mint_amount
 
     def remove_liquidity_one_coin(self, token_amount, i):
-        dy, dy_fee = self.calc_withdraw_one_coin(token_amount, i)
+        dy, dy_fee = self.calc_withdraw_one_coin(token_amount, i, use_fee=True)
         self.x[i] -= dy + dy_fee * self.admin_fee // 10**10
         self.tokens -= token_amount
-        return dy
+        return dy, dy_fee
 
     def calc_token_amount(self, amounts, use_fee=False):
         """
