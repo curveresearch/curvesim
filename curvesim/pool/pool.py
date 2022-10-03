@@ -412,6 +412,7 @@ class Pool:
         return token_amount
 
     def calc_withdraw_one_coin(self, token_amount, i, fee=True):
+        # FIXME: need to update for metapool
         xp = self.xp()
         if self.fee and fee:
             fee = self.fee - self.fee * xp[i] // sum(xp) + 5 * 10**5
@@ -451,6 +452,7 @@ class Pool:
 
         By default, it's assumed you want the contract behavior.
         """
+        # FIXME: need to handle rates for metapool
         A = self.A
         old_balances = self.x
         D0 = self.get_D_mem(old_balances, A)
