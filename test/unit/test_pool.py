@@ -5,6 +5,10 @@ from curvesim.pool import Pool
 
 
 def initialize_pool(vyper_pool):
+    """
+    Initialize python-based pool from the state variables of the
+    vyper-based implementation.
+    """
     A = vyper_pool.A()
     n_coins = vyper_pool.N_COINS()
     balances = [vyper_pool.balances(i) for i in range(n_coins)]
@@ -56,7 +60,7 @@ positive_balance = st.integers(min_value=10**5 * D_UNIT, max_value=10**10 * D_UN
 
 
 @given(positive_balance, positive_balance, positive_balance)
-@settings(suppress_health_check=[HealthCheck.function_scoped_fixture], max_examples=10, deadline=None)
+@settings(suppress_health_check=[HealthCheck.function_scoped_fixture], max_examples=10, deadline=400)
 def test_get_D(vyper_3pool, x0, x1, x2):
     """Test D calculation against vyper implementation."""
 
@@ -141,6 +145,7 @@ def test_get_y_D(vyper_3pool):
 @given(positive_balance, positive_balance, positive_balance)
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture], max_examples=10)
 def test_calc_token_amount(vyper_3pool, x0, x1, x2):
+    """Test `calc_token_amount` against vyper implementation."""
     python_3pool = initialize_pool(vyper_3pool)
 
     _balances = [x0, x1, x2]
@@ -156,6 +161,7 @@ def test_calc_token_amount(vyper_3pool, x0, x1, x2):
 @given(positive_balance, positive_balance, positive_balance)
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture], max_examples=10)
 def test_add_liquidity(vyper_3pool, x0, x1, x2):
+    """Test `add_liquidity` against vyper implementation."""
     python_3pool = initialize_pool(vyper_3pool)
 
     _balances = [x0, x1, x2]
@@ -181,6 +187,7 @@ def test_add_liquidity(vyper_3pool, x0, x1, x2):
 @given(positive_balance, st.integers(min_value=0, max_value=2), st.integers(min_value=0, max_value=2))
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture], max_examples=10)
 def test_exchange(vyper_3pool, dx, i, j):
+    """Test `exchange` against vyper implementation."""
     assume(i != j)
 
     python_3pool = initialize_pool(vyper_3pool)
@@ -205,6 +212,7 @@ def test_exchange(vyper_3pool, dx, i, j):
 @given(positive_balance)
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture], max_examples=10)
 def test_calc_withdraw_one_token(vyper_3pool, amount):
+    """Test `calc_withdraw_one_coin` against vyper implementation."""
     assume(amount < vyper_3pool.totalSupply())
 
     python_3pool = initialize_pool(vyper_3pool)
