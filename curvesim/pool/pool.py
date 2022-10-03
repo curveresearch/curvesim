@@ -414,17 +414,29 @@ class Pool:
     def calc_withdraw_one_coin(self, token_amount, i, fee=True):
         # FIXME: need to update for metapool
         xp = self.xp()
-        if self.fee and fee:
-            fee = self.fee - self.fee * xp[i] // sum(xp) + 5 * 10**5
-        else:
-            fee = 0
-
         D0 = self.D()
         D1 = D0 - token_amount * D0 // self.tokens
-        A = self.A
-        dy = xp[i] - self.get_y_D(A, i, xp, D1)
 
-        return dy - dy * fee // 10**10
+        A = self.A
+
+        xp_reduced = xp
+        if self.fee and fee:
+            n_coins = self.n
+            _fee = self.fee * n_coins // (4 * (n_coins - 1))
+
+            new_y = self.get_y_D(A, i, xp, D1)
+
+            for j in range(n_coins):
+                dx_expected = 0
+                if j == i:
+                    dx_expected = xp[j] * D1 // D0 - new_y
+                else:
+                    dx_expected = xp[j] - xp[j] * D1 // D0
+                xp_reduced[j] -= _fee * dx_expected // 10**10
+
+        dy = xp[i] - self.get_y_D(A, i, xp_reduced, D1)
+        dy = (dy - 1) * 10**18 // self.p[i]
+        return dy
 
     def add_liquidity(self, amounts):
         mint_amount, fees = self.calc_token_amount(amounts, use_fee=True)
