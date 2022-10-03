@@ -200,3 +200,17 @@ def test_exchange(vyper_3pool, dx, i, j):
     expected_balances = [vyper_3pool.balances(i) for i in range(3)]
     new_balances = python_3pool.x
     assert new_balances == expected_balances
+
+
+@given(positive_balance)
+@settings(suppress_health_check=[HealthCheck.function_scoped_fixture], max_examples=10)
+def test_calc_withdraw_one_token(vyper_3pool, amount):
+    assume(amount < vyper_3pool.totalSupply())
+
+    python_3pool = initialize_pool(vyper_3pool)
+
+    i = 0
+    expected_coin_amount = vyper_3pool.calc_withdraw_one_coin(amount, i)
+    coin_amount = python_3pool.calc_withdraw_one_coin(amount, i)
+
+    assert coin_amount == expected_coin_amount
