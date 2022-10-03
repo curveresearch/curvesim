@@ -36,8 +36,11 @@ jobs:
           black --version
           black . --check
 
-      - name: Test
+      - name: Unit tests
         run: |
-          # python hello_world.py
+          pytest
+
+      - name: End-to-end tests
+        run: |
           python -m test.ci
 
