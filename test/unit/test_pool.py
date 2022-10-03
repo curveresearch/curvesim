@@ -209,8 +209,7 @@ def test_calc_withdraw_one_token(vyper_3pool, amount):
 
     python_3pool = initialize_pool(vyper_3pool)
 
-    i = 0
-    expected_coin_amount = vyper_3pool.calc_withdraw_one_coin(amount, i)
-    coin_amount = python_3pool.calc_withdraw_one_coin(amount, i)
-
-    assert coin_amount == expected_coin_amount
+    for i in range(3):
+        expected_coin_amount = vyper_3pool.calc_withdraw_one_coin(amount, i)
+        coin_amount = python_3pool.calc_withdraw_one_coin(amount, i)
+        assert coin_amount == expected_coin_amount
