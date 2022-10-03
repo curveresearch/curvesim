@@ -33,8 +33,8 @@ def mainnet_3pool_state():
 def vyper_3pool(mainnet_3pool_state):
     """Initialize vyper fixture using mainnet values."""
     lp_total_supply = mainnet_3pool_state["lp_tokens"]
-    erc20_filepath = os.path.join(_base_dir, "erc20_mock.vy")
-    lp_token = boa.load(erc20_filepath, "Mock 3CRV", "MOCK-3CRV", 18, lp_total_supply)
+    mock_filepath = os.path.join(_base_dir, "lp_token_mock.vy")
+    lp_token = boa.load(mock_filepath, lp_total_supply)
 
     pool_filepath = os.path.join(_base_dir, "basepool.vy")
     owner = FAKE_ADDRESS
