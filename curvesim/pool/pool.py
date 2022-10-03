@@ -279,18 +279,18 @@ class Pool:
 
     def calc_withdraw_one_coin(self, token_amount, i, fee=True):
         # FIXME: need to update for metapool
+        A = self.A
         xp = self.xp()
         D0 = self.D()
         D1 = D0 - token_amount * D0 // self.tokens
 
-        A = self.A
+        new_y = self.get_y_D(A, i, xp, D1)
+        dy_before_fee = (xp[i] - new_y) * 10**18 // self.p[i]
 
         xp_reduced = xp
         if self.fee and fee:
             n_coins = self.n
             _fee = self.fee * n_coins // (4 * (n_coins - 1))
-
-            new_y = self.get_y_D(A, i, xp, D1)
 
             for j in range(n_coins):
                 dx_expected = 0
@@ -302,7 +302,11 @@ class Pool:
 
         dy = xp[i] - self.get_y_D(A, i, xp_reduced, D1)
         dy = (dy - 1) * 10**18 // self.p[i]
-        return dy
+        if fee:
+            dy_fee = dy_before_fee - dy
+            return dy, dy_fee
+        else:
+            return dy
 
     def add_liquidity(self, amounts):
         mint_amount, fees = self.calc_token_amount(amounts, use_fee=True)
@@ -318,8 +322,8 @@ class Pool:
         return mint_amount
 
     def remove_liquidity_one_coin(self, token_amount, i):
-        dy = self.calc_withdraw_one_coin(token_amount, i)
-        self.x[i] -= dy
+        dy, dy_fee = self.calc_withdraw_one_coin(token_amount, i)
+        self.x[i] -= dy + dy_fee * self.admin_fee // 10**10
         self.tokens -= token_amount
         return dy
 
