@@ -553,11 +553,20 @@ good-names=i,
            k,
            ex,
            Run,
-           _
+           _,
+           D,
+           A,
+           dx,
+           dy,
+           lo,
+           hi,
 
 # Good variable names regexes, separated by a comma. If names match any regex,
 # they will always be accepted
-good-names-rgxs=
+good-names-rgxs=D_*,
+                A_*,
+                x*,
+                y*,
 
 # Include a hint for the correct naming format with invalid-name.
 include-naming-hint=no

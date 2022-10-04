@@ -15,7 +15,16 @@ class Pool:
     """
 
     def __init__(
-        self, A, D, n, p=None, tokens=None, fee=4 * 10**6, fee_mul=None, r=None
+        self,
+        A,
+        D,
+        n,
+        p=None,
+        tokens=None,
+        fee=4 * 10**6,
+        fee_mul=None,
+        admin_fee=0 * 10**9,
+        r=None,
     ):
         """
         A: Amplification coefficient
@@ -25,8 +34,12 @@ class Pool:
         tokens: # of tokens; if meta-pool, this sets # of basepool tokens
         fee: fee with 10**10 precision (default = .004%)
         fee_mul: fee multiplier for dynamic fee pools
+        admin_fee: percentage of `fee` with 10**10 precision (default = 50%)
         r: initial redemption price for RAI-like pools
         """
+        # FIXME: set admin_fee default back to 5 * 10**9
+        # once sim code is updated.  Right now we use 0
+        # to pass the CI tests.
 
         if isinstance(n, list):  # is metapool
             self.A = A[0]  # actually A * n ** (n - 1) because it's an invariant
@@ -34,10 +47,19 @@ class Pool:
             self.max_coin = self.n - 1
             if not isinstance(fee, list):
                 fee = [fee] * n[0]
+            if not isinstance(admin_fee, list):
+                admin_fee = [admin_fee] * n[0]
             self.fee = fee[0]
+            self.admin_fee = admin_fee[0]
 
             self.basepool = Pool(
-                A[1], D[1], n[1], fee=fee[1], fee_mul=fee_mul[1], tokens=tokens[1]
+                A[1],
+                D[1],
+                n[1],
+                tokens=tokens[1],
+                fee=fee[1],
+                admin_fee=admin_fee[1],
+                fee_mul=fee_mul[1],
             )
 
             if p:
@@ -64,6 +86,7 @@ class Pool:
             self.n_total = n[0] + n[1] - 1
             self.tokens = tokens[0]
             self.fee_mul = fee_mul[0]
+            self.collected_admin_fees = [0] * n[0]
 
         else:
             self.A = A  # actually A * n ** (n - 1) because it's an invariant
@@ -85,14 +108,21 @@ class Pool:
             else:
                 self.tokens = tokens
             self.fee_mul = fee_mul
+            self.admin_fee = admin_fee
             self.ismeta = False
             self.r = False
             self.n_total = self.n
+            self.collected_admin_fees = [0] * self.n
 
     def xp(self):
         return [x * p // 10**18 for x, p in zip(self.x, self.p)]
 
     def D(self, xp=None):
+        A = self.A
+        xp = xp or self.xp()
+        return self.get_D(xp, A)
+
+    def get_D(self, xp, A):
         """
         D invariant calculation in non-overflowing integer operations
         iteratively
@@ -103,8 +133,6 @@ class Pool:
         D[j+1] = (A * n**n * sum(x_i) - D[j]**(n+1) / (n**n prod(x_i))) / (A * n**n - 1)
         """
         Dprev = 0
-        if xp is None:
-            xp = self.xp()
         S = sum(xp)
         D = S
         Ann = self.A * self.n
@@ -120,7 +148,11 @@ class Pool:
         D = int(D)
         return D
 
-    def y(self, i, j, x, xp=None):
+    def get_D_mem(self, balances, A):
+        xp = [x * p // 10**18 for x, p in zip(balances, self.p)]
+        return self.get_D(xp, A)
+
+    def get_y(self, i, j, x, xp):
         """
         Calculate x[j] if one makes x[i] = x
 
@@ -130,11 +162,7 @@ class Pool:
 
         x_1 = (x_1**2 + c) / (2*x_1 + b)
         """
-
-        if xp is None:
-            xx = self.xp()
-        else:
-            xx = xp[:]
+        xx = xp[:]
         D = self.D(xx)
         D = mpz(D)
         xx[i] = x  # x is quantity of underlying asset brought to 1e18 precision
@@ -151,10 +179,66 @@ class Pool:
             y_prev = y
             y = (y**2 + c) // (2 * y + b)
         y = int(y)
-        return y  # the result is in underlying units too
+        return y  # result is in units for D
 
-    def y_underlying(self, i, j, x):
-        # For meta-pool
+    def get_y_D(self, A, i, xp, D):
+        """
+        Calculate x[j] if one makes x[i] = x
+
+        Done by solving quadratic equation iteratively.
+        x_1**2 + x1 * (sum' - (A*n**n - 1) * D / (A * n**n)) = D ** (n+1)/(n ** (2 * n) * prod' * A)
+        x_1**2 + b*x_1 = c
+
+        x_1 = (x_1**2 + c) / (2*x_1 + b)
+        """
+        D = mpz(D)
+        xx = [xp[k] for k in range(self.n) if k != i]
+        S = sum(xx)
+        Ann = A * self.n
+        c = D
+        for y in xx:
+            c = c * D // (y * self.n)
+        c = c * D // (self.n * Ann)
+        b = S + D // Ann
+        y_prev = 0
+        y = D
+        while abs(y - y_prev) > 1:
+            y_prev = y
+            y = (y**2 + c) // (2 * y + b - D)
+        y = int(y)
+        return y  # result is in units for D
+
+    def exchange(self, i, j, dx):
+        if not self.ismeta:
+            xp = self.xp()
+            x = xp[i] + dx * self.p[i] // 10**18
+            y = self.get_y(i, j, x, xp)
+            dy = xp[j] - y - 1
+
+            if self.fee_mul is None:
+                fee = dy * self.fee // 10**10
+            else:
+                fee = (
+                    dy
+                    * self.dynamic_fee((xp[i] + x) // 2, (xp[j] + y) // 2)
+                    // 10**10
+                )
+
+            admin_fee = fee * self.admin_fee // 10**10
+
+            # Convert all to real units
+            rate = self.p[j]
+            dy = (dy - fee) * 10**18 // rate
+            fee = fee * 10**18 // rate
+            admin_fee = admin_fee * 10**18 // rate
+            assert dy > 0
+
+            self.x[i] += dx
+            self.x[j] -= dy + admin_fee
+            self.collected_admin_fees[j] += admin_fee
+            return dy, fee
+
+        # exchange_underlying
         rates = self.p[:]
         rates[self.max_coin] = self.basepool.get_virtual_price()
 
@@ -171,306 +255,138 @@ class Pool:
         if base_i < 0 or base_j < 0:  # if i or j not in basepool
             xp = [x * p // 10**18 for x, p in zip(self.x, rates)]
 
-            if base_i >= 0:
+            if base_i < 0:
+                x = xp[i] + dx * rates[i] // 10**18
+                self.x[i] += dx
+            else:
                 # i is from BasePool
                 # At first, get the amount of pool tokens
-                dx = x - self.basepool.xp()[base_i]
                 base_inputs = [0] * self.basepool.n
                 base_inputs[base_i] = dx
-
-                dx = self.basepool.calc_token_amount(base_inputs)
+                # Deposit and measure delta
+                dx = self.basepool.add_liquidity(
+                    base_inputs
+                )  # dx is # of minted basepool LP tokens
+                self.x[self.max_coin] += dx
                 # Need to convert pool token to "virtual" units using rates
                 x = dx * rates[self.max_coin] // 10**18
                 # Adding number of pool tokens
                 x += xp[self.max_coin]
 
-            y = self.y(meta_i, meta_j, x, xp)
+            y = self.get_y(meta_i, meta_j, x, xp)
 
+            # Either a real coin or token
+            dy = xp[meta_j] - y - 1
+            dy_fee = dy * self.fee // 10**10
+
+            # Convert all to real units
+            # Works for both pool coins and real coins
+            dy = (dy - dy_fee) * 10**18 // rates[meta_j]
+
+            self.x[meta_j] -= dy
+
+            # Withdraw from the base pool if needed
             if base_j >= 0:
-                dy = xp[meta_j] - y - 1
-                dy_fee = dy * self.fee // 10**10
-
-                # Convert all to real units
-                # Works for both pool coins and real coins
-                dy = (dy - dy_fee) * 10**18 // rates[meta_j]
-
-                D0 = self.basepool.D()
-                D1 = D0 - dy * D0 // self.basepool.tokens
-                y = self.y_D(base_j, D1)
+                dy, dy_fee = self.basepool.remove_liquidity_one_coin(dy, base_j)
 
         else:
             # If both are from the base pool
-            y = self.basepool.y(base_i, base_j, x)
+            dy, dy_fee = self.basepool.exchange(base_i, base_j, dx)
 
-        return y
+        return dy, dy_fee
 
-    def y_D(self, i, _D):
-        """
-        Calculate x[j] if one makes x[i] = x
-
-        Done by solving quadratic equation iteratively.
-        x_1**2 + x1 * (sum' - (A*n**n - 1) * D / (A * n**n)) = D ** (n+1)/(n ** (2 * n) * prod' * A)
-        x_1**2 + b*x_1 = c
-
-        x_1 = (x_1**2 + c) / (2*x_1 + b)
-        """
-        xx = self.xp()
-        xx = [xx[k] for k in range(self.n) if k != i]
-        S = sum(xx)
-        Ann = self.A * self.n
-        c = _D
-        for y in xx:
-            c = c * _D // (y * self.n)
-        c = c * _D // (self.n * Ann)
-        b = S + _D // Ann
-        y_prev = 0
-        y = _D
-        while abs(y - y_prev) > 1:
-            y_prev = y
-            y = (y**2 + c) // (2 * y + b - _D)
-        return y  # the result is in underlying units too
-
-    def dy(self, i, j, dx):
-        if self.ismeta:  # note that fees are already included
-            rates = self.p[:]
-            rates[self.max_coin] = self.basepool.get_virtual_price()
-
-            # Use base_i or base_j if they are >= 0
-            base_i = i - self.max_coin
-            base_j = j - self.max_coin
-            meta_i = self.max_coin
-            meta_j = self.max_coin
-            if base_i < 0:
-                meta_i = i
-            if base_j < 0:
-                meta_j = j
-
-            if base_i < 0 or base_j < 0:  # if i or j not in basepool
-                xp = [x * p // 10**18 for x, p in zip(self.x, rates)]
-
-                if base_i < 0:
-                    x = xp[i] + dx * rates[i] // 10**18
-                else:
-                    # i is from BasePool
-                    # At first, get the amount of pool tokens
-                    base_inputs = [0] * self.basepool.n
-                    base_inputs[base_i] = dx
-
-                    dx = self.basepool.calc_token_amount(base_inputs)
-                    # Need to convert pool token to "virtual" units using rates
-                    x = dx * rates[self.max_coin] // 10**18
-                    # Adding number of pool tokens
-                    x += xp[self.max_coin]
-
-                y = self.y(meta_i, meta_j, x, xp)
-
-                # Either a real coin or token
-                dy = xp[meta_j] - y - 1
-                dy_fee = dy * self.fee // 10**10
-
-                # Convert all to real units
-                # Works for both pool coins and real coins
-                dy = (dy - dy_fee) * 10**18 // rates[meta_j]
-
-                if base_j >= 0:
-                    dy = self.basepool.calc_withdraw_one_coin(dy, base_j)
-
-            else:
-                # If both are from the base pool
-                dy = self.basepool.dy(base_i, base_j, dx)
-                dy = dy - dy * self.fee // 10**10
-
-            return dy
-
-        else:  # if not meta-pool
-            # dx and dy are in underlying units
-            xp = self.xp()
-            return xp[j] - self.y(i, j, xp[i] + dx)
-
-    def exchange(self, i, j, dx):
-        if self.ismeta:  # exchange_underlying
-            rates = self.p[:]
-            rates[self.max_coin] = self.basepool.get_virtual_price()
-
-            # Use base_i or base_j if they are >= 0
-            base_i = i - self.max_coin
-            base_j = j - self.max_coin
-            meta_i = self.max_coin
-            meta_j = self.max_coin
-            if base_i < 0:
-                meta_i = i
-            if base_j < 0:
-                meta_j = j
-
-            if base_i < 0 or base_j < 0:  # if i or j not in basepool
-                xp = [x * p // 10**18 for x, p in zip(self.x, rates)]
-
-                if base_i < 0:
-                    x = xp[i] + dx * rates[i] // 10**18
-                    self.x[i] += dx
-                else:
-                    # i is from BasePool
-                    # At first, get the amount of pool tokens
-                    base_inputs = [0] * self.basepool.n
-                    base_inputs[base_i] = dx
-                    # Deposit and measure delta
-                    dx = self.basepool.add_liquidity(
-                        base_inputs
-                    )  # dx is # of minted basepool LP tokens
-                    self.x[self.max_coin] += dx
-                    # Need to convert pool token to "virtual" units using rates
-                    x = dx * rates[self.max_coin] // 10**18
-                    # Adding number of pool tokens
-                    x += xp[self.max_coin]
-
-                y = self.y(meta_i, meta_j, x, xp)
-
-                # Either a real coin or token
-                dy = xp[meta_j] - y - 1
-                dy_fee = dy * self.fee // 10**10
-
-                # Convert all to real units
-                # Works for both pool coins and real coins
-                dy_nofee = dy * 10**18 // rates[meta_j]
-                dy = (dy - dy_fee) * 10**18 // rates[meta_j]
-
-                self.x[meta_j] -= dy
-
-                # Withdraw from the base pool if needed
-                if base_j >= 0:
-                    dy = self.basepool.remove_liquidity_one_coin(dy, base_j)
-                    dy_nofee = self.basepool.calc_withdraw_one_coin(
-                        dy_nofee, base_j, fee=False
-                    )
-                    dy_fee = dy_nofee - dy
-
-            else:
-                # If both are from the base pool
-                dy, dy_fee = self.basepool.exchange(base_i, base_j, dx)
-
-            return dy, dy_fee
-
-        else:  # if not meta-pool, normal exchange
-            xp = self.xp()
-            x = xp[i] + dx
-            y = self.y(i, j, x)
-            dy = xp[j] - y
-            if self.fee_mul is None:  # if not dynamic fee pool
-                fee = dy * self.fee // 10**10
-            else:  # if dynamic fee pool
-                fee = (
-                    dy
-                    * self.dynamic_fee((xp[i] + x) // 2, (xp[j] + y) // 2)
-                    // 10**10
-                )
-            assert dy > 0
-            self.x[i] = x * 10**18 // self.p[i]
-            self.x[j] = (y + fee) * 10**18 // self.p[j]
-            return dy - fee, fee
-
-    def remove_liquidity_imbalance(self, amounts):
-        _fee = self.fee * self.n // (4 * (self.n - 1))
-
-        old_balances = self.x
-        new_balances = self.x[:]
-        D0 = self.D()
-        for i in range(self.n):
-            new_balances[i] -= amounts[i]
-        self.x = new_balances
-        D1 = self.D()
-        self.x = old_balances
-        fees = [0] * self.n
-        for i in range(self.n):
-            ideal_balance = D1 * old_balances[i] // D0
-            difference = abs(ideal_balance - new_balances[i])
-            fees[i] = _fee * difference // 10**10
-            new_balances[i] -= fees[i]
-        self.x = new_balances
-        D2 = self.D()
-        self.x = old_balances
-
-        token_amount = (D0 - D2) * self.tokens // D0
-
-        return token_amount
-
-    def calc_withdraw_one_coin(self, token_amount, i, fee=True):
+    def calc_withdraw_one_coin(self, token_amount, i, use_fee=True):
+        # FIXME: need to update for metapool
+        A = self.A
         xp = self.xp()
-        if self.fee and fee:
-            fee = self.fee - self.fee * xp[i] // sum(xp) + 5 * 10**5
-        else:
-            fee = 0
-
         D0 = self.D()
         D1 = D0 - token_amount * D0 // self.tokens
-        dy = xp[i] - self.y_D(i, D1)
 
-        return dy - dy * fee // 10**10
+        new_y = self.get_y_D(A, i, xp, D1)
+        dy_before_fee = (xp[i] - new_y) * 10**18 // self.p[i]
+
+        xp_reduced = xp
+        if self.fee and use_fee:
+            n_coins = self.n
+            _fee = self.fee * n_coins // (4 * (n_coins - 1))
+
+            for j in range(n_coins):
+                dx_expected = 0
+                if j == i:
+                    dx_expected = xp[j] * D1 // D0 - new_y
+                else:
+                    dx_expected = xp[j] - xp[j] * D1 // D0
+                xp_reduced[j] -= _fee * dx_expected // 10**10
+
+        dy = xp[i] - self.get_y_D(A, i, xp_reduced, D1)
+        dy = (dy - 1) * 10**18 // self.p[i]
+        if use_fee:
+            dy_fee = dy_before_fee - dy
+            return dy, dy_fee
+        else:
+            return dy
 
     def add_liquidity(self, amounts):
-        _fee = self.fee * self.n // (4 * (self.n - 1))
-
-        old_balances = self.x
-        new_balances = self.x[:]
-        D0 = self.D()
-
-        for i in range(self.n):
-            new_balances[i] += amounts[i]
-        self.x = new_balances
-        D1 = self.D()
-        self.x = old_balances
-
-        fees = [0] * self.n
-        mint_balances = new_balances[:]
-        for i in range(self.n):
-            ideal_balance = D1 * old_balances[i] // D0
-            difference = abs(ideal_balance - new_balances[i])
-            fees[i] = _fee * difference // 10**10
-            mint_balances[i] -= fees[i]  # used to calculate mint amount
-
-        self.x = mint_balances
-        D2 = self.D()
-        self.x = new_balances
-
-        mint_amount = self.tokens * (D2 - D0) // D0
+        mint_amount, fees = self.calc_token_amount(amounts, use_fee=True)
         self.tokens += mint_amount
+
+        balances = self.x
+        afee = self.admin_fee
+        admin_fees = [f * afee // 10**10 for f in fees]
+        new_balances = [
+            bal + amt - fee for bal, amt, fee in zip(balances, amounts, admin_fees)
+        ]
+        self.x = new_balances
+        self.collected_admin_fees = [
+            t + a for t, a in zip(self.collected_admin_fees, admin_fees)
+        ]
 
         return mint_amount
 
     def remove_liquidity_one_coin(self, token_amount, i):
-        dy = self.calc_withdraw_one_coin(token_amount, i)
-        self.x[i] -= dy
+        dy, dy_fee = self.calc_withdraw_one_coin(token_amount, i, use_fee=True)
+        admin_fee = dy_fee * self.admin_fee // 10**10
+        self.x[i] -= dy + admin_fee
+        self.collected_admin_fees[i] += admin_fee
         self.tokens -= token_amount
-        return dy
+        return dy, dy_fee
 
-    def calc_token_amount(self, amounts):
-        # Based on add_liquidity (more accurate than calc_token_amount in actual contract)
-        _fee = self.fee * self.n // (4 * (self.n - 1))
+    def calc_token_amount(self, amounts, use_fee=False):
+        """
+        Fee logic is based on add_liquidity, which makes this more accurate than
+        the `calc_token_amount` in the actual contract, which neglects fees.
 
+        By default, it's assumed you want the contract behavior.
+        """
+        # FIXME: need to handle rates for metapool
+        A = self.A
         old_balances = self.x
-        new_balances = self.x[:]
-        D0 = self.D()
+        D0 = self.get_D_mem(old_balances, A)
 
+        new_balances = self.x[:]
         for i in range(self.n):
             new_balances[i] += amounts[i]
-        self.x = new_balances
-        D1 = self.D()
-        self.x = old_balances
+        D1 = self.get_D_mem(new_balances, A)
 
-        fees = [0] * self.n
         mint_balances = new_balances[:]
-        for i in range(self.n):
-            ideal_balance = D1 * old_balances[i] // D0
-            difference = abs(ideal_balance - new_balances[i])
-            fees[i] = _fee * difference // 10**10
-            mint_balances[i] -= fees[i]  # used to calculate mint amount
 
-        self.x = mint_balances
-        D2 = self.D()
-        self.x = old_balances
+        if use_fee:
+            _fee = self.fee * self.n // (4 * (self.n - 1))
+
+            fees = [0] * self.n
+            for i in range(self.n):
+                ideal_balance = D1 * old_balances[i] // D0
+                difference = abs(ideal_balance - new_balances[i])
+                fees[i] = _fee * difference // 10**10
+                mint_balances[i] -= fees[i]
+
+        D2 = self.get_D_mem(mint_balances, A)
 
         mint_amount = self.tokens * (D2 - D0) // D0
-
-        return mint_amount
+        if use_fee:
+            return mint_amount, fees
+        else:
+            return mint_amount
 
     def get_virtual_price(self):
         return self.D() * 10**18 // self.tokens
@@ -551,14 +467,14 @@ class Pool:
                     base_inputs = [0] * self.basepool.n
                     base_inputs[base_i] = dx
 
-                    dw = self.basepool.calc_token_amount(base_inputs)
+                    dw, _ = self.basepool.calc_token_amount(base_inputs, use_fee=True)
                     # Convert lp token amount to virtual units
                     dw = dw * rates[self.max_coin] // 10**18
                     x = xp[self.max_coin] + dw
 
                     meta_i = self.max_coin
                     meta_j = j
-                    y = self.y(meta_i, meta_j, x, xp)
+                    y = self.get_y(meta_i, meta_j, x, xp)
 
                     dy = xp[meta_j] - y - 1
                     if use_fee:
@@ -640,25 +556,23 @@ class Pool:
                 rates = self.p[:]
                 rates[self.max_coin] = self.basepool.get_virtual_price()
                 xp = [x * p // 10**18 for x, p in zip(self.x, rates)]
-
-                hi = (
-                    self.y(meta_j, meta_i, int(xp[meta_j] * 0.01), xp)
-                    - self.xp()[meta_i]
-                )
+                hi = self.get_y(meta_j, meta_i, int(xp[meta_j] * 0.01), xp) - xp[meta_i]
             else:
+                base_xp = self.basepool.xp()
                 hi = (
-                    self.basepool.y(
-                        base_j, base_i, int(self.basepool.xp()[base_j] * 0.01)
+                    self.basepool.get_y(
+                        base_j, base_i, int(base_xp[base_j] * 0.01), base_xp
                     )
-                    - self.basepool.xp()[base_i]
+                    - base_xp[base_i]
                 )
 
             bounds = (10**12, hi)
 
         else:
+            xp = self.xp()
             bounds = (
                 10**12,
-                self.y(j, i, int(self.xp()[j] * 0.01)) - self.xp()[i],
+                self.get_y(j, i, int(xp[j] * 0.01), xp) - xp[i],
             )  # Lo: 1, Hi: enough coin[i] to leave 1% of coin[j]
 
         res = root_scalar(
@@ -802,10 +716,10 @@ class Pool:
 
         depth = []
         for i, j in combos:
-            trade, error, res = self.optarb(i, j, self.dydxfee(i, j) * (1 - size))
+            trade, _, _ = self.optarb(i, j, self.dydxfee(i, j) * (1 - size))
             depth.append(trade[2] / sumxp)
 
-            trade, error, res = self.optarb(j, i, self.dydxfee(j, i) * (1 - size))
+            trade, _, _ = self.optarb(j, i, self.dydxfee(j, i) * (1 - size))
             depth.append(trade[2] / sumxp)
 
         if ismeta:
@@ -942,22 +856,24 @@ class Pool:
             i = combo[0]
             j = combo[1]
 
+            xp = self.xp()
+
             if xs is None:
                 xs_i = np.linspace(
-                    int(self.D() * 0.0001), self.y(j, i, int(self.D() * 0.0001)), 1000
+                    int(self.D() * 0.0001),
+                    self.get_y(j, i, int(self.D() * 0.0001), xp),
+                    1000,
                 ).round()
             else:
                 xs_i = xs
 
             ys_i = []
             for x in xs_i:
-                ys_i.append(self.y(i, j, int(x)) / 10**18)
+                ys_i.append(self.get_y(i, j, int(x)) / 10**18, xp)
 
             xs_i = xs_i / 10**18
             xs_out.append(xs_i)
             ys_out.append(ys_i)
-
-            xp = self.xp()[:]
 
             if show:
                 if plt_n == 0:
@@ -982,7 +898,12 @@ class Pool:
 
 # Error functions for optarb and optarbs
 def arberror(dx, pool, i, j, p):
-    dx = int(dx)
+    if pool.ismeta and i >= pool.max_coin:
+        base_i = i - pool.max_coin
+        rate = pool.basepool.p[base_i]
+    else:
+        rate = pool.p[i]
+    dx = int(dx) * 10**18 // rate
 
     x_old = pool.x[:]
     if pool.ismeta:
