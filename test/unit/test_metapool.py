@@ -118,6 +118,32 @@ def test_get_virtual_price(vyper_metapool, vyper_3pool):
     assert virtual_price == expected_virtual_price
 
 
+@given(
+    positive_balance,
+    st.integers(min_value=0, max_value=1),
+    st.integers(min_value=0, max_value=1),
+)
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=10,
+    deadline=400,
+)
+def test_get_y(vyper_metapool, vyper_3pool, x, i, j):
+    """Test y calculation against vyper implementation"""
+    assume(i != j)
+
+    balances = [vyper_metapool.balances(i) for i in range(2)]
+    rates = [vyper_metapool.rates(i) for i in range(2)]
+    virtual_balances = [b * p // 10**18 for b, p in zip(balances, rates)]
+
+    # need `eval` since this function is internal
+    expected_y = vyper_metapool.eval(f"self.get_y({i}, {j}, {x}, {virtual_balances})")
+
+    python_metapool = initialize_metapool(vyper_metapool, vyper_3pool)
+    y = python_metapool.get_y(i, j, x, virtual_balances)
+    assert y == expected_y
+
+
 #
 # def test_get_y_D(vyper_3pool):
 #     """Test y calculation against vyper implementation"""
