@@ -15,7 +15,16 @@ class Pool:
     """
 
     def __init__(
-        self, A, D, n, p=None, tokens=None, fee=4 * 10**6, fee_mul=None, admin_fee=0 * 10**9, r=None
+        self,
+        A,
+        D,
+        n,
+        p=None,
+        tokens=None,
+        fee=4 * 10**6,
+        fee_mul=None,
+        admin_fee=0 * 10**9,
+        r=None,
     ):
         """
         A: Amplification coefficient
@@ -44,7 +53,13 @@ class Pool:
             self.admin_fee = admin_fee[0]
 
             self.basepool = Pool(
-                A[1], D[1], n[1], tokens=tokens[1], fee=fee[1], admin_fee=admin_fee[1], fee_mul=fee_mul[1]
+                A[1],
+                D[1],
+                n[1],
+                tokens=tokens[1],
+                fee=fee[1],
+                admin_fee=admin_fee[1],
+                fee_mul=fee_mul[1],
             )
 
             if p:
@@ -203,7 +218,11 @@ class Pool:
             if self.fee_mul is None:
                 fee = dy * self.fee // 10**10
             else:
-                fee = dy * self.dynamic_fee((xp[i] + x) // 2, (xp[j] + y) // 2) // 10**10
+                fee = (
+                    dy
+                    * self.dynamic_fee((xp[i] + x) // 2, (xp[j] + y) // 2)
+                    // 10**10
+                )
 
             admin_fee = fee * self.admin_fee // 10**10
 
@@ -245,7 +264,9 @@ class Pool:
                 base_inputs = [0] * self.basepool.n
                 base_inputs[base_i] = dx
                 # Deposit and measure delta
-                dx = self.basepool.add_liquidity(base_inputs)  # dx is # of minted basepool LP tokens
+                dx = self.basepool.add_liquidity(
+                    base_inputs
+                )  # dx is # of minted basepool LP tokens
                 self.x[self.max_coin] += dx
                 # Need to convert pool token to "virtual" units using rates
                 x = dx * rates[self.max_coin] // 10**18
@@ -312,9 +333,13 @@ class Pool:
         balances = self.x
         afee = self.admin_fee
         admin_fees = [f * afee // 10**10 for f in fees]
-        new_balances = [bal + amt - fee for bal, amt, fee in zip(balances, amounts, admin_fees)]
+        new_balances = [
+            bal + amt - fee for bal, amt, fee in zip(balances, amounts, admin_fees)
+        ]
         self.x = new_balances
-        self.collected_admin_fees = [t + a for t, a in zip(self.collected_admin_fees, admin_fees)]
+        self.collected_admin_fees = [
+            t + a for t, a in zip(self.collected_admin_fees, admin_fees)
+        ]
 
         return mint_amount
 
@@ -535,7 +560,9 @@ class Pool:
             else:
                 base_xp = self.basepool.xp()
                 hi = (
-                    self.basepool.get_y(base_j, base_i, int(base_xp[base_j] * 0.01), base_xp)
+                    self.basepool.get_y(
+                        base_j, base_i, int(base_xp[base_j] * 0.01), base_xp
+                    )
                     - base_xp[base_i]
                 )
 
@@ -833,7 +860,9 @@ class Pool:
 
             if xs is None:
                 xs_i = np.linspace(
-                    int(self.D() * 0.0001), self.get_y(j, i, int(self.D() * 0.0001), xp), 1000
+                    int(self.D() * 0.0001),
+                    self.get_y(j, i, int(self.D() * 0.0001), xp),
+                    1000,
                 ).round()
             else:
                 xs_i = xs
