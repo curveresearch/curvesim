@@ -179,6 +179,24 @@ def test_get_y(vyper_metapool, vyper_3pool, x, i, j):
 #     assert lp_amount == expected_lp_amount
 #
 #
+
+
+@given(positive_balance, positive_balance)
+@settings(suppress_health_check=[HealthCheck.function_scoped_fixture], max_examples=5)
+def test_calc_token_amount(vyper_metapool, vyper_3pool, x0, x1):
+    """Test `calc_token_amount` against vyper implementation."""
+    python_metapool = initialize_metapool(vyper_metapool, vyper_3pool)
+
+    _balances = [x0, x1]
+    rates = [vyper_metapool.rates(i) for i in range(len(_balances))]
+    balances = [b * 10**18 // r for b, r in zip(_balances, rates)]
+
+    expected_lp_amount = vyper_metapool.calc_token_amount(balances, True)
+    lp_amount = python_metapool.calc_token_amount(balances)
+
+    assert lp_amount == expected_lp_amount
+
+
 # @given(positive_balance, positive_balance, positive_balance)
 # @settings(suppress_health_check=[HealthCheck.function_scoped_fixture], max_examples=10)
 # def test_add_liquidity(vyper_3pool, x0, x1, x2):
