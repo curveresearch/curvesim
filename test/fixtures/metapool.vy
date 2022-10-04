@@ -13,14 +13,6 @@ interface Curve:
     def add_liquidity(amounts: uint256[BASE_N_COINS], min_mint_amount: uint256): nonpayable
     def remove_liquidity_one_coin(_token_amount: uint256, i: uint256, min_amount: uint256) -> uint256: nonpayable
 
-interface Factory:
-    def convert_metapool_fees() -> bool: nonpayable
-    def get_fee_receiver(_pool: address) -> address: view
-    def admin() -> address: view
-
-interface ERC1271:
-    def isValidSignature(_hash: bytes32, _signature: Bytes[65]) -> bytes32: view
-
 
 event Transfer:
     sender: indexed(address)
@@ -72,16 +64,6 @@ event RemoveLiquidityImbalance:
     invariant: uint256
     token_supply: uint256
 
-event RampA:
-    old_A: uint256
-    new_A: uint256
-    initial_time: uint256
-    future_time: uint256
-
-event StopRampA:
-    A: uint256
-    t: uint256
-
 
 # sim: we pass this into constructor to enable unit testing
 # BASE_POOL: constant(address) = 0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7
@@ -104,16 +86,10 @@ MAX_A: constant(uint256) = 10 ** 6
 MAX_A_CHANGE: constant(uint256) = 10
 MIN_RAMP_TIME: constant(uint256) = 86400
 
-EIP712_TYPEHASH: constant(bytes32) = keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)")
-PERMIT_TYPEHASH: constant(bytes32) = keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)")
-
-# keccak256("isValidSignature(bytes32,bytes)")[:4] << 224
-ERC1271_MAGIC_VAL: constant(bytes32) = 0x1626ba7e00000000000000000000000000000000000000000000000000000000
 VERSION: constant(String[8]) = "v5.0.0"
 
 
 basepool: address
-factory: address
 
 coins: public(address[N_COINS])
 balances: public(uint256[N_COINS])
@@ -130,12 +106,7 @@ name: public(String[64])
 symbol: public(String[32])
 
 balanceOf: public(HashMap[address, uint256])
-allowance: public(HashMap[address, HashMap[address, uint256]])
 totalSupply: public(uint256)
-
-DOMAIN_SEPARATOR: public(bytes32)
-nonces: public(HashMap[address, uint256])
-
 
 
 @external
@@ -168,7 +139,6 @@ def __init__(
     self.initial_A = A
     self.future_A = A
     self.fee = _fee
-    self.factory = msg.sender
 
     name: String[64] = concat("Curve.fi Factory USD Metapool: ", _name)
     self.name = name
@@ -176,10 +146,6 @@ def __init__(
 
     # for coin in BASE_COINS:
     #     ERC20(coin).approve(BASE_POOL, MAX_UINT256)
-
-    # self.DOMAIN_SEPARATOR = keccak256(
-    #     _abi_encode(EIP712_TYPEHASH, keccak256(name), keccak256(VERSION), chain.id, self)
-    # )
 
     # # fire a transfer event so block explorers identify the contract as an ERC20
     # log Transfer(ZERO_ADDRESS, self, 0)
