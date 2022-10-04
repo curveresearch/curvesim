@@ -16,7 +16,15 @@ def initialize_pool(vyper_pool):
     lp_total_supply = vyper_pool.totalSupply()
     fee = vyper_pool.fee()
     admin_fee = vyper_pool.admin_fee()
-    pool = Pool(A, D=balances, n=n_coins, p=p, tokens=lp_total_supply, fee=fee, admin_fee=admin_fee)
+    pool = Pool(
+        A,
+        D=balances,
+        n=n_coins,
+        p=p,
+        tokens=lp_total_supply,
+        fee=fee,
+        admin_fee=admin_fee,
+    )
     return pool
 
 
@@ -60,7 +68,11 @@ positive_balance = st.integers(min_value=10**5 * D_UNIT, max_value=10**10 * D_UN
 
 
 @given(positive_balance, positive_balance, positive_balance)
-@settings(suppress_health_check=[HealthCheck.function_scoped_fixture], max_examples=10, deadline=400)
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=10,
+    deadline=400,
+)
 def test_get_D(vyper_3pool, x0, x1, x2):
     """Test D calculation against vyper implementation."""
 
@@ -184,7 +196,11 @@ def test_add_liquidity(vyper_3pool, x0, x1, x2):
     assert new_balances == expected_balances
 
 
-@given(positive_balance, st.integers(min_value=0, max_value=2), st.integers(min_value=0, max_value=2))
+@given(
+    positive_balance,
+    st.integers(min_value=0, max_value=2),
+    st.integers(min_value=0, max_value=2),
+)
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture], max_examples=10)
 def test_exchange(vyper_3pool, dx, i, j):
     """Test `exchange` against vyper implementation."""
