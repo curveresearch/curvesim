@@ -63,53 +63,6 @@ def test_get_D(vyper_metapool, vyper_3pool, x0, x1):
     assert D == expected_D
 
 
-#
-# def test_get_D_balanced():
-#     """Sanity check for when pool is perfectly balanced"""
-#
-#     # create balanced pool
-#     balances = [
-#         295949605740077000000000000,
-#         295949605740077,
-#         295949605740077,
-#     ]
-#     p = [10**18, 10**30, 10**30]
-#     n_coins = 3
-#     A = 5858
-#
-#     pool = Pool(A, D=balances, n=n_coins, p=p)
-#     D = pool.D()
-#
-#     virtualized_balances = [b * p // 10**18 for b, p in zip(balances, p)]
-#     expected_D = sum(virtualized_balances)
-#
-#     assert D == expected_D
-#
-#
-# def test_get_virtual_price(vyper_3pool):
-#     """Test `get_virtual_price` against vyper implementation."""
-#
-#     python_3pool = initialize_pool(vyper_3pool)
-#     virtual_price = python_3pool.get_virtual_price()
-#     expected_virtual_price = vyper_3pool.get_virtual_price()
-#     assert virtual_price == expected_virtual_price
-#
-#
-# def test_get_y(vyper_3pool, mainnet_3pool_state):
-#     """Test y calculation against vyper implementation"""
-#
-#     virtual_balances = mainnet_3pool_state["virtual_balances"]
-#
-#     i = 0
-#     j = 1
-#     x = 516 * 10**18
-#     # need `eval` since this function is internal
-#     expected_y = vyper_3pool.eval(f"self.get_y({i}, {j}, {x}, {virtual_balances})")
-#
-#     python_3pool = initialize_pool(vyper_3pool)
-#     y = python_3pool.get_y(i, j, x, virtual_balances)
-#     assert y == expected_y
-#
 def test_get_virtual_price(vyper_metapool, vyper_3pool):
     """Test `get_virtual_price` against vyper implementation."""
     python_metapool = initialize_metapool(vyper_metapool, vyper_3pool)
@@ -125,7 +78,7 @@ def test_get_virtual_price(vyper_metapool, vyper_3pool):
 )
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
-    max_examples=10,
+    max_examples=5,
     deadline=400,
 )
 def test_get_y(vyper_metapool, vyper_3pool, x, i, j):
@@ -144,41 +97,40 @@ def test_get_y(vyper_metapool, vyper_3pool, x, i, j):
     assert y == expected_y
 
 
-#
-# def test_get_y_D(vyper_3pool):
-#     """Test y calculation against vyper implementation"""
-#
-#     python_3pool = initialize_pool(vyper_3pool)
-#     A = python_3pool.A
-#     virtual_balances = python_3pool.xp()
-#     D = python_3pool.D()
-#
-#     i = 0
-#     j = 1
-#     dx = 516 * 10**18
-#     virtual_balances[j] += dx
-#     expected_y = vyper_3pool.eval(f"self.get_y_D({A}, {i}, {virtual_balances}, {D})")
-#
-#     y = python_3pool.get_y_D(A, i, virtual_balances, D)
-#     assert y == expected_y
-#
-#
-# @given(positive_balance, positive_balance, positive_balance)
-# @settings(suppress_health_check=[HealthCheck.function_scoped_fixture], max_examples=10)
-# def test_calc_token_amount(vyper_3pool, x0, x1, x2):
-#     """Test `calc_token_amount` against vyper implementation."""
-#     python_3pool = initialize_pool(vyper_3pool)
-#
-#     _balances = [x0, x1, x2]
-#     rates = [vyper_3pool.rates(i) for i in range(len(_balances))]
-#     balances = [b * 10**18 // r for b, r in zip(_balances, rates)]
-#
-#     expected_lp_amount = vyper_3pool.calc_token_amount(balances, True)
-#     lp_amount = python_3pool.calc_token_amount(balances)
-#
-#     assert lp_amount == expected_lp_amount
-#
-#
+@given(
+    st.integers(min_value=10 * D_UNIT, max_value=10**6 * D_UNIT),
+    st.integers(min_value=0, max_value=1),
+    st.integers(min_value=0, max_value=1),
+)
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=5,
+    deadline=400,
+)
+def test_get_y_D(vyper_metapool, vyper_3pool, dx, i, j):
+    """Test y calculation against vyper implementation"""
+    assume(i != j)
+
+    python_metapool = initialize_metapool(vyper_metapool, vyper_3pool)
+    A = python_metapool.A
+    D = python_metapool.D()
+    rates = python_metapool.rates()
+    balances = python_metapool.x
+    vyper_balances = [vyper_metapool.balances(i) for i in range(2)]
+    assert balances == vyper_balances
+    virtual_balances = [b * p // 10**18 for b, p in zip(balances, rates)]
+
+    virtual_balances[j] += dx
+
+    # Need `eval` since this function is internal.
+    # `get_y_D` also takes in A_precise not A.
+    A_precise = A * 100
+    expected_y = vyper_metapool.eval(
+        f"self.get_y_D({A_precise}, {i}, {virtual_balances}, {D})"
+    )
+
+    y = python_metapool.get_y_D(A, i, virtual_balances, D)
+    assert y == expected_y
 
 
 @given(positive_balance, positive_balance)
