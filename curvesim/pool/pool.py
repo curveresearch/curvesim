@@ -14,7 +14,9 @@ class Pool:
     Python model of Curve pool math.
     """
 
-    def __init__(self, A, D, n, p=None, tokens=None, fee=4 * 10**6, fee_mul=None, r=None):
+    def __init__(
+        self, A, D, n, p=None, tokens=None, fee=4 * 10**6, fee_mul=None, r=None
+    ):
         """
         A: Amplification coefficient
         D: Total deposit size
@@ -34,7 +36,9 @@ class Pool:
                 fee = [fee] * n[0]
             self.fee = fee[0]
 
-            self.basepool = Pool(A[1], D[1], n[1], fee=fee[1], fee_mul=fee_mul[1], tokens=tokens[1])
+            self.basepool = Pool(
+                A[1], D[1], n[1], fee=fee[1], fee_mul=fee_mul[1], tokens=tokens[1]
+            )
 
             if p:
                 self.p = p
@@ -310,7 +314,9 @@ class Pool:
                     base_inputs = [0] * self.basepool.n
                     base_inputs[base_i] = dx
                     # Deposit and measure delta
-                    dx = self.basepool.add_liquidity(base_inputs)  # dx is # of minted basepool LP tokens
+                    dx = self.basepool.add_liquidity(
+                        base_inputs
+                    )  # dx is # of minted basepool LP tokens
                     self.x[self.max_coin] += dx
                     # Need to convert pool token to "virtual" units using rates
                     x = dx * rates[self.max_coin] // 10**18
@@ -333,7 +339,9 @@ class Pool:
                 # Withdraw from the base pool if needed
                 if base_j >= 0:
                     dy = self.basepool.remove_liquidity_one_coin(dy, base_j)
-                    dy_nofee = self.basepool.calc_withdraw_one_coin(dy_nofee, base_j, fee=False)
+                    dy_nofee = self.basepool.calc_withdraw_one_coin(
+                        dy_nofee, base_j, fee=False
+                    )
                     dy_fee = dy_nofee - dy
 
             else:
@@ -350,7 +358,11 @@ class Pool:
             if self.fee_mul is None:  # if not dynamic fee pool
                 fee = dy * self.fee // 10**10
             else:  # if dynamic fee pool
-                fee = dy * self.dynamic_fee((xp[i] + x) // 2, (xp[j] + y) // 2) // 10**10
+                fee = (
+                    dy
+                    * self.dynamic_fee((xp[i] + x) // 2, (xp[j] + y) // 2)
+                    // 10**10
+                )
             assert dy > 0
             self.x[i] = x * 10**18 // self.p[i]
             self.x[j] = (y + fee) * 10**18 // self.p[j]
@@ -466,7 +478,9 @@ class Pool:
     def dynamic_fee(self, xpi, xpj):
         xps2 = xpi + xpj
         xps2 *= xps2  # Doing just ** 2 can overflow apparently
-        return (self.fee_mul * self.fee) // ((self.fee_mul - 10**10) * 4 * xpi * xpj // xps2 + 10**10)
+        return (self.fee_mul * self.fee) // (
+            (self.fee_mul - 10**10) * 4 * xpi * xpj // xps2 + 10**10
+        )
 
     def dydxfee(self, i, j, dx=10**12):
         """
@@ -581,14 +595,18 @@ class Pool:
         D_pow = mpz(D) ** (n + 1)
         x_prod = prod(xp)
         A_pow = A * n ** (n + 1)
-        dydx = (xj * (xi * A_pow * x_prod + D_pow)) / (xi * (xj * A_pow * x_prod + D_pow))
+        dydx = (xj * (xi * A_pow * x_prod + D_pow)) / (
+            xi * (xj * A_pow * x_prod + D_pow)
+        )
 
         if use_fee:
             if self.fee_mul is None:
                 fee_factor = self.fee / 10**10
             else:
                 dx = 10**12
-                fee_factor = self.dynamic_fee(xi + dx // 2, xj - int(dydx * dx) // 2) / 10**10
+                fee_factor = (
+                    self.dynamic_fee(xi + dx // 2, xj - int(dydx * dx) // 2) / 10**10
+                )
         else:
             fee_factor = 0
 
@@ -623,10 +641,15 @@ class Pool:
                 rates[self.max_coin] = self.basepool.get_virtual_price()
                 xp = [x * p // 10**18 for x, p in zip(self.x, rates)]
 
-                hi = self.y(meta_j, meta_i, int(xp[meta_j] * 0.01), xp) - self.xp()[meta_i]
+                hi = (
+                    self.y(meta_j, meta_i, int(xp[meta_j] * 0.01), xp)
+                    - self.xp()[meta_i]
+                )
             else:
                 hi = (
-                    self.basepool.y(base_j, base_i, int(self.basepool.xp()[base_j] * 0.01))
+                    self.basepool.y(
+                        base_j, base_i, int(self.basepool.xp()[base_j] * 0.01)
+                    )
                     - self.basepool.xp()[base_i]
                 )
 
@@ -638,7 +661,9 @@ class Pool:
                 self.y(j, i, int(self.xp()[j] * 0.01)) - self.xp()[i],
             )  # Lo: 1, Hi: enough coin[i] to leave 1% of coin[j]
 
-        res = root_scalar(arberror, args=(self, i, j, p), bracket=bounds, method="brentq")
+        res = root_scalar(
+            arberror, args=(self, i, j, p), bracket=bounds, method="brentq"
+        )
 
         trade = (i, j, int(res.root))
 
@@ -761,11 +786,15 @@ class Pool:
         combos = list(combinations(range(self.n), 2))
         if self.ismeta:
             ismeta = True
-            self.ismeta = False  # pretend a normal pool to exchange for basepool LP token
+            self.ismeta = (
+                False  # pretend a normal pool to exchange for basepool LP token
+            )
             p_before = self.p[:]
             self.p[
                 self.max_coin
-            ] = self.basepool.get_virtual_price()  # use virtual price for LP token precision
+            ] = (
+                self.basepool.get_virtual_price()
+            )  # use virtual price for LP token precision
         else:
             ismeta = False
 
@@ -809,7 +838,9 @@ class Pool:
             trades_done.append((i, j, dx, dy))
 
             if self.ismeta:
-                if i < self.max_coin or j < self.max_coin:  # only count trades involving meta-asset
+                if (
+                    i < self.max_coin or j < self.max_coin
+                ):  # only count trades involving meta-asset
                     volume += dx * p[i] // 10**18  # in "DAI" units
             else:
                 volume += dx * p[i] // 10**18  # in "DAI" units
@@ -823,11 +854,15 @@ class Pool:
         if j == "b":
             if i >= self.max_coin:
                 raise ValueError("Coin i must be in the metapool for 'b' option")
-            self.ismeta = False  # pretend a normal pool to exchange for basepool LP token
+            self.ismeta = (
+                False  # pretend a normal pool to exchange for basepool LP token
+            )
             p0 = self.p[:]
             self.p[
                 self.max_coin
-            ] = self.basepool.get_virtual_price()  # use virtual price for LP token precision
+            ] = (
+                self.basepool.get_virtual_price()
+            )  # use virtual price for LP token precision
             j = 1
             metaRevert = True
 
@@ -908,7 +943,9 @@ class Pool:
             j = combo[1]
 
             if xs is None:
-                xs_i = np.linspace(int(self.D() * 0.0001), self.y(j, i, int(self.D() * 0.0001)), 1000).round()
+                xs_i = np.linspace(
+                    int(self.D() * 0.0001), self.y(j, i, int(self.D() * 0.0001)), 1000
+                ).round()
             else:
                 xs_i = xs
 

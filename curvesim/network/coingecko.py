@@ -18,7 +18,9 @@ async def get_prices(coin_id, vs_currency, days):
 
     # Format data
     data = pd.DataFrame(r["prices"], columns=["timestamp", "prices"])
-    data = data.merge(pd.DataFrame(r["total_volumes"], columns=["timestamp", "volumes"]))
+    data = data.merge(
+        pd.DataFrame(r["total_volumes"], columns=["timestamp", "volumes"])
+    )
     data["timestamp"] = pd.to_datetime(data["timestamp"], unit="ms", utc="True")
     data = data.set_index("timestamp")
 
@@ -69,8 +71,12 @@ def pool_prices(coins, vs_currency, days):
     volumes = []
 
     for pair in combos:
-        prices.append(qprices.iloc[:, pair[0]] / qprices.iloc[:, pair[1]])  # divide prices
-        volumes.append(qvolumes.iloc[:, pair[0]] + qvolumes.iloc[:, pair[1]])  # sum volumes
+        prices.append(
+            qprices.iloc[:, pair[0]] / qprices.iloc[:, pair[1]]
+        )  # divide prices
+        volumes.append(
+            qvolumes.iloc[:, pair[0]] + qvolumes.iloc[:, pair[1]]
+        )  # sum volumes
 
     prices = pd.concat(prices, axis=1)
     volumes = pd.concat(volumes, axis=1)

@@ -6,7 +6,18 @@ import numpy as np
 from matplotlib.lines import Line2D
 
 
-def plotsims(A_list, ar, bal, pool_value, depth, volume, log_returns, err, show=True, saveas=False):
+def plotsims(
+    A_list,
+    ar,
+    bal,
+    pool_value,
+    depth,
+    volume,
+    log_returns,
+    err,
+    show=True,
+    saveas=False,
+):
     """
     Plots output of Asims when only 1 fee is used
 
@@ -210,7 +221,9 @@ def plotsimsfee(A_list, fee_list, ar, bal, depth, volume, err, show=True, saveas
         plt.show()
 
 
-def saveplots(poolname, A_list, fee_list, ar, bal, depth, volume, pool_value, log_returns, err):
+def saveplots(
+    poolname, A_list, fee_list, ar, bal, depth, volume, pool_value, log_returns, err
+):
     if not os.path.exists("results/" + poolname):
         os.makedirs("results/" + poolname)
 
@@ -228,7 +241,12 @@ def saveplots(poolname, A_list, fee_list, ar, bal, depth, volume, pool_value, lo
         )
 
     for curr_fee in fee_list:
-        filename = "results/" + poolname + "/fee_" + str(round(curr_fee) / 10**8)[2:].ljust(2, "0")
+        filename = (
+            "results/"
+            + poolname
+            + "/fee_"
+            + str(round(curr_fee) / 10**8)[2:].ljust(2, "0")
+        )
 
         plotsims(
             A_list,

@@ -13,7 +13,9 @@ async def query(url, q):
 
 
 # Convex Community subgraphs
-CONVEX_COMMUNITY_URL = "https://api.thegraph.com/subgraphs/name/convex-community/volume-%s"
+CONVEX_COMMUNITY_URL = (
+    "https://api.thegraph.com/subgraphs/name/convex-community/volume-%s"
+)
 
 
 async def convex(chain, q):

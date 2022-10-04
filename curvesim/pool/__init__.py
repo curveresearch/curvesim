@@ -21,6 +21,8 @@ def get(address_or_symbol, chain="mainnet", src="cg", balanced=(True, True)):
     A = [p["A"], p["A_base"]]
     fee = [p["fee"], p["fee_base"]]
 
-    pool = make(A, p["D"], p["n"], tokens=p["tokens"], fee=fee, fee_mul=p["fee_mul"], r=p["r"])
+    pool = make(
+        A, p["D"], p["n"], tokens=p["tokens"], fee=fee, fee_mul=p["fee_mul"], r=p["r"]
+    )
 
     return pool

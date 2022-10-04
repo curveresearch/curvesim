@@ -61,7 +61,10 @@ async def volume(address, chain, bp=None, days=60, inUSD=True):
             sum_volume += r["volume"][i][key]
 
     else:
-        tasks = [llamaAPI(["pools", chain, "volume", address]), llamaAPI(["pools", chain, "volume", bp])]
+        tasks = [
+            llamaAPI(["pools", chain, "volume", address]),
+            llamaAPI(["pools", chain, "volume", bp]),
+        ]
 
         r_meta, r_base = await gather(*tasks)
 
@@ -93,7 +96,8 @@ async def latest_reserves(address, chain, p=10**18, bp=None, inUSD=True):
 
     else:
         curr_reserves = await gather(
-            latest_reserves(address, chain, p=p, inUSD=inUSD), latest_reserves(bp, chain, p=p, inUSD=inUSD)
+            latest_reserves(address, chain, p=p, inUSD=inUSD),
+            latest_reserves(bp, chain, p=p, inUSD=inUSD),
         )
 
     return curr_reserves

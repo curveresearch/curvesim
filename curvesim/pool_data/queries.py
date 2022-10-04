@@ -18,7 +18,9 @@ def from_address(address, chain, balanced=(True, True), days=60):
 
     # Get mainnet addresses for coins
     addrs = data["coins"]["addresses"]
-    m_addrs = loop.run_until_complete(crosschain_coin_addresses(addrs, chain, "mainnet"))
+    m_addrs = loop.run_until_complete(
+        crosschain_coin_addresses(addrs, chain, "mainnet")
+    )
     data["coins"]["addresses"] = m_addrs
 
     # Get underlying token addresses
