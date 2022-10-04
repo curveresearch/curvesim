@@ -76,9 +76,9 @@ def vyper_metapool(vyper_3pool):
         fee,
     )
 
-    # base virtual price 1022063067407124374
-    # virtual price 1028252290974324002
     balances = [762951074, 12971664836474542835562756]
     metapool.eval(f"self.balances={balances}")
+    total_supply = 20312687702458911532611097
+    metapool.eval(f"self.totalSupply={total_supply}")
 
     return metapool

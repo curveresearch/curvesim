@@ -110,6 +110,14 @@ def test_get_D(vyper_metapool, vyper_3pool, x0, x1):
 #     y = python_3pool.get_y(i, j, x, virtual_balances)
 #     assert y == expected_y
 #
+def test_get_virtual_price(vyper_metapool, vyper_3pool):
+    """Test `get_virtual_price` against vyper implementation."""
+    python_metapool = initialize_metapool(vyper_metapool, vyper_3pool)
+    virtual_price = python_metapool.get_virtual_price()
+    expected_virtual_price = vyper_metapool.get_virtual_price()
+    assert virtual_price == expected_virtual_price
+
+
 #
 # def test_get_y_D(vyper_3pool):
 #     """Test y calculation against vyper implementation"""
