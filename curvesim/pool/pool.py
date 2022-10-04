@@ -872,7 +872,7 @@ class Pool:
 
             ys_i = []
             for x in xs_i:
-                ys_i.append(self.get_y(i, j, int(x)) / 10**18, xp)
+                ys_i.append(self.get_y(i, j, int(x), xp) / 10**18, xp)
 
             xs_i = xs_i / 10**18
             xs_out.append(xs_i)
