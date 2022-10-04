@@ -48,3 +48,25 @@ def vyper_3pool(mainnet_3pool_state):
     pool.eval(f"self.balances={balances}")
 
     return pool
+
+
+@pytest.fixture(scope="function")
+def vyper_metapool(vyper_3pool):
+    """Initialize vyper fixture using mainnet values."""
+    metapool_filepath = os.path.join(_base_dir, "metapool.vy")
+    name = "SIM-3Pool"
+    symbol = "SIM3CRV-f"
+    coin = FAKE_ADDRESS
+    rate_multiplier = 10**34  # 2 decimals
+    A = 1000
+    fee = 4 * 10**6
+    # Admin fee is hard-coded as 50% for factory pools
+    # admin_fee = 5 * 10**9
+    metapool = boa.load(metapool_filepath, name, symbol, coin, rate_multiplier, A, fee)
+
+    # base virtual price 1022063067407124374
+    # virtual price 1028252290974324002
+    balances = [762951074, 12971664836474542835562756]
+    metapool.eval(f"self.balances={balances}")
+
+    return metapool
