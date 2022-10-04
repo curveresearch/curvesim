@@ -51,7 +51,7 @@ FEE_INDEX: constant(uint256) = 2  # Which coin may potentially have fees (USDT)
 
 
 owner: public(address)
-token: CurveToken
+token: public(CurveToken)
 
 initial_A: public(uint256)
 future_A: public(uint256)
@@ -502,7 +502,7 @@ def calc_withdraw_one_coin(_token_amount: uint256, i: uint256) -> uint256:
 
 @external
 @nonreentrant('lock')
-def remove_liquidity_one_coin(_token_amount: uint256, i: uint256, min_amount: uint256):
+def remove_liquidity_one_coin(_token_amount: uint256, i: uint256, min_amount: uint256) -> uint256:
     """
     Remove _amount of liquidity all in a form of coin i
     """
@@ -532,6 +532,7 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: uint256, min_amount: ui
     #     assert convert(_response, bool)  # dev: failed transfer
 
     log RemoveLiquidityOne(msg.sender, _token_amount, dy)
+    return dy
 
 
 @view

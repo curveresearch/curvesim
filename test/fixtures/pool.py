@@ -58,11 +58,23 @@ def vyper_metapool(vyper_3pool):
     symbol = "SIM3CRV-f"
     coin = FAKE_ADDRESS
     rate_multiplier = 10**34  # 2 decimals
+    basepool = vyper_3pool.address
+    basepool_token = vyper_3pool.token()
     A = 1000
     fee = 4 * 10**6
     # Admin fee is hard-coded as 50% for factory pools
     # admin_fee = 5 * 10**9
-    metapool = boa.load(metapool_filepath, name, symbol, coin, rate_multiplier, A, fee)
+    metapool = boa.load(
+        metapool_filepath,
+        name,
+        symbol,
+        coin,
+        basepool,
+        basepool_token,
+        rate_multiplier,
+        A,
+        fee,
+    )
 
     # base virtual price 1022063067407124374
     # virtual price 1028252290974324002

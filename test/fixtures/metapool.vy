@@ -1,12 +1,3 @@
-# @version 0.3.1
-"""
-@title StableSwap
-@author Curve.Fi
-@license Copyright (c) Curve.Fi, 2020-2021 - all rights reserved
-@notice 3pool metapool implementation contract
-@dev ERC20 support for return True/revert, return True/False, return None
-"""
-
 interface ERC20:
     def approve(_spender: address, _amount: uint256): nonpayable
     def balanceOf(_owner: address) -> uint256: view
@@ -15,12 +6,12 @@ interface Curve:
     def coins(i: uint256) -> address: view
     def get_virtual_price() -> uint256: view
     def calc_token_amount(amounts: uint256[BASE_N_COINS], deposit: bool) -> uint256: view
-    def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256: view
+    def calc_withdraw_one_coin(_token_amount: uint256, i: uint256) -> uint256: view
     def fee() -> uint256: view
-    def get_dy(i: int128, j: int128, dx: uint256) -> uint256: view
-    def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256): nonpayable
+    def get_dy(i: uint256, j: uint256, dx: uint256) -> uint256: view
+    def exchange(i: uint256, j: uint256, dx: uint256, min_dy: uint256) -> uint256: nonpayable
     def add_liquidity(amounts: uint256[BASE_N_COINS], min_mint_amount: uint256): nonpayable
-    def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_amount: uint256): nonpayable
+    def remove_liquidity_one_coin(_token_amount: uint256, i: uint256, min_amount: uint256) -> uint256: nonpayable
 
 interface Factory:
     def convert_metapool_fees() -> bool: nonpayable
@@ -43,16 +34,16 @@ event Approval:
 
 event TokenExchange:
     buyer: indexed(address)
-    sold_id: int128
+    sold_id: uint256
     tokens_sold: uint256
-    bought_id: int128
+    bought_id: uint256
     tokens_bought: uint256
 
 event TokenExchangeUnderlying:
     buyer: indexed(address)
-    sold_id: int128
+    sold_id: uint256
     tokens_sold: uint256
-    bought_id: int128
+    bought_id: uint256
     tokens_bought: uint256
 
 event AddLiquidity:
@@ -92,16 +83,17 @@ event StopRampA:
     t: uint256
 
 
-BASE_POOL: constant(address) = 0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7
+# sim: we pass this into constructor to enable unit testing
+# BASE_POOL: constant(address) = 0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7
 BASE_COINS: constant(address[3]) = [
     0x6B175474E89094C44Da98b954EedeAC495271d0F,  # DAI
     0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48,  # USDC
     0xdAC17F958D2ee523a2206206994597C13D831ec7,  # USDT
 ]
 
-N_COINS: constant(int128) = 2
-MAX_COIN: constant(int128) = N_COINS - 1
-BASE_N_COINS: constant(int128) = 3
+N_COINS: public(constant(uint256)) = 2
+MAX_COIN: constant(uint256) = N_COINS - 1
+BASE_N_COINS: constant(uint256) = 3
 PRECISION: constant(uint256) = 10 ** 18
 
 FEE_DENOMINATOR: constant(uint256) = 10 ** 10
@@ -120,6 +112,7 @@ ERC1271_MAGIC_VAL: constant(bytes32) = 0x1626ba7e0000000000000000000000000000000
 VERSION: constant(String[8]) = "v5.0.0"
 
 
+basepool: address
 factory: address
 
 coins: public(address[N_COINS])
@@ -150,9 +143,11 @@ def __init__(
     _name: String[32],
     _symbol: String[10],
     _coin: address,
+    _basepool: address,
+    _basepool_token: address,
     _rate_multiplier: uint256,
     _A: uint256,
-    _fee: uint256
+    _fee: uint256,
 ):
     """
     @notice Contract initializer
@@ -167,7 +162,8 @@ def __init__(
     assert self.fee == 0
 
     A: uint256 = _A * A_PRECISION
-    self.coins = [_coin, 0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490]
+    self.basepool = _basepool
+    self.coins = [_coin, _basepool_token]
     self.rate_multiplier = _rate_multiplier
     self.initial_A = A
     self.future_A = A
@@ -189,127 +185,27 @@ def __init__(
     # log Transfer(ZERO_ADDRESS, self, 0)
 
 
-### ERC20 Functionality ###
-
+# sim: function added for pool sim testing
 @view
 @external
-def decimals() -> uint256:
-    """
-    @notice Get the number of decimals for this token
-    @dev Implemented as a view method to reduce gas costs
-    @return uint256 decimal places
-    """
-    return 18
-
-
-@internal
-def _transfer(_from: address, _to: address, _value: uint256):
-    # # NOTE: vyper does not allow underflows
-    # #       so the following subtraction would revert on insufficient balance
-    self.balanceOf[_from] -= _value
-    self.balanceOf[_to] += _value
-
-    log Transfer(_from, _to, _value)
-
-
-@external
-def transfer(_to : address, _value : uint256) -> bool:
-    """
-    @dev Transfer token for a specified address
-    @param _to The address to transfer to.
-    @param _value The amount to be transferred.
-    """
-    self._transfer(msg.sender, _to, _value)
-    return True
-
-
-@external
-def transferFrom(_from : address, _to : address, _value : uint256) -> bool:
-    """
-     @dev Transfer tokens from one address to another.
-     @param _from address The address which you want to send tokens from
-     @param _to address The address which you want to transfer to
-     @param _value uint256 the amount of tokens to be transferred
-    """
-    self._transfer(_from, _to, _value)
-
-    _allowance: uint256 = self.allowance[_from][msg.sender]
-    if _allowance != MAX_UINT256:
-        self.allowance[_from][msg.sender] = _allowance - _value
-
-    return True
-
-
-@external
-def approve(_spender : address, _value : uint256) -> bool:
-    """
-    @notice Approve the passed address to transfer the specified amount of
-            tokens on behalf of msg.sender
-    @dev Beware that changing an allowance via this method brings the risk that
-         someone may use both the old and new allowance by unfortunate transaction
-         ordering: https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
-    @param _spender The address which will transfer the funds
-    @param _value The amount of tokens that may be transferred
-    @return bool success
-    """
-    self.allowance[msg.sender][_spender] = _value
-
-    log Approval(msg.sender, _spender, _value)
-    return True
-
-
-@external
-def permit(
-    _owner: address,
-    _spender: address,
-    _value: uint256,
-    _deadline: uint256,
-    _v: uint8,
-    _r: bytes32,
-    _s: bytes32
-) -> bool:
-    """
-    @notice Approves spender by owner's signature to expend owner's tokens.
-        See https://eips.ethereum.org/EIPS/eip-2612.
-    @dev Inspired by https://github.com/yearn/yearn-vaults/blob/main/contracts/Vault.vy#L753-L793
-    @dev Supports smart contract wallets which implement ERC1271
-        https://eips.ethereum.org/EIPS/eip-1271
-    @param _owner The address which is a source of funds and has signed the Permit.
-    @param _spender The address which is allowed to spend the funds.
-    @param _value The amount of tokens to be spent.
-    @param _deadline The timestamp after which the Permit is no longer valid.
-    @param _v The bytes[64] of the valid secp256k1 signature of permit by owner
-    @param _r The bytes[0:32] of the valid secp256k1 signature of permit by owner
-    @param _s The bytes[32:64] of the valid secp256k1 signature of permit by owner
-    @return True, if transaction completes successfully
-    """
-    assert _owner != ZERO_ADDRESS
-    assert block.timestamp <= _deadline
-
-    nonce: uint256 = self.nonces[_owner]
-    digest: bytes32 = keccak256(
-        concat(
-            b"\x19\x01",
-            self.DOMAIN_SEPARATOR,
-            keccak256(_abi_encode(PERMIT_TYPEHASH, _owner, _spender, _value, nonce, _deadline))
-        )
-    )
-
-    if _owner.is_contract:
-        sig: Bytes[65] = concat(_abi_encode(_r, _s), slice(convert(_v, bytes32), 31, 1))
-        # reentrancy not a concern since this is a staticcall
-        assert ERC1271(_owner).isValidSignature(digest, sig) == ERC1271_MAGIC_VAL
+def rates(i: uint256) -> uint256:
+    if i == 0:
+        return self.rate_multiplier
+    elif i == 1:
+        return Curve(self.basepool).get_virtual_price()
     else:
-        assert ecrecover(digest, convert(_v, uint256), convert(_r, uint256), convert(_s, uint256)) == _owner
-
-    self.allowance[_owner][_spender] = _value
-    self.nonces[_owner] = nonce + 1
-
-    log Approval(_owner, _spender, _value)
-    return True
+        raise
 
 
-### StableSwap Functionality ###
+# sim: function added for pool sim testing
+@view
+@external
+def D() -> uint256:
+    A: uint256 = self._A()
+    rates: uint256[N_COINS] = [self.rate_multiplier, Curve(self.basepool).get_virtual_price()]
+    balances: uint256[N_COINS] = self.balances
+    return self.get_D_mem(rates, balances, A)
+
 
 @view
 @internal
@@ -415,7 +311,7 @@ def get_virtual_price() -> uint256:
     @return LP token virtual price normalized to 1e18
     """
     amp: uint256 = self._A()
-    rates: uint256[N_COINS] = [self.rate_multiplier, Curve(BASE_POOL).get_virtual_price()]
+    rates: uint256[N_COINS] = [self.rate_multiplier, Curve(self.basepool).get_virtual_price()]
     xp: uint256[N_COINS] = self._xp_mem(rates, self.balances)
     D: uint256 = self.get_D(xp, amp)
     # D is in the units similar to DAI (e.g. converted to precision 1e18)
@@ -435,7 +331,7 @@ def calc_token_amount(_amounts: uint256[N_COINS], _is_deposit: bool) -> uint256:
     @return Expected amount of LP tokens received
     """
     amp: uint256 = self._A()
-    rates: uint256[N_COINS] = [self.rate_multiplier, Curve(BASE_POOL).get_virtual_price()]
+    rates: uint256[N_COINS] = [self.rate_multiplier, Curve(self.basepool).get_virtual_price()]
     balances: uint256[N_COINS] = self.balances
 
     D0: uint256 = self.get_D_mem(rates, balances, amp)
@@ -469,7 +365,7 @@ def add_liquidity(
     @return Amount of LP tokens received by depositing
     """
     amp: uint256 = self._A()
-    rates: uint256[N_COINS] = [self.rate_multiplier, Curve(BASE_POOL).get_virtual_price()]
+    rates: uint256[N_COINS] = [self.rate_multiplier, Curve(self.basepool).get_virtual_price()]
 
     # Initial invariant
     old_balances: uint256[N_COINS] = self.balances
@@ -538,7 +434,7 @@ def add_liquidity(
 
 @view
 @internal
-def get_y(i: int128, j: int128, x: uint256, xp: uint256[N_COINS]) -> uint256:
+def get_y(i: uint256, j: uint256, x: uint256, xp: uint256[N_COINS]) -> uint256:
     # x in the input is converted to the same price/precision
 
     assert i != j       # dev: same coin
@@ -586,7 +482,7 @@ def get_y(i: int128, j: int128, x: uint256, xp: uint256[N_COINS]) -> uint256:
 
 @view
 @external
-def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
+def get_dy(i: uint256, j: uint256, dx: uint256) -> uint256:
     """
     @notice Calculate the current output dy given input dx
     @dev Index values can be found via the `coins` public getter method
@@ -595,7 +491,7 @@ def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
     @param dx Amount of `i` being exchanged
     @return Amount of `j` predicted
     """
-    rates: uint256[N_COINS] = [self.rate_multiplier, Curve(BASE_POOL).get_virtual_price()]
+    rates: uint256[N_COINS] = [self.rate_multiplier, Curve(self.basepool).get_virtual_price()]
     xp: uint256[N_COINS] = self._xp_mem(rates, self.balances)
 
     x: uint256 = xp[i] + (dx * rates[i] / PRECISION)
@@ -607,7 +503,7 @@ def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
 
 @view
 @external
-def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
+def get_dy_underlying(i: uint256, j: uint256, dx: uint256) -> uint256:
     """
     @notice Calculate the current output dy given input dx on underlying
     @dev Index values can be found via the `coins` public getter method
@@ -616,14 +512,14 @@ def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
     @param dx Amount of `i` being exchanged
     @return Amount of `j` predicted
     """
-    rates: uint256[N_COINS] = [self.rate_multiplier, Curve(BASE_POOL).get_virtual_price()]
+    rates: uint256[N_COINS] = [self.rate_multiplier, Curve(self.basepool).get_virtual_price()]
     xp: uint256[N_COINS] = self._xp_mem(rates, self.balances)
 
     x: uint256 = 0
-    base_i: int128 = 0
-    base_j: int128 = 0
-    meta_i: int128 = 0
-    meta_j: int128 = 0
+    base_i: uint256 = 0
+    base_j: uint256 = 0
+    meta_i: uint256 = 0
+    meta_j: uint256 = 0
 
     if i != 0:
         base_i = i - MAX_COIN
@@ -641,14 +537,14 @@ def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
             base_inputs: uint256[BASE_N_COINS] = empty(uint256[BASE_N_COINS])
             base_inputs[base_i] = dx
             # Token amount transformed to underlying "dollars"
-            x = Curve(BASE_POOL).calc_token_amount(base_inputs, True) * rates[1] / PRECISION
+            x = Curve(self.basepool).calc_token_amount(base_inputs, True) * rates[1] / PRECISION
             # Accounting for deposit/withdraw fees approximately
-            x -= x * Curve(BASE_POOL).fee() / (2 * FEE_DENOMINATOR)
+            x -= x * Curve(self.basepool).fee() / (2 * FEE_DENOMINATOR)
             # Adding number of pool tokens
             x += xp[MAX_COIN]
         else:
             # If both are from the base pool
-            return Curve(BASE_POOL).get_dy(base_i, base_j, dx)
+            return Curve(self.basepool).get_dy(base_i, base_j, dx)
 
     # This pool is involved only when in-pool assets are used
     y: uint256 = self.get_y(meta_i, meta_j, x, xp)
@@ -661,7 +557,7 @@ def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
     else:
         # j is from BasePool
         # The fee is already accounted for
-        dy = Curve(BASE_POOL).calc_withdraw_one_coin(dy * PRECISION / rates[1], base_j)
+        dy = Curve(self.basepool).calc_withdraw_one_coin(dy * PRECISION / rates[1], base_j)
 
     return dy
 
@@ -669,8 +565,8 @@ def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
 @external
 @nonreentrant('lock')
 def exchange(
-    i: int128,
-    j: int128,
+    i: uint256,
+    j: uint256,
     _dx: uint256,
     _min_dy: uint256,
     _receiver: address = msg.sender,
@@ -685,7 +581,7 @@ def exchange(
     @param _receiver Address that receives `j`
     @return Actual amount of `j` received
     """
-    rates: uint256[N_COINS] = [self.rate_multiplier, Curve(BASE_POOL).get_virtual_price()]
+    rates: uint256[N_COINS] = [self.rate_multiplier, Curve(self.basepool).get_virtual_price()]
 
     old_balances: uint256[N_COINS] = self.balances
     xp: uint256[N_COINS] = self._xp_mem(rates, old_balances)
@@ -741,8 +637,8 @@ def exchange(
 @external
 @nonreentrant('lock')
 def exchange_underlying(
-    i: int128,
-    j: int128,
+    i: uint256,
+    j: uint256,
     _dx: uint256,
     _min_dy: uint256,
     _receiver: address = msg.sender,
@@ -756,17 +652,17 @@ def exchange_underlying(
     @param _receiver Address that receives `j`
     @return Actual amount of `j` received
     """
-    rates: uint256[N_COINS] = [self.rate_multiplier, Curve(BASE_POOL).get_virtual_price()]
+    rates: uint256[N_COINS] = [self.rate_multiplier, Curve(self.basepool).get_virtual_price()]
     old_balances: uint256[N_COINS] = self.balances
     xp: uint256[N_COINS] = self._xp_mem(rates, old_balances)
 
     base_coins: address[3] = BASE_COINS
 
     dy: uint256 = 0
-    base_i: int128 = 0
-    base_j: int128 = 0
-    meta_i: int128 = 0
-    meta_j: int128 = 0
+    base_i: uint256 = 0
+    base_j: uint256 = 0
+    meta_i: uint256 = 0
+    meta_j: uint256 = 0
     x: uint256 = 0
     input_coin: address = ZERO_ADDRESS
     output_coin: address = ZERO_ADDRESS
@@ -784,18 +680,18 @@ def exchange_underlying(
         meta_j = 1
         output_coin = base_coins[base_j]
 
-    response: Bytes[32] = raw_call(
-        input_coin,
-        concat(
-            method_id("transferFrom(address,address,uint256)"),
-            convert(msg.sender, bytes32),
-            convert(self, bytes32),
-            convert(_dx, bytes32),
-        ),
-        max_outsize=32,
-    )
-    if len(response) > 0:
-        assert convert(response, bool)
+    # response: Bytes[32] = raw_call(
+    #     input_coin,
+    #     concat(
+    #         method_id("transferFrom(address,address,uint256)"),
+    #         convert(msg.sender, bytes32),
+    #         convert(self, bytes32),
+    #         convert(_dx, bytes32),
+    #     ),
+    #     max_outsize=32,
+    # )
+    # if len(response) > 0:
+    #     assert convert(response, bool)
 
     dx: uint256 = _dx
     if i == 0 or j == 0:
@@ -809,7 +705,7 @@ def exchange_underlying(
             coin_i: address = self.coins[MAX_COIN]
             # Deposit and measure delta
             x = ERC20(coin_i).balanceOf(self)
-            Curve(BASE_POOL).add_liquidity(base_inputs, 0)
+            Curve(self.basepool).add_liquidity(base_inputs, 0)
             # Need to convert pool token to "virtual" units using rates
             # dx is also different now
             dx = ERC20(coin_i).balanceOf(self) - x
@@ -837,29 +733,29 @@ def exchange_underlying(
 
         # Withdraw from the base pool if needed
         if j > 0:
-            out_amount: uint256 = ERC20(output_coin).balanceOf(self)
-            Curve(BASE_POOL).remove_liquidity_one_coin(dy, base_j, 0)
-            dy = ERC20(output_coin).balanceOf(self) - out_amount
+            # out_amount: uint256 = ERC20(output_coin).balanceOf(self)
+            dy = Curve(self.basepool).remove_liquidity_one_coin(dy, base_j, 0)
+            # dy = ERC20(output_coin).balanceOf(self) - out_amount
 
         assert dy >= _min_dy
 
     else:
         # If both are from the base pool
         dy = ERC20(output_coin).balanceOf(self)
-        Curve(BASE_POOL).exchange(base_i, base_j, dx, _min_dy)
+        Curve(self.basepool).exchange(base_i, base_j, dx, _min_dy)
         dy = ERC20(output_coin).balanceOf(self) - dy
 
-    response = raw_call(
-        output_coin,
-        concat(
-            method_id("transfer(address,uint256)"),
-            convert(_receiver, bytes32),
-            convert(dy, bytes32),
-        ),
-        max_outsize=32,
-    )
-    if len(response) > 0:
-        assert convert(response, bool)
+    # response = raw_call(
+    #     output_coin,
+    #     concat(
+    #         method_id("transfer(address,uint256)"),
+    #         convert(_receiver, bytes32),
+    #         convert(dy, bytes32),
+    #     ),
+    #     max_outsize=32,
+    # )
+    # if len(response) > 0:
+    #     assert convert(response, bool)
 
     log TokenExchangeUnderlying(msg.sender, i, dx, j, dy)
 
@@ -928,7 +824,7 @@ def remove_liquidity_imbalance(
     @return Actual amount of the LP token burned in the withdrawal
     """
     amp: uint256 = self._A()
-    rates: uint256[N_COINS] = [self.rate_multiplier, Curve(BASE_POOL).get_virtual_price()]
+    rates: uint256[N_COINS] = [self.rate_multiplier, Curve(self.basepool).get_virtual_price()]
     old_balances: uint256[N_COINS] = self.balances
     D0: uint256 = self.get_D_mem(rates, old_balances, amp)
 
@@ -981,7 +877,7 @@ def remove_liquidity_imbalance(
 
 @view
 @internal
-def get_y_D(A: uint256, i: int128, xp: uint256[N_COINS], D: uint256) -> uint256:
+def get_y_D(A: uint256, i: uint256, xp: uint256[N_COINS], D: uint256) -> uint256:
     """
     Calculate x[i] if one reduces D from being calculated for xp to D
 
@@ -1029,12 +925,12 @@ def get_y_D(A: uint256, i: int128, xp: uint256[N_COINS], D: uint256) -> uint256:
 
 @view
 @internal
-def _calc_withdraw_one_coin(_burn_amount: uint256, i: int128) -> uint256[2]:
+def _calc_withdraw_one_coin(_burn_amount: uint256, i: uint256) -> uint256[2]:
     # First, need to calculate
     # * Get current D
     # * Solve Eqn against y_i for D - _token_amount
     amp: uint256 = self._A()
-    rates: uint256[N_COINS] = [self.rate_multiplier, Curve(BASE_POOL).get_virtual_price()]
+    rates: uint256[N_COINS] = [self.rate_multiplier, Curve(self.basepool).get_virtual_price()]
     xp: uint256[N_COINS] = self._xp_mem(rates, self.balances)
     D0: uint256 = self.get_D(xp, amp)
 
@@ -1063,7 +959,7 @@ def _calc_withdraw_one_coin(_burn_amount: uint256, i: int128) -> uint256[2]:
 
 @view
 @external
-def calc_withdraw_one_coin(_burn_amount: uint256, i: int128) -> uint256:
+def calc_withdraw_one_coin(_burn_amount: uint256, i: uint256) -> uint256:
     """
     @notice Calculate the amount received when withdrawing a single coin
     @param _burn_amount Amount of LP tokens to burn in the withdrawal
@@ -1077,7 +973,7 @@ def calc_withdraw_one_coin(_burn_amount: uint256, i: int128) -> uint256:
 @nonreentrant('lock')
 def remove_liquidity_one_coin(
     _burn_amount: uint256,
-    i: int128,
+    i: uint256,
     _min_received: uint256,
     _receiver: address = msg.sender,
 ) -> uint256:
@@ -1115,91 +1011,8 @@ def remove_liquidity_one_coin(
     return dy[0]
 
 
-@external
-def ramp_A(_future_A: uint256, _future_time: uint256):
-    assert msg.sender == Factory(self.factory).admin()  # dev: only owner
-    assert block.timestamp >= self.initial_A_time + MIN_RAMP_TIME
-    assert _future_time >= block.timestamp + MIN_RAMP_TIME  # dev: insufficient time
-
-    _initial_A: uint256 = self._A()
-    _future_A_p: uint256 = _future_A * A_PRECISION
-
-    assert _future_A > 0 and _future_A < MAX_A
-    if _future_A_p < _initial_A:
-        assert _future_A_p * MAX_A_CHANGE >= _initial_A
-    else:
-        assert _future_A_p <= _initial_A * MAX_A_CHANGE
-
-    self.initial_A = _initial_A
-    self.future_A = _future_A_p
-    self.initial_A_time = block.timestamp
-    self.future_A_time = _future_time
-
-    log RampA(_initial_A, _future_A_p, block.timestamp, _future_time)
-
-
-@external
-def stop_ramp_A():
-    assert msg.sender == Factory(self.factory).admin()  # dev: only owner
-
-    current_A: uint256 = self._A()
-    self.initial_A = current_A
-    self.future_A = current_A
-    self.initial_A_time = block.timestamp
-    self.future_A_time = block.timestamp
-    # now (block.timestamp < t1) is always False, so we return saved A
-
-    log StopRampA(current_A, block.timestamp)
-
-
 @view
 @external
 def admin_balances(i: uint256) -> uint256:
     return ERC20(self.coins[i]).balanceOf(self) - self.balances[i]
 
-
-@external
-def withdraw_admin_fees():
-    # transfer coin 0 to Factory and call `convert_fees` to swap it for coin 1
-    factory: address = self.factory
-    coin: address = self.coins[0]
-    amount: uint256 = ERC20(coin).balanceOf(self) - self.balances[0]
-    if amount > 0:
-        response: Bytes[32] = raw_call(
-            coin,
-            concat(
-                method_id("transfer(address,uint256)"),
-                convert(factory, bytes32),
-                convert(amount, bytes32),
-            ),
-            max_outsize=32,
-        )
-        if len(response) > 0:
-            assert convert(response, bool)
-        Factory(factory).convert_metapool_fees()
-
-    # transfer coin 1 to the receiver
-    coin = self.coins[1]
-    amount = ERC20(coin).balanceOf(self) - self.balances[1]
-    if amount > 0:
-        receiver: address = Factory(factory).get_fee_receiver(self)
-        response: Bytes[32] = raw_call(
-            coin,
-            concat(
-                method_id("transfer(address,uint256)"),
-                convert(receiver, bytes32),
-                convert(amount, bytes32),
-            ),
-            max_outsize=32,
-        )
-        if len(response) > 0:
-            assert convert(response, bool)
-
-
-@view
-@external
-def version() -> String[8]:
-    """
-    @notice Get the version of this token contract
-    """
-    return VERSION
