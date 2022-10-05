@@ -952,7 +952,7 @@ def remove_liquidity_one_coin(
     self.balances[i] -= (dy[0] + dy[1] * ADMIN_FEE / FEE_DENOMINATOR)
     total_supply: uint256 = self.totalSupply - _burn_amount
     self.totalSupply = total_supply
-    self.balanceOf[msg.sender] -= _burn_amount
+    # self.balanceOf[msg.sender] -= _burn_amount
     log Transfer(msg.sender, ZERO_ADDRESS, _burn_amount)
 
     # response: Bytes[32] = raw_call(
