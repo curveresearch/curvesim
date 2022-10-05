@@ -250,7 +250,6 @@ class MetaPool:
         return dy, dy_fee
 
     def calc_withdraw_one_coin(self, token_amount, i, use_fee=True):
-        # FIXME: need to update for metapool
         A = self.A
         xp = self._xp()
         D0 = self.D()
