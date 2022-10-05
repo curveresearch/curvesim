@@ -600,13 +600,12 @@ class Pool:
         # Initial guesses for dx, limits, and trades
         # uses optarb (i.e., only considering price of coin[i] and coin[j])
         # guess will be too high but in range
-        k = 0
         x0 = []
         lo = []
         hi = []
         coins = []
         price_targs = []
-        for pair in combos:
+        for k, pair in enumerate(combos):
             i = pair[0]
             j = pair[1]
             if self.dydxfee(i, j) - prices[k] > 0:
@@ -639,7 +638,6 @@ class Pool:
                 hi.append(int(limits[k] * 10**18 + 1))
                 coins.append((i, j))
                 price_targs.append(prices[k])
-            k += 1
 
         # Order trades in terms of expected size
         order = sorted(range(len(x0)), reverse=True, key=x0.__getitem__)
@@ -935,8 +933,7 @@ def arberrors(dxs, pool, price_targs, coins):
         rates.extend(pool.basepool.p)
 
     # Do each trade
-    k = 0
-    for pair in coins:
+    for k, pair in enumerate(coins):
         i = pair[0]
         j = pair[1]
 
@@ -948,17 +945,13 @@ def arberrors(dxs, pool, price_targs, coins):
         if dx > 0:
             pool.exchange(i, j, dx)
 
-        k += 1
-
     # Check price errors after all trades
     errors = []
-    k = 0
-    for pair in coins:
+    for k, pair in enumerate(coins):
         i = pair[0]
         j = pair[1]
         p = price_targs[k]
         errors.append(pool.dydxfee(i, j) - p)
-        k += 1
 
     pool.x = x_old
     if pool.ismeta:
