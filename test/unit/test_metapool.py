@@ -45,7 +45,7 @@ positive_balance = st.integers(min_value=10**5 * D_UNIT, max_value=10**10 * D_UN
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
     max_examples=10,
-    deadline=400,
+    deadline=None,
 )
 def test_get_D(vyper_metapool, vyper_3pool, x0, x1):
     """Test D calculation against vyper implementation."""
@@ -79,7 +79,7 @@ def test_get_virtual_price(vyper_metapool, vyper_3pool):
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
     max_examples=5,
-    deadline=400,
+    deadline=None,
 )
 def test_get_y(vyper_metapool, vyper_3pool, x, i, j):
     """Test y calculation against vyper implementation"""
@@ -105,7 +105,7 @@ def test_get_y(vyper_metapool, vyper_3pool, x, i, j):
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
     max_examples=5,
-    deadline=400,
+    deadline=None,
 )
 def test_get_y_D(vyper_metapool, vyper_3pool, dx, i, j):
     """Test y calculation against vyper implementation"""
@@ -134,7 +134,11 @@ def test_get_y_D(vyper_metapool, vyper_3pool, dx, i, j):
 
 
 @given(positive_balance, positive_balance)
-@settings(suppress_health_check=[HealthCheck.function_scoped_fixture], max_examples=5)
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=5,
+    deadline=None,
+)
 def test_calc_token_amount(vyper_metapool, vyper_3pool, x0, x1):
     """Test `calc_token_amount` against vyper implementation."""
     python_metapool = initialize_metapool(vyper_metapool, vyper_3pool)
@@ -149,31 +153,32 @@ def test_calc_token_amount(vyper_metapool, vyper_3pool, x0, x1):
     assert lp_amount == expected_lp_amount
 
 
-# @given(positive_balance, positive_balance, positive_balance)
-# @settings(suppress_health_check=[HealthCheck.function_scoped_fixture], max_examples=10)
-# def test_add_liquidity(vyper_3pool, x0, x1, x2):
-#     """Test `add_liquidity` against vyper implementation."""
-#     python_3pool = initialize_pool(vyper_3pool)
-#
-#     _balances = [x0, x1, x2]
-#     rates = [vyper_3pool.rates(i) for i in range(len(_balances))]
-#     amounts = [b * 10**18 // r for b, r in zip(_balances, rates)]
-#
-#     old_vyper_balances = [vyper_3pool.balances(i) for i in range(len(_balances))]
-#     balances = python_3pool.x
-#     assert balances == old_vyper_balances
-#
-#     lp_total_supply = vyper_3pool.totalSupply()
-#     vyper_3pool.add_liquidity(amounts, 0)
-#     expected_lp_amount = vyper_3pool.totalSupply() - lp_total_supply
-#
-#     lp_amount = python_3pool.add_liquidity(amounts)
-#     assert lp_amount == expected_lp_amount
-#
-#     expected_balances = [vyper_3pool.balances(i) for i in range(len(_balances))]
-#     new_balances = python_3pool.x
-#     assert new_balances == expected_balances
-#
+@given(positive_balance, positive_balance)
+@settings(suppress_health_check=[HealthCheck.function_scoped_fixture], max_examples=5)
+def test_add_liquidity(vyper_metapool, vyper_3pool, x0, x1):
+    """Test `add_liquidity` against vyper implementation."""
+    python_metapool = initialize_metapool(vyper_metapool, vyper_3pool)
+
+    _balances = [x0, x1]
+    rates = [vyper_metapool.rates(i) for i in range(len(_balances))]
+    amounts = [b * 10**18 // r for b, r in zip(_balances, rates)]
+
+    old_vyper_balances = [vyper_metapool.balances(i) for i in range(len(_balances))]
+    balances = python_metapool.x
+    assert balances == old_vyper_balances
+
+    lp_total_supply = vyper_metapool.totalSupply()
+    vyper_metapool.add_liquidity(amounts, 0)
+    expected_lp_amount = vyper_metapool.totalSupply() - lp_total_supply
+
+    lp_amount = python_metapool.add_liquidity(amounts)
+    assert lp_amount == expected_lp_amount
+
+    expected_balances = [vyper_metapool.balances(i) for i in range(len(_balances))]
+    new_balances = python_metapool.x
+    assert new_balances == expected_balances
+
+
 #
 # @given(
 #     positive_balance,

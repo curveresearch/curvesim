@@ -19,11 +19,6 @@ event Transfer:
     receiver: indexed(address)
     value: uint256
 
-event Approval:
-    owner: indexed(address)
-    spender: indexed(address)
-    value: uint256
-
 event TokenExchange:
     buyer: indexed(address)
     sold_id: uint256
