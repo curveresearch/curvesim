@@ -1,3 +1,4 @@
+import traceback
 from itertools import combinations
 from math import prod
 
@@ -676,16 +677,20 @@ class Pool:
             errors = res.fun
 
         except Exception:
+            print(traceback.format_exc())
             print(
-                "[Error: Optarbs] x0: "
+                "Optarbs args:\n"
+                + "x0: "
                 + str(x0)
-                + " lo: "
+                + ", lo: "
                 + str(lo)
-                + " hi: "
+                + ", hi: "
                 + str(hi)
-                + " prices: "
-                + str(price_targs)
+                + ", prices: "
+                + str(price_targs),
+                end="\n" * 2,
             )
+
             errors = np.array(arberrors([0] * len(x0), self, price_targs, coins))
             res = []
         return trades, errors, res
