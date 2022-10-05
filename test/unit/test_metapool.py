@@ -44,7 +44,7 @@ positive_balance = st.integers(min_value=10**5 * D_UNIT, max_value=10**10 * D_UN
 @given(positive_balance, positive_balance)
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
-    max_examples=10,
+    max_examples=5,
     deadline=None,
 )
 def test_get_D(vyper_metapool, vyper_3pool, x0, x1):
@@ -154,7 +154,11 @@ def test_calc_token_amount(vyper_metapool, vyper_3pool, x0, x1):
 
 
 @given(positive_balance, positive_balance)
-@settings(suppress_health_check=[HealthCheck.function_scoped_fixture], max_examples=5)
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=5,
+    deadline=None,
+)
 def test_add_liquidity(vyper_metapool, vyper_3pool, x0, x1):
     """Test `add_liquidity` against vyper implementation."""
     python_metapool = initialize_metapool(vyper_metapool, vyper_3pool)
@@ -184,7 +188,11 @@ def test_add_liquidity(vyper_metapool, vyper_3pool, x0, x1):
     st.integers(min_value=0, max_value=1),
     st.integers(min_value=0, max_value=1),
 )
-@settings(suppress_health_check=[HealthCheck.function_scoped_fixture], max_examples=10)
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=5,
+    deadline=None,
+)
 def test_exchange(vyper_metapool, vyper_3pool, dx, i, j):
     """Test `exchange` against vyper implementation."""
     assume(i != j)
@@ -209,7 +217,11 @@ def test_exchange(vyper_metapool, vyper_3pool, dx, i, j):
 
 
 @given(positive_balance, st.integers(min_value=0, max_value=1))
-@settings(suppress_health_check=[HealthCheck.function_scoped_fixture], max_examples=5)
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=5,
+    deadline=None,
+)
 def test_calc_withdraw_one_token(vyper_metapool, vyper_3pool, amount, i):
     """Test `calc_withdraw_one_coin` against vyper implementation."""
     assume(amount < vyper_metapool.totalSupply())
@@ -222,7 +234,11 @@ def test_calc_withdraw_one_token(vyper_metapool, vyper_3pool, amount, i):
 
 
 @given(positive_balance, st.integers(min_value=0, max_value=1))
-@settings(suppress_health_check=[HealthCheck.function_scoped_fixture], max_examples=10)
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=5,
+    deadline=None,
+)
 def test_remove_liquidity_one_coin(vyper_metapool, vyper_3pool, amount, i):
     """Test `remove_liquidity_one_coin` against vyper implementation."""
     assume(amount < vyper_metapool.totalSupply())
