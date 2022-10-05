@@ -1,3 +1,4 @@
+import traceback
 from itertools import combinations
 from math import prod
 
@@ -231,7 +232,7 @@ class Pool:
             dy = (dy - fee) * 10**18 // rate
             fee = fee * 10**18 // rate
             admin_fee = admin_fee * 10**18 // rate
-            assert dy > 0
+            assert dy >= 0
 
             self.x[i] += dx
             self.x[j] -= dy + admin_fee
@@ -398,16 +399,16 @@ class Pool:
             (self.fee_mul - 10**10) * 4 * xpi * xpj // xps2 + 10**10
         )
 
-    def dydxfee(self, i, j, dx=10**12):
+    def dydxfee(self, i, j):
         """
         Returns price with fee, (dy[j]-fee)/dx[i]) given some dx[i]
 
         For metapools, the indices are assumed to include base pool
         underlyer indices.
         """
-        return self.dydx(i, j, dx, use_fee=True)
+        return self.dydx(i, j, use_fee=True)
 
-    def dydx(self, i, j, dx=10**12, use_fee=False):
+    def dydx(self, i, j, use_fee=False):
         """
         Returns price, dy[j]/dx[i], given some dx[i]
 
@@ -464,6 +465,7 @@ class Pool:
                     _dydx *= 1 - fee / 10**10
 
                 else:  # i is from basepool
+                    dx = 10**12
                     base_inputs = [0] * self.basepool.n
                     base_inputs[base_i] = dx
 
@@ -519,10 +521,7 @@ class Pool:
             if self.fee_mul is None:
                 fee_factor = self.fee / 10**10
             else:
-                dx = 10**12
-                fee_factor = (
-                    self.dynamic_fee(xi + dx // 2, xj - int(dydx * dx) // 2) / 10**10
-                )
+                fee_factor = self.dynamic_fee(xi, xj) / 10**10
         else:
             fee_factor = 0
 
@@ -532,7 +531,8 @@ class Pool:
 
     def optarb(self, i, j, p):
         """
-        Estimates trade to optimally arbitrage coin[i] for coin[j] given external price p (base: i, quote: j)
+        Estimates trade to optimally arbitrage coin[i]
+        for coin[j] given external price p (base: i, quote: j)
         p must be less than dy[j]/dx[i], including fees
 
         Returns:
@@ -566,12 +566,12 @@ class Pool:
                     - base_xp[base_i]
                 )
 
-            bounds = (10**12, hi)
+            bounds = (1, hi)
 
         else:
             xp = self.xp()
             bounds = (
-                10**12,
+                1,
                 self.get_y(j, i, int(xp[j] * 0.01), xp) - xp[i],
             )  # Lo: 1, Hi: enough coin[i] to leave 1% of coin[j]
 
@@ -587,7 +587,8 @@ class Pool:
 
     def optarbs(self, prices, limits):  # noqa: C901
         """
-        Estimates trades to optimally arbitrage all coins in a pool, given prices and volume limits
+        Estimates trades to optimally arbitrage all coins
+        in a pool, given prices and volume limits
 
         Returns:
         trades: list of trades with format (i,j,dx)
@@ -600,16 +601,15 @@ class Pool:
         # Initial guesses for dx, limits, and trades
         # uses optarb (i.e., only considering price of coin[i] and coin[j])
         # guess will be too high but in range
-        k = 0
         x0 = []
         lo = []
         hi = []
         coins = []
         price_targs = []
-        for pair in combos:
+        for k, pair in enumerate(combos):
             i = pair[0]
             j = pair[1]
-            if arberror(10**12, self, i, j, prices[k]) > 0:
+            if self.dydxfee(i, j) - prices[k] > 0:
                 try:
                     trade, error, res = self.optarb(i, j, prices[k])
                     x0.append(min(trade[2], int(limits[k] * 10**18)))
@@ -621,7 +621,7 @@ class Pool:
                 coins.append((i, j))
                 price_targs.append(prices[k])
 
-            elif arberror(10**12, self, j, i, 1 / prices[k]) > 0:
+            elif self.dydxfee(j, i) - 1 / prices[k] > 0:
                 try:
                     trade, error, res = self.optarb(j, i, 1 / prices[k])
                     x0.append(min(trade[2], int(limits[k] * 10**18)))
@@ -639,7 +639,6 @@ class Pool:
                 hi.append(int(limits[k] * 10**18 + 1))
                 coins.append((i, j))
                 price_targs.append(prices[k])
-            k += 1
 
         # Order trades in terms of expected size
         order = sorted(range(len(x0)), reverse=True, key=x0.__getitem__)
@@ -678,16 +677,20 @@ class Pool:
             errors = res.fun
 
         except Exception:
+            print(traceback.format_exc())
             print(
-                "[Error: Optarbs] x0: "
+                "Optarbs args:\n"
+                + "x0: "
                 + str(x0)
-                + " lo: "
+                + ", lo: "
                 + str(lo)
-                + " hi: "
+                + ", hi: "
                 + str(hi)
-                + " prices: "
-                + str(price_targs)
+                + ", prices: "
+                + str(price_targs),
+                end="\n" * 2,
             )
+
             errors = np.array(arberrors([0] * len(x0), self, price_targs, coins))
             res = []
         return trades, errors, res
@@ -925,36 +928,35 @@ def arberror(dx, pool, i, j, p):
 
 
 def arberrors(dxs, pool, price_targs, coins):
+    rates = pool.p[:]
     x_old = pool.x[:]
+
     if pool.ismeta:
         x_old_base = pool.basepool.x[:]
         tokens_old = pool.basepool.tokens
+        rates.pop()
+        rates.extend(pool.basepool.p)
 
     # Do each trade
-    k = 0
-    for pair in coins:
+    for k, pair in enumerate(coins):
         i = pair[0]
         j = pair[1]
 
         if np.isnan(dxs[k]):
             dx = 0
         else:
-            dx = int(dxs[k])
+            dx = int(dxs[k]) * 10**18 // rates[i]
 
         if dx > 0:
             pool.exchange(i, j, dx)
 
-        k += 1
-
     # Check price errors after all trades
     errors = []
-    k = 0
-    for pair in coins:
+    for k, pair in enumerate(coins):
         i = pair[0]
         j = pair[1]
         p = price_targs[k]
         errors.append(pool.dydxfee(i, j) - p)
-        k += 1
 
     pool.x = x_old
     if pool.ismeta:
