@@ -208,44 +208,42 @@ def test_exchange(vyper_metapool, vyper_3pool, dx, i, j):
     assert new_balances == expected_balances
 
 
-#
-#
-# @given(positive_balance, st.integers(min_value=0, max_value=2))
-# @settings(suppress_health_check=[HealthCheck.function_scoped_fixture], max_examples=10)
-# def test_calc_withdraw_one_token(vyper_3pool, amount, i):
-#     """Test `calc_withdraw_one_coin` against vyper implementation."""
-#     assume(amount < vyper_3pool.totalSupply())
-#
-#     python_3pool = initialize_pool(vyper_3pool)
-#
-#     expected_coin_amount = vyper_3pool.calc_withdraw_one_coin(amount, i)
-#     coin_amount, _ = python_3pool.calc_withdraw_one_coin(amount, i)
-#     assert coin_amount == expected_coin_amount
-#
-#
-# @given(positive_balance, st.integers(min_value=0, max_value=2))
-# @settings(suppress_health_check=[HealthCheck.function_scoped_fixture], max_examples=10)
-# def test_remove_liquidity_one_coin(vyper_3pool, amount, i):
-#     """Test `remove_liquidity_one_coin` against vyper implementation."""
-#     assume(amount < vyper_3pool.totalSupply())
-#
-#     python_3pool = initialize_pool(vyper_3pool)
-#
-#     old_vyper_balances = [vyper_3pool.balances(i) for i in range(3)]
-#     balances = python_3pool.x
-#     assert balances == old_vyper_balances
-#
-#     old_vyper_supply = vyper_3pool.totalSupply()
-#     lp_supply = python_3pool.tokens
-#     assert lp_supply == old_vyper_supply
-#
-#     vyper_3pool.remove_liquidity_one_coin(amount, i, 0)
-#     expected_coin_balance = vyper_3pool.balances(i)
-#     expected_lp_supply = vyper_3pool.totalSupply()
-#
-#     python_3pool.remove_liquidity_one_coin(amount, i)
-#     coin_balance = python_3pool.x[i]
-#     lp_supply = python_3pool.tokens
-#
-#     assert coin_balance == expected_coin_balance
-#     assert lp_supply == expected_lp_supply
+@given(positive_balance, st.integers(min_value=0, max_value=1))
+@settings(suppress_health_check=[HealthCheck.function_scoped_fixture], max_examples=5)
+def test_calc_withdraw_one_token(vyper_metapool, vyper_3pool, amount, i):
+    """Test `calc_withdraw_one_coin` against vyper implementation."""
+    assume(amount < vyper_metapool.totalSupply())
+
+    python_metapool = initialize_metapool(vyper_metapool, vyper_3pool)
+
+    expected_coin_amount = vyper_metapool.calc_withdraw_one_coin(amount, i)
+    coin_amount, _ = python_metapool.calc_withdraw_one_coin(amount, i)
+    assert coin_amount == expected_coin_amount
+
+
+@given(positive_balance, st.integers(min_value=0, max_value=1))
+@settings(suppress_health_check=[HealthCheck.function_scoped_fixture], max_examples=10)
+def test_remove_liquidity_one_coin(vyper_metapool, vyper_3pool, amount, i):
+    """Test `remove_liquidity_one_coin` against vyper implementation."""
+    assume(amount < vyper_metapool.totalSupply())
+
+    python_metapool = initialize_metapool(vyper_metapool, vyper_3pool)
+
+    old_vyper_balances = [vyper_metapool.balances(i) for i in range(2)]
+    balances = python_metapool.x
+    assert balances == old_vyper_balances
+
+    old_vyper_supply = vyper_metapool.totalSupply()
+    lp_supply = python_metapool.tokens
+    assert lp_supply == old_vyper_supply
+
+    vyper_metapool.remove_liquidity_one_coin(amount, i, 0)
+    expected_coin_balance = vyper_metapool.balances(i)
+    expected_lp_supply = vyper_metapool.totalSupply()
+
+    python_metapool.remove_liquidity_one_coin(amount, i)
+    coin_balance = python_metapool.x[i]
+    lp_supply = python_metapool.tokens
+
+    assert coin_balance == expected_coin_balance
+    assert lp_supply == expected_lp_supply
