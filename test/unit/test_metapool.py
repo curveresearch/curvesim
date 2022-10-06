@@ -216,6 +216,53 @@ def test_exchange(vyper_metapool, vyper_3pool, dx, i, j):
     assert new_balances == expected_balances
 
 
+@given(
+    positive_balance,
+    st.integers(min_value=0, max_value=4),
+    st.integers(min_value=0, max_value=4),
+)
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=5,
+    deadline=None,
+)
+def test_exchange_underlying(vyper_metapool, vyper_3pool, dx, i, j):
+    """Test `exchange` against vyper implementation."""
+    assume(i != j)
+
+    python_metapool = initialize_metapool(vyper_metapool, vyper_3pool)
+    python_basepool = initialize_pool(vyper_3pool)
+
+    # check metapool balances
+    old_vyper_balances = [vyper_metapool.balances(i) for i in range(2)]
+    balances = python_metapool.x
+    assert balances == old_vyper_balances
+    # check basepool balances
+    old_vyper_balances = [vyper_3pool.balances(i) for i in range(3)]
+    balances = python_basepool.x
+    assert balances == old_vyper_balances
+
+    # convert to real units
+    if i == 0:
+        dx = dx * 10**18 // vyper_metapool.rates(i)
+    else:
+        dx = dx * 10**18 // vyper_3pool.rates(i)
+
+    expected_dy = vyper_metapool.exchange_underlying(i, j, dx, 0)
+    dy, _ = python_metapool.exchange_underlying(i, j, dx)
+
+    assert dy == expected_dy
+
+    # check metapool balances
+    expected_balances = [vyper_metapool.balances(i) for i in range(2)]
+    new_balances = python_metapool.x
+    assert new_balances == expected_balances
+    # check basepool balances
+    expected_balances = [vyper_3pool.balances(i) for i in range(3)]
+    new_balances = python_basepool.x
+    assert new_balances == expected_balances
+
+
 @given(positive_balance, st.integers(min_value=0, max_value=1))
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
