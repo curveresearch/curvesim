@@ -211,17 +211,13 @@ class MetaPool:
 
             if base_i < 0:
                 x = xp[i] + dx * rates[i] // 10**18
-                self.x[i] += dx
             else:
                 # i is from BasePool
                 # At first, get the amount of pool tokens
                 base_inputs = [0] * self.basepool.n
                 base_inputs[base_i] = dx
                 # Deposit and measure delta
-                dx = self.basepool.add_liquidity(
-                    base_inputs
-                )  # dx is # of minted basepool LP tokens
-                self.x[self.max_coin] += dx
+                dx = self.basepool.add_liquidity(base_inputs)
                 # Need to convert pool token to "virtual" units using rates
                 x = dx * rates[self.max_coin] // 10**18
                 # Adding number of pool tokens
@@ -237,7 +233,16 @@ class MetaPool:
             # Works for both pool coins and real coins
             dy = (dy - dy_fee) * 10**18 // rates[meta_j]
 
-            self.x[meta_j] -= dy
+            dy_admin_fee = dy_fee * self.admin_fee // 10**10
+            dy_admin_fee = dy_admin_fee * 10**18 // rates[meta_j]
+
+            dy_fee = dy_fee * 10**18 // rates[meta_j]
+
+            # Change balances exactly in same way as we change actual ERC20 coin amounts
+            self.x[meta_i] += dx
+            # When rounding errors happen, we undercharge admin fee in favor of LP
+            self.x[meta_j] -= dy + dy_admin_fee
+            self.collected_admin_fees[meta_j] += dy_admin_fee
 
             # Withdraw from the base pool if needed
             if base_j >= 0:
