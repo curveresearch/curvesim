@@ -1,7 +1,7 @@
 from hypothesis import HealthCheck, assume, given, settings
 from hypothesis import strategies as st
 
-from curvesim.pool import MetaPool
+from curvesim.pool import MetaPool, Pool
 
 from .test_pool import initialize_pool
 
@@ -311,3 +311,77 @@ def test_remove_liquidity_one_coin(vyper_metapool, vyper_3pool, amount, i):
 
     assert coin_balance == expected_coin_balance
     assert lp_supply == expected_lp_supply
+
+
+@given(
+    positive_balance,
+    positive_balance,
+    positive_balance,
+    positive_balance,
+    positive_balance,
+    st.integers(min_value=0, max_value=3),
+    st.integers(min_value=0, max_value=3),
+)
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=5,
+    deadline=None,
+)
+def test_dydxfee(x0, x1, b0, b1, b2, i, j):
+    """Test `dydxfee` against discrete pricing using `exchange`"""
+    assume(i != j)
+
+    admin_fee = 5 * 10**9
+
+    base_A = 3000
+    _base_balances = [b0, b1, b2]
+    base_p = [10**18, 10**30, 10**30]
+    base_balances = [b * 10**18 // p for b, p in zip(_base_balances, base_p)]
+    base_n = len(_base_balances)
+    base_tokens = sum(_base_balances)
+    base_fee = 1 * 10**6
+    basepool = Pool(
+        base_A,
+        D=base_balances,
+        n=base_n,
+        p=base_p,
+        tokens=base_tokens,
+        fee=base_fee,
+        admin_fee=admin_fee,
+    )
+
+    A = 1365
+    _balances = [x0, x1]
+    p = [10**18, 10**18]
+    balances = [b * 10**18 // p for b, p, in zip(_balances, base_p)]
+    n = len(_balances)
+    tokens = sum(_balances)
+    fee = 4 * 10**6
+    metapool = MetaPool(
+        A,
+        D=balances,
+        n=n,
+        basepool=basepool,
+        p=p,
+        tokens=tokens,
+        fee=fee,
+        admin_fee=admin_fee,
+    )
+
+    _dydx = metapool.dydxfee(i, j)
+
+    rates = p[:1] + base_p
+    dx = 10**18
+    _dx = dx * 10**18 // rates[i]  # real units
+    _dy, _ = metapool.exchange_underlying(i, j, _dx)
+    dy = _dy * rates[j] // 10**18  # virtual units
+
+    price = dy / dx
+    print("\n")
+    print("Discretized derivative:", price)
+    print("Continuous derivative:", _dydx)
+    print(f"_dx: {_dx}, i: {i} ")
+    print(f"_dy: {_dy}, j: {j} ")
+    print(base_balances)
+    print(balances)
+    print("-------------------------------")
