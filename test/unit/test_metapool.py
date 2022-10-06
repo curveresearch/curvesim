@@ -218,8 +218,8 @@ def test_exchange(vyper_metapool, vyper_3pool, dx, i, j):
 
 @given(
     positive_balance,
-    st.integers(min_value=0, max_value=4),
-    st.integers(min_value=0, max_value=4),
+    st.integers(min_value=0, max_value=3),
+    st.integers(min_value=0, max_value=3),
 )
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
@@ -227,11 +227,11 @@ def test_exchange(vyper_metapool, vyper_3pool, dx, i, j):
     deadline=None,
 )
 def test_exchange_underlying(vyper_metapool, vyper_3pool, dx, i, j):
-    """Test `exchange` against vyper implementation."""
+    """Test `exchange_underlying` against vyper implementation."""
     assume(i != j)
 
     python_metapool = initialize_metapool(vyper_metapool, vyper_3pool)
-    python_basepool = initialize_pool(vyper_3pool)
+    python_basepool = python_metapool.basepool
 
     # check metapool balances
     old_vyper_balances = [vyper_metapool.balances(i) for i in range(2)]
@@ -244,9 +244,10 @@ def test_exchange_underlying(vyper_metapool, vyper_3pool, dx, i, j):
 
     # convert to real units
     if i == 0:
-        dx = dx * 10**18 // vyper_metapool.rates(i)
+        dx = dx * 10**18 // vyper_metapool.rates(0)
     else:
-        dx = dx * 10**18 // vyper_3pool.rates(i)
+        base_i = i - 1
+        dx = dx * 10**18 // vyper_3pool.rates(base_i)
 
     expected_dy = vyper_metapool.exchange_underlying(i, j, dx, 0)
     dy, _ = python_metapool.exchange_underlying(i, j, dx)
