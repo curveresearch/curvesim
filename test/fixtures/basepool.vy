@@ -186,7 +186,7 @@ def calc_token_amount(amounts: uint256[N_COINS], deposit: bool) -> uint256:
 
 @external
 @nonreentrant('lock')
-def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
+def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256) -> uint256:
     fees: uint256[N_COINS] = empty(uint256[N_COINS])
     _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
     _admin_fee: uint256 = self.admin_fee
@@ -270,6 +270,8 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
     self.token.mint(msg.sender, mint_amount)
 
     log AddLiquidity(msg.sender, amounts, fees, D1, token_supply + mint_amount)
+
+    return mint_amount
 
 
 

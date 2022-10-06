@@ -10,7 +10,7 @@ interface Curve:
     def fee() -> uint256: view
     def get_dy(i: uint256, j: uint256, dx: uint256) -> uint256: view
     def exchange(i: uint256, j: uint256, dx: uint256, min_dy: uint256) -> uint256: nonpayable
-    def add_liquidity(amounts: uint256[BASE_N_COINS], min_mint_amount: uint256): nonpayable
+    def add_liquidity(amounts: uint256[BASE_N_COINS], min_mint_amount: uint256) -> uint256: nonpayable
     def remove_liquidity_one_coin(_token_amount: uint256, i: uint256, min_amount: uint256) -> uint256: nonpayable
 
 
@@ -139,11 +139,13 @@ def __init__(
     self.name = name
     self.symbol = concat(_symbol, "3CRV-f")
 
+    # sim: comment-out the interaction with coins.
+    # ----------------------------------------------------------
     # for coin in BASE_COINS:
     #     ERC20(coin).approve(BASE_POOL, MAX_UINT256)
 
-    # # fire a transfer event so block explorers identify the contract as an ERC20
-    # log Transfer(ZERO_ADDRESS, self, 0)
+    # fire a transfer event so block explorers identify the contract as an ERC20
+    log Transfer(ZERO_ADDRESS, self, 0)
 
 
 # sim: function added for pool sim testing
@@ -339,6 +341,8 @@ def add_liquidity(
         if amount == 0:
             assert total_supply > 0
         else:
+            # sim: comment-out the interaction with coins.
+            # ----------------------------------------------------------
             # response: Bytes[32] = raw_call(
             #     self.coins[i],
             #     concat(
@@ -565,6 +569,10 @@ def exchange(
     # When rounding errors happen, we undercharge admin fee in favor of LP
     self.balances[j] = old_balances[j] - dy - dy_admin_fee
 
+    # sim: comment-out the interaction with coins.
+    # Life is a lot easier for us if we don't bother traversing
+    # this code path with mocks and such.
+    # ----------------------------------------------------------
     # response: Bytes[32] = raw_call(
     #     self.coins[i],
     #     concat(
@@ -641,6 +649,10 @@ def exchange_underlying(
         meta_j = 1
         output_coin = base_coins[base_j]
 
+    # sim: comment-out the interaction with coins.
+    # Life is a lot easier for us if we don't bother traversing
+    # this code path with mocks and such.
+    # ----------------------------------------------------------
     # response: Bytes[32] = raw_call(
     #     input_coin,
     #     concat(
@@ -665,11 +677,15 @@ def exchange_underlying(
             base_inputs[base_i] = dx
             coin_i: address = self.coins[MAX_COIN]
             # Deposit and measure delta
-            x = ERC20(coin_i).balanceOf(self)
-            Curve(self.basepool).add_liquidity(base_inputs, 0)
+            # ----------------------------------------------------------
+            # sim: comment-out the interaction with coin and use return
+            # value from `add_liquidity` which we adjusted
+            # ----------------------------------------------------------
+            # x = ERC20(coin_i).balanceOf(self)
+            dx = Curve(self.basepool).add_liquidity(base_inputs, 0)
             # Need to convert pool token to "virtual" units using rates
             # dx is also different now
-            dx = ERC20(coin_i).balanceOf(self) - x
+            # dx = ERC20(coin_i).balanceOf(self) - x
             x = dx * rates[MAX_COIN] / PRECISION
             # Adding number of pool tokens
             x += xp[MAX_COIN]
@@ -694,6 +710,10 @@ def exchange_underlying(
 
         # Withdraw from the base pool if needed
         if j > 0:
+            # ----------------------------------------------------------
+            # sim: comment-out the interaction with coin and use return
+            # value from `remove_liquidity_imbalance` which we adjusted
+            # ----------------------------------------------------------
             # out_amount: uint256 = ERC20(output_coin).balanceOf(self)
             dy = Curve(self.basepool).remove_liquidity_one_coin(dy, base_j, 0)
             # dy = ERC20(output_coin).balanceOf(self) - out_amount
@@ -702,10 +722,12 @@ def exchange_underlying(
 
     else:
         # If both are from the base pool
-        dy = ERC20(output_coin).balanceOf(self)
-        Curve(self.basepool).exchange(base_i, base_j, dx, _min_dy)
-        dy = ERC20(output_coin).balanceOf(self) - dy
+        # dy = ERC20(output_coin).balanceOf(self)
+        dy = Curve(self.basepool).exchange(base_i, base_j, dx, _min_dy)
+        # dy = ERC20(output_coin).balanceOf(self) - dy
 
+    # sim: comment-out the interaction with coin
+    # ----------------------------------------------------------
     # response = raw_call(
     #     output_coin,
     #     concat(
@@ -747,6 +769,8 @@ def remove_liquidity(
         assert value >= _min_amounts[i]
         self.balances[i] = old_balance - value
         amounts[i] = value
+        # sim: comment-out the interaction with coin
+        # ----------------------------------------------------------
         # response: Bytes[32] = raw_call(
         #     self.coins[i],
         #     concat(
@@ -794,6 +818,8 @@ def remove_liquidity_imbalance(
         amount: uint256 = _amounts[i]
         if amount != 0:
             new_balances[i] -= amount
+            # sim: comment-out the interaction with coin
+            # ----------------------------------------------------------
             # response: Bytes[32] = raw_call(
             #     self.coins[i],
             #     concat(
@@ -955,6 +981,8 @@ def remove_liquidity_one_coin(
     # self.balanceOf[msg.sender] -= _burn_amount
     log Transfer(msg.sender, ZERO_ADDRESS, _burn_amount)
 
+    # sim: comment-out the interaction with coin
+    # ----------------------------------------------------------
     # response: Bytes[32] = raw_call(
     #     self.coins[i],
     #     concat(
