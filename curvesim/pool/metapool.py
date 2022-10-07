@@ -43,6 +43,12 @@ class MetaPool:
         self.fee = fee
         self.admin_fee = admin_fee
 
+        # If basepool coins have too few decimals, it can wreak havoc
+        # on a certain codepath of our `dydx` function, where we use
+        # a difference quotient to estimate the derivative.
+        for _p in basepool.p:
+            if _p > 10**30:
+                raise ValueError(f"{_p} too high: decimals must be >= 6.")
         self.basepool = basepool
 
         if p:
