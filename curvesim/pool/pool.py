@@ -467,7 +467,7 @@ class Pool:
                 else:  # i is from basepool
                     dx = 10**12
                     base_inputs = [0] * self.basepool.n
-                    base_inputs[base_i] = dx
+                    base_inputs[base_i] = dx * 10**18 // self.basepool.p[base_i]
 
                     dw, _ = self.basepool.calc_token_amount(base_inputs, use_fee=True)
                     # Convert lp token amount to virtual units
@@ -483,9 +483,7 @@ class Pool:
                         dy_fee = dy * self.fee // 10**10
                     else:
                         dy_fee = 0
-
-                    # Convert to real units
-                    dy = (dy - dy_fee) * 10**18 // rates[meta_j]
+                    dy -= dy_fee
 
                     _dydx = dy / dx
 
@@ -872,7 +870,7 @@ class Pool:
 
             ys_i = []
             for x in xs_i:
-                ys_i.append(self.get_y(i, j, int(x)) / 10**18, xp)
+                ys_i.append(self.get_y(i, j, int(x), xp) / 10**18, xp)
 
             xs_i = xs_i / 10**18
             xs_out.append(xs_i)

@@ -51,7 +51,7 @@ FEE_INDEX: constant(uint256) = 2  # Which coin may potentially have fees (USDT)
 
 
 owner: public(address)
-token: CurveToken
+token: public(CurveToken)
 
 initial_A: public(uint256)
 future_A: public(uint256)
@@ -186,7 +186,7 @@ def calc_token_amount(amounts: uint256[N_COINS], deposit: bool) -> uint256:
 
 @external
 @nonreentrant('lock')
-def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
+def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256) -> uint256:
     fees: uint256[N_COINS] = empty(uint256[N_COINS])
     _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
     _admin_fee: uint256 = self.admin_fee
@@ -270,6 +270,8 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
     self.token.mint(msg.sender, mint_amount)
 
     log AddLiquidity(msg.sender, amounts, fees, D1, token_supply + mint_amount)
+
+    return mint_amount
 
 
 
@@ -502,7 +504,7 @@ def calc_withdraw_one_coin(_token_amount: uint256, i: uint256) -> uint256:
 
 @external
 @nonreentrant('lock')
-def remove_liquidity_one_coin(_token_amount: uint256, i: uint256, min_amount: uint256):
+def remove_liquidity_one_coin(_token_amount: uint256, i: uint256, min_amount: uint256) -> uint256:
     """
     Remove _amount of liquidity all in a form of coin i
     """
@@ -532,6 +534,7 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: uint256, min_amount: ui
     #     assert convert(_response, bool)  # dev: failed transfer
 
     log RemoveLiquidityOne(msg.sender, _token_amount, dy)
+    return dy
 
 
 @view
