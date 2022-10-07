@@ -7,6 +7,14 @@ from curvesim.pool import MetaPool, Pool
 from .test_pool import initialize_pool
 
 
+def convert_to_virtual_balances(rates, balances):
+    return [b * p // 10**18 for b, p in zip(balances, rates)]
+
+
+def convert_to_real_balances(rates, balances):
+    return [b * 10**18 // p for b, p in zip(balances, rates)]
+
+
 def initialize_metapool(vyper_metapool, vyper_3pool):
     """
     Initialize python-based pool from the state variables of the
@@ -53,7 +61,7 @@ def test_get_D(vyper_metapool, vyper_3pool, x0, x1):
 
     _balances = [x0, x1]
     p = [vyper_metapool.rates(i) for i in range(len(_balances))]
-    balances = [x * 10**18 // p for x, p in zip(_balances, p)]
+    balances = convert_to_real_balances(p, _balances)
 
     vyper_metapool.eval(f"self.balances={balances}")
     expected_D = vyper_metapool.D()
@@ -88,7 +96,7 @@ def test_get_y(vyper_metapool, vyper_3pool, x, i, j):
 
     balances = [vyper_metapool.balances(i) for i in range(2)]
     rates = [vyper_metapool.rates(i) for i in range(2)]
-    virtual_balances = [b * p // 10**18 for b, p in zip(balances, rates)]
+    virtual_balances = convert_to_virtual_balances(rates, balances)
 
     # need `eval` since this function is internal
     expected_y = vyper_metapool.eval(f"self.get_y({i}, {j}, {x}, {virtual_balances})")
@@ -119,7 +127,7 @@ def test_get_y_D(vyper_metapool, vyper_3pool, dx, i, j):
     balances = python_metapool.x
     vyper_balances = [vyper_metapool.balances(i) for i in range(2)]
     assert balances == vyper_balances
-    virtual_balances = [b * p // 10**18 for b, p in zip(balances, rates)]
+    virtual_balances = convert_to_virtual_balances(rates, balances)
 
     virtual_balances[j] += dx
 
@@ -146,7 +154,7 @@ def test_calc_token_amount(vyper_metapool, vyper_3pool, x0, x1):
 
     _balances = [x0, x1]
     rates = [vyper_metapool.rates(i) for i in range(len(_balances))]
-    balances = [b * 10**18 // r for b, r in zip(_balances, rates)]
+    balances = convert_to_real_balances(rates, _balances)
 
     expected_lp_amount = vyper_metapool.calc_token_amount(balances, True)
     lp_amount = python_metapool.calc_token_amount(balances)
@@ -166,7 +174,7 @@ def test_add_liquidity(vyper_metapool, vyper_3pool, x0, x1):
 
     _balances = [x0, x1]
     rates = [vyper_metapool.rates(i) for i in range(len(_balances))]
-    amounts = [b * 10**18 // r for b, r in zip(_balances, rates)]
+    amounts = convert_to_real_balances(rates, _balances)
 
     old_vyper_balances = [vyper_metapool.balances(i) for i in range(len(_balances))]
     balances = python_metapool.x
@@ -339,7 +347,7 @@ def test_dydxfee(x0, x1, b0, b1, b2, i, j):
     base_A = 3000
     base_p = [10**18, 10**30, 10**30]
     base_balances = [b0, b1, b2]
-    base_balances = [b * 10**18 // p for b, p in zip(base_balances, base_p)]
+    base_balances = convert_to_real_balances(base_p, base_balances)
     base_n = len(base_balances)
     base_tokens = sum(base_balances)
     base_fee = 1 * 10**6
@@ -357,7 +365,7 @@ def test_dydxfee(x0, x1, b0, b1, b2, i, j):
     A = 1365
     p = [10**18, 10**18]
     balances = [x0, x1]
-    balances = [b * 10**18 // p for b, p in zip(balances, p)]
+    balances = convert_to_real_balances(p, balances)
     n = len(balances)
     tokens = sum(balances)
     fee = 4 * 10**6
