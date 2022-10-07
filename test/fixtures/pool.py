@@ -29,8 +29,8 @@ def mainnet_3pool_state():
     }
 
 
-@pytest.fixture(scope="function")
-def vyper_3pool(mainnet_3pool_state):
+@pytest.fixture(scope="session")
+def _vyper_3pool(mainnet_3pool_state):
     """Initialize vyper fixture using mainnet values."""
     lp_total_supply = mainnet_3pool_state["lp_tokens"]
     mock_filepath = os.path.join(_base_dir, "lp_token_mock.vy")
@@ -50,16 +50,16 @@ def vyper_3pool(mainnet_3pool_state):
     return pool
 
 
-@pytest.fixture(scope="function")
-def vyper_metapool(vyper_3pool):
+@pytest.fixture(scope="session")
+def _vyper_metapool(_vyper_3pool):
     """Initialize vyper fixture using mainnet values."""
     metapool_filepath = os.path.join(_base_dir, "metapool.vy")
     name = "SIM-3Pool"
     symbol = "SIM3CRV-f"
     coin = FAKE_ADDRESS
     rate_multiplier = 10**34  # 2 decimals
-    basepool = vyper_3pool.address
-    basepool_token = vyper_3pool.token()
+    basepool = _vyper_3pool.address
+    basepool_token = _vyper_3pool.token()
     A = 1000
     fee = 4 * 10**6
     # Admin fee is hard-coded as 50% for factory pools
@@ -82,3 +82,15 @@ def vyper_metapool(vyper_3pool):
     metapool.eval(f"self.totalSupply={total_supply}")
 
     return metapool
+
+
+@pytest.fixture(scope="function")
+def vyper_3pool(_vyper_3pool):
+    with boa.env.anchor():
+        yield _vyper_3pool
+
+
+@pytest.fixture(scope="function")
+def vyper_metapool(_vyper_metapool):
+    with boa.env.anchor():
+        yield _vyper_metapool
