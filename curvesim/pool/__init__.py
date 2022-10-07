@@ -5,11 +5,7 @@ from curvesim.pool_data import get as _get_pool_data
 from .metapool import MetaPool
 from .pool import Pool
 
-
-def make(A, D, n, p=None, tokens=None, fee=4 * 10**6, fee_mul=None, r=None):
-    pool = Pool(A, D, n, p=None, tokens=None, fee=4 * 10**6, fee_mul=None, r=None)
-
-    return pool
+make = Pool
 
 
 def get(address_or_symbol, chain="mainnet", src="cg", balanced=(True, True)):
@@ -20,8 +16,12 @@ def get(address_or_symbol, chain="mainnet", src="cg", balanced=(True, True)):
         balanced=balanced,
     )
 
-    A = [p["A"], p["A_base"]]
-    fee = [p["fee"], p["fee_base"]]
+    if p["A_base"]:
+        A = [p["A"], p["A_base"]]
+        fee = [p["fee"], p["fee_base"]]
+    else:
+        A = p["A"]
+        fee = p["fee"]
 
     pool = make(
         A, p["D"], p["n"], tokens=p["tokens"], fee=fee, fee_mul=p["fee_mul"], r=p["r"]
