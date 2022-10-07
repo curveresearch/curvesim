@@ -1,3 +1,4 @@
+import pytest
 from hypothesis import HealthCheck, assume, given, settings
 from hypothesis import strategies as st
 
@@ -313,6 +314,7 @@ def test_remove_liquidity_one_coin(vyper_metapool, vyper_3pool, amount, i):
     assert lp_supply == expected_lp_supply
 
 
+@pytest.mark.skip(reason="WIP: various issues affecting reliabililty of test")
 @given(
     positive_balance,
     positive_balance,
@@ -324,22 +326,24 @@ def test_remove_liquidity_one_coin(vyper_metapool, vyper_3pool, amount, i):
 )
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
-    max_examples=5,
+    max_examples=10,
     deadline=None,
 )
 def test_dydxfee(x0, x1, b0, b1, b2, i, j):
     """Test `dydxfee` against discrete pricing using `exchange`"""
-    assume(i != j)
+    # don't test between base underlyers here; will be done in regular pool tests
+    assume(i != j and (i == 0 or j == 0))
 
     admin_fee = 5 * 10**9
 
     base_A = 3000
-    _base_balances = [b0, b1, b2]
     base_p = [10**18, 10**30, 10**30]
-    base_balances = [b * 10**18 // p for b, p in zip(_base_balances, base_p)]
-    base_n = len(_base_balances)
-    base_tokens = sum(_base_balances)
+    base_balances = [b0, b1, b2]
+    base_balances = [b * 10**18 // p for b, p in zip(base_balances, base_p)]
+    base_n = len(base_balances)
+    base_tokens = sum(base_balances)
     base_fee = 1 * 10**6
+    base_fee = 0
     basepool = Pool(
         base_A,
         D=base_balances,
@@ -351,12 +355,13 @@ def test_dydxfee(x0, x1, b0, b1, b2, i, j):
     )
 
     A = 1365
-    _balances = [x0, x1]
     p = [10**18, 10**18]
-    balances = [b * 10**18 // p for b, p, in zip(_balances, base_p)]
-    n = len(_balances)
-    tokens = sum(_balances)
+    balances = [x0, x1]
+    balances = [b * 10**18 // p for b, p in zip(balances, p)]
+    n = len(balances)
+    tokens = sum(balances)
     fee = 4 * 10**6
+    fee = 0
     metapool = MetaPool(
         A,
         D=balances,
@@ -371,17 +376,29 @@ def test_dydxfee(x0, x1, b0, b1, b2, i, j):
     _dydx = metapool.dydxfee(i, j)
 
     rates = p[:1] + base_p
-    dx = 10**18
-    _dx = dx * 10**18 // rates[i]  # real units
-    _dy, _ = metapool.exchange_underlying(i, j, _dx)
-    dy = _dy * rates[j] // 10**18  # virtual units
+    _dx = 10**12
+    dx = _dx * 10**18 // rates[i]
+    dy, _ = metapool.exchange_underlying(i, j, dx)
+    _dy = dy * rates[j] // 10**18
 
-    price = dy / dx
-    print("\n")
-    print("Discretized derivative:", price)
-    print("Continuous derivative:", _dydx)
-    print(f"_dx: {_dx}, i: {i} ")
-    print(f"_dy: {_dy}, j: {j} ")
-    print(base_balances)
-    print(balances)
-    print("-------------------------------")
+    price = _dy / _dx
+    # print("\n")
+    # print("Discretized derivative:", price)
+    # print("Continuous derivative:", _dydx)
+    # print(f"dx: {dx}, i: {i} ")
+    # print(f"dy: {dy}, j: {j} ")
+    # print(base_balances)
+    # print(balances)
+    # print("-------------------------------")
+
+    assert _dydx > 0
+    assert price > 0
+
+    tol = 1e-12
+    if i == 0:
+        # due to our fee approximation for the continuous pricing case,
+        # we won't get as much precision with using `exchange_underlying`,
+        # which will use the exact fee logic in the contracts.
+        tol = 0.0015
+
+    assert abs(price - _dydx) < tol
