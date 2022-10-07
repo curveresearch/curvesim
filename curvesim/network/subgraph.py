@@ -1,4 +1,5 @@
 from asyncio import gather
+from datetime import datetime, timedelta
 
 import pandas as pd
 from eth_utils import to_checksum_address
@@ -47,33 +48,43 @@ async def symbol_address(symbol, chain):
 
 
 async def volume(address, chain, days=60):
+    t_end = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    t_start = t_end - timedelta(days=days)
+
     q = """
         {
           swapVolumeSnapshots(
             orderBy: timestamp,
             orderDirection: desc,
-            first: %d,
             where:
               {
                 pool: "%s"
                 period: "86400"
+                timestamp_gte: %d
+                timestamp_lte: %d
               }
           )
           {
             volume
+            timestamp
           }
         }
     """ % (
-        days,
         address.lower(),
+        int(t_start.timestamp()),
+        int(t_end.timestamp()),
     )
 
     r = await convex(chain, q)
     r = r["data"]["swapVolumeSnapshots"]
+    r_length = len(r)
+
+    if r_length < days:
+        print(f"Warning: only {r_length}/{days} days of volume returned")
 
     volume = 0
-    for i in range(days):
-        volume += float(r[i]["volume"])
+    for day in r:
+        volume += float(day["volume"])
 
     return volume
 
