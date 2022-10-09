@@ -1,4 +1,3 @@
-from asyncio import gather
 from datetime import datetime, timedelta
 
 import pandas as pd
@@ -127,8 +126,7 @@ async def snapshot(address, chain):
         % address.lower()
     )
 
-    r, vol = await gather(convex(chain, q), volume(address, chain))
-
+    r = await convex(chain, q)
     r = r["data"]["dailyPoolSnapshots"][0]
 
     # Flatten
@@ -184,7 +182,6 @@ async def snapshot(address, chain):
             "virtual_price": int(r["virtualPrice"]),
             "tokens": D * 10**18 // int(r["virtualPrice"]),
         },
-        "volume": vol,
         "basepool": basepool,
         "timestamp": int(r["timestamp"]),
     }
@@ -209,7 +206,7 @@ async def snapshot(address, chain):
 RAI_ADDR = ("0x618788357D0EBd8A37e763ADab3bc575D54c2C7d", "mainnet")
 
 
-async def redemption_price(n=1000, address=RAI_ADDR[0], chain=RAI_ADDR[1]):
+async def redemption_prices(address=RAI_ADDR[0], chain=RAI_ADDR[1], n=1000):
     if (address, chain) != RAI_ADDR:
         return None
 
