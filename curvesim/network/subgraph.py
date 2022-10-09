@@ -162,7 +162,7 @@ async def snapshot(address, chain):
     if r["metapool"]:
         basepool = await snapshot(r["basePool"], chain)
     else:
-        basepool = False
+        basepool = None
 
     # Output
     data = {
