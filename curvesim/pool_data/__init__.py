@@ -1,5 +1,9 @@
-__all__ = ["from_address", "from_symbol", "get", "queries"]
-from curvesim.pool_data.queries import from_address, from_symbol
+__all__ = ["from_address", "from_symbol", "get", "queries", "Pool", "MetaPool"]
+
+from ..pool.metapool import MetaPool
+from ..pool.pool import Pool
+from . import queries
+from .queries import from_address, from_symbol
 
 
 def get(address_or_symbol, chain="mainnet", src="cg", balanced=(True, True), days=60):
@@ -8,7 +12,7 @@ def get(address_or_symbol, chain="mainnet", src="cg", balanced=(True, True), day
     else:
         from_x = from_symbol
 
-    params = from_x(address_or_symbol, chain, balanced=balanced, days=days)
+    params = from_x(address_or_symbol, chain, balanced=balanced)
 
     pool_data = PoolData(params)
 
@@ -27,12 +31,14 @@ class PoolData(dict):
 
         if self["basepool"]:
             bp_kwargs = bal(self["basepool"]["init_kwargs"], balanced[1])
-            kwargs.update({"basepool": bp_kwargs})
+            kwargs.update({"basepool": Pool(**bp_kwargs)})
+            pool = MetaPool(**kwargs)
+        else:
+            pool = Pool(**kwargs)
 
-        # to update: return pool object using kwargs
-        # pool.metadata = self
+        pool.metadata = self
 
-        return kwargs
+        return pool
 
     def coins(self):
         if not self["basepool"]:
@@ -41,47 +47,22 @@ class PoolData(dict):
             c = self["coins"]["addresses"][:-1] + self["basepool"]["coins"]["addresses"]
         return c
 
-    def volume(self):
-        if not self["basepool"]:
-            vol = self["volume"]
-        else:
-            vol = [self["volume"], self["basepool"]["volume"]]
+    def volume(self, days=60):
+        address = self["address"]
+        chain = self["chain"]
+
+        bp = None
+        if self["basepool"]:
+            bp = self["basepool"]["address"]
+
+        vol = queries.volume(address, chain, bp_address=bp, days=days)
+
         return vol
 
-    def redemption_prices(self):
-        return self["r"]
+    def redemption_prices(self, n=1000):
+        address = self["address"]
+        chain = self["chain"]
 
-    def legacy(self, balanced=(True, True)):
-        pool = self.pool(balanced=balanced)
+        r = queries.redemption_prices(address, chain, n=n)
 
-        if self["basepool"]:
-            basepool = pool.pop("basepool")
-            legacy_args = {
-                "D": [pool["D"], basepool["D"]],
-                "coins": self.coins(),
-                "n": [pool["n"], basepool["n"]],
-                "A": pool["A"],
-                "A_base": basepool["A"],
-                "fee": pool["fee"],
-                "fee_base": basepool["fee"],
-                "tokens": [pool["tokens"], basepool["tokens"]],
-                "fee_mul": [pool["fee_mul"], basepool["fee_mul"]],
-                "histvolume": self.volume(),
-                "r": self.redemption_prices(),
-            }
-        else:
-            legacy_args = {
-                "D": pool["D"],
-                "coins": self.coins(),
-                "n": pool["n"],
-                "A": pool["A"],
-                "A_base": None,
-                "fee": pool["fee"],
-                "fee_base": None,
-                "tokens": pool["tokens"],
-                "fee_mul": pool["fee_mul"],
-                "histvolume": self.volume(),
-                "r": self.redemption_prices(),
-            }
-
-        return legacy_args
+        return r
