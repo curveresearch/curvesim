@@ -221,32 +221,42 @@ def plotsimsfee(A_list, fee_list, ar, bal, depth, volume, err, show=True, saveas
         plt.show()
 
 
+def stringify_fee(fee):
+    return str(round(fee) / 10**8)[2:].ljust(2, "0")
+
+
 def saveplots(
-    poolname, A_list, fee_list, ar, bal, depth, volume, pool_value, log_returns, err
+    poolname,
+    A_list,
+    fee_list,
+    ar,
+    bal,
+    depth,
+    volume,
+    pool_value,
+    log_returns,
+    err,
+    fee_base=None,
 ):
     if not os.path.exists("results/" + poolname):
         os.makedirs("results/" + poolname)
 
+    if fee_base:
+        filedir = os.path.join(
+            "results", poolname, "base_fee_" + stringify_fee(fee_base)
+        )
+    else:
+        filedir = os.path.join("results", poolname)
+    os.makedirs(filedir, exist_ok=True)
+
     if len(fee_list) > 1:
+        filename = os.path.join(filedir, "summary")
         plotsimsfee(
-            A_list,
-            fee_list,
-            ar,
-            bal,
-            depth,
-            volume,
-            err,
-            show=False,
-            saveas="results/" + poolname + "/summary",
+            A_list, fee_list, ar, bal, depth, volume, err, show=False, saveas=filename
         )
 
     for curr_fee in fee_list:
-        filename = (
-            "results/"
-            + poolname
-            + "/fee_"
-            + str(round(curr_fee) / 10**8)[2:].ljust(2, "0")
-        )
+        filename = os.path.join(filedir, "fee_" + stringify_fee(curr_fee))
 
         plotsims(
             A_list,

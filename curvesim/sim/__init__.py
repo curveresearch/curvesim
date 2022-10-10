@@ -245,6 +245,7 @@ def autosim(  # noqa: C901
     A=None,
     D=None,
     fee=None,
+    fee_base=None,
     vol_mult=None,
     vol_mode=1,
     fee_mul=None,
@@ -380,6 +381,11 @@ def autosim(  # noqa: C901
     else:
         fee_list = np.array(fee) * 10**10
 
+    if fee_base:
+        fee_base = int(fee_base * 10**10)
+    else:
+        fee_base = pldata["fee_base"]
+
     # Test values
     if test:
         A_list = np.array([100, 1000])
@@ -397,7 +403,7 @@ def autosim(  # noqa: C901
         prices,
         volumes,
         A_base=pldata["A_base"],
-        fee_base=pldata["fee_base"],
+        fee_base=fee_base,
         tokens=pldata["tokens"],
         fee_mul=fee_mul,
         vol_mult=vol_mult,
@@ -418,6 +424,7 @@ def autosim(  # noqa: C901
         res["pool_value"],
         res["log_returns"],
         res["err"],
+        fee_base=fee_base,
     )
 
     # Save text
