@@ -1,4 +1,4 @@
-__all__ = ["get", "make", "MetaPool", "Pool"]
+__all__ = ["get", "MetaPool", "Pool"]
 
 from curvesim.pool_data import get as _get_pool_data
 
