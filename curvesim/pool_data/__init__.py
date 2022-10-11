@@ -1,8 +1,17 @@
-__all__ = ["from_address", "from_symbol", "get", "queries", "Pool", "MetaPool"]
+__all__ = [
+    "MetaPool",
+    "Pool",
+    "PoolData",
+    "from_address",
+    "from_symbol",
+    "get",
+    "queries",
+]
 
+from ..network.subgraph import redemption_prices_sync as _redemption_prices
+from ..network.subgraph import volume_sync as _volume
 from ..pool.metapool import MetaPool
 from ..pool.pool import Pool
-from . import queries
 from .queries import from_address, from_symbol
 
 
@@ -30,7 +39,8 @@ class PoolData(dict):
         kwargs = bal(self["init_kwargs"].copy(), balanced[0])
 
         if self["basepool"]:
-            bp_kwargs = bal(self["basepool"]["init_kwargs"], balanced[1])
+            bp_kwargs = self["basepool"]["init_kwargs"].copy()
+            bp_kwargs = bal(bp_kwargs, balanced[1])
             kwargs.update({"basepool": Pool(**bp_kwargs)})
             pool = MetaPool(**kwargs)
         else:
@@ -48,21 +58,24 @@ class PoolData(dict):
         return c
 
     def volume(self, days=60):
-        address = self["address"]
+        addrs = self["address"]
         chain = self["chain"]
 
-        bp = None
         if self["basepool"]:
-            bp = self["basepool"]["address"]
+            addrs = [addrs, self["basepool"]["address"]]
+            vol = _volume(addrs, chain, days=days)
+            summed_vol = [sum(v) for v in vol]
 
-        vol = queries.volume(address, chain, bp_address=bp, days=days)
+        else:
+            vol = _volume(addrs, chain, days=days)
+            summed_vol = sum(vol)
 
-        return vol
+        return summed_vol
 
     def redemption_prices(self, n=1000):
         address = self["address"]
         chain = self["chain"]
 
-        r = queries.redemption_prices(address, chain, n=n)
+        r = _redemption_prices(address, chain, n=n)
 
         return r

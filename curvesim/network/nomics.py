@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from numpy import NaN
 
 from .http import HTTP
+from .utils import sync
 
 load_dotenv()
 key = os.environ.get("NOMICS_API_KEY")
@@ -162,7 +163,7 @@ def update(coins, quote, t_start, t_end, pairs=False):  # noqa: C901
     t_end = t_end.replace(tzinfo=timezone.utc)
 
     loop = asyncio.get_event_loop()
-    coins = loop.run_until_complete(coin_ids_from_addresses(coins))
+    coins = coin_ids_from_addresses_sync(coins, event_loop=loop)
 
     # Coins priced against one another
     if quote is None:
@@ -176,14 +177,13 @@ def update(coins, quote, t_start, t_end, pairs=False):  # noqa: C901
 
     # Coins prices against single quote currency
     else:
-        quote = loop.run_until_complete(coin_id_from_address(quote))
+        quote = coin_ids_from_addresses_sync(quote, event_loop=loop)
         combos = [(coin, quote) for coin in coins]
 
     # Get data for each pair
     for pair in combos:
-        print(f"Downloading {pair[0]}-{pair[1]}")
         f_name = f"data/{pair[0]}-{pair[1]}.csv"
-        fn = None
+        vwap_args = None
 
         try:
             curr_file = pd.read_csv(f_name, index_col=0)
@@ -196,15 +196,16 @@ def update(coins, quote, t_start, t_end, pairs=False):  # noqa: C901
                 t_start = t_start_orig
 
             if t_start < t_end:
-                fn = vwap_agg(pair, t_start, t_end)
+                vwap_args = (pair, t_start, t_end)
 
         except Exception:
             curr_file = None
-            fn = vwap_agg(pair, t_start_orig, t_end)
+            vwap_args = (pair, t_start_orig, t_end)
 
         # Save if any new data
-        if fn is not None:
-            data = loop.run_until_complete(fn)
+        if vwap_args is not None:
+            print(f"Downloading {pair[0]}-{pair[1]}")
+            data = vwap_agg_sync(*vwap_args)
             if curr_file is not None:
                 data = pd.concat([curr_file, data])
             data = data[data.index >= t_start_orig]
@@ -241,17 +242,19 @@ def pool_prices(  # noqa: C901
         raise ValueError("Use only 'coins' or 'pairs', not both.")
 
     if coins:
-        coins = loop.run_until_complete(coin_ids_from_addresses(coins))
+        coins = coin_ids_from_addresses_sync(coins, event_loop=loop)
 
         if quote:
-            quote = loop.run_until_complete(coin_id_from_address(quote))
+            quote = coin_ids_from_addresses_sync(quote, event_loop=loop)
             symbol_pairs = zip(coins, [quote] * len(coins))
+
         else:
             symbol_pairs = list(combinations(coins, 2))
-    elif pairs:
-        pairs = loop.run_until_complete(coin_ids_from_addresses(pairs))
 
+    elif pairs:
+        pairs = coin_ids_from_addresses_sync(pairs, event_loop=loop)
         symbol_pairs = pairs
+
     else:
         raise ValueError("Must use one of 'coins' or 'pairs'.")
 
@@ -415,7 +418,7 @@ def local_pool_prices(  # noqa: C901
     return prices, volumes, pzero
 
 
-async def coin_id_from_address(address):
+async def _coin_id_from_address(address):
     if address == ETH_addr:
         return "ETH"
 
@@ -431,10 +434,23 @@ async def coin_id_from_address(address):
 
 
 async def coin_ids_from_addresses(addresses):
-    tasks = []
-    for addr in addresses:
-        tasks.append(coin_id_from_address(addr))
+    if isinstance(addresses, str):
+        coin_ids = await _coin_id_from_address(addresses)
 
-    coin_ids = await asyncio.gather(*tasks)
+    else:
+        tasks = []
+        for addr in addresses:
+            tasks.append(_coin_id_from_address(addr))
+
+        coin_ids = await asyncio.gather(*tasks)
 
     return coin_ids
+
+
+# Sync
+get_data_sync = sync(get_data)
+get_mkt_sync = sync(get_mkt)
+get_agg_sync = sync(get_agg)
+vwap_mkt_sync = sync(vwap_mkt)
+vwap_agg_sync = sync(vwap_agg)
+coin_ids_from_addresses_sync = sync(coin_ids_from_addresses)

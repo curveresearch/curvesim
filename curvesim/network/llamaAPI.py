@@ -4,6 +4,7 @@ from eth_utils import to_checksum_address
 from numpy import array
 
 from .http import HTTP
+from .utils import sync
 
 URL = "https://api-py.llama.airforce/curve/v1/"
 
@@ -101,3 +102,13 @@ async def latest_reserves(address, chain, p=10**18, bp=None, inUSD=True):
         )
 
     return curr_reserves
+
+
+# Sync
+llamaAPI_sync = sync(llamaAPI)
+pools_sync = sync(pools)
+pool_metadata_sync = sync(pool_metadata)
+symbol_address_sync = sync(symbol_address)
+volume_sync = sync(volume)
+reserves_sync = sync(reserves)
+latest_reserves_sync = sync(latest_reserves)
