@@ -1,2 +1,6 @@
-Simulation period: 08/09/22 to 10/09/22
-CAUTION: Trade volume limiting may be less accurate for CoinGecko data.
+Simulation period: 08/12/22 to 10/11/22
+Data Availability:
+0x056Fd409E1d7A124BD7017459dFEa2F387b6d5Cd/0x853d955aCEf822Db058eb8505911ED77F175b99e: 0.2%
+0x056Fd409E1d7A124BD7017459dFEa2F387b6d5Cd/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48: 37.7%
+0x853d955aCEf822Db058eb8505911ED77F175b99e/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48: 97.3%
+CAUTION: Limited price data used in simulation
