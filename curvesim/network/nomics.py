@@ -87,7 +87,7 @@ async def vwap_agg(coins, t_start, t_end):
 
     data = await asyncio.gather(
         get_agg(coins, t_start, t_end, exp=1),
-        get_agg(coins[::-1], t_start, t_end, exp=1),
+        get_agg(coins[::-1], t_start, t_end, exp=-1),
     )
 
     prices = [d["price"] for d in data]
