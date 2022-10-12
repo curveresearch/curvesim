@@ -10,20 +10,28 @@ To avoid dependency issues, it is recommended to use the included `requirements.
 
 
 ## Basic Use: Autosim
-The autosim() function simulates existing Curve pools with a range of A and/or fee parameters. The function fetches pool properties (e.g., current pool size) and 2 months of price/volume data, runs multiple simulations in parallel, and saves results plots to the "pools" directory. 
+The autosim() function simulates existing Curve pools with a range of A and/or fee parameters. The function fetches pool properties (e.g., current pool size) and 2 months of price/volume data, runs multiple simulations in parallel, and saves results plots to the "results" directory. 
 
-Any pool with an entry in poolDF_cg.csv (if using CoinGecko data) or poolDF_nomics.csv (if using Nomics or local data) can be simulated by passing its name as an argument to autosim(). Additional entries can easily be added to these CSVs (see Adding Pools).
+Curve pools from any chain supported by the [Convex Community Subgraphs](https://thegraph.com/hosted-service/subgraph/convex-community/volume-mainnet) can be simulated directly by inputting the pool's address or symbol. For factory pools, the pool and LP token use the same symbol. For earlier pools, we use the LP token symbol.
 
 ### Example:
-For example, to simulate 3pool with the default configuration, simply run:
+For example, to simulate 3pool with the default configuration, you could use either its address or the '3crv' LP token symbol (both are case-insensitive):
 
 ```python
 import curvesim
-res = curvesim.autosim('3pool')
+res = curvesim.autosim("0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7")
+res = curvesim.autosim("3crv")
 ```
 
+To simulate pools on chains other than Ethereum, use the "chain" argument:
+```python
+import curvesim
+res = curvesim.autosim("2crv", chain="arbitrum")
+```
+
+
 ### Results:
-Plots of the results will be saved to the "pools/poolname" (e.g., pools/3pool) directory. The output dictionary, "res", contains pandas dataframes for all of the data plotted in the figures:
+Plots of the results will be saved to the "results/poolname" (e.g., pools/3crv) directory. The output dictionary, "res", contains pandas dataframes for all of the data plotted in the figures:
 
 * **ar**: annualized returns
 * **bal**: balance parameter over time, bal=1 when in perfect balance, and bal=0 when all holdings are in 1 coin
@@ -37,7 +45,6 @@ Plots of the results will be saved to the "pools/poolname" (e.g., pools/3pool) d
 
 ## Customizing Simulation Parameters
 By default, pools are simulated using:
-* parameters prescribed in poolDF_\*.csv
 * on-chain or Curve Subgraph data about the pool
 * a broad range of A (16 values, 64 to 11,585) and fee (5 values, 0.02 to 0.06%) values
 * CoinGecko price/volume data
@@ -53,18 +60,18 @@ import curvesim
 import numpy as np
 
 #Specify A values:
-res = curvesim.autosim('3pool', A=np.linspace(1000,20000,20))
+res = curvesim.autosim('3crv', A=np.linspace(1000,20000,20))
 
 #Specify fees (0.04% and 0.05%):
-res = curvesim.autosim('3pool', fee=[.0003, .0004])
+res = curvesim.autosim('3crv', fee=[.0003, .0004])
 
 #Specify custom A range and 0.03% fee
 #Note that single fee must still be a list
-res = curvesim.autosim('3pool', A=np.linspace(1000,20000,20), fee=[.0003])
+res = curvesim.autosim('3crv', A=np.linspace(1000,20000,20), fee=[.0003])
 ```
 Additionally, a small number of A/fee values (2 each) can be set for testing purposes: 
 ```python
-res = curvesim.autosim('3pool', test=True)
+res = curvesim.autosim('3crv', test=True)
 ```
 
 
@@ -78,18 +85,18 @@ The following parameters are automatically specified by autosim(), but can be ov
 import curvesim
 
 #Simulate 3pool assuming total deposit of $10B, fee = 0.03%
-res = curvesim.autosim('3pool', D=10000000000, fee=[.0003])
+res = curvesim.autosim('3crv', D=10000000000, fee=[.0003])
 
 #For metapools, specifying D effects the deposit in the metapool, but not the basepool
-#Simulate BUSDv2 metapool assuming total deposit of $1B, fee = 0.03%
-res = curvesim.autosim('busdv2', D=1000000000, fee=[.0003])
+#Simulate USDN metapool assuming total deposit of $1B, fee = 0.03%
+res = curvesim.autosim('usdn3crv', D=1000000000, fee=[.0003])
 
 #Simulate 3pool, limiting volume to 75% of market volume, fee = 0.03% 
 #Note: it is not reccomended to adjust this parameter, try vol_mode instead (see below)
-res = curvesim.autosim('3pool', vol_mult=.75, fee=[.0003])
+res = curvesim.autosim('3crv', vol_mult=.75, fee=[.0003])
 
 #Simulate hypothetical 3pool with dynamic fee like AAVE pool, fee = 0.03% 
-res = curvesim.autosim('3pool', feemul=2*10**10, fee=[.0003])
+res = curvesim.autosim('3crv', feemul=2*10**10, fee=[.0003])
 ```
 
 ### Volume Limits
@@ -109,8 +116,6 @@ The "src" argument can be used to choose between 3 different data sources:
 * **src = "nomics"**: Nomics API (paid); set `NOMICS_API_KEY` as env variable or in `.env` file.
 * **src = "local"**: local data stored in the "data" folder
 
-Because CoinGecko and Nomics use different naming conventions for each coin, we provide `poolDF_cg.csv` and `poolDF_nomics.csv` specifying coin names for each source. The "local" option uses `poolDF_nomics`.
-
 #### Note on CoinGecko vs. Nomics Data
 While Nomics provides 30-minute-interval data for each specific coin-pair, CoinGecko provides prices *per coin* in 1-hour intervals. Each coin's price is computed relative to all its trading pairs and converted to a quote currency (e.g., USD), with volume summed across all trading pairs. Therefore, market volume taken from CoinGecko is often much higher than one can expect for a specific coin-pair. This issue is largely ameloriated by our volume limiting approach, with CoinGecko results typically mirroring Nomics results qualitatively, but it should be noted that CoinGecko data may be less reliable than Nomics data for certain simulations.
 
@@ -121,23 +126,6 @@ Additionally, one can specify:
 * **ncpu**: number of CPUs to use for parallel processing (default: 4); for use with profilers, e.g. `cProfile`, use `ncpu=1`.
 * **trunc**: a pair of indicies to truncate price/volume data to [trunc[0]:trunc[1]]
 
-## Adding Pools
-We have provided information for many (but not all) pools in the poolDF_\*.csv files. To add additional pools, simply add a line to the relevant CSV with the following attributes seperated by semi-colons:
-
-* **name**: name to reference the pool by
-* **address**: address on ETH mainnet 
-* **coins**: list of coin IDs used for fetching price/volume data; differs for Coingecko and Nomics!
-* **precmul**: list of multipliers to bring coin precision up to 10\*\*18; "PRECISION_MUL" in pool contract
-* **basepool**: if metapool, name of basepool
-* **tokentype**: list specifying if any token is cToken or yToken; only used to calculate initial holdings
-* **feemul**: fee multiplier for dynamic fee pools; "offpeg_fee_multiplier" in pool contract
-
 ## Simulating Hypothetical Pools
-If a pool does not already exist, the easiest way to simulate it is to copy a poolDF_\*.csv line for a similar pool (e.g., if metapool, copy busdv2 or usdn, etc.), replace the coin IDs ("coins") with the coins of interest, update precmul to the appropriate values, and then specify D and volmult when running autosim().
-
-Alternatively, you can directly input the relevant pool values into the psim() function. Instructions for this will be added soon.
-
-## Forthcoming
-* support for additional blockchains
-* auto-populating poolDF_\*.csv from Curve pool registry
+If a pool does not already exist, you can directly input the relevant pool values into the psim() function.
 
