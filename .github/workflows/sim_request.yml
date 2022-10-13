@@ -1,4 +1,4 @@
-name: CI
+name: Sim Request
 
 on:
   issues:
