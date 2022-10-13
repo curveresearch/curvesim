@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  issues:
+    types: [labeled, edited]
+
+jobs:
+  build:
+    if: ${{ github.event.label.name == 'sim request' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: '8f63eb1612a7fd3b6e6182ea7db8a863ff7c4478'
+
+      - name: Set up latest Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "*"
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: View issue information
+        run: |
+          echo "Issue title: ${{ github.event.issue.title }}"
+          echo "Issue body: ${{ github.event.issue.body }}"
+
+      - name: View the github context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
