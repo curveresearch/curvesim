@@ -7,11 +7,6 @@ from .pool import Pool
 
 
 def get(address_or_symbol, chain="mainnet", src="cg", balanced=(False, False)):
-    p = _get_pool_data(
-        address_or_symbol,
-        chain=chain,
-        src=src,
-        balanced=balanced,
-    )
+    p = _get_pool_data(address_or_symbol, chain=chain, src=src)
 
-    return p.pool()
+    return p.pool(balanced=balanced)

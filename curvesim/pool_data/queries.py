@@ -5,7 +5,7 @@ from ..network.subgraph import pool_snapshot_sync, symbol_address_sync
 from ..network.web3 import underlying_coin_addresses_sync
 
 
-def from_address(address, chain, balanced=(True, True)):
+def from_address(address, chain):
     loop = asyncio.get_event_loop()
     data = pool_snapshot_sync(address, chain, event_loop=loop)
 
@@ -31,6 +31,6 @@ def from_address(address, chain, balanced=(True, True)):
 def from_symbol(symbol, chain, balanced=(True, True)):
     address = symbol_address_sync(symbol, chain)
 
-    data = from_address(address, chain, balanced=balanced)
+    data = from_address(address, chain)
 
     return data

@@ -15,13 +15,13 @@ from ..pool.pool import Pool
 from .queries import from_address, from_symbol
 
 
-def get(address_or_symbol, chain="mainnet", src="cg", balanced=(True, True), days=60):
+def get(address_or_symbol, chain="mainnet", src="cg", days=60):
     if address_or_symbol.startswith("0x"):
         from_x = from_address
     else:
         from_x = from_symbol
 
-    params = from_x(address_or_symbol, chain, balanced=balanced)
+    params = from_x(address_or_symbol, chain)
 
     pool_data = PoolData(params)
 
