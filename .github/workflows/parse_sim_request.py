@@ -15,15 +15,17 @@ body = os.getenv("BODY")
 if not body:
     raise Exception("BODY env var is not populated.")
 
+body = body.replace(r"\r", "\r").replace(r"\n", "\n")
+
 parts = body.split(SECTION_HEADING)
 if len(parts) != 2:
     raise Exception("Need exactly one section heading.")
-config_string = SECTION_HEADING + "\n" + parts[1]
+config_string = SECTION_HEADING + parts[1]
 
 config = configparser.ConfigParser()
 config.read_string(config_string)
 
-pool_settings = config[SECTION_HEADING]
+pool_settings = config[SECTION_HEADING.strip("][")]
 poolname = pool_settings.get("address") or pool_settings.get("symbol")
 chain = pool_settings.get("chain", "mainnet")
 
