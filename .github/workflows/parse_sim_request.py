@@ -6,7 +6,6 @@
 # other param choices may be allowed in the future
 
 import configparser
-import io
 import json
 import os
 
