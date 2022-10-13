@@ -37,7 +37,7 @@ jobs:
         run: |
           echo "$GITHUB_CONTEXT"
 
-      - name: Extract pool settings from issue text
+      - name: Run pool simulation
         env:
           BODY: ${{ github.event.issue.body }}
         run: |

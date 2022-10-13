@@ -3,7 +3,7 @@
 import json
 import sys
 
-sys.path.insert(0, "../")
+sys.path.insert(0, ".")
 import curvesim  # noqa
 
 json_data = sys.stdin.read()
