@@ -33,4 +33,15 @@ jobs:
       - name: View the github context
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "$GITHUB_CONTEXT"
+        run: |
+          echo "$GITHUB_CONTEXT"
+
+      - name: Extract pool settings from issue text
+        env:
+          BODY: ${{ github.event.issue.body }}
+        run: |
+          # will extract settings from BODY env var
+          python3 ./github/workflows/parse_sim_request.py
+
+
+
