@@ -6,7 +6,8 @@ on:
 
 jobs:
   build:
-    if: ${{ github.event.label.name == 'sim request' }}
+    # if: ${{ github.event.label.name == 'sim request' }}
+    if: contains(github.event.issue.labels.*.name, 'sim request')
     runs-on: ubuntu-latest
 
     steps:
