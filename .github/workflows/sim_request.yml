@@ -42,7 +42,7 @@ jobs:
           BODY: ${{ github.event.issue.body }}
         run: |
           # will extract settings from BODY env var
-          python3 ./github/workflows/parse_sim_request.py
+          python3 ./.github/workflows/parse_sim_request.py
 
 
 
