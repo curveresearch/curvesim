@@ -36,8 +36,8 @@ jobs:
           BODY: ${{ github.event.issue.body }}
         run: |
           # will extract settings from BODY env var
-          python3 .github/workflows/parse_sim_request.py | \
-          python3 .github/workflows/run_sim_request.py
+          python3 .github/workflows/parse_sim_request.py > sim_settings.json
+          sim_settings.json > python3 .github/workflows/run_sim_request.py
 
       - name: Save results
         run: |
@@ -46,7 +46,7 @@ jobs:
           git config --add --bool push.autoSetupRemote true
           BRANCH=sim-request-${{ github.event.issue.number }}; \
           git checkout $(git show-ref --verify --quiet refs/heads/$BRANCH || echo '-b') $BRANCH
-          git add results data
+          git add .
           git commit -m "Commit sim results - GH run ID: ${{ github.run_id }}"
           git push
 
