@@ -45,6 +45,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config --add --bool push.autoSetupRemote true
           BRANCH=sim-request-${{ github.event.issue.number }}; \
+          git fetch origin $BRANCH 2>/dev/null; \
           git checkout $(git show-ref --verify --quiet refs/heads/$BRANCH || echo '-b') $BRANCH
           git add .
           git commit -m "Commit sim results - GH run ID: ${{ github.run_id }}"
