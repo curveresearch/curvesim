@@ -47,6 +47,7 @@ jobs:
           fi
 
       - name: Run pool simulation
+        id: sim-run
         env:
           BODY: ${{ github.event.issue.body }}
         run: |
@@ -55,7 +56,27 @@ jobs:
           python3 .github/workflows/run_sim_request.py < sim_settings.json
 
       - name: Save results
+        id: sim-save
         run: |
           git add .
           git commit -m "Commit sim results - GH run ID: ${{ github.run_id }}"
           git push
+
+      - name: Failure comment
+        if: failure()
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            Simulation run has failed.  Please contact the research team for assistance.
+
+      - name: Success comment
+        if: steps.sim-save.outcome == 'success'
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            Simulation run has completed successfuly.
+
+            [Sim results](https://github.com/curveresearch/curvesim/tree/sim-request-${{ github.event.issue.number }}/results)
+
