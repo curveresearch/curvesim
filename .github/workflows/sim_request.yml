@@ -48,6 +48,9 @@ jobs:
           if `git show-ref --verify --quiet refs/heads/$BRANCH`; then \
             git fetch origin $BRANCH; \
             git checkout $BRANCH; \
+            git stash; \
+            git pull; \
+            git stash pop; \
           else \
             git checkout -b $BRANCH; \
           fi
