@@ -12,4 +12,4 @@ pool_settings = json.loads(json_data)
 poolname = pool_settings["poolname"]
 chain = pool_settings["chain"]
 
-res = curvesim.autosim(poolname, chain=chain, ncpu=4)
+res = curvesim.autosim(poolname, chain=chain, ncpu=4, test=True)
