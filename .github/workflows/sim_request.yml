@@ -46,8 +46,8 @@ jobs:
           git config --add --bool push.autoSetupRemote true
           BRANCH=sim-request-${{ github.event.issue.number }}; \
           if `git show-ref --verify --quiet refs/heads/$BRANCH`; then \
+            git fetch origin $BRANCH; \
             git checkout $BRANCH; \
-            git pull; \
           else \
             git checkout -b $BRANCH; \
           fi
