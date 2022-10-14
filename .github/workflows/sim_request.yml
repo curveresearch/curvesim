@@ -37,7 +37,7 @@ jobs:
         run: |
           # will extract settings from BODY env var
           python3 .github/workflows/parse_sim_request.py > sim_settings.json
-          sim_settings.json > python3 .github/workflows/run_sim_request.py
+          python3 .github/workflows/run_sim_request.py < sim_settings.json
 
       - name: Save results
         run: |
