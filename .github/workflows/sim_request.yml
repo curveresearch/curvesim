@@ -31,6 +31,21 @@ jobs:
       #   run: |
       #     echo "$GITHUB_CONTEXT"
 
+      - name: Checkout branch for results
+        run: |
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git config --add --bool push.autoSetupRemote true
+          BRANCH=sim-request-${{ github.event.issue.number }}; \
+          git fetch origin $BRANCH 2>/dev/null; \
+          if `git show-ref --verify --quiet refs/heads/$BRANCH`; then \
+            echo "Checking out existing branch..."; \
+            git checkout $BRANCH; \
+          else \
+            echo "Checking out new branch..."; \
+            git checkout -b $BRANCH; \
+          fi
+
       - name: Run pool simulation
         env:
           BODY: ${{ github.event.issue.body }}
@@ -41,20 +56,6 @@ jobs:
 
       - name: Save results
         run: |
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git config user.name "github-actions[bot]"
-          git config --add --bool push.autoSetupRemote true
-          BRANCH=sim-request-${{ github.event.issue.number }}; \
-          if `git show-ref --verify --quiet refs/heads/$BRANCH`; then \
-            git fetch origin $BRANCH; \
-            git checkout $BRANCH; \
-            git stash; \
-            git pull; \
-            git stash pop; \
-          else \
-            git checkout -b $BRANCH; \
-          fi
           git add .
           git commit -m "Commit sim results - GH run ID: ${{ github.run_id }}"
           git push
-
