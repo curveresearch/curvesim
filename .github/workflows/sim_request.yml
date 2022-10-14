@@ -37,8 +37,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config --add --bool push.autoSetupRemote true
           BRANCH=sim-request-${{ github.event.issue.number }}; \
-          git fetch origin $BRANCH 2>/dev/null; \
-          if `git show-ref --verify --quiet refs/heads/$BRANCH`; then \
+          if `git ls-remote --exit-code --heads origin $BRANCH`; then \
+            git fetch origin $BRANCH; \
             echo "Checking out existing branch..."; \
             git checkout $BRANCH; \
           else \
