@@ -8,6 +8,8 @@ __all__ = [
     "queries",
 ]
 
+from numpy import array
+
 from ..network.subgraph import redemption_prices_sync as _redemption_prices
 from ..network.subgraph import volume_sync as _volume
 from ..pool.metapool import MetaPool
@@ -64,13 +66,27 @@ class PoolData(dict):
         if self["basepool"]:
             addrs = [addrs, self["basepool"]["address"]]
             vol = _volume(addrs, chain, days=days)
-            summed_vol = [sum(v) for v in vol]
+            summed_vol = array([sum(v) for v in vol])
 
         else:
             vol = _volume(addrs, chain, days=days)
-            summed_vol = sum(vol)
+            summed_vol = array(sum(vol))
 
         return summed_vol
+
+    def n(self):
+        if not self["basepool"]:
+            n = self["init_kwargs"]["n"]
+        else:
+            n = [self["init_kwargs"]["n"], self["basepool"]["init_kwargs"]["n"]]
+
+        return n
+
+    def type(self):
+        if self["basepool"]:
+            return "MetaPool"
+        else:
+            return "Pool"
 
     def redemption_prices(self, n=1000):
         address = self["address"]
