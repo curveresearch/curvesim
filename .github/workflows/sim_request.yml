@@ -39,3 +39,13 @@ jobs:
           python3 .github/workflows/parse_sim_request.py | \
           python3 .github/workflows/run_sim_request.py
 
+      - name: Save results
+      - uses: actions/checkout@v3
+        run: |
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          BRANCH=sim-request-${{ github.event.issue.number }}; \
+          git checkout $(git show-ref --verify --quiet refs/heads/$BRANCH || echo '-b') $BRANCH
+          git add results data
+          git commit -m "Commit sim results - GH run ID: ${{ github.run_id }}"
+          git push
