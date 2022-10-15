@@ -18,6 +18,7 @@ def nomics(coins, days=60):
 
 
 def coingecko(coins, days=60):
+    print("Fetching CoinGecko price data...")
     prices, volumes = _coingecko.pool_prices(coins, "usd", days)
     pzero = 0
 
