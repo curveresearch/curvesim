@@ -28,7 +28,8 @@ config.read_string(config_string)
 pool_settings = config[SECTION_HEADING.strip("][")]
 poolname = pool_settings.get("address") or pool_settings.get("symbol")
 chain = pool_settings.get("chain", "mainnet")
+test = pool_settings.getboolean("test", False)
 
-settings_dict = {"poolname": poolname, "chain": chain}
+settings_dict = {"poolname": poolname, "chain": chain, "test": test}
 
 print(json.dumps(settings_dict))
