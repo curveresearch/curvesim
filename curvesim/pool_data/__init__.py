@@ -12,8 +12,7 @@ from numpy import array
 
 from ..network.subgraph import redemption_prices_sync as _redemption_prices
 from ..network.subgraph import volume_sync as _volume
-from ..pool.metapool import MetaPool
-from ..pool.pool import Pool
+from ..pool.stableswap import MetaPool, Pool
 from .queries import from_address, from_symbol
 
 

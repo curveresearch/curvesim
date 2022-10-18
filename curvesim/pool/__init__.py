@@ -2,8 +2,7 @@ __all__ = ["get", "make", "MetaPool", "Pool"]
 
 from curvesim.pool_data import get as _get_pool_data
 
-from .metapool import MetaPool
-from .pool import Pool
+from .stableswap import MetaPool, Pool
 
 
 def make(
