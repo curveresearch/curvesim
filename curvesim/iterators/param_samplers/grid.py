@@ -1,18 +1,21 @@
+from copy import deepcopy
 from itertools import product
 
 
 class Grid:
     def __init__(self, pool, variable_params, fixed_params=None):
-        self.pool = self.set_attributes(pool(), fixed_params)
+        self.pool_template = pool
+        self.set_attributes(self.pool_template, fixed_params)
         self.param_grid = self.param_product(variable_params)
-        self.param_iterator = iter(self.param_grid)
+        self.param_generator = iter(self.param_grid)
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        params = next(self.param_iterator)
-        pool = self.set_attributes(self.pool, params)
+        params = next(self.param_generator)
+        pool = deepcopy(self.pool_template)
+        self.set_attributes(pool, params)
         return pool
 
     @staticmethod
@@ -47,7 +50,7 @@ class Grid:
     @staticmethod
     def set_attributes(pool, attribute_dict):
         if attribute_dict is None:
-            return pool
+            return
 
         for key, value in attribute_dict.items():
             if key == "basepool":
@@ -59,5 +62,3 @@ class Grid:
             else:
                 value = int(round(value))
                 setattr(pool, key, value)
-
-        return pool

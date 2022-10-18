@@ -3,7 +3,7 @@ from ...price_data import get
 
 class PriceVolume:
     def __init__(self, coins, days=60, data_dir="data", src="coingecko"):
-        prices, volumes, pzero = get(coins(), days=days, data_dir=data_dir, src=src)
+        prices, volumes, pzero = get(coins, days=days, data_dir=data_dir, src=src)
 
         self.prices = prices
         self.volumes = volumes
@@ -16,10 +16,12 @@ class PriceVolume:
         return self
 
     def __next__(self):
-        prices = next(self.price_generator)[1]
-        volumes = next(self.volume_generator)[1]
+        prices = next(self.price_generator)
+        volumes = next(self.volume_generator)
 
-        return prices, volumes
+        assert prices[0] == volumes[0], "Price/volume timestamps did not match"
+
+        return prices[1], volumes[1], prices[0]
 
     def total_volumes(self):
         return self.volumes.sum()

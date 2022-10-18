@@ -30,8 +30,8 @@ def volume_limited_arbitrage(
     vol_mult=None,
     vol_mode=1,
 ):
-    pool = pool_data.pool
-    coins = pool_data.coins
+    pool = pool_data.pool()
+    coins = pool_data.coins()
 
     if test:
         variable_params = TEST_PARAMS
@@ -67,15 +67,15 @@ def volume_limited_arbitrage(
 # Strategy
 def strategy(pool, price_sampler, vol_mult):
     trader = Arbitrageur(pool)
-    metrics = Metrics()
+    # metrics = Metrics()
 
-    for prices, volumes in price_sampler:
+    for prices, volumes, timestamp in price_sampler:
         limits = volumes * vol_mult
         trades, errors, res = trader.compute_trades(prices, limits)
         trades_done, volume = trader.do_trades(trades)
-        metrics.update(trader.pool, errors, volume)
+        # metrics.update(trader.pool, errors, volume)
 
-    return metrics()
+    return  # metrics()
 
 
 class Arbitrageur:
@@ -101,7 +101,7 @@ class Arbitrageur:
             return [], 0
 
         if self.pool.ismeta:
-            p = self.pool.p[0 : self.max_coin] + self.pool.basepool.p[:]
+            p = self.pool.p[0 : self.pool.max_coin] + self.pool.basepool.p[:]
         else:
             p = self.pool.p[:]
 
@@ -113,7 +113,7 @@ class Arbitrageur:
             trades_done.append(trade + (dy,))
 
             if self.pool.ismeta:
-                if i < self.max_coin or j < self.max_coin:
+                if i < self.pool.max_coin or j < self.pool.max_coin:
                     volume += dx * p[i] // 10**18  # in D units
             else:
                 volume += dx * p[i] // 10**18  # in D units
