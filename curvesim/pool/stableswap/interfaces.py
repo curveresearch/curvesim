@@ -6,8 +6,9 @@ from numpy import isnan
 
 from curvesim.pipelines.templates import SimInterface
 
-from . import MetaPool, Pool
 from . import functions as pool_functions
+from .metapool import MetaPool
+from .pool import Pool
 
 
 class StableSwapSimInterface(SimInterface):
