@@ -192,7 +192,7 @@ class MetaPool:
         dy = (dy - fee) * 10**18 // rate
         fee = fee * 10**18 // rate
         admin_fee = admin_fee * 10**18 // rate
-        assert dy > 0
+        assert dy >= 0
 
         self.x[i] += dx
         self.x[j] -= dy + admin_fee
