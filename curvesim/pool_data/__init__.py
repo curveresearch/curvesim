@@ -29,7 +29,16 @@ def get(address_or_symbol, chain="mainnet", src="cg", days=60):
     return pool_data
 
 
-class PoolData(dict):
+class PoolData:
+    def __init__(self, metadata_dict, cache_data=False, days=60):
+        self.dict = metadata_dict
+        if cache_data:
+            self.set_cache(days=days)
+
+    def set_cache(self, days=60):
+        self.volume(days=days, store=True)
+        self.redemption_prices(store=True)
+
     def pool(self, balanced=(True, True)):
         def bal(kwargs, balanced):
             reserves = kwargs.pop("reserves")
@@ -37,33 +46,41 @@ class PoolData(dict):
                 kwargs.update({"D": reserves})
             return kwargs
 
-        kwargs = bal(self["init_kwargs"].copy(), balanced[0])
+        kwargs = bal(self.dict["init_kwargs"].copy(), balanced[0])
 
-        if self["basepool"]:
-            bp_kwargs = self["basepool"]["init_kwargs"].copy()
+        if self.dict["basepool"]:
+            bp_kwargs = self.dict["basepool"]["init_kwargs"].copy()
             bp_kwargs = bal(bp_kwargs, balanced[1])
             kwargs.update({"basepool": Pool(**bp_kwargs)})
             pool = MetaPool(**kwargs)
         else:
             pool = Pool(**kwargs)
 
-        pool.metadata = self
+        pool.metadata = self.dict
 
         return pool
 
     def coins(self):
-        if not self["basepool"]:
-            c = self["coins"]["addresses"]
+        if not self.dict["basepool"]:
+            c = self.dict["coins"]["addresses"]
         else:
-            c = self["coins"]["addresses"][:-1] + self["basepool"]["coins"]["addresses"]
+            c = (
+                self.dict["coins"]["addresses"][:-1]
+                + self.dict["basepool"]["coins"]["addresses"]
+            )
         return c
 
-    def volume(self, days=60):
-        addrs = self["address"]
-        chain = self["chain"]
+    def volume(self, days=60, store=False, get_cache=True):
+        if get_cache and hasattr(self, "_volume"):
+            print("Getting cached historical volume...")
+            return self._volume
 
-        if self["basepool"]:
-            addrs = [addrs, self["basepool"]["address"]]
+        print("Fetching historical volume...")
+        addrs = self.dict["address"]
+        chain = self.dict["chain"]
+
+        if self.dict["basepool"]:
+            addrs = [addrs, self.dict["basepool"]["address"]]
             vol = _volume(addrs, chain, days=days)
             summed_vol = array([sum(v) for v in vol])
 
@@ -71,26 +88,40 @@ class PoolData(dict):
             vol = _volume(addrs, chain, days=days)
             summed_vol = array(sum(vol))
 
+        if store:
+            self._volume = summed_vol
+
         return summed_vol
 
     def n(self):
-        if not self["basepool"]:
-            n = self["init_kwargs"]["n"]
+        if not self.dict["basepool"]:
+            n = self.dict["init_kwargs"]["n"]
         else:
-            n = [self["init_kwargs"]["n"], self["basepool"]["init_kwargs"]["n"]]
+            n = [
+                self.dict["init_kwargs"]["n"],
+                self.dict["basepool"]["init_kwargs"]["n"],
+            ]
 
         return n
 
     def type(self):
-        if self["basepool"]:
+        if self.dict["basepool"]:
             return "MetaPool"
         else:
             return "Pool"
 
-    def redemption_prices(self, n=1000):
-        address = self["address"]
-        chain = self["chain"]
+    def redemption_prices(self, n=1000, store=False, get_cache=True):
+        if get_cache and hasattr(self, "_redemption_prices"):
+            print("Getting cached redemption prices...")
+            return self._redemption_prices
+
+        print("Fetching redemption prices...")
+        address = self.dict["address"]
+        chain = self.dict["chain"]
 
         r = _redemption_prices(address, chain, n=n)
+
+        if store:
+            self._redemption_prices = r
 
         return r
