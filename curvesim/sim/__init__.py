@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 
 from curvesim.network import coingecko, nomics
+from curvesim.pipelines.arbitrage import volume_limited_arbitrage  # noqa: F401
 from curvesim.plot import plotsims, plotsimsfee, saveplots
 from curvesim.pool import Pool
 from curvesim.pool_data import get
@@ -407,18 +408,7 @@ def autosim(  # noqa: C901
     )
 
     # Save plots
-    saveplots(
-        poolname,
-        A_list,
-        fee_list,
-        res["ar"],
-        res["bal"],
-        res["depth"],
-        res["volume"],
-        res["pool_value"],
-        res["log_returns"],
-        res["err"],
-    )
+    saveplots(poolname, A_list, fee_list, res)
 
     # Save text
     combos = list(combinations(coins, 2))
