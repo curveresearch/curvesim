@@ -16,7 +16,7 @@ class Grid:
         params = next(self.param_generator)
         pool = deepcopy(self.pool_template)
         self.set_attributes(pool, params)
-        return pool
+        return pool, params
 
     @staticmethod
     def param_product(p_dict):
@@ -56,9 +56,7 @@ class Grid:
             if key == "basepool":
                 items = attribute_dict["basepool"].items()
                 for base_key, base_value in items:
-                    base_value = int(round(base_value))
                     setattr(pool.basepool, base_key, base_value)
 
             else:
-                value = int(round(value))
                 setattr(pool, key, value)
