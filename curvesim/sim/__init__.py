@@ -1,3 +1,4 @@
+import os
 import multiprocessing
 from datetime import datetime, timedelta
 from functools import partial
@@ -123,7 +124,7 @@ def psim(
     vol_mult=1,
     r=None,
     plot=False,
-    ncpu=4,
+    ncpu=None,
 ):
     """
     Calls sim() with a variety of A parameters (A_list) and/or fees (fee_list)
@@ -143,7 +144,7 @@ def psim(
     vol_mult: scalar or vector (one element per pair) multiplied by market volume to limit trade sizes
     r: time series of redemption prices for RAI-like pools
     plot: if true, plots outputs
-    ncpu: number of CPUs to use for parallel processing
+    ncpu: number of CPUs to use for parallel processing, default = all available CPUs
 
 
     Returns a dict containing:
@@ -158,6 +159,10 @@ def psim(
     p: time series of pool precisions (incl. basepool virtual price and/or RAI redemption price)
 
     """
+
+    # Use all available CPUs (or 4 if that number can't be determined)
+    if ncpu is None:
+        ncpu = os.cpu_count() if os.cpu_count() is not None else 4
 
     # Format inputs
     A_list = [int(round(A)) for A in A_list]
@@ -249,7 +254,7 @@ def autosim(  # noqa: C901
     vol_mode=1,
     fee_mul=None,
     src="cg",
-    ncpu=4,
+    ncpu=None,
     trunc=None,
     pool_data=None,
     data_dir="data",
@@ -276,11 +281,15 @@ def autosim(  # noqa: C901
         -'nomics': nomics (requires paid API key in nomics.py)
         -'local': pulls from CSVs in "data" folder
 
-    ncpu: number of CPUs to use for parallel processing
+    ncpu: number of CPUs to use for parallel processing, default = all available CPUs
     trunc: truncate price/volume data to [trunc[0]:trunc[1]]
 
     Returns results dict from psim
     """
+
+    # Use all available CPUs (or 4 if that number can't be determined)
+    if ncpu is None:
+        ncpu = os.cpu_count() if os.cpu_count() is not None else 4
 
     # Get current pool data
     print("[" + poolname + "] Fetching pool data...")
