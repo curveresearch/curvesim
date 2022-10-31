@@ -10,9 +10,8 @@ from scipy.optimize import least_squares, root_scalar
 
 
 class Pool:
-
     """
-    Python model of Curve pool math.
+    Basic stableswap implementation in Python.
     """
 
     def __init__(
@@ -27,15 +26,26 @@ class Pool:
         admin_fee=0 * 10**9,
     ):
         """
-        A: Amplification coefficient
-        D: Total deposit size
-        n: number of currencies; if list, assumes meta-pool
-        p: precision
-        tokens: # of tokens; if meta-pool, this sets # of basepool tokens
-        fee: fee with 10**10 precision (default = .004%)
-        fee_mul: fee multiplier for dynamic fee pools
-        admin_fee: percentage of `fee` with 10**10 precision (default = 50%)
-        r: initial redemption price for RAI-like pools
+        Parameters
+        ----------
+        A : int
+            Amplification coefficient; this is `A * n**(n-1)` in the whitepaper.
+        D : int or list of int
+            coin balances or virtual total balance
+        n: int
+            number of coins
+        rates: list of int
+            precision and rate adjustments
+        tokens: int
+            LP token supply
+        fee: int, optional
+            fee with 10**10 precision (default = .004%)
+        fee_mul:
+            fee multiplier for dynamic fee pools
+        admin_fee: int, optional
+            percentage of `fee` with 10**10 precision (default = 50%)
+        r: int, optional
+            initial redemption price for RAI-like pools
         """
         # FIXME: set admin_fee default back to 5 * 10**9
         # once sim code is updated.  Right now we use 0
@@ -114,20 +124,32 @@ class Pool:
         return [x * p // 10**18 for x, p in zip(self.x, self.p)]
 
     def D(self, xp=None):
+        """
+        Convenience wrapper for `get_D` which uses the set `A` and makes `xp`
+        an optional arg.
+        """
         A = self.A
         xp = xp or self.xp()
         return self.get_D(xp, A)
 
     def get_D(self, xp, A):
         """
-        D invariant calculation in non-overflowing integer operations
-        iteratively
+        Calculate D invariant iteratively using non-overflowing integer operations.
 
-        A * sum(x_i) * n**n + D = A * D * n**n + D**(n+1) / (n**n * prod(x_i))
+        Stableswap equation:
 
-        Converging solution:
-        D[j+1] = (A * n**n * sum(x_i) - D[j]**(n+1) / (n**n prod(x_i))) / (A * n**n - 1)
-        """
+        .. math::
+            A n^n \sum(x_i) + D = A n^n D + D^{n+1} / (n^n \prod(x_i))
+
+        Converging solution using Newton's method:
+
+        .. math::
+            D[j+1] = (A n^n \sum(x_i) + n D[j]^{n+1} / (n^n \prod(x_i)))
+                    / (A n^n + (n+1) D[j]^n/(n^n \prod(x_i)) - 1)
+
+        Replace A * n**n by Ann and D[j]**(n+1)/(n**n prod(x_i)) by D_p to
+        arrive at the iterative formula in the code.
+        """  # noqa
         Dprev = 0
         S = sum(xp)
         D = S
@@ -145,6 +167,10 @@ class Pool:
         return D
 
     def get_D_mem(self, balances, A):
+        """
+        Convenience wrapper for `get_D` which takes in balances in token units.
+        Naming is based on the vyper equivalent.
+        """
         xp = [x * p // 10**18 for x, p in zip(balances, self.p)]
         return self.get_D(xp, A)
 
@@ -152,8 +178,14 @@ class Pool:
         """
         Calculate x[j] if one makes x[i] = x
 
-        Done by solving quadratic equation iteratively.
-        x_1**2 + x1 * (sum' - (A*n**n - 1) * D / (A * n**n)) = D ** (n+1)/(n ** (2 * n) * prod' * A)
+        Done by solving quadratic equation iteratively via Newton's method.
+
+        x_1**2 + x1 * (sum' - (A * n**n - 1) * D / (A * n**n))
+            = D ** (n+1)/(n ** (2 * n) * prod' * A)
+
+        where sum' is the sum of all x_i for i != j and
+        prod' is the prod of all x_i for i != j.
+
         x_1**2 + b*x_1 = c
 
         x_1 = (x_1**2 + c) / (2*x_1 + b)
@@ -179,13 +211,9 @@ class Pool:
 
     def get_y_D(self, A, i, xp, D):
         """
-        Calculate x[j] if one makes x[i] = x
+        Calculate x[i] if one uses a reduced `D` than one calculated for given `xp`.
 
-        Done by solving quadratic equation iteratively.
-        x_1**2 + x1 * (sum' - (A*n**n - 1) * D / (A * n**n)) = D ** (n+1)/(n ** (2 * n) * prod' * A)
-        x_1**2 + b*x_1 = c
-
-        x_1 = (x_1**2 + c) / (2*x_1 + b)
+        See docstring for `get_y`.
         """
         D = mpz(D)
         xx = [xp[k] for k in range(self.n) if k != i]
@@ -205,6 +233,33 @@ class Pool:
         return y  # result is in units for D
 
     def exchange(self, i, j, dx):
+        """
+        Perform an exchange between two coins.
+        Index values can be found via the `coins` public getter method.
+
+        Parameters
+        ----------
+        i : int
+            Index of "in" coin.
+        j : int
+            Index of "out" coin.
+        dx : int
+            Amount of coin `i` being exchanged.
+        min_dy : int
+            Minimum amount of coin `j` to receive.
+
+        Returns
+        -------
+        int
+            amount of coin `j` received.
+
+        Examples
+        --------
+
+        >>> pool = Pool(A=250, D=1000000*10**18, n=2)
+        >>> pool.exchange(0, 1, 150 * 10**6)
+        150000000
+        """
         if not self.ismeta:
             xp = self.xp()
             x = xp[i] + dx * self.p[i] // 10**18
