@@ -1,8 +1,8 @@
-__all__ = ["get", "make", "MetaPool", "Pool"]
+__all__ = ["get", "make", "MetaPool", "Pool", "RaiPool"]
 
 from curvesim.pool_data import get as _get_pool_data
 
-from .stableswap import MetaPool, Pool
+from .stableswap import MetaPool, Pool, RaiPool
 
 
 def make(
@@ -15,7 +15,6 @@ def make(
     fee=4 * 10**6,
     fee_mul=None,
     admin_fee=0 * 10**9,
-    r=None,
 ):
 
     if basepool:
@@ -29,7 +28,6 @@ def make(
             fee=fee,
             fee_mul=fee_mul,
             admin_fee=admin_fee,
-            r=r,
         )
 
     else:
@@ -42,7 +40,6 @@ def make(
             fee=fee,
             fee_mul=fee_mul,
             admin_fee=admin_fee,
-            r=r,
         )
 
     return pool
