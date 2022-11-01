@@ -20,7 +20,6 @@ class MetaPool:
         fee=4 * 10**6,
         fee_mul=None,
         admin_fee=0 * 10**9,
-        r=None,
     ):
         """
         A: Amplification coefficient
@@ -56,12 +55,6 @@ class MetaPool:
         else:
             self.p = [10**18] * n
 
-        if r:
-            self.p[0] = r
-            self.r = True
-        else:
-            self.r = False
-
         if isinstance(D, list):
             self.x = D
         else:
@@ -72,6 +65,9 @@ class MetaPool:
         self.tokens = tokens
         self.fee_mul = fee_mul
         self.collected_admin_fees = [0] * n
+
+    def next_timestamp(*args, **kwargs):
+        pass
 
     def D(self, xp=None):
         A = self.A

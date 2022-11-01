@@ -55,7 +55,7 @@ def exchange(i, j, dx, x, p, A, fee, admin_fee, xp=None, fee_mul=None):
     else:
         fee = (
             dy
-            * dynamic_fee((xp[i] + x) // 2, (xp[j] + y) // 2, fee, fee_mul)
+            * dynamic_fee((xp[i] + x_i) // 2, (xp[j] + y) // 2, fee, fee_mul)
             // 10**10
         )
 
@@ -318,7 +318,7 @@ def dydx_metapool(
     return float(_dydx)
 
 
-def dydx(i, j, xp, A, fee=None, fee_mul=None):
+def dydx(i, j, xp, A, fee=None, fee_mul=None, **kwargs):
     """
     Treats indices as applying to the "top-level" pool if a metapool.
     Basically this is the "regular" pricing calc with no special metapool handling.
@@ -347,6 +347,30 @@ def dydx(i, j, xp, A, fee=None, fee_mul=None):
     dydx *= 1 - fee_factor
 
     return float(dydx)
+
+
+def dydx_metapool_rai(*args, **kwargs):
+    i, j = args[0:2]
+    rates, rates_base = args[4:6]
+    max_coin = args[8]
+
+    dydx = dydx_metapool(*args, **kwargs)
+
+    if i >= max_coin and j < max_coin:
+        base_i = i - max_coin
+        dydx = dydx * rates_base[base_i] / rates[j]
+
+    if j >= max_coin and i < max_coin:
+        base_j = j - max_coin
+        dydx = dydx * rates[i] / rates_base[base_j]
+
+    return dydx
+
+
+def dydx_rai(*args, p=None, **kwargs):
+    i, j = args[0:2]
+    _dydx = dydx(*args, **kwargs)
+    return _dydx * p[i] / p[j]
 
 
 def add_liquidity(amounts, A, x, rates, tokens, fee, admin_fee, xp=None):

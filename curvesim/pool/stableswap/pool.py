@@ -25,7 +25,6 @@ class Pool:
         fee=4 * 10**6,
         fee_mul=None,
         admin_fee=0 * 10**9,
-        r=None,
     ):
         """
         A: Amplification coefficient
@@ -70,12 +69,6 @@ class Pool:
                 self.p = [10**18] * n[0]
                 self.basepool.p = [10**18] * n[1]
 
-            if r:
-                self.p[0] = r
-                self.r = True
-            else:
-                self.r = False
-
             if isinstance(D[0], list):
                 self.x = D[0]
             else:
@@ -111,9 +104,11 @@ class Pool:
             self.fee_mul = fee_mul
             self.admin_fee = admin_fee
             self.ismeta = False
-            self.r = False
             self.n_total = self.n
             self.collected_admin_fees = [0] * self.n
+
+    def next_timestamp(*args, **kwargs):
+        pass
 
     def xp(self):
         return [x * p // 10**18 for x, p in zip(self.x, self.p)]

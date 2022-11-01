@@ -9,12 +9,16 @@ from curvesim.pipelines.templates import SimInterface
 from . import functions as pool_functions
 from .metapool import MetaPool
 from .pool import Pool
+from .raipool import RaiPool
 
 
 class StableSwapSimInterface(SimInterface):
     def __init__(self, pool):
         pool_function_dict = stableswap_interface_fns[type(pool)]
         self._set_pool_interface(pool, pool_function_dict)
+
+        self.pricing_fns = stableswap_pricing_fns[type(pool)]
+        self.next_timestamp = self.pool.next_timestamp
 
         all_idx = range(pool.n_total)
         base_idx = list(range(pool.n))
@@ -280,11 +284,12 @@ def _metapool_test_trade(self, coin_in, coin_out, dx, state=None):
     i, j = self.get_coin_indices(coin_in, coin_out)
     state = state or self.get_pool_state()
     max_coin = self.max_coin
+    get_dydx, _get_dydx = self.pricing_fns
 
     # Basepool LP token not used in trade
     if i != "bp_token" and j != "bp_token":
         assert i != j
-        return _test_trade_underlying(state, i, j, dx, max_coin)
+        return _test_trade_underlying(state, get_dydx, i, j, dx, max_coin)
 
     # Basepool LP token used in trade
     else:
@@ -295,10 +300,10 @@ def _metapool_test_trade(self, coin_in, coin_out, dx, state=None):
             j = max_coin
 
         assert i != j
-        return _test_trade_meta(state, i, j, dx)
+        return _test_trade_meta(state, _get_dydx, i, j, dx)
 
 
-def _test_trade_underlying(state, i, j, dx, max_coin):
+def _test_trade_underlying(state, pricing_fn, i, j, dx, max_coin):
     args = [
         state.x,
         state.x_base,
@@ -331,12 +336,12 @@ def _test_trade_underlying(state, i, j, dx, max_coin):
         args[2] = rates
         args[7] = tokens_base
 
-    dydx = pool_functions.dydx_metapool(i, j, *args)
+    dydx = pricing_fn(i, j, *args)
 
     return (dydx,) + output
 
 
-def _test_trade_meta(state, i, j, dx):
+def _test_trade_meta(state, pricing_fn, i, j, dx):
     xp = pool_functions.get_xp(state.x, state.rates)
     exchange_args = (
         state.x,
@@ -357,8 +362,8 @@ def _test_trade_meta(state, i, j, dx):
 
     xp_post = pool_functions.get_xp(output[0], state.rates)
 
-    dydx = pool_functions.dydx(
-        i, j, xp_post, state.A, fee=state.fee, fee_mul=state.fee_mul
+    dydx = pricing_fn(
+        i, j, xp_post, state.A, p=state.p, fee=state.fee, fee_mul=state.fee_mul
     )
 
     return (dydx,) + output
@@ -368,6 +373,7 @@ def _make_metapool_error_fns(self):  # noqa: C901
     # Note: for performance, does not support string coin-names
 
     state = self.get_pool_state()
+    get_dydx = self.pricing_fns[0]
     max_coin = self.max_coin
     args = [
         state.x,
@@ -400,10 +406,12 @@ def _make_metapool_error_fns(self):  # noqa: C901
             xp_j = int(xp_meta[meta_j] * 0.01)
             high = pool_functions.get_y(meta_j, meta_i, xp_j, xp_meta, state.A)
             high -= xp_meta[meta_i]
+            # high = high * 10**18 // state.rates[meta_i]
         else:
             xp_j = int(xp_base[base_j] * 0.01)
             high = pool_functions.get_y(base_j, base_i, xp_j, xp_base, state.A_base)
             high -= xp_base[base_i]
+            # high = high * 10**18 // state.p_base[base_i]
 
         return (0, high)
 
@@ -433,7 +441,7 @@ def _make_metapool_error_fns(self):  # noqa: C901
         else:
             xp_base_post = xp_base
 
-        dydx = pool_functions.dydx_metapool(i, j, *_args, base_xp=xp_base_post)
+        dydx = get_dydx(i, j, *_args, base_xp=xp_base_post)
 
         return dydx - price_target
 
@@ -472,7 +480,8 @@ def _make_metapool_error_fns(self):  # noqa: C901
         errors = []
         _xp_base = [mpz(x) for x in _xp_base]
         for k, pair in enumerate(coins):
-            dydx = pool_functions.dydx_metapool(*pair, *_args, base_xp=_xp_base)
+
+            dydx = get_dydx(*pair, *_args, base_xp=_xp_base)
             errors.append(dydx - price_targets[k])
 
         return errors
@@ -516,4 +525,11 @@ stableswap_metapool_fns = dict(zip(interface_functions, stableswap_metapool_fns)
 stableswap_interface_fns = {
     Pool: stableswap_pool_fns,
     MetaPool: stableswap_metapool_fns,
+    RaiPool: stableswap_metapool_fns,
+}
+
+stableswap_pricing_fns = {
+    Pool: (pool_functions.dydx, pool_functions.dydx),
+    MetaPool: (pool_functions.dydx_metapool, pool_functions.dydx),
+    RaiPool: (pool_functions.dydx_metapool_rai, pool_functions.dydx_rai),
 }
