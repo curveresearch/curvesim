@@ -72,7 +72,7 @@ def make(
     return pool
 
 
-def get(address_or_symbol, chain="mainnet", src="cg", balanced=(True, True)):
+def get(address_or_symbol, chain="mainnet", src="cg", balanced=(False, False)):
     """
     Parameters
     ----------
