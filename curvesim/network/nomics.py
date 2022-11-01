@@ -150,9 +150,11 @@ def format_price_data(data, t_start, t_end, exp=1):
         elif exp == -1:
             data["volume"] = pd.to_numeric(data["volume"]) / data["price"]
 
-    # Fill in missing data with zeros
+    # Fill in missing data
     t_samples = pd.date_range(start=t_start, end=t_end, freq="30min", tz=timezone.utc)
-    data = data.reindex(t_samples, fill_value=0)
+    data = data.reindex(t_samples)
+    data["volume"].fillna(0, inplace=True)
+    data["price"].fillna(method="ffill", inplace=True)
 
     return data
 
@@ -269,7 +271,7 @@ def pool_prices(  # noqa: C901
     prices = pd.concat(prices, axis=1)
     volumes = pd.concat(volumes, axis=1)
 
-    pzero = (prices == 0).mean()
+    pzero = (volumes == 0).mean()
 
     prices = prices.replace(
         to_replace=0, method="ffill"
