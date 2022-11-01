@@ -26,6 +26,7 @@ def coingecko(coins, days=60):
 
 
 def local(coins, data_dir="data"):
+    print("Using local data...")
     prices, volumes, pzero = _nomics.local_pool_prices(coins, data_dir=data_dir)
 
     return prices, volumes, pzero
