@@ -55,15 +55,18 @@ def volume_limited_arbitrage(
 
     results = run_pipeline(param_sampler, price_sampler, strat, ncpu=ncpu)
     results = format_results(
-        results, param_sampler.param_grid, price_sampler.prices.index
+        results, param_sampler.flat_grid(), price_sampler.prices.index
     )
 
-    saveplots(
-        pool.metadata["symbol"].lower() + "_" + pool.metadata["address"][0:7],
-        variable_params["A"],
-        variable_params["fee"],
-        results,
-    )
+    p_keys = sorted(variable_params.keys())
+    if p_keys == ["A", "fee"]:
+        saveplots(
+            pool.metadata["symbol"].lower() + "_" + pool.metadata["address"][0:7],
+            variable_params["A"],
+            variable_params["fee"],
+            results,
+        )
+
     return results
 
 
@@ -78,6 +81,7 @@ def strategy(pool, params, price_sampler, vol_mult):
 
     for prices, volumes, timestamp in price_sampler:
         limits = volumes * vol_mult
+        pool_interface.next_timestamp(timestamp)
         trades, errors, res = trader.compute_trades(prices, limits)
         trades_done, volume = trader.do_trades(trades)
 
@@ -140,9 +144,6 @@ class Metrics:
             self.price_error,
             self.volume,
         )
-
-        # need to compute ar, etc.
-        # return so easily made into DF
 
         return records
 
@@ -243,7 +244,6 @@ def opt_arb(get_bounds, error_function, i, j, p):
 
     """
     bounds = get_bounds(i, j)
-
     res = root_scalar(error_function, args=(i, j, p), bracket=bounds, method="brentq")
 
     trade = (i, j, int(res.root))
@@ -342,10 +342,14 @@ def get_trade_args(get_pool_price, get_bounds, error_function, prices, limits, c
             except ValueError:
                 print(
                     "Warning: Opt_arb error,",
+                    "Pair:",
+                    (i, j),
                     "Pool price:",
                     get_pool_price(i, j),
                     "Target Price:",
                     prices[k],
+                    "Diff:",
+                    get_pool_price(i, j) - prices[k],
                 )
                 x0.append(0)
 
@@ -361,10 +365,14 @@ def get_trade_args(get_pool_price, get_bounds, error_function, prices, limits, c
             except ValueError:
                 print(
                     "Warning: Opt_arb error,",
+                    "Pair:",
+                    (j, i),
                     "Pool price:",
                     get_pool_price(j, i),
                     "Target Price:",
                     1 / prices[k],
+                    "Diff:",
+                    get_pool_price(j, i) - 1 / prices[k],
                 )
                 x0.append(0)
 
