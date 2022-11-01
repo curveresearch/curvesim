@@ -12,7 +12,7 @@ from numpy import array
 
 from ..network.subgraph import redemption_prices_sync as _redemption_prices
 from ..network.subgraph import volume_sync as _volume
-from ..pool.stableswap import MetaPool, Pool
+from ..pool.stableswap import MetaPool, Pool, RaiPool
 from .queries import from_address, from_symbol
 
 
@@ -39,6 +39,14 @@ class PoolData:
         self.volume(days=days, store=True)
         self.redemption_prices(store=True)
 
+    def clear_cache(self):
+        attrs = ["_volume", "_redemption_prices"]
+        for attr in attrs:
+            try:
+                delattr(self, attr)
+            except AttributeError:
+                print(f"Cached {attr[1:]} already cleared")
+
     def pool(self, balanced=(True, True)):
         def bal(kwargs, balanced):
             reserves = kwargs.pop("reserves")
@@ -52,7 +60,13 @@ class PoolData:
             bp_kwargs = self.dict["basepool"]["init_kwargs"].copy()
             bp_kwargs = bal(bp_kwargs, balanced[1])
             kwargs.update({"basepool": Pool(**bp_kwargs)})
-            pool = MetaPool(**kwargs)
+
+            r = self.redemption_prices()
+            if r is None:
+                pool = MetaPool(**kwargs)
+            else:
+                pool = RaiPool(r, **kwargs)
+
         else:
             pool = Pool(**kwargs)
 
@@ -67,6 +81,16 @@ class PoolData:
             c = (
                 self.dict["coins"]["addresses"][:-1]
                 + self.dict["basepool"]["coins"]["addresses"]
+            )
+        return c
+
+    def coin_names(self):
+        if not self.dict["basepool"]:
+            c = self.dict["coins"]["names"]
+        else:
+            c = (
+                self.dict["coins"]["names"][:-1]
+                + self.dict["basepool"]["coins"]["names"]
             )
         return c
 
@@ -115,7 +139,6 @@ class PoolData:
             print("Getting cached redemption prices...")
             return self._redemption_prices
 
-        print("Fetching redemption prices...")
         address = self.dict["address"]
         chain = self.dict["chain"]
 
