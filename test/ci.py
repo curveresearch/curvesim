@@ -7,21 +7,21 @@ import curvesim
 
 if __name__ == "__main__":  # noqa: C901
     data_dir = os.path.join("test", "data")
-    pool_names = ["3CRV", "a3CRV", "FRAX3CRV-f", "MIM-3LP3CRV-f", "RAI3CRV"]
+    pool_names = ["3CRV", "a3CRV", "FRAX3CRV-f", "MIM-3LP3CRV-f"]
 
     abs_tolerances = {
         "ar": 1.5e-4,
         "bal": 0.035,
-        "depth": 5,  # in liquidity density units
+        "depth": 10,  # in liquidity density units
         "err": 0.01,
         "log_returns": 0,
         "p": 1e15,
-        "pool_value": 10,  # in dollar units
+        "pool_value": 0,  # in dollar units
         "volume": 0,
         "x": 0,
     }
 
-    rel_tolerances = {}
+    rel_tolerances = {"pool_value": 0.0001}
 
     skipped = ["log_returns", "volume", "x"]
 
