@@ -1,3 +1,5 @@
+import asyncio
+
 from gmpy2 import mpz
 
 
@@ -20,3 +22,12 @@ def compute_D(xp, A):
     D = int(D)
 
     return D
+
+
+def sync(func):
+    def inner(*args, event_loop=None, **kwargs):
+        loop = event_loop or asyncio.get_event_loop()
+        res = loop.run_until_complete(func(*args, **kwargs))
+        return res
+
+    return inner

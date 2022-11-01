@@ -4,6 +4,7 @@ from web3 import AsyncHTTPProvider, Web3
 from web3.eth import AsyncEth
 
 from .http import HTTP
+from .utils import sync
 
 # Chain explorer
 ETHERSCAN = ("https://api.etherscan.io/api", "PT1D9IGAPPPRFMD312V9GARWW93BS9ZV6V")
@@ -63,7 +64,7 @@ async def contract(address, abi=None):
     return c
 
 
-async def underlying_coin_address(address):
+async def _underlying_coin_address(address):
     c = await contract(address)
 
     fns = ["upgradeToAndCall", "underlying", "token"]
@@ -89,9 +90,21 @@ async def underlying_coin_address(address):
 
 
 async def underlying_coin_addresses(addresses):
-    tasks = []
-    for address in addresses:
-        tasks.append(underlying_coin_address(address))
-    addrs = await gather(*tasks)
+    if isinstance(addresses, str):
+        addrs = await _underlying_coin_address(addresses)
+
+    else:
+        tasks = []
+        for address in addresses:
+            tasks.append(_underlying_coin_address(address))
+
+        addrs = await gather(*tasks)
 
     return addrs
+
+
+# Sync
+explorer_sync = sync(explorer)
+ABI_sync = sync(ABI)
+contract_sync = sync(contract)
+underlying_coin_addresses_sync = sync(underlying_coin_addresses)

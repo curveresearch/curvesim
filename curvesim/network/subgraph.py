@@ -1,16 +1,19 @@
 from asyncio import gather
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pandas as pd
 from eth_utils import to_checksum_address
 
 from .http import HTTP
-from .utils import compute_D
+from .utils import compute_D, sync
 
 
 async def query(url, q):
     r = await HTTP.post(url, json={"query": q})
     return r
+
+
+query_sync = sync(query)
 
 
 # Convex Community subgraphs
@@ -47,7 +50,7 @@ async def symbol_address(symbol, chain):
     return addr
 
 
-async def volume(address, chain, days=60):
+async def _volume(address, chain, days=60):
     t_end = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
     t_start = t_end - timedelta(days=days)
 
@@ -80,16 +83,32 @@ async def volume(address, chain, days=60):
     r_length = len(r)
 
     if r_length < days:
-        print(f"Warning: only {r_length}/{days} days of volume returned")
+        print(f"Warning: only {r_length}/{days} days of pool volume returned")
 
-    volume = 0
-    for day in r:
-        volume += float(day["volume"])
-
-    return volume
+    return r
 
 
-async def snapshot(address, chain):
+async def volume(addresses, chain, days=60):
+    if isinstance(addresses, str):
+        r = await _volume(addresses, chain, days=days)
+        vol = [float(e["volume"]) for e in r]
+
+    else:
+        tasks = []
+        for addr in addresses:
+            tasks.append(_volume(addr, chain, days=days))
+
+        r = await gather(*tasks)
+
+        vol = []
+        for _r in r:
+            _vol = [float(e["volume"]) for e in _r]
+            vol.append(_vol)
+
+    return vol
+
+
+async def _pool_snapshot(address, chain):
     q = (
         """
         {
@@ -127,9 +146,14 @@ async def snapshot(address, chain):
         % address.lower()
     )
 
-    r, vol = await gather(convex(chain, q), volume(address, chain))
-
+    r = await convex(chain, q)
     r = r["data"]["dailyPoolSnapshots"][0]
+
+    return r
+
+
+async def pool_snapshot(address, chain):
+    r = await _pool_snapshot(address, chain)
 
     # Flatten
     pool = r.pop("pool")
@@ -160,16 +184,16 @@ async def snapshot(address, chain):
 
     # Basepool
     if r["metapool"]:
-        basepool = await snapshot(r["basePool"], chain)
+        basepool = await pool_snapshot(r["basePool"], chain)
     else:
-        basepool = False
+        basepool = None
 
     # Output
     data = {
         "name": r["name"],
         "address": to_checksum_address(r["address"]),
         "chain": chain,
-        "symbol": r["symbol"],
+        "symbol": r["symbol"].strip(),
         "version": version,
         "pool_type": r["poolType"],
         "params": {
@@ -184,7 +208,6 @@ async def snapshot(address, chain):
             "virtual_price": int(r["virtualPrice"]),
             "tokens": D * 10**18 // int(r["virtualPrice"]),
         },
-        "volume": vol,
         "basepool": basepool,
         "timestamp": int(r["timestamp"]),
     }
@@ -205,33 +228,68 @@ async def snapshot(address, chain):
     return data
 
 
+convex_sync = sync(convex)
+symbol_address_sync = sync(symbol_address)
+volume_sync = sync(volume)
+pool_snapshot_sync = sync(pool_snapshot)
+
+
 # Reflexer Subgraph
 RAI_ADDR = ("0x618788357D0EBd8A37e763ADab3bc575D54c2C7d", "mainnet")
 
 
-async def redemption_price(n=1000, address=RAI_ADDR[0], chain=RAI_ADDR[1]):
+async def _redemption_prices(address, chain, t_start, t_end, n):
     if (address, chain) != RAI_ADDR:
         return None
 
+    t_end = int(t_end.timestamp())
+    t_start = int(t_start.timestamp())
+
     url = "https://api.thegraph.com/subgraphs/name/reflexer-labs/rai-mainnet"
-    q = (
-        """
+    q = """{
+        redemptionPrices(
+            orderBy: timestamp,
+            orderDirection: desc,
+            first: %d,
+            where: {timestamp_lte: %d}
+        )
         {
-          redemptionPrices(orderBy: timestamp, orderDirection: desc, first: %d) {
-                timestamp
-                value
-              }
-        }"""
-        % n
-    )
+            timestamp
+            value
+        }
+    }"""
 
-    r = await query(url, q)
+    t_earliest = t_end
+    data = []
+    while t_earliest >= t_start:
+        r = await query(url, q % (n, t_earliest))
+        data += r["data"]["redemptionPrices"]
+        t_earliest = int(data[-1]["timestamp"])
+    return data
 
-    data = pd.DataFrame(r["data"]["redemptionPrices"])
+
+async def redemption_prices(address=RAI_ADDR[0], chain=RAI_ADDR[1], days=60, n=1000):
+
+    t_end = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    t_end = t_end.replace(tzinfo=timezone.utc)
+    t_start = t_end - timedelta(days=days)
+
+    r = await _redemption_prices(address, chain, t_start, t_end, n)
+
+    if r is None:
+        return None
+
+    data = pd.DataFrame(r)
     data.columns = ["timestamp", "price"]
     data.price = (data.price.astype(float) * 10**18).astype(int)
     data.timestamp = pd.to_datetime(data.timestamp, unit="s", utc=True)
     data.sort_values("timestamp", inplace=True)
     data.set_index("timestamp", inplace=True)
+    data.drop_duplicates(inplace=True)
 
-    return data
+    t0 = data.index.asof(t_start)
+
+    return data[data.index >= t0]
+
+
+redemption_prices_sync = sync(redemption_prices)
