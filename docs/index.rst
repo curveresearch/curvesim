@@ -57,26 +57,21 @@ API documentation
    api
 
 
-Indices and tables
--------------------
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
 Contribute
 ----------
 
-- Issue Tracker: github.com/$project/$project/issues
-- Source Code: github.com/$project/$project
+- Issue Tracker: github.com/curveresearch/curvesim/issues
+- Source Code: github.com/curveresearch/curvesim
 
 Support
 -------
 
 If you are having issues, please let us know.
-We have a mailing list located at: project@google-groups.com
+
+Discord:
+
 
 License
 -------
 
-The project is licensed under the BSD license.
+The project is licensed under the MIT license.
