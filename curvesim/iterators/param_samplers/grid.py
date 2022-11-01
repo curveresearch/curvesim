@@ -18,13 +18,20 @@ class Grid:
         self.set_attributes(pool, params)
         return pool, params
 
+    def flat_grid(self):
+        flat = self.param_grid.copy()
+        for params in flat:
+            basepool = params.pop("basepool", None)
+            if basepool:
+                for key, val in basepool.items():
+                    params.update({key + "_base": val})
+
+        return flat
+
     @staticmethod
     def param_product(p_dict):
         p_dict = p_dict.copy()
-
-        basepool = None
-        if "basepool" in p_dict.keys():
-            basepool = p_dict.pop("basepool")
+        basepool = p_dict.pop("basepool", None)
 
         keys = p_dict.keys()
         vals = p_dict.values()
@@ -56,7 +63,23 @@ class Grid:
             if key == "basepool":
                 items = attribute_dict["basepool"].items()
                 for base_key, base_value in items:
-                    setattr(pool.basepool, base_key, base_value)
+                    if base_key == "D":
+                        p = pool.basepool.p[:]
+                        n = pool.basepool.n
+                        D = base_value
+                        x = [D // n * 10**18 // _p for _p in p]
+                        pool.basepool.x = x
+
+                    else:
+                        setattr(pool.basepool, base_key, base_value)
 
             else:
-                setattr(pool, key, value)
+                if key == "D":
+                    p = getattr(pool, "rates", pool.p[:])
+                    n = pool.n
+                    D = value
+                    x = [D // n * 10**18 // _p for _p in p]
+                    pool.x = x
+
+                else:
+                    setattr(pool, key, value)
