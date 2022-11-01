@@ -1,5 +1,5 @@
 from asyncio import gather
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pandas as pd
 from eth_utils import to_checksum_address
@@ -83,7 +83,7 @@ async def _volume(address, chain, days=60):
     r_length = len(r)
 
     if r_length < days:
-        print(f"Warning: only {r_length}/{days} days of volume returned")
+        print(f"Warning: only {r_length}/{days} days of pool volume returned")
 
     return r
 
@@ -238,41 +238,58 @@ pool_snapshot_sync = sync(pool_snapshot)
 RAI_ADDR = ("0x618788357D0EBd8A37e763ADab3bc575D54c2C7d", "mainnet")
 
 
-async def _redemption_prices(address=RAI_ADDR[0], chain=RAI_ADDR[1], n=1000):
+async def _redemption_prices(address, chain, t_start, t_end, n):
     if (address, chain) != RAI_ADDR:
         return None
 
+    t_end = int(t_end.timestamp())
+    t_start = int(t_start.timestamp())
+
     url = "https://api.thegraph.com/subgraphs/name/reflexer-labs/rai-mainnet"
-    q = (
-        """
+    q = """{
+        redemptionPrices(
+            orderBy: timestamp,
+            orderDirection: desc,
+            first: %d,
+            where: {timestamp_lte: %d}
+        )
         {
-          redemptionPrices(orderBy: timestamp, orderDirection: desc, first: %d) {
-                timestamp
-                value
-              }
-        }"""
-        % n
-    )
+            timestamp
+            value
+        }
+    }"""
 
-    r = await query(url, q)
+    t_earliest = t_end
+    data = []
+    while t_earliest >= t_start:
+        r = await query(url, q % (n, t_earliest))
+        data += r["data"]["redemptionPrices"]
+        t_earliest = int(data[-1]["timestamp"])
+    return data
 
-    return r
 
+async def redemption_prices(address=RAI_ADDR[0], chain=RAI_ADDR[1], days=60, n=1000):
 
-async def redemption_prices(address=RAI_ADDR[0], chain=RAI_ADDR[1], n=1000):
-    r = await _redemption_prices(address=address, chain=chain, n=n)
+    t_end = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    t_end = t_end.replace(tzinfo=timezone.utc)
+    t_start = t_end - timedelta(days=days)
+
+    r = await _redemption_prices(address, chain, t_start, t_end, n)
 
     if r is None:
         return None
 
-    data = pd.DataFrame(r["data"]["redemptionPrices"])
+    data = pd.DataFrame(r)
     data.columns = ["timestamp", "price"]
     data.price = (data.price.astype(float) * 10**18).astype(int)
     data.timestamp = pd.to_datetime(data.timestamp, unit="s", utc=True)
     data.sort_values("timestamp", inplace=True)
     data.set_index("timestamp", inplace=True)
+    data.drop_duplicates(inplace=True)
 
-    return data
+    t0 = data.index.asof(t_start)
+
+    return data[data.index >= t0]
 
 
 redemption_prices_sync = sync(redemption_prices)
