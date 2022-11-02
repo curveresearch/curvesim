@@ -29,7 +29,25 @@ Pythonic interaction with Curve pool objects::
 Arbitrage simulations to see results of varying fee and amplification (A) parameters::
 
     >>> import curvesim
-    >>> curvesim.autosim("3CRV", A=[50, 75, 100, 150, 200])
+    >>> res = curvesim.autosim("3CRV", A=[75, 100, 150])
+    Fetching CoinGecko price data...
+    Fetching historical volume...
+    Volume Multipliers:
+    2.435631111781869e-05
+    [3Crv] Simulating with {'A': 150}
+    [3Crv] Simulating with {'A': 100}
+    [3Crv] Simulating with {'A': 75}
+    >>> res['pool_value']
+         2022-09-01 23:30:00+00:00  ...  2022-11-01 23:30:00+00:00
+    A                               ...
+    75                7.922430e+08  ...               7.925223e+08
+    100               7.922430e+08  ...               7.925253e+08
+    150               7.922430e+08  ...               7.925288e+08
+
+    [3 rows x 1465 columns]
+
+
+Charts of the results are saved to the `results` folder.
 
 
 Features
