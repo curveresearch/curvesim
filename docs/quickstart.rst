@@ -3,8 +3,6 @@
 Quickstart
 ==========
 
-.. module:: curvesim
-
 This guide will help you get up-and-running with Curvesim.
 
 First, check that:

@@ -18,7 +18,6 @@ Simulation functions
 .. automodule:: curvesim.sim
 
 .. autofunction:: curvesim.sim.autosim
-.. autofunction:: curvesim.sim.sim
 
 
 Curve Pools
