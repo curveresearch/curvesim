@@ -56,11 +56,12 @@ the actual smart contract.
 You can also easily check the impact of trades or how many LP tokens you receive from
 depositing::
 
-    # check amount received and fees paid
+    # check out-token amount and fees paid
     >>> dx = 12345 * 10**6
     >>> pool.exchange(2, 1, dx)
     (12340177006, 1234141)
 
+    # check amount of LP tokens received
     >>> amounts = [100 * 10**18, 50 * 10**6, 25 * 10**6]
     >>> pool.add_liquidity(amounts)
     97835056610971313989
