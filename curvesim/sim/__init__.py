@@ -21,12 +21,14 @@ def parse_arguments(**kwargs):
 
     variable_params = {}
     fixed_params = {}
-    to_remove = []
+    rest_of_params = {}
+    defaults = DEFAULT_PARAMS.copy()
 
     for key, val in kwargs.items():
-        if key in pool_args:
-            to_remove.append(key)
+        if key in defaults:
+            del defaults[key]
 
+        if key in pool_args:
             if isinstance(val, int):
                 fixed_params.update({key: val})
 
@@ -37,8 +39,6 @@ def parse_arguments(**kwargs):
                 raise TypeError(f"Argument {key} must be an int or iterable of ints")
 
         elif key in basepool_args:
-            to_remove.append(key)
-
             if isinstance(val, int):
                 fixed_params.setdefault("basepool", {})
                 fixed_params["basepool"].update({key[:-5]: val})
@@ -49,10 +49,9 @@ def parse_arguments(**kwargs):
 
             else:
                 raise TypeError(f"Argument {key} must be an int or iterable of ints")
+        else:
+            rest_of_params[key] = val
 
-    for key in to_remove:
-        del kwargs[key]
+    variable_params = variable_params or defaults
 
-    variable_params = variable_params or DEFAULT_PARAMS
-
-    return variable_params, fixed_params, kwargs
+    return variable_params, fixed_params, rest_of_params
