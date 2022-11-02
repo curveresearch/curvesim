@@ -46,6 +46,15 @@ User Guide
 
    install
    quickstart
+   advanced
+
+
+Recent Changes / Announcements
+--------------------------------
+.. toctree::
+   :maxdepth: 1
+
+   updates
 
 
 API documentation
