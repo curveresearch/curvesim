@@ -7,9 +7,6 @@ def autosim(pool=None, chain="mainnet", pool_data=None, **kwargs):
 
     pool_data = pool_data or get_pool_data(pool, chain)
     p_var, p_fixed, kwargs = parse_arguments(**kwargs)
-    print(p_var)
-    print(p_fixed)
-    print(kwargs)
 
     results = volume_limited_arbitrage(
         pool_data, variable_params=p_var, fixed_params=p_fixed, **kwargs
