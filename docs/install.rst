@@ -3,16 +3,17 @@
 Installation of Curvesim
 ========================
 
-This part of the documentation covers the installation of Curvesim.
-The first step to using any software package is getting it properly installed.
+Installing Curvesim should be straightforward for most use-cases.  We recommend using the `pip install`
+option, but those looking to contribute or use bleeding-edge features may want to use the source
+code option.
 
 
-$ python -m pip install curvesim
+$ python3 -m pip install curvesim
 --------------------------------
 
-To install Requests, simply run this simple command in your terminal of choice::
+To install Curvesim, simply run this simple command in your terminal of choice::
 
-    $ python -m pip install curvesim
+    $ python3 -m pip install curvesim
 
 
 Get the Source Code
@@ -34,4 +35,4 @@ Once you have a copy of the source, you can embed it in your own Python
 package, or install it into your site-packages easily::
 
     $ cd curvesim
-    $ python -m pip install .
+    $ python3 -m pip install .
