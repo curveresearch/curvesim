@@ -37,6 +37,9 @@ Curve Pools
 .. autoclass:: curvesim.pool.MetaPool
    :inherited-members:
 
+.. autoclass:: curvesim.pool.RaiPool
+   :inherited-members:
+
 Pool Data
 ----------
 
