@@ -6,6 +6,7 @@ class RaiPool(MetaPool):
     Rebasing stableswap metapool implementation in Python. Used for RAI3CRV pool.
 
     """
+
     def __init__(self, redemption_prices, *args, p=None, n=None, **kwargs):
         """
         Parameters
@@ -21,13 +22,13 @@ class RaiPool(MetaPool):
             number of coins
         p: list of int
             precision and rate adjustments
-        tokens: int
+        tokens : int
             LP token supply
-        fee: int, optional
+        fee : int, optional
             fee with 10**10 precision (default = .004%)
-        fee_mul:
+        fee_mul :
             fee multiplier for dynamic fee pools
-        admin_fee: int, optional
+        admin_fee : int, optional
             percentage of `fee` with 10**10 precision (default = 50%)
         """
         self.redemption_prices = redemption_prices
@@ -38,6 +39,16 @@ class RaiPool(MetaPool):
         super().__init__(p=p, n=n, *args, **kwargs)
 
     def next_timestamp(self, timestamp, *args, **kwargs):
+        """
+        Updates the redemption price based on the input timestamp
+
+        Parameters
+        ----------
+        timestamp : datetime.datetime
+            the time to sample from
+
+        """
+
         r = self.redemption_prices.price.asof(timestamp)
         self.p[0] = int(r)
 
