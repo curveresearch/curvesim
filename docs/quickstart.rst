@@ -145,10 +145,9 @@ If you want to dig into the pulled data that was used to construct the pool::
 Run an arbitrage simulation for a proposed A param
 ------------------------------------------------------
 
-For a new pool parameter, such as the amplification coefficient ``A``, you would want
-to understand the risk-reward profile.  What is the likely fee revenue?  How likely
-is the pool to be imbalanced and how deeply?  The ``A`` parameter changes the curvature
-of the bonding curve and thus greatly impacts these and other factors.::
+Tuning a pool parameter, such as the amplification coefficient ``A``, can greatly affect the
+risk-reward profile.  The ``A`` parameter alters the curvature of the bonding curve, directly
+impacting the pool's ability to handle large trades while holding imbalanced reserves.
 
     >>> import curvesim
     >>> res = curvesim.autosim("0x5a6A4D54456819380173272A5E8E9B9904BdF41B", chain="mainnet", A=875)
@@ -161,6 +160,11 @@ of the bonding curve and thus greatly impacts these and other factors.::
     [MIM-3LP3CRV-f] Simulating with {'A': 875, 'fee': 2000000}
     [MIM-3LP3CRV-f] Simulating with {'A': 875, 'fee': 3000000}
     [MIM-3LP3CRV-f] Simulating with {'A': 875, 'fee': 4000000}
+
+The ``res`` dictionary holds different time series showing different aspects of risk and reward, such as
+annualized returns, pool total value, imbalance factor, and volume.
+
+Charts are saved in the ``results`` folder.
 
 Likely you will want to see the impact over a range of ``A`` values.  The ``A`` and ``fee`` parameters will accept either a integer or iterable of integers; note ``fee`` values are in units of basis points multiplied by 10**6.::
     
@@ -177,20 +181,22 @@ Likely you will want to see the impact over a range of ``A`` values.  The ``A`` 
 
 Other helpful parameters for :func:`~curvesim.autosim` are:
 
-    - src: Valid values for data source are 'coingecko', 'nomics', or 'local'
+    - src: data source for prices and volumes.  Allowed values are 'coingecko', 'nomics', or 'local'
     - ncpu: Number of cores to use.
     - days: Number of days to fetch data for.
     - vol_mode: Modes for limiting trade volume
-      1: limits trade volumes proportionally to market volume for each pair
-      2: limits trade volumes equally across pairs
-      3: mode 2 for trades with meta-pool asset, mode 1 for basepool-only trades
-    - test: Sets `A` and `fee` params to a small set of values for testing purposes:
+
+      - 1: limits trade volumes proportionally to market volume for each pair
+      - 2: limits trade volumes equally across pairs
+      - 3: mode 2 for trades with meta-pool asset, mode 1 for basepool-only trades
+
+    - test: Sets `A` and `fee` params to a small set of values for testing purposes.
 
 
 Errors and Exceptions
 ---------------------
 
-All exceptions that Requests explicitly raises inherit from
+All exceptions that Curvesim explicitly raises inherit from
 :exc:`curvesim.exceptions.CurvesimException`.
 
 Here are some common error types that may be useful to know about.
