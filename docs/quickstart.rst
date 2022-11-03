@@ -29,7 +29,7 @@ Let's retrieve the famous 3Pool from Ethereum Mainnet::
 
     >>> pool = curvesim.pool.get("0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7", "mainnet")
 
-Now, we have a :class:`Pool <curvesim.pool.Pool>` object called ``pool``. It's state is
+Now, we have a :class:`Pool <curvesim.pool.Pool>` object called ``pool``. Its state is
 pulled from `Curve volume subgraph <https://github.com/curvefi/volume-subgraphs>`_ daily 
 snapshots. From this object we can retrieve state information and see the result of pool 
 operations such as swaps (exchanges) or adding liquidity.
@@ -45,7 +45,7 @@ For example, to check various data about the pool::
     >>> pool.D()
     792229855185904089753030799
 
-    >>> pool.x
+    >>> pool.balances
     [221310603060971366741693471,
      209546983349734000000000000,
      361385319858769000000000000]
@@ -148,39 +148,52 @@ Run an arbitrage simulation for a proposed A param
 For a new pool parameter, such as the amplification coefficient ``A``, you would want
 to understand the risk-reward profile.  What is the likely fee revenue?  How likely
 is the pool to be imbalanced and how deeply?  The ``A`` parameter changes the curvature
-of the bonding curve and thus greatly impacts these and other factors.
+of the bonding curve and thus greatly impacts these and other factors.::
 
     >>> import curvesim
-    >>> curvesim.autosim("0x5a6A4D54456819380173272A5E8E9B9904BdF41B", chain="mainnet", A=875)
+    >>> res = curvesim.autosim("0x5a6A4D54456819380173272A5E8E9B9904BdF41B", chain="mainnet", A=875)
+    Fetching CoinGecko price data...
+    Fetching historical volume...
+    Volume Multipliers:
+    [9.59195904e-07 9.59195904e-07 9.59195904e-07 2.36911915e-05
+     2.36911915e-05 2.36911915e-05]
+    [MIM-3LP3CRV-f] Simulating with {'A': 875, 'fee': 1000000}
+    [MIM-3LP3CRV-f] Simulating with {'A': 875, 'fee': 2000000}
+    [MIM-3LP3CRV-f] Simulating with {'A': 875, 'fee': 3000000}
+    [MIM-3LP3CRV-f] Simulating with {'A': 875, 'fee': 4000000}
 
+Likely you will want to see the impact over a range of ``A`` values.  The ``A`` and ``fee`` parameters will accept either a integer or iterable of integers; note ``fee`` values are in units of basis points multiplied by 10**6.::
+    
+    >>> res = curvesim.autosim("0x5a6A4D54456819380173272A5E8E9B9904BdF41B", chain="mainnet", A=range(500, 1500, 250), fee=[4000000])
+    Fetching CoinGecko price data...
+    Fetching historical volume...
+    Volume Multipliers:
+    [9.59195904e-07 9.59195904e-07 9.59195904e-07 2.37521074e-05
+     2.37521074e-05 2.37521074e-05]
+    [MIM-3LP3CRV-f] Simulating with {'A': 750, 'fee': 4000000}
+    [MIM-3LP3CRV-f] Simulating with {'A': 1000, 'fee': 4000000}
+    [MIM-3LP3CRV-f] Simulating with {'A': 1250, 'fee': 4000000}
+    [MIM-3LP3CRV-f] Simulating with {'A': 500, 'fee': 4000000}
 
-    >>> payload = {'key1': 'value1', 'key2': ['value2', 'value3']}
+Other helpful parameters for :func:`~curvesim.autosim` are:
 
-    >>> r = requests.get('https://httpbin.org/get', params=payload)
-    >>> print(r.url)
-    https://httpbin.org/get?key1=value1&key2=value2&key2=value3
-
-
+    - src: Valid values for data source are 'coingecko', 'nomics', or 'local'
+    - ncpu: Number of cores to use.
+    - days: Number of days to fetch data for.
+    - vol_mode: Modes for limiting trade volume
+      1: limits trade volumes proportionally to market volume for each pair
+      2: limits trade volumes equally across pairs
+      3: mode 2 for trades with meta-pool asset, mode 1 for basepool-only trades
+    - test: Sets `A` and `fee` params to a small set of values for testing purposes:
 
 
 Errors and Exceptions
 ---------------------
 
-In the event of a network problem (e.g. DNS failure, refused connection, etc),
-Requests will raise a :exc:`~requests.exceptions.ConnectionError` exception.
-
-:meth:`Response.raise_for_status() <requests.Response.raise_for_status>` will
-raise an :exc:`~requests.exceptions.HTTPError` if the HTTP request
-returned an unsuccessful status code.
-
-If a request times out, a :exc:`~requests.exceptions.Timeout` exception is
-raised.
-
-If a request exceeds the configured number of maximum redirections, a
-:exc:`~requests.exceptions.TooManyRedirects` exception is raised.
-
 All exceptions that Requests explicitly raises inherit from
-:exc:`requests.exceptions.RequestException`.
+:exc:`curvesim.exceptions.CurvesimException`.
+
+Here are some common error types that may be useful to know about.
 
 -----------------------
 
