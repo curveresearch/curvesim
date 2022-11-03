@@ -3,10 +3,111 @@ from curvesim.pool_data import get as get_pool_data
 
 
 def autosim(pool=None, chain="mainnet", pool_data=None, **kwargs):
+    """
+    Parameters
+    ----------
+    pool: str, optional
+        This string identifies the pool by address or LP token symbol.
+
+        .. note::
+            Either `pool` or `pool_data` must be provided.
+
+        .. warning::
+            An LP token symbol need not be unique.  In particular, factory pools
+            are deployed permissionlessly and no checks are done to ensure unique
+            LP token symbol.  Currently the first pool retrieved from the subgraph
+            is used; this is effectively random.
+
+    chain: str, default='mainnet'
+        Identifier for blockchain or layer2.  Supported values are:
+            "mainnet", "arbitrum", "optimism", "fantom", "avalanche"
+            "matic", "xdai"
+
+    pool_data: dict, optional
+        Dict of pool data necessary to instantiate a pool object.
+
+        .. note::
+            Either `pool` or `pool_data` must be provided.
+
+    A: int or iterable of int
+        Amplification coefficient.  This controls the curvature of the
+        stableswap bonding curve.  Increased values makes the curve
+        flatter in a greater neighborhood of equal balances.
+
+        Defaults to [int(2 ** (a / 2)) for a in range(12, 28)].
+
+    D: int, optional
+        Total pool liquidity given in 18 decimal precision.
+
+        Defaults to on-chain data.
+
+    tokens: int, optional
+        Total LP token supply.
+
+        Defaults to on-chain data.
+
+    fee: int or iterable of int
+        Fees taken for both liquidity providers and the DAO.
+
+        Units are in fixed-point so that 10**10 is 100%,
+        e.g. 4 * 10**6 is 4 bps and 2 * 10**8 is 2%.
+
+        Defaults to list(range(1000000, 5000000, 1000000)),
+
+    fee_mul : int
+        fee multiplier for dynamic fee pools
+
+    admin_fee : int, default=0 * 10**9
+        Fees taken for the DAO.  For factory pools, it is half of the total fees,
+        as was typical for previous non-factory pools.
+
+        Units are fixed-point percentage of `fee`, e.g. 5 * 10**9 is
+        50% of the total fees.
+
+    test: bool, default=False
+        Sets `A` and `fee` params to a small set of values for testing purposes:
+        {"A": [100, 1000], "fee": [3000000, 4000000]}
+        Note this overrides any given values of those params.
+
+    days: int, default=60
+        Number of days to fetch data for.
+
+    src: str, default='coingecko'
+        Valid values for data source are 'coingecko', 'nomics', or 'local'
+
+    data_dir: str, default='data'
+        Relative path to saved data folder.
+
+    vol_mult : float, optional
+        Percentage of market volume used to limit trade size as specified by `vol_mode`.
+
+    vol_mode : int, default=1
+        Modes for limiting trade volume.
+
+        1: limits trade volumes proportionally to market volume for each pair
+        2: limits trade volumes equally across pairs
+        3: mode 2 for trades with meta-pool asset, mode 1 for basepool-only trades
+
+    ncpu : int, default=4
+        Number of cores to use.
+
+
+    Returns
+    -------
+    dict
+        Dictionary of results, each value being a pandas.Series.
+
+
+    Raises
+    ------
+
+    Note
+    ----
+    """
     assert any([pool, pool_data]), "Must input 'pool' or 'pool_data'"
 
     pool_data = pool_data or get_pool_data(pool, chain)
-    p_var, p_fixed, kwargs = parse_arguments(**kwargs)
+    p_var, p_fixed, kwargs = _parse_arguments(**kwargs)
 
     results = volume_limited_arbitrage(
         pool_data, variable_params=p_var, fixed_params=p_fixed, **kwargs
@@ -15,7 +116,7 @@ def autosim(pool=None, chain="mainnet", pool_data=None, **kwargs):
     return results
 
 
-def parse_arguments(**kwargs):
+def _parse_arguments(**kwargs):
     pool_args = ["A", "D", "x", "p", "fee", "fee_mul", "tokens", "admin_fee"]
     basepool_args = [arg + "_base" for arg in pool_args[:-1]]
 
