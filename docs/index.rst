@@ -53,7 +53,11 @@ Charts of the results are saved to the `results` folder.
 Features
 --------
 
-Curvesim lets you...
+Curvesim lets you:
+
+* Simulate interactions with Curve pools in Python
+* Analyze the effects of parameter changes on pool performance
+* Develop custom simulation pipelines for pool optimization
 
 
 User Guide
