@@ -1,3 +1,7 @@
+"""
+Implements the volume-limited arbitrage pipeline.
+"""
+
 import traceback
 from datetime import timedelta
 from functools import partial
@@ -34,6 +38,65 @@ def volume_limited_arbitrage(
     vol_mode=1,
     ncpu=4,
 ):
+    """
+    Implements the volume-limited arbitrage pipeline.
+
+    At each timestep, the pool is arbitraged as close to the prevailing market price
+    as possible without surpassing a volume constraint. By default, volume is limited
+    to the total market volume at each timestep, multiplied by the ratio of historical
+    pool volume to total market volume over the whole simulation period (vol_mult).
+
+    Parameters
+    ----------
+    pool_data : pool_data.PoolData
+        pool data object for the pool of interest
+
+    variable_params : dict, defaults to broad range of A/fee values
+        pool parameters to vary across simulations; keys: pool parameters,
+        values: iterables of ints
+
+        Example
+        --------
+        >>> variable_params = {"A": [100, 1000], "fee": [10**6, 4*10**6]}
+
+    fixed_params : dict, optional
+        pool parameters set before all simulations; keys: pool parameters,
+        values: ints
+
+        Example
+        --------
+        >>> fixed_params = {"D": 1000000*10**18}
+
+    test : bool, optional
+        Overrides variable_params to use only four test values
+
+    days : int, default=60
+        number of days to pull pool and price data for
+
+    src : str, default="coingecko"
+        source for price/volume data: coingecko, nomics, or local
+
+    data_dir : str, default="data"
+        relative path to saved price data folder
+
+    vol_mult : float or numpy.ndarray, default computed from data
+        value(s) multiplied by market volume to specify volume limits;
+        can be a scalar or vector with entries for each pairwise coin combination
+
+    vol_mode : int, default=1
+        modes for limiting trade volume
+
+        1: limits trade volumes proportionally to market volume for each pair
+
+        2: limits trade volumes equally across pairs
+
+        3: mode 2 for trades with meta-pool asset, mode 1 for basepool-only trades
+
+    ncpu : int, default=4
+        number of cores to use
+
+    """
+
     if test:
         variable_params = TEST_PARAMS
 

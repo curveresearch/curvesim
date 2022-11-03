@@ -40,6 +40,17 @@ Curve Pools
 .. autoclass:: curvesim.pool.RaiPool
    :inherited-members:
 
+
+Pipelines
+---------
+.. _pipelinesapi:
+
+.. automodule:: curvesim.pipelines
+
+    Arbitrage
+    ---------
+    .. autofunction:: curvesim.pipelines.arbitrage.volume_limited_arbitrage()
+
 Pool Data
 ----------
 
@@ -60,4 +71,3 @@ Price Data
 .. automodule:: curvesim.price_data
 
 .. autofunction:: curvesim.price_data.get()
-
