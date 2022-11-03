@@ -1,7 +1,14 @@
+"""
+Objects and methods for fetching pool state and metadata.
+
+Currently supports stableswap pools, meta-pools, and rebasing (RAI) pools.
+"""
+
 __all__ = [
     "MetaPool",
     "Pool",
     "PoolData",
+    "RaiPool",
     "from_address",
     "from_symbol",
     "get",
@@ -16,7 +23,23 @@ from ..pool.stableswap import MetaPool, Pool, RaiPool
 from .queries import from_address, from_symbol
 
 
-def get(address_or_symbol, chain="mainnet", src="cg", days=60):
+def get(address_or_symbol, chain="mainnet"):
+    """
+    Pulls pool state and metadata from daily snapshot.
+
+    Parameters
+    ----------
+    address_or_symbol: str
+        Pool adress or (LP token) symbol
+    chain: str
+        Blockchain for the pool
+
+    Returns
+    -------
+    pool_data.PoolData
+        PoolData object
+
+    """
     if address_or_symbol.startswith("0x"):
         from_x = from_address
     else:
@@ -30,16 +53,49 @@ def get(address_or_symbol, chain="mainnet", src="cg", days=60):
 
 
 class PoolData:
+    """
+    Container with methods to return pool state, metadata, and pools employing them.
+    """
+
     def __init__(self, metadata_dict, cache_data=False, days=60):
+        """
+        Parameters
+        ----------
+        metadata_dict: dict
+            Pool metadata in the format returned by network.subgraph.pool_snapshot
+        cache_data: bool
+            If True, fetches and caches historical volume and redemption price
+        days: int
+            Days worth of data to fetch if caching
+        """
         self.dict = metadata_dict
         if cache_data:
             self.set_cache(days=days)
 
     def set_cache(self, days=60):
+        """
+        Fetches and caches historical volume and redemption price data.
+
+        Parameters
+        ----------
+        days: int
+            Days worth of data to fetch
+
+        Returns
+        -------
+        self
+        """
         self.volume(days=days, store=True)
         self.redemption_prices(store=True)
 
     def clear_cache(self):
+        """
+        Clears any cached data.
+
+        Returns
+        -------
+        self
+        """
         attrs = ["_volume", "_redemption_prices"]
         for attr in attrs:
             try:
@@ -48,6 +104,20 @@ class PoolData:
                 print(f"Cached {attr[1:]} already cleared")
 
     def pool(self, balanced=(True, True)):
+        """
+        Constructs a pool object based on the stored data.
+
+        Parameters
+        ----------
+        balanced: tuple
+            If True, balances the value across the pool's holdings.
+            The second element refers to the basepool, if present.
+
+        Returns
+        -------
+        pool.stableswap Pool, MetaPool, or RaiPool object
+        """
+
         def bal(kwargs, balanced):
             reserves = kwargs.pop("reserves")
             if not balanced:
@@ -75,6 +145,20 @@ class PoolData:
         return pool
 
     def coins(self):
+        """
+        Returns coin addresses for the pool's holdings.
+
+        For pools that are not on Ethereum mainnet, the address
+        for the corresponding mainnet token is returned.
+
+        For lending tokens (e.g., aTokens or cTokens), the
+        address for the underlying token is returned.
+
+        Returns
+        -------
+        list of strings
+            Coin addresses
+        """
         if not self.dict["basepool"]:
             c = self.dict["coins"]["addresses"]
         else:
@@ -85,6 +169,20 @@ class PoolData:
         return c
 
     def coin_names(self):
+        """
+        Returns coin names for the pool's holdings.
+
+        For pools that are not on Ethereum mainnet, the name
+        of the corresponding mainnet token is returned.
+
+        For lending tokens (e.g., aTokens or cTokens), the
+        name of the underlying token is returned.
+
+        Returns
+        -------
+        list of strings
+            Coin names
+        """
         if not self.dict["basepool"]:
             c = self.dict["coins"]["names"]
         else:
@@ -95,6 +193,23 @@ class PoolData:
         return c
 
     def volume(self, days=60, store=False, get_cache=True):
+        """
+        Fetches the pool's historical volume over the specified number of days.
+
+        Parameters
+        ----------
+        days: int
+            Days worth of data to fetch
+        store: bool
+            If true, caches the fetched data
+        get_cache: bool
+            If true, returns cached data
+
+        Returns
+        -------
+        numpy.ndarray
+            Total volume summed across the specified number of days.
+        """
         if get_cache and hasattr(self, "_volume"):
             print("Getting cached historical volume...")
             return self._volume
@@ -118,6 +233,17 @@ class PoolData:
         return summed_vol
 
     def n(self):
+        """
+        Returns the number of token-types (e.g., DAI, USDC, USDT) in a pool.
+
+        Returns
+        -------
+        int or list of ints
+            Number of token-types.
+
+            For metapools, a list [n_metapool, n_basepool] is returned.
+            N_metapool includes the basepool LP token.
+        """
         if not self.dict["basepool"]:
             n = self.dict["init_kwargs"]["n"]
         else:
@@ -129,12 +255,39 @@ class PoolData:
         return n
 
     def type(self):
+        """
+        Returns a string of the pool type.
+
+        Returns
+        -------
+           str
+
+        """
         if self.dict["basepool"]:
             return "MetaPool"
         else:
             return "Pool"
 
-    def redemption_prices(self, n=1000, store=False, get_cache=True):
+    def redemption_prices(self, days=60, store=False, get_cache=True):
+        """
+        Fetches the pool's redemption price over the specified number of days.
+
+        Note: only returns data for RAI3CRV pool. Otherwise, returns None.
+
+        Parameters
+        ----------
+        days: int
+            Days worth of data to fetch
+        store: bool
+            If true, caches the fetched data
+        get_cache: bool
+            If true, returns cached data
+
+        Returns
+        -------
+        pandas.DataFrame
+            Timestamped redemption prices across the specified number of days.
+        """
         if get_cache and hasattr(self, "_redemption_prices"):
             print("Getting cached redemption prices...")
             return self._redemption_prices
@@ -142,7 +295,7 @@ class PoolData:
         address = self.dict["address"]
         chain = self.dict["chain"]
 
-        r = _redemption_prices(address, chain, n=n)
+        r = _redemption_prices(address, chain, days=days)
 
         if store:
             self._redemption_prices = r
