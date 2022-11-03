@@ -37,3 +37,24 @@ Curve Pools
 .. autoclass:: curvesim.pool.MetaPool
    :inherited-members:
 
+Pool Data
+----------
+
+.. _pooldataapi:
+
+.. automodule:: curvesim.pool_data
+
+.. autofunction:: curvesim.pool_data.get()
+
+.. autoclass:: curvesim.pool_data.PoolData
+    :inherited-members:
+
+Price Data
+------------
+
+.. _pricedataapi:
+
+.. automodule:: curvesim.price_data
+
+.. autofunction:: curvesim.price_data.get()
+
