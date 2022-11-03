@@ -110,7 +110,8 @@ class PoolData:
         Parameters
         ----------
         balanced : tuple, default=(True,True)
-            If True, balances the value across the pool's holdings.
+            If True, balances the pool value across assets.
+
             The second element refers to the basepool, if present.
 
         Returns
@@ -242,6 +243,7 @@ class PoolData:
             Number of token-types.
 
             For metapools, a list [n_metapool, n_basepool] is returned.
+
             N_metapool includes the basepool LP token.
         """
         if not self.dict["basepool"]:
