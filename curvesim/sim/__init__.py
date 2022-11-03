@@ -39,7 +39,7 @@ def autosim(pool=None, chain="mainnet", pool_data=None, **kwargs):
             "mainnet", "arbitrum", "optimism", "fantom", "avalanche"
             "matic", "xdai"
 
-    pool_data: dict, optional
+    pool_data: PoolData, optional
         Dict of pool data necessary to instantiate a pool object.
 
         .. note::
