@@ -62,11 +62,11 @@ class PoolData:
         Parameters
         ----------
         metadata_dict : dict
-            Pool metadata in the format returned by network.subgraph.pool_snapshot
+            pool metadata in the format returned by network.subgraph.pool_snapshot
         cache_data : bool, optional
-            If True, fetches and caches historical volume and redemption price
+            if True, fetches and caches historical volume and redemption price
         days : int, default=60
-            Days worth of data to fetch if caching
+            number of days to pull data for if caching
         """
         self.dict = metadata_dict
         if cache_data:
@@ -79,7 +79,7 @@ class PoolData:
         Parameters
         ----------
         days : int, default=60
-            Days worth of data to fetch
+            number of days to pull data for
 
         Returns
         -------
@@ -158,7 +158,7 @@ class PoolData:
         Returns
         -------
         list of strings
-            Coin addresses
+            coin addresses
         """
         if not self.dict["basepool"]:
             c = self.dict["coins"]["addresses"]
@@ -182,7 +182,7 @@ class PoolData:
         Returns
         -------
         list of strings
-            Coin names
+            coin names
         """
         if not self.dict["basepool"]:
             c = self.dict["coins"]["names"]
@@ -200,16 +200,16 @@ class PoolData:
         Parameters
         ----------
         days : int, default=60
-            Days worth of data to fetch
+            number of days to pull data for
         store : bool, default=False
-            If true, caches the fetched data
+            if true, caches the fetched data
         get_cache : bool, default=True
-            If true, returns cached data when available
+            if true, returns cached data when available
 
         Returns
         -------
         numpy.ndarray
-            Total volume summed across the specified number of days.
+            total volume summed across the specified number of days.
         """
         if get_cache and hasattr(self, "_volume"):
             print("Getting cached historical volume...")
@@ -279,16 +279,16 @@ class PoolData:
         Parameters
         ----------
         days : int, default=60
-            Days worth of data to fetch
+            number of days to pull data for
         store : bool, default=False
-            If true, caches the fetched data
+            if true, caches the fetched data
         get_cache : bool, default=True
-            If true, returns cached data when available
+            if true, returns cached data when available
 
         Returns
         -------
         pandas.DataFrame
-            Timestamped redemption prices across the specified number of days
+            timestamped redemption prices across the specified number of days
         """
         if get_cache and hasattr(self, "_redemption_prices"):
             print("Getting cached redemption prices...")
