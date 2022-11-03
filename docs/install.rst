@@ -16,6 +16,18 @@ To install Curvesim, simply run this simple command in your terminal of choice::
     $ python3 -m pip install curvesim
 
 
+virtual environments
+^^^^^^^^^^^^^^^^^^^^
+
+It is highly recommended to use a virtual environment to do the above install.  Using a virtual env
+ensures that changes in your other packages installed for other projects do not conflict with
+Curvesim or its dependencies.  In general, it is considered best practice to separate project
+dependencies with virtual envs.
+
+- `Why use virtual envs <https://realpython.com/python-virtual-environments-a-primer/#why-do-you-need-virtual-environments>`_
+- `Instructions <https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment>`_ for installing and using a virtual env
+
+
 Get the Source Code
 -------------------
 
