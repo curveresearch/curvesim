@@ -84,8 +84,21 @@ class Pool:
 
     def D(self, xp=None):
         """
+        `D` is the stableswap invariant; this can be thought of as the value of
+        all coin balances if the pool were to become balanced.
+
         Convenience wrapper for `get_D` which uses the set `A` and makes `xp`
         an optional arg.
+
+        Parameters
+        ----------
+        xp: list of ints
+            Coin balances in units of D
+
+        Returns
+        -------
+        int
+            The stableswap invariant, `D`.
         """
         A = self.A
         xp = xp or self._xp()
@@ -108,6 +121,18 @@ class Pool:
 
         Replace :math:`A n^n` by `An` and :math:`d_j^{n+1}/(n^n \prod{x_i})` by :math:`D_p` to
         arrive at the iterative formula in the code.
+
+        Parameters
+        ----------
+        xp: list of ints
+            Coin balances in units of D
+        A: int
+            Amplification coefficient
+
+        Returns
+        -------
+        int
+            The stableswap invariant, `D`.
         """  # noqa
         Dprev = 0
         S = sum(xp)
@@ -130,6 +155,18 @@ class Pool:
         """
         Convenience wrapper for `get_D` which takes in balances in token units.
         Naming is based on the vyper equivalent.
+
+        Parameters
+        ----------
+        balances: list of ints
+            Coin balances in native token units
+        A: int
+            Amplification coefficient
+
+        Returns
+        -------
+        int
+            The stableswap invariant, `D`.
         """
         xp = [x * p // 10**18 for x, p in zip(balances, self.p)]
         return self.get_D(xp, A)
@@ -154,6 +191,22 @@ class Pool:
         which can then be solved iteratively by Newton's method:
 
         .. math:: x_1 := (x_1^2 + c) / (2 x_1 + b)
+
+        Parameters
+        ----------
+        i: int
+            index of coin; usually the "in"-token
+        j: int
+            index of coin; usually the "out"-token
+        x: int
+            balance of i-th coin in units of D
+        xp: list of int
+            coin balances in units of D
+
+        Returns
+        -------
+        int
+            The balance of the j-th coin, in units of D, for the other coin balances given.
         """  # noqa
         xx = xp[:]
         D = self.D(xx)
@@ -180,6 +233,22 @@ class Pool:
         Calculate x[i] if one uses a reduced `D` than one calculated for given `xp`.
 
         See docstring for `get_y`.
+
+        Parameters
+        ----------
+        A: int
+            Amplification coefficient for given xp and D
+        i: int
+            index of coin to calculate balance for
+        xp: list of int
+            coin balances in units of D
+        D: int
+            new invariant value
+
+        Returns
+        -------
+        int
+            The balance of the i-th coin, in units of D
         """
         D = mpz(D)
         n = self.n
