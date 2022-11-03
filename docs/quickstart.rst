@@ -18,9 +18,8 @@ Fetch a pool from a chain
 -------------------------
 
 If you know the address of the pool for the chain you want, you can easily start
-interacting with it (note this is introspecting on the pool state and using its
-functions; Curvesim doesn't actually submit transacions, i.e. write data to the
-chain and alter the real pool state.)
+interacting with it. Curvesim allows you to introspect on the pool's state and use its
+functions without submitting actual transactions on chain.
 
 Begin by importing the Curvesim module::
 
@@ -30,9 +29,10 @@ Let's retrieve the famous 3Pool from Ethereum Mainnet::
 
     >>> pool = curvesim.pool.get("0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7", "mainnet")
 
-Now, we have a :class:`Pool <curvesim.pool.Pool>` object called ``pool``.  From
-this object we can retrieve state information and see the result of pool operations
-such as swaps (exchanges) or adding liquidity.
+Now, we have a :class:`Pool <curvesim.pool.Pool>` object called ``pool``. It's state is
+pulled from `Curve volume subgraph <https://github.com/curvefi/volume-subgraphs>`_ daily 
+snapshots. From this object we can retrieve state information and see the result of pool 
+operations such as swaps (exchanges) or adding liquidity.
 
 The pool interface adheres closely to the live smart contract's, so if you are familiar
 with the vyper contract, you should feel at home.
