@@ -141,5 +141,5 @@ def get(address_or_symbol, chain="mainnet", balanced=(False, False)):
     >>> import curvesim
     >>> pool = curvesim.pool.get("0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7", "mainnet")
     """
-    p = _get_pool_data(address_or_symbol, chain=chain, src=src)
+    p = _get_pool_data(address_or_symbol, chain=chain)
     return p.pool(balanced=balanced)
