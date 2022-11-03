@@ -29,10 +29,10 @@ def get(address_or_symbol, chain="mainnet"):
 
     Parameters
     ----------
-    address_or_symbol: str
-        Pool adress or (LP token) symbol
-    chain: str
-        Blockchain for the pool
+    address_or_symbol : str
+        pool address prefixed with “0x” or LP token symbol
+    chain : str
+        chain/layer2 identifier, e.g. “mainnet”, “arbitrum”, “optimism”
 
     Returns
     -------
@@ -61,11 +61,11 @@ class PoolData:
         """
         Parameters
         ----------
-        metadata_dict: dict
+        metadata_dict : dict
             Pool metadata in the format returned by network.subgraph.pool_snapshot
-        cache_data: bool
+        cache_data : bool, optional
             If True, fetches and caches historical volume and redemption price
-        days: int
+        days : int, default=60
             Days worth of data to fetch if caching
         """
         self.dict = metadata_dict
@@ -78,7 +78,7 @@ class PoolData:
 
         Parameters
         ----------
-        days: int
+        days : int, default=60
             Days worth of data to fetch
 
         Returns
@@ -109,7 +109,7 @@ class PoolData:
 
         Parameters
         ----------
-        balanced: tuple
+        balanced : tuple, default=(True,True)
             If True, balances the value across the pool's holdings.
             The second element refers to the basepool, if present.
 
@@ -198,12 +198,12 @@ class PoolData:
 
         Parameters
         ----------
-        days: int
+        days : int, default=60
             Days worth of data to fetch
-        store: bool
+        store : bool, default=False
             If true, caches the fetched data
-        get_cache: bool
-            If true, returns cached data
+        get_cache : bool, default=True
+            If true, returns cached data when available
 
         Returns
         -------
@@ -276,17 +276,17 @@ class PoolData:
 
         Parameters
         ----------
-        days: int
+        days : int, default=60
             Days worth of data to fetch
-        store: bool
+        store : bool, default=False
             If true, caches the fetched data
-        get_cache: bool
-            If true, returns cached data
+        get_cache : bool, default=True
+            If true, returns cached data when available
 
         Returns
         -------
         pandas.DataFrame
-            Timestamped redemption prices across the specified number of days.
+            Timestamped redemption prices across the specified number of days
         """
         if get_cache and hasattr(self, "_redemption_prices"):
             print("Getting cached redemption prices...")
