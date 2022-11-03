@@ -11,7 +11,7 @@ def nomics(coins, days=60, data_dir="data"):
     print("Fetching Nomics price data...")
     print("Timerange: %s to %s" % (str(t_start), str(t_end)))
 
-    _nomics.update(coins, None, t_start, t_end, data_dir)
+    _nomics.update(coins, None, t_start, t_end, data_dir=data_dir)
     prices, volumes, pzero = _nomics.pool_prices(coins)
 
     return prices, volumes, pzero
