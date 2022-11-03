@@ -1,1 +1,3 @@
-from .grid import Grid  # noqa: F401
+__all__ = ["Grid"]
+
+from .grid import Grid

@@ -3,6 +3,18 @@ from ...price_data import get
 
 class PriceVolume:
     def __init__(self, coins, days=60, data_dir="data", src="coingecko"):
+        """
+        Parameters
+        ----------
+        coins: list of str
+            addresses of coins in the pool
+        days: int, defaults to 60
+            number of last days to pull
+        data_dir: str, defaults to "data"
+            relative path to saved data folder
+        src: str, defaults to "coingecko"
+            identifies pricing source: coingecko, nomics, or local
+        """
         prices, volumes, pzero = get(coins, days=days, data_dir=data_dir, src=src)
 
         self.prices = prices
@@ -24,9 +36,22 @@ class PriceVolume:
         return prices[1], volumes[1], prices[0]
 
     def total_volumes(self):
+        """
+        Returns
+        -------
+        pandas.Series
+            Total volume of all coins for each day.
+        """
         return self.volumes.sum()
 
     def restart(self):
+        """
+        Resets the iterator.
+
+        Returns
+        -------
+        self
+        """
         self.price_generator = self.prices.iterrows()
         self.volume_generator = self.volumes.iterrows()
 
@@ -37,6 +62,20 @@ class PriceVolumeRedemptionPrice:
     def __init__(
         self, coins, redemption_prices, days=60, data_dir="data", src="coingecko"
     ):
+        """
+        Parameters
+        ----------
+        coins: list of str
+            addresses of coins in the pool
+        redemption_prices: pandas.Series
+            time series for redemption prices
+        days: int, defaults to 60
+            number of last days to pull
+        data_dir: str, defaults to "data"
+            relative path to saved data folder
+        src: str, defaults to "coingecko"
+            identifies pricing source: coingecko, nomics, or local
+        """
 
         prices, volumes, pzero = get(coins(), days=days, data_dir=data_dir, src=src)
 
@@ -63,9 +102,22 @@ class PriceVolumeRedemptionPrice:
         return prices, volumes, redemption_price
 
     def total_volumes(self):
+        """
+        Returns
+        -------
+        pandas.Series
+            Total volume of all coins for each day.
+        """
         return self.volumes.sum(axis=1)
 
     def reset(self):
+        """
+        Resets the iterator.
+
+        Returns
+        -------
+        self
+        """
         self.price_generator = self.prices.iterrows()
         self.volume_generator = self.volumes.iterrows()
 

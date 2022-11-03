@@ -1,1 +1,3 @@
-from .price_volume import PriceVolume, PriceVolumeRedemptionPrice  # noqa: F401
+__all__ = ["PriceVolume", "PriceVolumeRedemptionPrice"]
+
+from .price_volume import PriceVolume, PriceVolumeRedemptionPrice
