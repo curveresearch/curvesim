@@ -116,7 +116,7 @@ class PoolData:
 
         Returns
         -------
-        pool.stableswap Pool, MetaPool, or RaiPool object
+        Pool, MetaPool, or RaiPool
         """
 
         def bal(kwargs, balanced):
