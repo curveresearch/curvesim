@@ -4,9 +4,8 @@ from gmpy2 import mpz
 
 
 class MetaPool:
-
     """
-    Python model of Curve pool math.
+    Basic stableswap metapool implementation in Python.
     """
 
     def __init__(
@@ -22,16 +21,26 @@ class MetaPool:
         admin_fee=0 * 10**9,
     ):
         """
-        A: Amplification coefficient
-        D: Total deposit size
-        n: number of currencies; if list, assumes metapool
-        basepool: a Pool object, basepool for the metapool
-        p: precision
-        tokens: # of tokens; if meta-pool, this sets # of basepool tokens
-        fee: fee with 10**10 precision (default = .004%)
-        fee_mul: fee multiplier for dynamic fee pools
-        admin_fee: percentage of `fee` with 10**10 precision (default = 50%)
-        r: initial redemption price for RAI-like pools
+        Parameters
+        ----------
+        A : int
+            Amplification coefficient; this is :math:`A n^{n-1}` in the whitepaper.
+        D : int or list of int
+            coin balances or virtual total balance
+        n: int
+            number of coins
+        p: list of int
+            precision and rate adjustments
+        tokens: int
+            LP token supply
+        fee: int, optional
+            fee with 10**10 precision (default = .004%)
+        fee_mul:
+            fee multiplier for dynamic fee pools
+        admin_fee: int, optional
+            percentage of `fee` with 10**10 precision (default = 50%)
+        r: int, optional
+            initial redemption price for RAI-like pools
         """
         # FIXME: set admin_fee default back to 5 * 10**9
         # once sim code is updated.  Right now we use 0
@@ -66,7 +75,19 @@ class MetaPool:
         self.fee_mul = fee_mul
         self.collected_admin_fees = [0] * n
 
-    def next_timestamp(*args, **kwargs):
+    @property
+    def balances(self):
+        """
+        Alias to adhere closer to vyper interface.
+
+        Returns
+        -------
+        list of int
+            pool coin balances in native token units
+        """
+        return self.x
+
+    def next_timestamp(self, *args, **kwargs):
         pass
 
     def D(self, xp=None):
