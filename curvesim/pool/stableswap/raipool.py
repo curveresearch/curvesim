@@ -11,7 +11,8 @@ class RaiPool(MetaPool):
         Parameters
         ----------
         redemption_prices : pandas.DataFrame
-            timestamped redemption prices (see :meth:`.PoolData.redemption_prices()`)
+            timestamped redemption prices
+            (see :meth:`.PoolData.redemption_prices()`)
         A : int
             Amplification coefficient; this is :math:`A n^{n-1}` in the whitepaper.
         D : int or list of int
