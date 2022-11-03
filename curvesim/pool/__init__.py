@@ -2,17 +2,14 @@
 Pool subpackage for creating Curve pool objects.
 
 This subpackage can be used standalone from the simulation functionality
-for interactive exploration of Curve pool behavior.
-
-The two primary ways to create pools are `get` and `make`, which allow you
-to create pools from on-chain state or passed-in parameters, respectively.
+for interactive exploration of Curve pool behavior. The two primary ways to create
+pools are `get` and `make`, which allow you to create pools from on-chain state or p
+assed-in parameters, respectively.
 
 Pool calculations are thoroughly unit-tested against the corresponding
 smart contract code.  We aim for the exact results as in the vyper
-integer arithmetic.
-
-The pool interfaces largely adhere to the smart contracts but in a few
-cases allow an extra option, such as enabling fees.
+integer arithmetic. The pool interfaces largely adhere to the smart contracts
+but in a few cases allow an extra option, such as enabling/disabling fees.
 """
 
 __all__ = ["get", "make", "MetaPool", "Pool", "RaiPool"]
@@ -39,6 +36,47 @@ def make(
 
     Parameters
     ----------
+    A: int
+        Amplification coefficient.  This controls the curvature of the
+        stableswap bonding curve.  Increased values makes the curve
+        flatter in a greater neighborhood of equal balances.
+
+        Defaults to [int(2 ** (a / 2)) for a in range(12, 28)].
+
+    D: int
+        Total pool liquidity given in 18 decimal precision.
+
+        Defaults to on-chain data.
+
+    n: int
+        The number of token-types in the pool (e.g., DAI, USDC, USDT = 3)
+
+    basepool: dict, optional
+        a dict cointaining the arguments for instantiating a basepool
+
+    tokens: int, optional
+        Total LP token supply.
+
+        .. note::
+            The number of tokens does not influence "normal" pool computations;
+            but, for metapools, the number of basepool tokens is critically
+            important to trade calculations.
+
+    fee: int
+        Fees taken for both liquidity providers and the DAO.
+
+        Units are in fixed-point so that 10**10 is 100%,
+        e.g. 4 * 10**6 is 4 bps and 2 * 10**8 is 2%.
+
+    fee_mul : int
+        fee multiplier for dynamic fee pools
+
+    admin_fee : int, default=0 * 10**9
+        Fees taken for the DAO.  For factory pools, it is half of the total fees,
+        as was typical for previous non-factory pools.
+
+        Units are fixed-point percentage of `fee`, e.g. 5 * 10**9 is
+        50% of the total fees.
 
     Returns
     -------
@@ -72,7 +110,7 @@ def make(
     return pool
 
 
-def get(address_or_symbol, chain="mainnet", src="cg", balanced=(False, False)):
+def get(address_or_symbol, chain="mainnet", balanced=(False, False)):
     """
     Parameters
     ----------
@@ -83,12 +121,15 @@ def get(address_or_symbol, chain="mainnet", src="cg", balanced=(False, False)):
             An LP token symbol need not be unique.  In particular, factory pools
             are deployed permissionlessly and no checks are done to ensure unique
             LP token symbol.  Currently the first pool retrieved from the subgraph
-            is used; this is effectively random.
-    chain: str
+            is used; which can be effectively random if token symbols clash.
+
+    chain: str, default="mainnet"
         chain/layer2 identifier, e.g. "mainnet", "arbitrum", "optimism"
-    src: str
-        data source identifier: "nomics", "cg", or "local"
-    balances: (bool, bool)
+
+    balanced : tuple, default=(True,True)
+            If True, balances the pool value across assets.
+
+            The second element refers to the basepool, if present.
 
 
     Returns
