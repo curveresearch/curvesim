@@ -1,9 +1,25 @@
+"""
+A simulation runs trades against Curve pools, possibly a variety of
+informed and noisy trades, although currently only "optimal" arbitrages
+are supported.
+
+The primary use-case is to determine optimal amplitude (A) and
+fee parameters given historical price and volume feeds.
+"""
 from curvesim.pipelines.arbitrage import DEFAULT_PARAMS, volume_limited_arbitrage
 from curvesim.pool_data import get as get_pool_data
 
 
 def autosim(pool=None, chain="mainnet", pool_data=None, **kwargs):
     """
+    The autosim() function simulates existing Curve pools with a range of A and/or fee parameters.
+    The function fetches pool properties (e.g., current pool size) and 2 months of price/volume data,
+    runs multiple simulations in parallel, and saves results plots to the "results" directory.
+
+    Curve pools from any chain supported by the Convex Community Subgraphs can be simulated directly
+    by inputting the pool's address or symbol. For factory pools, the pool and LP token use the same
+    symbol. For earlier pools, we use the LP token symbol.
+
     Parameters
     ----------
     pool: str, optional
@@ -90,7 +106,6 @@ def autosim(pool=None, chain="mainnet", pool_data=None, **kwargs):
 
     ncpu : int, default=4
         Number of cores to use.
-
 
     Returns
     -------
