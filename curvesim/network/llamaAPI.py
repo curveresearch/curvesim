@@ -1,3 +1,6 @@
+"""
+Network connector for LLama Airforce REST API.
+"""
 from asyncio import gather
 
 from eth_utils import to_checksum_address

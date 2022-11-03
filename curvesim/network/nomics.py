@@ -1,3 +1,6 @@
+"""
+Network connector for nomics API.
+"""
 import asyncio
 import os
 from datetime import timedelta, timezone
@@ -228,16 +231,28 @@ def pool_prices(  # noqa: C901
     """
     Loads and formats price/volume data from CSVs.
 
-    coins: list of coins to load (e.g., ['DAI', 'USDC', 'USDT'])
-    quote: if string, name of quote currency to load (e.g., 'USD')
-    quotediv: determine pairwise coin prices using third currency (e.g., ETH-SUSD/SETH-SUSD for ETH-SETH)
-    t_start/t_end: used to truncate input time series
-    resample: used to downsample input time series
-    pairs: list of coin pairs to load (e.g., ['DAI-USDC', 'USDC-USDT'])
-    data_dir: base directory name for price csv files
+    Parameters
+    ----------
+    coins: list of str
+        list of coins to load (e.g., ['DAI', 'USDC', 'USDT'])
+    quote: str, optional
+        name of quote currency to load (e.g., 'USD')
+    quotediv: bool
+        determine pairwise coin prices using third currency (e.g., ETH-SUSD/SETH-SUSD for ETH-SETH)
+    t_start/t_end:
+        used to truncate input time series
+    resample:
+        used to downsample input time series
+    pairs: list of str
+        list of coin pairs to load (e.g., ['DAI-USDC', 'USDC-USDT'])
+    data_dir: str
+        base directory name for price csv files
 
-    Returns exchange rates/volumes for each coin pair in order of list(itertools.combinations(coins,2))
-
+    Returns
+    -------
+    list of triples of form (price, volume, pzero)
+        exchange rates/volumes for each coin pair in order of list(itertools.combinations(coins,2))
+        pzero is an error status
     """
     loop = asyncio.get_event_loop()
 
@@ -335,15 +350,28 @@ def local_pool_prices(  # noqa: C901
     """
     Loads and formats price/volume data from CSVs.
 
-    coins: list of coins to load (e.g., ['DAI', 'USDC', 'USDT'])
-    quote: if string, name of quote currency to load (e.g., 'USD')
-    quotediv: determine pairwise coin prices using third currency (e.g., ETH-SUSD/SETH-SUSD for ETH-SETH)
-    t_start/t_end: used to truncate input time series
-    resample: used to downsample input time series
-    pairs: list of coin pairs to load (e.g., ['DAI-USDC', 'USDC-USDT'])
-    data_dir: base directory name for price csv files
+    Parameters
+    ----------
+    coins: list of str
+        list of coins to load (e.g., ['DAI', 'USDC', 'USDT'])
+    quote: str
+        name of quote currency to load (e.g., 'USD')
+    quotediv: bool
+        determine pairwise coin prices using third currency (e.g., ETH-SUSD/SETH-SUSD for ETH-SETH)
+    t_start/t_end:
+        used to truncate input time series
+    resample:
+        used to downsample input time series
+    pairs: list of str
+        list of coin pairs to load (e.g., ['DAI-USDC', 'USDC-USDT'])
+    data_dir: str
+        base directory name for price csv files
 
-    Returns exchange rates/volumes for each coin pair in order of list(itertools.combinations(coins,2))
+    Returns
+    -------
+    list of triples of form (price, volume, pzero)
+        exchange rates/volumes for each coin pair in order of list(itertools.combinations(coins,2))
+        pzero is an error status
 
     """
 

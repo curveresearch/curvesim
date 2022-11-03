@@ -1,3 +1,6 @@
+"""
+Network connector for Coingecko.
+"""
 import asyncio
 from datetime import datetime, timedelta, timezone
 from itertools import combinations
@@ -76,6 +79,24 @@ async def _pool_prices(coins, vs_currency, days):
 
 
 def pool_prices(coins, vs_currency, days):
+    """
+    Pull price and volume data for given coins, quoted in given
+    quote currency for given days.
+
+    Parameters
+    ----------
+    coins: list of str
+        list of coin addresses
+    vs_currency: str
+        symbol for quote currency
+    days: int
+        number of days to pull data for
+
+    Returns
+    -------
+    pair of pandas.Series
+        prices Series and volumes Series
+    """
     # Get data
     coins = coin_ids_from_addresses_sync(coins, "mainnet")
     qprices, qvolumes = _pool_prices_sync(coins, vs_currency, days)

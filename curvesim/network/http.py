@@ -1,3 +1,6 @@
+"""
+General utility for http requests.
+"""
 from aiohttp import ClientSession
 from tenacity import retry, stop_after_attempt, wait_random
 
