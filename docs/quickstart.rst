@@ -142,7 +142,7 @@ If you want to dig into the pulled data that was used to construct the pool::
 
 
 
-Run an arbitrage simulation for a proposed A param
+Run an arbitrage simulation for a proposed A parameter
 ------------------------------------------------------
 
 Tuning a pool parameter, such as the amplification coefficient ``A``, can greatly affect the
@@ -150,7 +150,8 @@ risk-reward profile.  The ``A`` parameter alters the curvature of the bonding cu
 impacting the pool's ability to handle large trades while holding imbalanced reserves.
 
     >>> import curvesim
-    >>> res = curvesim.autosim("0x5a6A4D54456819380173272A5E8E9B9904BdF41B", chain="mainnet", A=875)
+    >>> mim = "0x5a6A4D54456819380173272A5E8E9B9904BdF41B"
+    >>> res = curvesim.autosim(mim, chain="mainnet", A=875)
     Fetching CoinGecko price data...
     Fetching historical volume...
     Volume Multipliers:
@@ -161,14 +162,13 @@ impacting the pool's ability to handle large trades while holding imbalanced res
     [MIM-3LP3CRV-f] Simulating with {'A': 875, 'fee': 3000000}
     [MIM-3LP3CRV-f] Simulating with {'A': 875, 'fee': 4000000}
 
-The ``res`` dictionary holds different time series showing different aspects of risk and reward, such as
-annualized returns, pool total value, imbalance factor, and volume.
+The ``res`` dictionary holds different time series showing different aspects of risk and reward, such as annualized returns, pool total value, imbalance factor, and volume.
 
 Charts are saved in the ``results`` folder.
 
-Likely you will want to see the impact over a range of ``A`` values.  The ``A`` and ``fee`` parameters will accept either a integer or iterable of integers; note ``fee`` values are in units of basis points multiplied by 10**6.::
+Likely you will want to see the impact over a range of ``A`` values.  The ``A`` and ``fee`` parameters will accept either a integer or iterables of integers; note ``fee`` values are in units of basis points multiplied by 10**6.::
     
-    >>> res = curvesim.autosim("0x5a6A4D54456819380173272A5E8E9B9904BdF41B", chain="mainnet", A=range(500, 1500, 250), fee=[4000000])
+    >>> res = curvesim.autosim(mim, chain="mainnet", A=range(500, 1500, 250), fee=4000000)
     Fetching CoinGecko price data...
     Fetching historical volume...
     Volume Multipliers:
@@ -179,7 +179,27 @@ Likely you will want to see the impact over a range of ``A`` values.  The ``A`` 
     [MIM-3LP3CRV-f] Simulating with {'A': 1250, 'fee': 4000000}
     [MIM-3LP3CRV-f] Simulating with {'A': 500, 'fee': 4000000}
 
-Other helpful parameters for :func:`~curvesim.autosim` are:
+Run an arbitrage simulation varying multiple parameters
+--------------------------------------------------------
+
+You may also want to see how different ``A`` and ``fee`` parameters perform in conjuction.
+If you input multiple iterables for parameters, each possible combination of parameters is simulated::
+
+    >>> res = curvesim.autosim(mim, chain="mainnet", A=[100, 1000], fee=[3000000, 4000000])
+    Fetching CoinGecko price data...
+    Fetching historical volume...
+    Volume Multipliers:
+    [9.59195904e-07 9.59195904e-07 9.59195904e-07 2.37521074e-05
+     2.37521074e-05 2.37521074e-05]
+    [MIM-3LP3CRV-f] Simulating with {'A': 100, 'fee': 3000000}
+    [MIM-3LP3CRV-f] Simulating with {'A': 100, 'fee': 4000000}
+    [MIM-3LP3CRV-f] Simulating with {'A': 1000, 'fee': 3000000}
+    [MIM-3LP3CRV-f] Simulating with {'A': 1000, 'fee': 4000000}
+
+
+Fine-tuning the simulator
+-------------------------
+Other helpful parameters for :func:`.autosim` are:
 
     - src: data source for prices and volumes.  Allowed values are 'coingecko', 'nomics', or 'local'
     - ncpu: Number of cores to use.
@@ -191,6 +211,9 @@ Other helpful parameters for :func:`~curvesim.autosim` are:
       - 3: mode 2 for trades with meta-pool asset, mode 1 for basepool-only trades
 
     - test: Sets `A` and `fee` params to a small set of values for testing purposes.
+
+Note: Using the Nomics data source requires setting the NOMICS_API_KEY OS environment
+variable with a paid nomics API key
 
 
 Errors and Exceptions
