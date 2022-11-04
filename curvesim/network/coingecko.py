@@ -86,11 +86,11 @@ def pool_prices(coins, vs_currency, days):
     Parameters
     ----------
     coins: list of str
-        list of coin addresses
+        List of coin addresses.
     vs_currency: str
-        symbol for quote currency
+        Symbol for quote currency.
     days: int
-        number of days to pull data for
+        Number of days to pull data for.
 
     Returns
     -------

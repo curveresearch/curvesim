@@ -25,6 +25,20 @@ def compute_D(xp, A):
 
 
 def sync(func):
+    """
+    Returns a sync version of an async function.
+
+    Parameters
+    ----------
+    func : callable
+        An async function.
+
+    Returns
+    -------
+    inner : callable
+        Sync version of the async function.
+    """
+
     def inner(*args, event_loop=None, **kwargs):
         loop = event_loop or asyncio.get_event_loop()
         res = loop.run_until_complete(func(*args, **kwargs))

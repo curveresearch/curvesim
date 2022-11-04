@@ -234,25 +234,37 @@ def pool_prices(  # noqa: C901
     Parameters
     ----------
     coins: list of str
-        list of coins to load (e.g., ['DAI', 'USDC', 'USDT'])
+        List of coin addresses to load. Data loaded for pairwise combinations.
+
     quote: str, optional
-        name of quote currency to load (e.g., 'USD')
+        Name of an additional quote currency to use.
+
     quotediv: bool
-        determine pairwise coin prices using third currency (e.g., ETH-SUSD/SETH-SUSD for ETH-SETH)
+        Determine pairwise coin prices using third currency
+        (e.g., ETH-SUSD/SETH-SUSD for ETH-SETH).
+
     t_start/t_end:
-        used to truncate input time series
+        Used to truncate input time series.
+
     resample:
-        used to downsample input time series
-    pairs: list of str
-        list of coin pairs to load (e.g., ['DAI-USDC', 'USDC-USDT'])
+        Used to downsample input time series.
+
+    pairs: list
+        List of coin addresses to load. Data loaded for each listed pair.
+
     data_dir: str
-        base directory name for price csv files
+        Base directory name for price csv files.
 
     Returns
     -------
-    list of triples of form (price, volume, pzero)
-        exchange rates/volumes for each coin pair in order of list(itertools.combinations(coins,2))
-        pzero is an error status
+    prices : pandas.DataFrame
+        Timestamped prices for each pair of coins.
+
+    volumes : pandas.DataFrame
+        Timestamped volumes for each pair of coins.
+
+    pzero : pandas.Series
+        Proportion of timestamps with zero volume.
     """
     loop = asyncio.get_event_loop()
 
@@ -353,26 +365,37 @@ def local_pool_prices(  # noqa: C901
     Parameters
     ----------
     coins: list of str
-        list of coins to load (e.g., ['DAI', 'USDC', 'USDT'])
-    quote: str
-        name of quote currency to load (e.g., 'USD')
+        List of coin names/addresses to load. Data loaded for pairwise combinations.
+
+    quote: str, optional
+        Name of an additional quote currency to use.
+
     quotediv: bool
-        determine pairwise coin prices using third currency (e.g., ETH-SUSD/SETH-SUSD for ETH-SETH)
+        Determine pairwise coin prices using third currency
+        (e.g., ETH-SUSD/SETH-SUSD for ETH-SETH).
+
     t_start/t_end:
-        used to truncate input time series
+        Used to truncate input time series.
+
     resample:
-        used to downsample input time series
-    pairs: list of str
-        list of coin pairs to load (e.g., ['DAI-USDC', 'USDC-USDT'])
+        Used to downsample input time series.
+
+    pairs: list
+        List of coin names/addresses to load. Data loaded for each listed pair.
+
     data_dir: str
-        base directory name for price csv files
+        Base directory name for price csv files.
 
     Returns
     -------
-    list of triples of form (price, volume, pzero)
-        exchange rates/volumes for each coin pair in order of list(itertools.combinations(coins,2))
-        pzero is an error status
+    prices : pandas.DataFrame
+        Timestamped prices for each pair of coins.
 
+    volumes : pandas.DataFrame
+        Timestamped volumes for each pair of coins.
+
+    pzero : pandas.Series
+        Proportion of timestamps with zero volume.
     """
 
     if pairs and coins:
