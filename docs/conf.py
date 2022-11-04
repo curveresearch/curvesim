@@ -52,3 +52,7 @@ napoleon_include_init_with_doc = True
 
 html_theme = "flask"
 html_static_path = ["_static"]
+
+mathjax3_config = {
+    "tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]]},
+}
