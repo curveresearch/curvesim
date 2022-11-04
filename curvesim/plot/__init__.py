@@ -1,3 +1,9 @@
+"""
+Plotters to visualize simulation results.
+
+This code is likely to be changed soon.
+"""
+
 import os
 
 import matplotlib.pyplot as plt
