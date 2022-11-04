@@ -3,16 +3,7 @@ Tools for fetching pool state and metadata.
 Currently supports stableswap pools, meta-pools, and rebasing (RAI) metapools.
 """
 
-__all__ = [
-    "MetaPool",
-    "Pool",
-    "PoolData",
-    "RaiPool",
-    "from_address",
-    "from_symbol",
-    "get",
-    "queries",
-]
+__all__ = ["Pool", "from_address", "from_symbol", "get"]
 
 from numpy import array
 
@@ -261,7 +252,7 @@ class PoolData:
 
     def type(self):
         """
-        Returns a string of the pool type.
+        Returns the pool type.
 
         Returns
         -------
@@ -269,9 +260,9 @@ class PoolData:
 
         """
         if self.dict["basepool"]:
-            return "MetaPool"
+            return MetaPool
         else:
-            return "Pool"
+            return Pool
 
     def redemption_prices(self, days=60, store=False, get_cache=True):
         """
