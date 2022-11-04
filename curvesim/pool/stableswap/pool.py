@@ -99,6 +99,10 @@ class Pool:
         -------
         int
             The stableswap invariant, `D`.
+
+        Note
+        ----
+        This is a "view" function; it doesn't change the state of the pool.
         """
         A = self.A
         xp = xp or self._xp()
@@ -133,6 +137,10 @@ class Pool:
         -------
         int
             The stableswap invariant, `D`.
+
+        Note
+        ----
+        This is a "view" function; it doesn't change the state of the pool.
         """  # noqa
         Dprev = 0
         S = sum(xp)
@@ -167,6 +175,10 @@ class Pool:
         -------
         int
             The stableswap invariant, `D`.
+
+        Note
+        ----
+        This is a "view" function; it doesn't change the state of the pool.
         """
         xp = [x * p // 10**18 for x, p in zip(balances, self.p)]
         return self.get_D(xp, A)
@@ -207,6 +219,10 @@ class Pool:
         -------
         int
             The balance of the j-th coin, in units of D, for the other coin balances given.
+
+        Note
+        ----
+        This is a "view" function; it doesn't change the state of the pool.
         """  # noqa
         xx = xp[:]
         D = self.D(xx)
@@ -249,6 +265,10 @@ class Pool:
         -------
         int
             The balance of the i-th coin, in units of D
+
+        Note
+        ----
+        This is a "view" function; it doesn't change the state of the pool.
         """
         D = mpz(D)
         n = self.n
@@ -292,9 +312,9 @@ class Pool:
         Examples
         --------
 
-        >>> pool = Pool(A=250, D=1000000*10**18, n=2)
+        >>> pool = Pool(A=250, D=1000000 * 10**18, n=2, p=[10**30, 10**30])
         >>> pool.exchange(0, 1, 150 * 10**6)
-        150000000
+        (149939820, 59999)
         """
         xp = self._xp()
         x = xp[i] + dx * self.p[i] // 10**18
@@ -321,6 +341,30 @@ class Pool:
         return dy, fee
 
     def calc_withdraw_one_coin(self, token_amount, i, use_fee=True):
+        """
+        Calculate the amount in the i-th coin received from
+        redeeming the given amount of LP tokens.
+
+        By default, fees are deducted.
+
+        Parameters
+        ----------
+        token_amount: int
+            Amount of LP tokens to redeem
+        i: int
+            Index of coin to withdraw in.
+        use_fee: bool, default=True
+            Deduct fees.
+
+        Returns
+        -------
+        int
+            Redemption amount in i-th coin
+
+        Note
+        ----
+        This is a "view" function; it doesn't change the state of the pool.
+        """
         A = self.A
         xp = self._xp()
         D0 = self.D()
@@ -351,6 +395,19 @@ class Pool:
             return dy
 
     def add_liquidity(self, amounts):
+        """
+        Deposit coin amounts for LP token.
+
+        Parameters
+        ----------
+        amounts: list of int
+            Coin amounts to deposit
+
+        Returns
+        -------
+        int
+            LP token amount received for the deposit amounts.
+        """
         mint_amount, fees = self.calc_token_amount(amounts, use_fee=True)
         self.tokens += mint_amount
 
@@ -366,6 +423,21 @@ class Pool:
         return mint_amount
 
     def remove_liquidity_one_coin(self, token_amount, i):
+        """
+        Redeem given LP token amount for the i-th coin.
+
+        Parameters
+        ----------
+        token_amount: int
+            Amount of LP tokens to redeem
+        i: int
+            Index of coin to withdraw in
+
+        Returns
+        -------
+        int
+            Redemption amount in i-th coin
+        """
         dy, dy_fee = self.calc_withdraw_one_coin(token_amount, i, use_fee=True)
         admin_fee = dy_fee * self.admin_fee // 10**10
         self.x[i] -= dy + admin_fee
@@ -375,10 +447,30 @@ class Pool:
 
     def calc_token_amount(self, amounts, use_fee=False):
         """
+        Calculate the amount of LP tokens received for the given coin
+        deposit amounts.
+
         Fee logic is based on add_liquidity, which makes this more accurate than
         the `calc_token_amount` in the actual contract, which neglects fees.
 
-        By default, it's assumed you want the contract behavior.
+        By default, it's assumed you the same behavior as the vyper contract,
+        which is to NOT deduct fees.
+
+        Parameters
+        ----------
+        amounts: list of int
+            Coin amounts to be deposited.
+        use_fee: bool, default=False
+            Deduct fees.
+
+        Returns
+        -------
+        int
+            LP token amount received for the deposit amounts.
+
+        Note
+        ----
+        This is a "view" function; it doesn't change the state of the pool.
         """
         A = self.A
         old_balances = self.x
@@ -410,6 +502,20 @@ class Pool:
             return mint_amount
 
     def get_virtual_price(self):
+        """
+        Returns the expected value of one LP token if the pool were
+        to become perfectly balanced (all coins revert to peg).
+
+        Returns
+        -------
+        int
+            Amount of the stableswap invariant, `D`, corresponding to
+            one LP token, in units of `D`.
+
+        Note
+        ----
+        This is a "view" function; it doesn't change the state of the pool.
+        """
         return self.D() * 10**18 // self.tokens
 
     def dynamic_fee(self, xpi, xpj):
@@ -421,16 +527,57 @@ class Pool:
 
     def dydxfee(self, i, j):
         """
-        Returns price with fee, (dy[j]-fee)/dx[i]) given some dx[i]
+        Returns the spot price of i-th coin quoted in terms of j-th coin,
+        i.e. the ratio of output coin amount to input coin amount for
+        an "infinitesimally" small trade.
 
-        For metapools, the indices are assumed to include base pool
-        underlyer indices.
+        Trading fees are deducted.
+
+        Parameters
+        ----------
+        i: int
+            Index of coin to be priced; in a swapping context, this is
+            the "in"-token.
+        j: int
+            Index of quote currency; in a swapping context, this is the
+            "out"-token.
+
+        Returns
+        -------
+        float
+            Price of i-th coin quoted in j-th coin with fees deducted.
+
+        Note
+        ----
+        This is a "view" function; it doesn't change the state of the pool.
         """
         return self.dydx(i, j, use_fee=True)
 
     def dydx(self, i, j, use_fee=False):
         """
-        Returns price, dy[j]/dx[i], given some dx[i]
+        Returns the spot price of i-th coin quoted in terms of j-th coin,
+        i.e. the ratio of output coin amount to input coin amount for
+        an "infinitesimally" small trade.
+
+        Defaults to no fees deducted.
+
+        Parameters
+        ----------
+        i: int
+            Index of coin to be priced; in a swapping context, this is
+            the "in"-token.
+        j: int
+            Index of quote currency; in a swapping context, this is the
+            "out"-token.
+
+        Returns
+        -------
+        float
+            Price of i-th coin quoted in j-th coin
+
+        Note
+        ----
+        This is a "view" function; it doesn't change the state of the pool.
         """
         xp = self._xp()
         xi = xp[i]
