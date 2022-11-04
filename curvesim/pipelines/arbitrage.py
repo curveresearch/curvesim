@@ -48,7 +48,7 @@ def volume_limited_arbitrage(
 
     Parameters
     ----------
-    pool_data : pool_data.PoolData
+    pool_data : :class:`.PoolData`
         Pool data object for the pool of interest.
 
     variable_params : dict, defaults to broad range of A/fee values
