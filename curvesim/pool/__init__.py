@@ -135,7 +135,7 @@ def get(address_or_symbol, chain="mainnet", balanced=(False, False)):
 
     Returns
     -------
-    :class:`Pool`
+    :class:`Pool` or :class:`MetaPool`
 
     Examples
     --------
