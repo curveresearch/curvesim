@@ -46,33 +46,41 @@ def autosim(pool=None, chain="mainnet", pool_data=None, **kwargs):
         .. note::
             Either `pool` or `pool_data` must be provided.
 
-    A: int or iterable of int
+    A: int or iterable of int, optional
         Amplification coefficient.  This controls the curvature of the
         stableswap bonding curve.  Increased values makes the curve
         flatter in a greater neighborhood of equal balances.
 
-        Defaults to [int(2 ** (a / 2)) for a in range(12, 28)].
+        Defaults to ``[int(2 ** (a / 2)) for a in range(12, 28)]``.
+
+        For basepool, use **A_base**.
 
     D: int, optional
         Total pool liquidity given in 18 decimal precision.
-
         Defaults to on-chain data.
+
+        For basepool, use **D_base**.
 
     tokens: int, optional
         Total LP token supply.
-
         Defaults to on-chain data.
 
-    fee: int or iterable of int
+        For basepool, use **tokens_base**.
+
+    fee: int or iterable of int, optional
         Fees taken for both liquidity providers and the DAO.
 
         Units are in fixed-point so that 10**10 is 100%,
         e.g. 4 * 10**6 is 4 bps and 2 * 10**8 is 2%.
 
-        Defaults to list(range(1000000, 5000000, 1000000)),
+        Defaults to ``list(range(1000000, 5000000, 1000000))``.
+
+        For basepool, use **fee_base**.
 
     fee_mul : int
-        fee multiplier for dynamic fee pools
+        Fee multiplier for dynamic fee pools.
+
+        For basepool, use **fee_mul_base**.
 
     admin_fee : int, default=0 * 10**9
         Fees taken for the DAO.  For factory pools, it is half of the total fees,
@@ -82,9 +90,11 @@ def autosim(pool=None, chain="mainnet", pool_data=None, **kwargs):
         50% of the total fees.
 
     test: bool, default=False
-        Sets `A` and `fee` params to a small set of values for testing purposes:
-        {"A": [100, 1000], "fee": [3000000, 4000000]}
-        Note this overrides any given values of those params.
+        Overrides variable_params to use four test values:
+
+        .. code-block::
+
+            {"A": [100, 1000], "fee": [3000000, 4000000]}
 
     days: int, default=60
         Number of days to fetch data for.
