@@ -37,7 +37,7 @@ class Pool:
             LP token supply
         fee: int, optional
             fee with 10**10 precision (default = .004%)
-        fee_mul:
+        fee_mul: optional
             fee multiplier for dynamic fee pools
         admin_fee: int, optional
             percentage of `fee` with 10**10 precision (default = 50%)
