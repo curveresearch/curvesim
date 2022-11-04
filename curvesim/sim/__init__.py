@@ -12,8 +12,9 @@ from curvesim.pool_data import get as get_pool_data
 
 def autosim(pool=None, chain="mainnet", pool_data=None, **kwargs):
     """
-    The autosim() function simulates existing Curve pools with a range of A and/or fee parameters.
-    The function fetches pool properties (e.g., current pool size) and 2 months of price/volume data,
+    The autosim() function simulates existing Curve pools with a range of parameters
+    (e.g., the amplitude parameter, A, and the exchange fee). The function fetches pool
+    properties (e.g., current pool size) and 2 months of price/volume data,
     runs multiple simulations in parallel, and saves results plots to the "results" directory.
 
     Curve pools from any chain supported by the Convex Community Subgraphs can be simulated directly
@@ -40,7 +41,7 @@ def autosim(pool=None, chain="mainnet", pool_data=None, **kwargs):
             "matic", "xdai"
 
     pool_data: PoolData, optional
-        Dict of pool data necessary to instantiate a pool object.
+        Pool data necessary to instantiate a pool object.
 
         .. note::
             Either `pool` or `pool_data` must be provided.
