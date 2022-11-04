@@ -5,6 +5,33 @@ from numpy import append
 
 # Volume Multipliers
 def compute_volume_multipliers(pool_vol, market_vol, n, pool_type, mode=1):
+    """
+    Computes volume multipliers (vol_mult) used for volume limiting.
+
+    Parameters
+    ----------
+    pool_vol : numpy.ndarray
+        Total volume for the pool over the simulation period.
+
+    market_vol : numpy.ndarray
+        Total market volume for each token pair over the simulation period.
+
+    n : int
+        The number of token-types in the pool (e.g., DAI, USDC, USDT = 3)
+
+    pool_type : str
+        "Pool" or "MetaPool"
+
+    vol_mode : int, default=1
+        Modes for computing the volume multiplier:
+
+        1: limits trade volumes proportionally to market volume for each pair
+
+        2: limits trade volumes equally across pairs
+
+        3: mode 2 for trades with meta-pool asset, mode 1 for basepool-only trades
+
+    """
     if pool_type == "Pool":
         vol_mult = pool_vol_mult(pool_vol, market_vol, n, mode)
 
