@@ -301,13 +301,12 @@ class Pool:
             Index of "out" coin.
         dx : int
             Amount of coin `i` being exchanged.
-        min_dy : int
-            Minimum amount of coin `j` to receive.
 
         Returns
         -------
-        int
-            amount of coin `j` received.
+        (int, int)
+            (amount of coin `j` received, trading fee)
+
 
         Examples
         --------

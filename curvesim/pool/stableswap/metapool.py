@@ -1,3 +1,6 @@
+"""
+Mainly a module to house the `MetaPool`, a metapool stableswap implementation in Python.
+"""
 from math import prod
 
 from gmpy2 import mpz
@@ -316,13 +319,11 @@ class MetaPool:
             Index of "out" coin.
         dx : int
             Amount of coin `i` being exchanged.
-        min_dy : int
-            Minimum amount of coin `j` to receive.
 
         Returns
         -------
-        int
-            amount of coin `j` received.
+        (int, int)
+            (amount of coin `j` received, trading fee)
 
         Examples
         --------
@@ -356,6 +357,28 @@ class MetaPool:
         return dy, fee
 
     def exchange_underlying(self, i, j, dx):
+        """
+        Perform an exchange between two coins.
+
+        Index values include underlyer indices.  The zero index
+        is the "primary" stable for the metapool, while indices
+        1, 2, ..., correspond to the basepool indices offset
+        by one.
+
+        Parameters
+        ----------
+        i : int
+            Index of "in" coin.
+        j : int
+            Index of "out" coin.
+        dx : int
+            Amount of coin `i` being exchanged.
+
+        Returns
+        -------
+        (int, int)
+            (amount of coin `j` received, trading fee)
+        """
         rates = self.rates()
 
         # Use base_i or base_j if they are >= 0
@@ -417,6 +440,30 @@ class MetaPool:
         return dy, dy_fee
 
     def calc_withdraw_one_coin(self, token_amount, i, use_fee=True):
+        """
+        Calculate the amount in the i-th coin received from
+        redeeming the given amount of LP tokens.
+
+        By default, fees are deducted.
+
+        Parameters
+        ----------
+        token_amount: int
+            Amount of LP tokens to redeem
+        i: int
+            Index of coin to withdraw in.
+        use_fee: bool, default=True
+            Deduct fees.
+
+        Returns
+        -------
+        int
+            Redemption amount in i-th coin
+
+        Note
+        ----
+        This is a "view" function; it doesn't change the state of the pool.
+        """
         A = self.A
         xp = self._xp()
         D0 = self.D()
@@ -447,6 +494,19 @@ class MetaPool:
             return dy
 
     def add_liquidity(self, amounts):
+        """
+        Deposit coin amounts for LP token.
+
+        Parameters
+        ----------
+        amounts: list of int
+            Coin amounts to deposit
+
+        Returns
+        -------
+        int
+            LP token amount received for the deposit amounts.
+        """
         mint_amount, fees = self.calc_token_amount(amounts, use_fee=True)
         self.tokens += mint_amount
 
@@ -464,6 +524,21 @@ class MetaPool:
         return mint_amount
 
     def remove_liquidity_one_coin(self, token_amount, i):
+        """
+        Redeem given LP token amount for the i-th coin.
+
+        Parameters
+        ----------
+        token_amount: int
+            Amount of LP tokens to redeem
+        i: int
+            Index of coin to withdraw in
+
+        Returns
+        -------
+        int
+            Redemption amount in i-th coin
+        """
         dy, dy_fee = self.calc_withdraw_one_coin(token_amount, i, use_fee=True)
         admin_fee = dy_fee * self.admin_fee // 10**10
         self.x[i] -= dy + admin_fee
@@ -478,10 +553,30 @@ class MetaPool:
 
     def calc_token_amount(self, amounts, use_fee=False):
         """
+        Calculate the amount of LP tokens received for the given coin
+        deposit amounts.
+
         Fee logic is based on add_liquidity, which makes this more accurate than
         the `calc_token_amount` in the actual contract, which neglects fees.
 
-        By default, it's assumed you want the contract behavior.
+        By default, it's assumed you the same behavior as the vyper contract,
+        which is to NOT deduct fees.
+
+        Parameters
+        ----------
+        amounts: list of int
+            Coin amounts to be deposited.
+        use_fee: bool, default=False
+            Deduct fees.
+
+        Returns
+        -------
+        int
+            LP token amount received for the deposit amounts.
+
+        Note
+        ----
+        This is a "view" function; it doesn't change the state of the pool.
         """
         A = self.A
         old_balances = self.x
