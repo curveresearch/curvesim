@@ -46,13 +46,14 @@ def make(
     D: int
         Total pool liquidity given in 18 decimal precision.
 
-        Defaults to on-chain data.
-
     n: int
         The number of token-types in the pool (e.g., DAI, USDC, USDT = 3)
 
     basepool: dict, optional
         a dict cointaining the arguments for instantiating a basepool
+
+    p: list of int, optional
+        precisions for each coin
 
     tokens: int, optional
         Total LP token supply.
@@ -80,7 +81,7 @@ def make(
 
     Returns
     -------
-    :class:`Pool`
+    :class:`Pool` or :class:`MetaPool`
     """
     if basepool:
         pool = MetaPool(
