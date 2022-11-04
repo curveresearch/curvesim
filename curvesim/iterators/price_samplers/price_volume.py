@@ -2,8 +2,14 @@ from ...price_data import get
 
 
 class PriceVolume:
+    """
+    An iterator that retrieves price/volume and iterates over timepoints in the data.
+    """
+
     def __init__(self, coins, days=60, data_dir="data", src="coingecko"):
         """
+        Retrieves price/volume data and prepares it for iteration.
+
         Parameters
         ----------
         coins: list of str

@@ -46,6 +46,7 @@ Pipelines
 
 .. automodule:: curvesim.pipelines
 
+
     Arbitrage
     ---------
     .. autofunction:: curvesim.pipelines.arbitrage.volume_limited_arbitrage()
@@ -58,6 +59,7 @@ Pipelines
         :members: update, __call__
         :exclude-members: __init__, __new__
 
+.. autofunction:: curvesim.pipelines.templates.run_pipeline()
 
 Pool Data
 ----------
@@ -72,10 +74,33 @@ Pool Data
     :inherited-members:
 
 Price Data
-------------
+-----------
 
 .. _pricedataapi:
 
 .. automodule:: curvesim.price_data
 
 .. autofunction:: curvesim.price_data.get()
+
+Iterators
+---------
+
+.. _iteratorsapi:
+
+.. automodule:: curvesim.iterators
+
+    Parameter Samplers
+    ------------------
+    .. automodule:: curvesim.iterators.param_samplers
+
+    .. autoclass:: curvesim.iterators.param_samplers.Grid
+        :inherited-members:
+
+    Price Samplers
+    --------------
+    .. automodule:: curvesim.iterators.price_samplers
+
+    .. autoclass:: curvesim.iterators.price_samplers.PriceVolume
+        :inherited-members:
+
+
