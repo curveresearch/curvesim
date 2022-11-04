@@ -80,11 +80,13 @@ def volume_limited_arbitrage(
         relative path to saved price data folder
 
     vol_mult : float or numpy.ndarray, default computed from data
-        value(s) multiplied by market volume to specify volume limits;
-        can be a scalar or vector with entries for each pairwise coin combination
+        Value(s) multiplied by market volume to specify volume limits (overrides vol_mode).
+
+        Can be a scalar or vector with values for each pairwise coin combination
+
 
     vol_mode : int, default=1
-        modes for limiting trade volume
+        Modes for limiting trade volume.
 
         1: limits trade volumes proportionally to market volume for each pair
 

@@ -13,7 +13,7 @@ from curvesim.pool_data import get as get_pool_data
 def autosim(pool=None, chain="mainnet", pool_data=None, **kwargs):
     """
     The autosim() function simulates existing Curve pools with a range of parameters
-    (e.g., the amplitude parameter, A, and the exchange fee). The function fetches pool
+    (e.g., the amplitude parameter, A, and/or the exchange fee). The function fetches pool
     properties (e.g., current pool size) and 2 months of price/volume data,
     runs multiple simulations in parallel, and saves results plots to the "results" directory.
 
@@ -95,14 +95,18 @@ def autosim(pool=None, chain="mainnet", pool_data=None, **kwargs):
     data_dir: str, default='data'
         Relative path to saved data folder.
 
-    vol_mult : float, optional
-        Percentage of market volume used to limit trade size as specified by `vol_mode`.
+    vol_mult : float or numpy.ndarray, default computed from data
+        Value(s) multiplied by market volume to specify volume limits (overrides vol_mode).
+
+        Can be a scalar or vector with values for each pairwise coin combination
 
     vol_mode : int, default=1
         Modes for limiting trade volume.
 
         1: limits trade volumes proportionally to market volume for each pair
+
         2: limits trade volumes equally across pairs
+
         3: mode 2 for trades with meta-pool asset, mode 1 for basepool-only trades
 
     ncpu : int, default=4
