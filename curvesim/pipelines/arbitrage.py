@@ -43,8 +43,8 @@ def volume_limited_arbitrage(
 
     At each timestep, the pool is arbitraged as close to the prevailing market price
     as possible without surpassing a volume constraint. By default, volume is limited
-    to the total market volume at each timestep, multiplied by the ratio of historical
-    pool volume to total market volume over the whole simulation period (vol_mult).
+    to the total market volume at each timestep, scaled by the proportion of
+    volume attributable to the pool over the whole simulation period (vol_mult).
 
     Parameters
     ----------
@@ -52,16 +52,16 @@ def volume_limited_arbitrage(
         Pool data object for the pool of interest.
 
     variable_params : dict, defaults to broad range of A/fee values
-        Pool parameters to vary across simulations. keys: pool parameters,
-        values: iterables of ints
+        Pool parameters to vary across simulations.
+        keys: pool parameters, values: iterables of ints
 
         Example
         --------
         >>> variable_params = {"A": [100, 1000], "fee": [10**6, 4*10**6]}
 
     fixed_params : dict, optional
-        Pool parameters set before all simulations. keys: pool parameters,
-        values: ints
+        Pool parameters set before all simulations.
+        keys: pool parameters, values: ints
 
         Example
         --------

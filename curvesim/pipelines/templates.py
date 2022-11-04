@@ -6,10 +6,13 @@ def run_pipeline(param_sampler, price_sampler, strategy, ncpu=4):
     """
     Core function for running pipelines.
 
+    Typically called within a function specifying the pipeline components
+    (see, e.g., :func:`.volume_limited_arbitrage()`)
+
     Parameters
     ----------
     param_sampler : iterator
-        An terator that returns pool parameters (see :mod:`.param_samplers`).
+        An iterator that returns pool parameters (see :mod:`.param_samplers`).
 
     price_sampler : iterator
         An iterator that returns (minimally) a time-series of prices
