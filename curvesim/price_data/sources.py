@@ -4,14 +4,14 @@ from curvesim.network import coingecko as _coingecko
 from curvesim.network import nomics as _nomics
 
 
-def nomics(coins, days=60):
+def nomics(coins, days=60, data_dir="data"):
     t_end = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
     t_start = t_end - timedelta(days=days)
 
     print("Fetching Nomics price data...")
     print("Timerange: %s to %s" % (str(t_start), str(t_end)))
 
-    _nomics.update(coins, None, t_start, t_end)
+    _nomics.update(coins, None, t_start, t_end, data_dir=data_dir)
     prices, volumes, pzero = _nomics.pool_prices(coins)
 
     return prices, volumes, pzero

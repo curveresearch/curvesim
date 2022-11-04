@@ -159,7 +159,7 @@ def format_price_data(data, t_start, t_end, exp=1):
     return data
 
 
-def update(coins, quote, t_start, t_end, pairs=False):  # noqa: C901
+def update(coins, quote, t_start, t_end, pairs=False, data_dir="data"):  # noqa: C901
     t_start = t_start.replace(tzinfo=timezone.utc)
     t_start_orig = t_start
     t_end = t_end.replace(tzinfo=timezone.utc)
@@ -184,7 +184,7 @@ def update(coins, quote, t_start, t_end, pairs=False):  # noqa: C901
 
     # Get data for each pair
     for pair in combos:
-        f_name = f"data/{pair[0]}-{pair[1]}.csv"
+        f_name = os.path.join(data_dir, f"{pair[0]}-{pair[1]}.csv")
         vwap_args = None
 
         try:
@@ -211,6 +211,7 @@ def update(coins, quote, t_start, t_end, pairs=False):  # noqa: C901
             if curr_file is not None:
                 data = pd.concat([curr_file, data])
             data = data[data.index >= t_start_orig]
+            os.makedirs(data_dir, exist_ok=True)
             data.to_csv(f_name)
 
 
