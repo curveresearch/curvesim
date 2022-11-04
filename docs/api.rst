@@ -28,8 +28,7 @@ Curve Pools
 .. automodule:: curvesim.pool
 
 .. autofunction:: curvesim.pool.get
-.. autodata:: curvesim.pool.make
-   :annotation:
+.. autofunction:: curvesim.pool.make
 
 .. autoclass:: curvesim.pool.Pool
    :inherited-members:
