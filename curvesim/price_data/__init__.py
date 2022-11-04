@@ -1,6 +1,5 @@
 """
-Unified interface for retrieving price data.
-
+Tools for retrieving price data.
 Currently supports Coingecko, Nomics, and locally stored data.
 
 To use nomics, set the OS environment variable NOMICS_API_KEY.
@@ -19,23 +18,29 @@ def get(coins, days=60, data_dir="data", src="coingecko"):
     Parameters
     ----------
     coins : list of str
-        list of coin addresses
+        List of coin addresses.
+
     days : int, default=60
-        number of days to pull data for
+        Number of days to pull data for.
+
     data_dir : str, default="data"
-        directory to load local data from
+        Directory to load local data from.
+
     src : str, default="coingecko"
-        data source ("coingecko", "nomics", or "local")
+        Data source ("coingecko", "nomics", or "local").
 
 
     Returns
     -------
     prices : pandas.DataFrame
-        timestamped prices for each pair of coins
+        Timestamped prices for each pair of coins.
+
     volumes : pandas.DataFrame
-        timestamped volumes for each pair of coins
+        Timestamped volumes for each pair of coins.
+
     pzero : int or pandas.Series
-        proportion of timestamps with zero volume
+        Proportion of timestamps with zero volume.
+
     """
     if src == "coingecko":
         prices, volumes, pzero = coingecko(coins, days=days)

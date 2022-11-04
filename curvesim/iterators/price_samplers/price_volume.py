@@ -7,13 +7,17 @@ class PriceVolume:
         Parameters
         ----------
         coins: list of str
-            addresses of coins in the pool
+            Addresses of coins in the pool.
+
         days: int, defaults to 60
-            number of last days to pull
+            Number of days to pull data for.
+
         data_dir: str, defaults to "data"
-            relative path to saved data folder
+            Relative path to saved data folder.
+
         src: str, defaults to "coingecko"
-            identifies pricing source: coingecko, nomics, or local
+            Identifies pricing source: coingecko, nomics, or local.
+
         """
         prices, volumes, pzero = get(coins, days=days, data_dir=data_dir, src=src)
 
@@ -28,6 +32,19 @@ class PriceVolume:
         return self
 
     def __next__(self):
+        """
+        Returns
+        -------
+        prices : pandas.Series
+            Prices for each pairwise coin combination.
+
+        volumes : pandas.Series
+            Prices for each pairwise coin combination.
+
+        timestamp : datetime.datetime
+            Timestamp for the current price/volume.
+
+        """
         prices = next(self.price_generator)
         volumes = next(self.volume_generator)
 
@@ -40,7 +57,7 @@ class PriceVolume:
         Returns
         -------
         pandas.Series
-            Total volume of all coins for each day.
+            Total volume for each pairwise coin combination, summed accross timestamps.
         """
         return self.volumes.sum()
 

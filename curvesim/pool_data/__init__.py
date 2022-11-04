@@ -1,7 +1,6 @@
 """
-Objects and methods for fetching pool state and metadata.
-
-Currently supports stableswap pools, meta-pools, and rebasing (RAI) pools.
+Tools for fetching pool state and metadata.
+Currently supports stableswap pools, meta-pools, and rebasing (RAI) metapools.
 """
 
 __all__ = [
@@ -30,14 +29,14 @@ def get(address_or_symbol, chain="mainnet"):
     Parameters
     ----------
     address_or_symbol : str
-        pool address prefixed with “0x” or LP token symbol
+        Pool address prefixed with “0x” or LP token symbol.
+
     chain : str
-        chain/layer2 identifier, e.g. “mainnet”, “arbitrum”, “optimism”
+        Chain/layer2 identifier, e.g. “mainnet”, “arbitrum”, “optimism".
 
     Returns
     -------
-    pool_data.PoolData
-        PoolData object
+    PoolData
 
     """
     if address_or_symbol.startswith("0x"):
@@ -62,11 +61,14 @@ class PoolData:
         Parameters
         ----------
         metadata_dict : dict
-            pool metadata in the format returned by network.subgraph.pool_snapshot
+            Pool metadata in the format returned by network.subgraph.pool_snapshot.
+
         cache_data : bool, optional
-            if True, fetches and caches historical volume and redemption price
+            If True, fetches and caches historical volume and redemption price.
+
         days : int, default=60
-            number of days to pull data for if caching
+            Number of days to pull data for if caching.
+
         """
         self.dict = metadata_dict
         if cache_data:
@@ -81,9 +83,6 @@ class PoolData:
         days : int, default=60
             number of days to pull data for
 
-        Returns
-        -------
-        self
         """
         self.volume(days=days, store=True)
         self.redemption_prices(store=True)
@@ -92,9 +91,6 @@ class PoolData:
         """
         Clears any cached data.
 
-        Returns
-        -------
-        self
         """
         attrs = ["_volume", "_redemption_prices"]
         for attr in attrs:
@@ -117,6 +113,7 @@ class PoolData:
         Returns
         -------
         Pool, MetaPool, or RaiPool
+
         """
 
         def bal(kwargs, balanced):
@@ -159,6 +156,7 @@ class PoolData:
         -------
         list of strings
             coin addresses
+
         """
         if not self.dict["basepool"]:
             c = self.dict["coins"]["addresses"]
@@ -183,6 +181,7 @@ class PoolData:
         -------
         list of strings
             coin names
+
         """
         if not self.dict["basepool"]:
             c = self.dict["coins"]["names"]
@@ -200,16 +199,19 @@ class PoolData:
         Parameters
         ----------
         days : int, default=60
-            number of days to pull data for
+            Number of days to pull data for.
+
         store : bool, default=False
-            if true, caches the fetched data
+            If true, caches the fetched data.
+
         get_cache : bool, default=True
-            if true, returns cached data when available
+            If true, returns cached data when available.
 
         Returns
         -------
         numpy.ndarray
-            total volume summed across the specified number of days.
+            Total volume summed across the specified number of days.
+
         """
         if get_cache and hasattr(self, "_volume"):
             print("Getting cached historical volume...")
@@ -245,6 +247,7 @@ class PoolData:
             For metapools, a list [n_metapool, n_basepool] is returned.
 
             N_metapool includes the basepool LP token.
+
         """
         if not self.dict["basepool"]:
             n = self.dict["init_kwargs"]["n"]
@@ -262,7 +265,7 @@ class PoolData:
 
         Returns
         -------
-           str
+        str
 
         """
         if self.dict["basepool"]:
@@ -279,16 +282,19 @@ class PoolData:
         Parameters
         ----------
         days : int, default=60
-            number of days to pull data for
+            Number of days to pull data for.
+
         store : bool, default=False
-            if true, caches the fetched data
+            If True, caches the fetched data.
+
         get_cache : bool, default=True
-            if true, returns cached data when available
+            If True, returns cached data when available.
 
         Returns
         -------
         pandas.DataFrame
-            timestamped redemption prices across the specified number of days
+            Timestamped redemption prices across the specified number of days.
+
         """
         if get_cache and hasattr(self, "_redemption_prices"):
             print("Getting cached redemption prices...")
