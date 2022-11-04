@@ -33,7 +33,7 @@ def autosim(pool=None, chain="mainnet", pool_data=None, **kwargs):
             An LP token symbol need not be unique.  In particular, factory pools
             are deployed permissionlessly and no checks are done to ensure unique
             LP token symbol.  Currently the first pool retrieved from the subgraph
-            is used; this is effectively random.
+            is used, which can be effectively random if token symbols clash.
 
     chain: str, default='mainnet'
         Identifier for blockchain or layer2.  Supported values are:
