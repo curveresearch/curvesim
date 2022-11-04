@@ -49,6 +49,15 @@ Pipelines
     Arbitrage
     ---------
     .. autofunction:: curvesim.pipelines.arbitrage.volume_limited_arbitrage()
+    .. autofunction:: curvesim.pipelines.arbitrage.strategy()
+
+    .. autoclass:: curvesim.pipelines.arbitrage.Arbitrageur
+        :inherited-members:
+
+    .. autoclass:: curvesim.pipelines.arbitrage.Metrics
+        :members: update, __call__
+        :exclude-members: __init__, __new__
+
 
 Pool Data
 ----------
