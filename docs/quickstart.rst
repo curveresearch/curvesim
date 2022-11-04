@@ -5,13 +5,19 @@ Quickstart
 
 This guide will help you get up-and-running with Curvesim.
 
-First, check that:
+First, make sure that:
 
 * Curvesim is :ref:`installed <install>`
 * Curvesim is :ref:`up-to-date <updates>`
 
 
-Let's get started with some simple examples.
+Hello world
+------------
+
+Before digging into more interesting examples, let's check the installed package can
+run without issues.  In the console, run::
+
+    $ python3 -m curvesim.hello_world
 
 
 Fetch a pool from a chain
@@ -30,9 +36,9 @@ Let's retrieve the famous 3Pool from Ethereum Mainnet::
     >>> pool = curvesim.pool.get("0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7", "mainnet")
 
 Now, we have a :class:`Pool <curvesim.pool.Pool>` object called ``pool``. Its state is
-pulled from `Curve volume subgraph <https://github.com/curvefi/volume-subgraphs>`_ daily 
-snapshots. From this object we can retrieve state information and see the result of pool 
-operations such as swaps (exchanges) or adding liquidity.
+pulled from daily snapshots of the `Curve volume subgraph <https://github.com/curvefi/volume-subgraphs>`_.
+From this object we can retrieve state information and see the result of pool 
+operations such as swaps or adding liquidity.
 
 The pool interface adheres closely to the live smart contract's, so if you are familiar
 with the vyper contract, you should feel at home.
@@ -147,7 +153,7 @@ Run an arbitrage simulation for a proposed A parameter
 
 Tuning a pool parameter, such as the amplification coefficient ``A``, can greatly affect the
 risk-reward profile.  The ``A`` parameter alters the curvature of the bonding curve, directly
-impacting the pool's ability to handle large trades while holding imbalanced reserves.
+impacting the pool's ability to handle large trades while holding imbalanced reserves.::
 
     >>> import curvesim
     >>> mim = "0x5a6A4D54456819380173272A5E8E9B9904BdF41B"
@@ -201,16 +207,39 @@ Fine-tuning the simulator
 -------------------------
 Other helpful parameters for :func:`.autosim` are:
 
-    - src: data source for prices and volumes.  Allowed values are 'coingecko', 'nomics', or 'local'
-    - ncpu: Number of cores to use.
-    - days: Number of days to fetch data for.
-    - vol_mode: Modes for limiting trade volume
+    - ``src``: data source for prices and volumes.  Allowed values are 'coingecko', 'nomics', or 'local'
+    - ``ncpu``: Number of cores to use.
+    - ``days``: Number of days to fetch data for.
+    - ``vol_mode``: Modes for limiting trade volume
 
       - 1: limits trade volumes proportionally to market volume for each pair
       - 2: limits trade volumes equally across pairs
       - 3: mode 2 for trades with meta-pool asset, mode 1 for basepool-only trades
 
-    - test: Sets `A` and `fee` params to a small set of values for testing purposes.
+    - ``test``: Sets ``A`` and ``fee`` params to a small set of values for testing purposes.
+
+
+Tips
+----
+
+Price data source
+^^^^^^^^^^^^^^^^^
+
+By default, Curvesim uses Coingecko pricing and volume data.  You can specify 
+Nomics as the data provider, by using ``src='nomics'`` in simulations
+
+In order to use this feature you will need to have the ``NOMICS_API_KEY``
+environment variable set. You can manually set one this running the python
+process, although for your convenience, Curvesim will automatically load any
+env variables it finds in a local ``.env`` file.
+
+Parallel processing
+^^^^^^^^^^^^^^^^^^^
+By default, Curvesim will use the maximum number of cores available to run
+simulations.  You can specify the exact number through the `ncpu` option.
+
+For profiling the code, it is recommended to use ``ncpu=1``, as common
+profilers (such as ``cProfile``) will not produce accurate results otherwise.
 
 Note: Using the Nomics data source requires setting the NOMICS_API_KEY OS environment
 variable with a paid nomics API key
