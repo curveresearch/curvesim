@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, timezone
 import pandas as pd
 from eth_utils import to_checksum_address
 
+from ..exceptions import SubgraphResultError
 from .http import HTTP
 from .utils import compute_D, sync
 
@@ -119,7 +120,9 @@ async def symbol_address(symbol, chain):
         for pool in r["data"]["pools"]:
             pool_list += f"\"{pool['symbol']}\": {pool['address']}\n"
 
-        raise ValueError("Multiple pools returned for symbol query:" + pool_list)
+        raise SubgraphResultError(
+            "Multiple pools returned for symbol query:" + pool_list
+        )
 
     addr = to_checksum_address(r["data"]["pools"][0]["address"])
 
