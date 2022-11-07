@@ -104,6 +104,7 @@ async def symbol_address(symbol, chain):
               {symbol_starts_with_nocase: "%s"}
           )
           {
+            symbol
             address
           }
         }
@@ -112,6 +113,14 @@ async def symbol_address(symbol, chain):
     )
 
     r = await convex(chain, q)
+
+    if len(r["data"]["pools"]) > 1:
+        pool_list = "\n\n"
+        for pool in r["data"]["pools"]:
+            pool_list += f"\"{pool['symbol']}\": {pool['address']}\n"
+
+        raise ValueError("Multiple pools returned for symbol query:" + pool_list)
+
     addr = to_checksum_address(r["data"]["pools"][0]["address"])
 
     return addr
