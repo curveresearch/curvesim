@@ -2,7 +2,7 @@ from math import factorial
 
 from numpy import append
 
-from curvesim.pool import MetaPool, Pool
+from curvesim.pool import CurveMetaPool, CurvePool
 
 
 # Volume Multipliers
@@ -22,7 +22,7 @@ def compute_volume_multipliers(pool_vol, market_vol, n, pool_type, mode=1):
         The number of token-types in the pool (e.g., DAI, USDC, USDT = 3)
 
     pool_type : str
-        "Pool" or "MetaPool"
+        "CurvePool" or "CurveMetaPool"
 
     vol_mode : int, default=1
         Modes for computing the volume multiplier:
@@ -34,10 +34,10 @@ def compute_volume_multipliers(pool_vol, market_vol, n, pool_type, mode=1):
         3: mode 2 for trades with meta-pool asset, mode 1 for basepool-only trades
 
     """
-    if pool_type == Pool:
+    if pool_type == CurvePool:
         vol_mult = pool_vol_mult(pool_vol, market_vol, n, mode)
 
-    elif pool_type == MetaPool:
+    elif pool_type == CurveMetaPool:
         vol_mult = metapool_vol_mult(pool_vol, market_vol, n, mode)
 
     else:

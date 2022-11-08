@@ -1,7 +1,7 @@
 from hypothesis import HealthCheck, assume, given, settings
 from hypothesis import strategies as st
 
-from curvesim.pool import Pool
+from curvesim.pool import CurvePool
 
 
 def initialize_pool(vyper_pool):
@@ -16,7 +16,7 @@ def initialize_pool(vyper_pool):
     lp_total_supply = vyper_pool.totalSupply()
     fee = vyper_pool.fee()
     admin_fee = vyper_pool.admin_fee()
-    pool = Pool(
+    pool = CurvePool(
         A,
         D=balances,
         n=n_coins,
@@ -102,7 +102,7 @@ def test_get_D_balanced():
     n_coins = 3
     A = 5858
 
-    pool = Pool(A, D=balances, n=n_coins, p=p)
+    pool = CurvePool(A, D=balances, n=n_coins, p=p)
     D = pool.D()
 
     virtualized_balances = [b * p // 10**18 for b, p in zip(balances, p)]

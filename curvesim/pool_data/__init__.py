@@ -3,13 +3,13 @@ Tools for fetching pool state and metadata.
 Currently supports stableswap pools, meta-pools, and rebasing (RAI) metapools.
 """
 
-__all__ = ["Pool", "from_address", "from_symbol", "get"]
+__all__ = ["PoolData", "from_address", "from_symbol", "get"]
 
 from numpy import array
 
 from ..network.subgraph import redemption_prices_sync as _redemption_prices
 from ..network.subgraph import volume_sync as _volume
-from ..pool.stableswap import MetaPool, Pool, RaiPool
+from ..pool.stableswap import CurveMetaPool, CurvePool, CurveRaiPool
 from .queries import from_address, from_symbol
 
 
@@ -103,7 +103,7 @@ class PoolData:
 
         Returns
         -------
-        Pool, MetaPool, or RaiPool
+        Pool
 
         """
 
@@ -118,16 +118,16 @@ class PoolData:
         if self.dict["basepool"]:
             bp_kwargs = self.dict["basepool"]["init_kwargs"].copy()
             bp_kwargs = bal(bp_kwargs, balanced[1])
-            kwargs.update({"basepool": Pool(**bp_kwargs)})
+            kwargs.update({"basepool": CurvePool(**bp_kwargs)})
 
             r = self.redemption_prices()
             if r is None:
-                pool = MetaPool(**kwargs)
+                pool = CurveMetaPool(**kwargs)
             else:
-                pool = RaiPool(r, **kwargs)
+                pool = CurveRaiPool(r, **kwargs)
 
         else:
-            pool = Pool(**kwargs)
+            pool = CurvePool(**kwargs)
 
         pool.metadata = self.dict
 
@@ -260,9 +260,9 @@ class PoolData:
 
         """
         if self.dict["basepool"]:
-            return MetaPool
+            return CurveMetaPool
         else:
-            return Pool
+            return CurvePool
 
     def redemption_prices(self, days=60, store=False, get_cache=True):
         """

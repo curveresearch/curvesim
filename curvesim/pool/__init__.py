@@ -12,11 +12,19 @@ integer arithmetic. The pool interfaces largely adhere to the smart contracts
 but in a few cases allow an extra option, such as enabling/disabling fees.
 """
 
-__all__ = ["get", "make", "MetaPool", "Pool", "RaiPool"]
+__all__ = [
+    "Pool",
+    "get",
+    "make",
+    "CurvePool",
+    "CurveMetaPool",
+    "CurveRaiPool",
+]
 
 from curvesim.pool_data import get as _get_pool_data
 
-from .stableswap import MetaPool, Pool, RaiPool
+from .base import Pool
+from .stableswap import CurveMetaPool, CurvePool, CurveRaiPool
 
 
 def make(
@@ -81,10 +89,10 @@ def make(
 
     Returns
     -------
-    :class:`Pool` or :class:`MetaPool`
+    :class:`Pool`
     """
     if basepool:
-        pool = MetaPool(
+        pool = CurveMetaPool(
             A,
             D,
             n,
@@ -97,7 +105,7 @@ def make(
         )
 
     else:
-        pool = Pool(
+        pool = CurvePool(
             A,
             D,
             n,
@@ -135,7 +143,7 @@ def get(address_or_symbol, chain="mainnet", balanced=(False, False)):
 
     Returns
     -------
-    :class:`Pool` or :class:`MetaPool`
+    :class:`Pool`
 
     Examples
     --------

@@ -2,7 +2,7 @@ import pytest
 from hypothesis import HealthCheck, assume, given, settings
 from hypothesis import strategies as st
 
-from curvesim.pool import MetaPool, Pool
+from curvesim.pool import CurveMetaPool, CurvePool
 
 from .test_pool import initialize_pool
 
@@ -28,7 +28,7 @@ def initialize_metapool(vyper_metapool, vyper_3pool):
     fee = vyper_metapool.fee()
     admin_fee = vyper_metapool.admin_fee()
     basepool = initialize_pool(vyper_3pool)
-    metapool = MetaPool(
+    metapool = CurveMetaPool(
         A,
         D=balances,
         n=n_coins,
@@ -352,7 +352,7 @@ def test_dydxfee(x0, x1, b0, b1, b2, i, j):
     base_tokens = sum(base_balances)
     base_fee = 1 * 10**6
     base_fee = 0
-    basepool = Pool(
+    basepool = CurvePool(
         base_A,
         D=base_balances,
         n=base_n,
@@ -370,7 +370,7 @@ def test_dydxfee(x0, x1, b0, b1, b2, i, j):
     tokens = sum(balances)
     fee = 4 * 10**6
     fee = 0
-    metapool = MetaPool(
+    metapool = CurveMetaPool(
         A,
         D=balances,
         n=n,

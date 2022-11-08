@@ -1,7 +1,7 @@
-from .metapool import MetaPool
+from .metapool import CurveMetaPool
 
 
-class RaiPool(MetaPool):
+class CurveRaiPool(CurveMetaPool):
     """
     Rebasing stableswap metapool implementation in Python. Used for RAI3CRV pool.
 
