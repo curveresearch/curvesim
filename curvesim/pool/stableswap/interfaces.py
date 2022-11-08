@@ -7,9 +7,9 @@ from numpy import isnan
 from curvesim.pipelines.templates import SimInterface
 
 from . import functions as pool_functions
-from .metapool import MetaPool
-from .pool import Pool
-from .raipool import RaiPool
+from .metapool import CurveMetaPool
+from .pool import CurvePool
+from .raipool import CurveRaiPool
 
 
 class StableSwapSimInterface(SimInterface):
@@ -90,7 +90,7 @@ MetaPoolState = namedtuple(
 )
 
 
-# Functions for stableswap.Pool
+# Functions for stableswap.CurvePool
 def _get_pool_state(p):
     return PoolState(p.x[:], p.p[:], p.A, p.fee, p.fee_mul, p.tokens, p.admin_fee)
 
@@ -205,7 +205,7 @@ def _make_error_fns(self):
     return get_trade_bounds, post_trade_price_error, post_trade_price_error_multi
 
 
-# Functions for stableswap.MetaPool
+# Functions for stableswap.CurveMetaPool
 def _get_metapool_state(pool):
     state_pairs = zip(_get_pool_state(pool), _get_pool_state(pool.basepool))
 
@@ -523,13 +523,13 @@ stableswap_metapool_fns = (
 stableswap_pool_fns = dict(zip(interface_functions, stableswap_pool_fns))
 stableswap_metapool_fns = dict(zip(interface_functions, stableswap_metapool_fns))
 stableswap_interface_fns = {
-    Pool: stableswap_pool_fns,
-    MetaPool: stableswap_metapool_fns,
-    RaiPool: stableswap_metapool_fns,
+    CurvePool: stableswap_pool_fns,
+    CurveMetaPool: stableswap_metapool_fns,
+    CurveRaiPool: stableswap_metapool_fns,
 }
 
 stableswap_pricing_fns = {
-    Pool: (pool_functions.dydx, pool_functions.dydx),
-    MetaPool: (pool_functions.dydx_metapool, pool_functions.dydx),
-    RaiPool: (pool_functions.dydx_metapool_rai, pool_functions.dydx_rai),
+    CurvePool: (pool_functions.dydx, pool_functions.dydx),
+    CurveMetaPool: (pool_functions.dydx_metapool, pool_functions.dydx),
+    CurveRaiPool: (pool_functions.dydx_metapool_rai, pool_functions.dydx_rai),
 }

@@ -5,8 +5,10 @@ from math import prod
 
 from gmpy2 import mpz
 
+from ..base import Pool
 
-class Pool:
+
+class CurvePool(Pool):
     """
     Basic stableswap implementation in Python.
     """

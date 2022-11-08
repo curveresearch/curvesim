@@ -5,8 +5,10 @@ from math import prod
 
 from gmpy2 import mpz
 
+from ..base import Pool
 
-class MetaPool:
+
+class CurveMetaPool(Pool):
     """
     Basic stableswap metapool implementation in Python.
     """
