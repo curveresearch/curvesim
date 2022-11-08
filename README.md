@@ -1,8 +1,9 @@
 [![CI](https://github.com/curveresearch/curvesim/actions/workflows/CI.yml/badge.svg)](https://github.com/curveresearch/curvesim/actions/workflows/CI.yml)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Docs](https://readthedocs.org/projects/curvesim/badge/?version=latest)](https://curvesim.readthedocs.io/en/latest)
-[![License](https://img.shields.io/github/license/readthedocs/curvesim.svg)](https://github.com/readthedocs/curvesim/blob/main/LICENSE)
-[![pypi](https://img.shields.io/pypi/v/curvesim.svg)(https://pypi.org/project/curvesim)
+![PyPI](https://img.shields.io/pypi/v/curvesim)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/curvesim)
+![PyPI - License](https://img.shields.io/pypi/l/curvesim)
 
 
 # CurveSim
