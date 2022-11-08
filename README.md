@@ -1,5 +1,8 @@
 [![CI](https://github.com/curveresearch/curvesim/actions/workflows/CI.yml/badge.svg)](https://github.com/curveresearch/curvesim/actions/workflows/CI.yml)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Docs](https://readthedocs.org/projects/curvesim/badge/?version=latest)](https://curvesim.readthedocs.io/en/latest)
+[![License](https://img.shields.io/github/license/readthedocs/curvesim.svg)](https://github.com/readthedocs/curvesim/blob/main/LICENSE)
+[![pypi](https://img.shields.io/pypi/v/curvesim.svg)(https://pypi.org/project/curvesim)
 
 
 # CurveSim
@@ -11,6 +14,12 @@ The maintainers use Python 3.8 or above.  Likely the code should be fine for Pyt
 Primary package dependencies: scipy, numpy, pandas, Web3, matplotlib, requests, gmpy2
 
 To avoid dependency issues, it is recommended to use the included `requirements.txt` file in a Python virtual environment (`venv`).
+
+
+
+## Documentation
+
+Check out the full documentation at https://curvesim.readthedocs.io/
 
 
 ## Basic Use: Autosim
