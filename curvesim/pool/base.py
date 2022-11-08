@@ -1,9 +1,18 @@
 """
-Base class for any pool-like entity.
+Module housing the required implementation for any pool entity
+in the Curvesim Framework.
 """
 
 
 class Pool:
+    """
+    The `Pool` base class has the explicitly required properties for any pool-like
+    object used in Curvesim.
+
+    Currently the base attributes are not informative for pools
+    constructed manually rather than from chain data.
+    """
+
     @property
     def name(self):
         """Descriptive name for this pool"""
