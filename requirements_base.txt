@@ -31,3 +31,6 @@ hypothesis[numpy,pandas]==6.54.6
 # pip choke on its dependency resolution
 titanoboa @ git+https://github.com/vyperlang/titanoboa@ad59fd9a9dc72057dfffdbb6db455ae0ff0f96e8
 py-evm==0.6.0a1
+
+sphinx==5.3.0 
+Pallets-Sphinx-Themes==2.0.2

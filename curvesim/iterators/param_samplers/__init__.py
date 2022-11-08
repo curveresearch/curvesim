@@ -1,1 +1,7 @@
-from .grid import Grid  # noqa: F401
+"""
+Iterators that generate pools with updated parameters per tick.
+"""
+
+__all__ = ["Grid"]
+
+from .grid import Grid

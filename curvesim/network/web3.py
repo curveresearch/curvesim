@@ -1,3 +1,7 @@
+"""
+Network connector for on-chain data
+"""
+
 from asyncio import gather, sleep
 
 from web3 import AsyncHTTPProvider, Web3
@@ -12,7 +16,17 @@ ETHERSCAN = ("https://api.etherscan.io/api", "PT1D9IGAPPPRFMD312V9GARWW93BS9ZV6V
 
 async def explorer(params):
     """
-    params: module, action, kwargs
+    Async function to retrieve data from the chain explorer (Etherscan).
+
+    Parameters
+    ----------
+    params : dict
+        Must include keys for module, action, and any required arguments for the query.
+
+    Returns
+    -------
+    dict
+        Query result
 
     """
     params.update({"apikey": ETHERSCAN[1]})
@@ -32,6 +46,19 @@ async def explorer(params):
 
 
 async def ABI(address):
+    """
+    Async function to retrieves ABI from the chain explorer (Etherscan).
+
+    Parameters
+    ----------
+    address : str
+        Address for the contract on Ethereum mainnet.
+
+    Returns
+    -------
+    abi : str
+
+    """
     p = {
         "module": "contract",
         "action": "getabi",
@@ -58,6 +85,19 @@ W3 = Web3(
 
 
 async def contract(address, abi=None):
+    """
+    Creates an async Web3py contract object.
+
+    Parameters
+    ----------
+    address : str
+        Address for the contract on Ethereum mainnet.
+
+    Returns
+    -------
+    contract : web3.contract.AsyncContract
+
+    """
     abi = abi or await ABI(address)
 
     c = W3.eth.contract(address=address, abi=abi)
@@ -90,6 +130,21 @@ async def _underlying_coin_address(address):
 
 
 async def underlying_coin_addresses(addresses):
+    """
+    Async function to get the underlying coin addresses for lending tokens
+    (aTokens, cTokens, and yTokens).
+
+    Parameters
+    ----------
+    addresses : iterable of str
+        Addresses for the lending tokens on Ethereum mainnet.
+
+    Returns
+    -------
+    addresses : list of str
+        The addresses of the underlying tokens.
+
+    """
     if isinstance(addresses, str):
         addrs = await _underlying_coin_address(addresses)
 

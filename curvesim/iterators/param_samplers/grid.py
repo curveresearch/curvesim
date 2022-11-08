@@ -3,7 +3,35 @@ from itertools import product
 
 
 class Grid:
+    """
+    Iterates over a "grid" of all possible combinations of the input parameters.
+    """
+
     def __init__(self, pool, variable_params, fixed_params=None):
+        """
+        Parameters
+        ----------
+        pool : pool object
+            The "template" pool that will have its parameters modified.
+
+        variable_params: dict
+            Pool parameters to vary across simulations.
+
+            keys: pool parameters, values: iterables of ints
+
+            Basepool parameters can be included with a "basepool" key.
+
+            Example
+            -------
+            .. code-block ::
+
+                variable_params = {"A": [100, 1000], "basepool": {fee: [10**6, 4*10**6]}}
+
+        fixed_params : dict, optional
+            Pool parameters set before all simulations.
+            keys: pool parameters, values: ints
+
+        """
         self.pool_template = pool
         self.set_attributes(self.pool_template, fixed_params)
         self.param_grid = self.param_product(variable_params)
@@ -13,12 +41,30 @@ class Grid:
         return self
 
     def __next__(self):
+        """
+        Returns
+        -------
+        pool : pool object
+            A pool object with the current variable parameters set.
+
+        params : dict
+            A dictionary of the pool parameters set on this iteration.
+
+        """
         params = next(self.param_generator)
         pool = deepcopy(self.pool_template)
         self.set_attributes(pool, params)
         return pool, params
 
     def flat_grid(self):
+        """
+        Returns
+        -------
+        list of dicts
+            A list of the parameters used in each iteration, flattened such
+            that basepool parameters are named, e.g., A_base, fee_base, etc.
+
+        """
         flat = self.param_grid.copy()
         for params in flat:
             basepool = params.pop("basepool", None)

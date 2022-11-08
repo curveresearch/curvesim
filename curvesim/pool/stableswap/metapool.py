@@ -1,12 +1,14 @@
+"""
+Mainly a module to house the `MetaPool`, a metapool stableswap implementation in Python.
+"""
 from math import prod
 
 from gmpy2 import mpz
 
 
 class MetaPool:
-
     """
-    Python model of Curve pool math.
+    Basic stableswap metapool implementation in Python.
     """
 
     def __init__(
@@ -22,16 +24,26 @@ class MetaPool:
         admin_fee=0 * 10**9,
     ):
         """
-        A: Amplification coefficient
-        D: Total deposit size
-        n: number of currencies; if list, assumes metapool
-        basepool: a Pool object, basepool for the metapool
-        p: precision
-        tokens: # of tokens; if meta-pool, this sets # of basepool tokens
-        fee: fee with 10**10 precision (default = .004%)
-        fee_mul: fee multiplier for dynamic fee pools
-        admin_fee: percentage of `fee` with 10**10 precision (default = 50%)
-        r: initial redemption price for RAI-like pools
+        Parameters
+        ----------
+        A : int
+            Amplification coefficient; this is :math:`A n^{n-1}` in the whitepaper.
+        D : int or list of int
+            coin balances or virtual total balance
+        n: int
+            number of coins
+        basepool: :class:`curvesim.pool.Pool`
+            basepool for the metapool
+        p: list of int, optional
+            precision and rate adjustments, defaults to 10**18 each coin
+        tokens: int
+            LP token supply
+        fee: int, optional
+            fee with 10**10 precision (default = .004%)
+        fee_mul: optional
+            fee multiplier for dynamic fee pools
+        admin_fee: int, optional
+            percentage of `fee` with 10**10 precision (default = 50%)
         """
         # FIXME: set admin_fee default back to 5 * 10**9
         # once sim code is updated.  Right now we use 0
@@ -66,10 +78,43 @@ class MetaPool:
         self.fee_mul = fee_mul
         self.collected_admin_fees = [0] * n
 
-    def next_timestamp(*args, **kwargs):
+    @property
+    def balances(self):
+        """
+        Alias to adhere closer to vyper interface.
+
+        Returns
+        -------
+        list of int
+            pool coin balances in native token units
+        """
+        return self.x
+
+    def next_timestamp(self, *args, **kwargs):
         pass
 
     def D(self, xp=None):
+        """
+        `D` is the stableswap invariant; this can be thought of as the value of
+        all coin balances if the pool were to become balanced.
+
+        Convenience wrapper for `get_D` which uses the set `A` and makes `xp`
+        an optional arg.
+
+        Parameters
+        ----------
+        xp: list of ints
+            Coin balances in units of D
+
+        Returns
+        -------
+        int
+            The stableswap invariant, `D`.
+
+        Note
+        ----
+        This is a "view" function; it doesn't change the state of the pool.
+        """
         A = self.A
         if not xp:
             rates = self.rates()
@@ -78,14 +123,38 @@ class MetaPool:
 
     def get_D(self, xp, A):
         """
-        D invariant calculation in non-overflowing integer operations
-        iteratively
+        Calculate D invariant iteratively using non-overflowing integer operations.
 
-        A * sum(x_i) * n**n + D = A * D * n**n + D**(n+1) / (n**n * prod(x_i))
+        Stableswap equation:
 
-        Converging solution:
-        D[j+1] = (A * n**n * sum(x_i) - D[j]**(n+1) / (n**n prod(x_i))) / (A * n**n - 1)
-        """
+        .. math::
+             A n^n \sum{x_i} + D = A n^n D + D^{n+1} / (n^n \prod{x_i})
+
+        Converging solution using Newton's method:
+
+        .. math::
+             d_{j+1} = (A n^n \sum{x_i} + n d_j^{n+1} / (n^n \prod{x_i}))
+                     / (A n^n + (n+1) d_j^n/(n^n \prod{x_i}) - 1)
+
+        Replace :math:`A n^n` by `An` and :math:`d_j^{n+1}/(n^n \prod{x_i})` by :math:`D_p` to
+        arrive at the iterative formula in the code.
+
+        Parameters
+        ----------
+        xp: list of ints
+            Coin balances in units of D
+        A: int
+            Amplification coefficient
+
+        Returns
+        -------
+        int
+            The stableswap invariant, `D`.
+
+        Note
+        ----
+        This is a "view" function; it doesn't change the state of the pool.
+        """  # noqa
         Dprev = 0
         S = sum(xp)
         D = S
@@ -111,19 +180,70 @@ class MetaPool:
         return [x * p // 10**18 for x, p in zip(balances, rates)]
 
     def get_D_mem(self, rates, balances, A):
+        """
+        Convenience wrapper for `get_D` which takes in balances in token units.
+        Naming is based on the vyper equivalent.
+
+        Parameters
+        ----------
+        balances: list of ints
+            Coin balances in native token units
+        A: int
+            Amplification coefficient
+
+        Returns
+        -------
+        int
+            The stableswap invariant, `D`.
+
+        Note
+        ----
+        This is a "view" function; it doesn't change the state of the pool.
+        """
         xp = self._xp_mem(rates, balances)
         return self.get_D(xp, A)
 
     def get_y(self, i, j, x, xp):
         """
-        Calculate x[j] if one makes x[i] = x
+        Calculate x[j] if one makes x[i] = x.
 
-        Done by solving quadratic equation iteratively.
-        x_1**2 + x1 * (sum' - (A * n - 1) * D / (A * n)) = D**(n + 1)/(n**(n + 1) * prod' * A)
-        x_1**2 + b*x_1 = c
+        The stableswap equation gives the following:
 
-        x_1 = (x_1**2 + c) / (2*x_1 + b)
-        """
+        .. math::
+            x_1^2 + x_1 (\operatorname{sum'} - (A n^n - 1) D / (A n^n))
+               = D^{n+1}/(n^{2 * n} \operatorname{prod'} A)
+
+        where :math:`\operatorname{sum'}` is the sum of all :math:`x_i` for :math:`i \\neq j` and
+        :math:`\operatorname{prod'}` is the product of all :math:`x_i` for :math:`i \\neq j`.
+
+        This is a quadratic equation in :math:`x_j`.
+
+        .. math:: x_1^2 + b x_1 = c
+
+        which can then be solved iteratively by Newton's method:
+
+        .. math:: x_1 := (x_1^2 + c) / (2 x_1 + b)
+
+        Parameters
+        ----------
+        i: int
+            index of coin; usually the "in"-token
+        j: int
+            index of coin; usually the "out"-token
+        x: int
+            balance of i-th coin in units of D
+        xp: list of int
+            coin balances in units of D
+
+        Returns
+        -------
+        int
+            The balance of the j-th coin, in units of D, for the other coin balances given.
+
+        Note
+        ----
+        This is a "view" function; it doesn't change the state of the pool.
+        """  # noqa
         xx = xp[:]
         D = self.D(xx)
         D = mpz(D)
@@ -145,13 +265,29 @@ class MetaPool:
 
     def get_y_D(self, A, i, xp, D):
         """
-        Calculate x[i] if one reduces D from being calculated for xp to D
+        Calculate x[i] if one uses a reduced `D` than one calculated for given `xp`.
 
-        Done by solving quadratic equation iteratively.
-        x_1**2 + x1 * (sum' - (A * n - 1) * D / (A * n)) = D**(n + 1)/(n**(n + 1) * prod' * A)
-        x_1**2 + b*x_1 = c
+        See docstring for `get_y`.
 
-        x_1 = (x_1**2 + c) / (2*x_1 + b)
+        Parameters
+        ----------
+        A: int
+            Amplification coefficient for given xp and D
+        i: int
+            index of coin to calculate balance for
+        xp: list of int
+            coin balances in units of D
+        D: int
+            new invariant value
+
+        Returns
+        -------
+        int
+            The balance of the i-th coin, in units of D
+
+        Note
+        ----
+        This is a "view" function; it doesn't change the state of the pool.
         """
         D = mpz(D)
         xx = [xp[k] for k in range(self.n) if k != i]
@@ -171,6 +307,31 @@ class MetaPool:
         return y  # result is in units for D
 
     def exchange(self, i, j, dx):
+        """
+        Perform an exchange between two coins.
+        Index values can be found via the `coins` public getter method.
+
+        Parameters
+        ----------
+        i : int
+            Index of "in" coin.
+        j : int
+            Index of "out" coin.
+        dx : int
+            Amount of coin `i` being exchanged.
+
+        Returns
+        -------
+        (int, int)
+            (amount of coin `j` received, trading fee)
+
+        Examples
+        --------
+
+        >>> pool = MetaPool(A=250, D=1000000 * 10**18, n=2, p=[10**30, 10**30])
+        >>> pool.exchange(0, 1, 150 * 10**6)
+        (149939820, 59999)
+        """
         xp = self._xp()
         x = xp[i] + dx * self.p[i] // 10**18
         y = self.get_y(i, j, x, xp)
@@ -196,6 +357,28 @@ class MetaPool:
         return dy, fee
 
     def exchange_underlying(self, i, j, dx):
+        """
+        Perform an exchange between two coins.
+
+        Index values include underlyer indices.  The zero index
+        is the "primary" stable for the metapool, while indices
+        1, 2, ..., correspond to the basepool indices offset
+        by one.
+
+        Parameters
+        ----------
+        i : int
+            Index of "in" coin.
+        j : int
+            Index of "out" coin.
+        dx : int
+            Amount of coin `i` being exchanged.
+
+        Returns
+        -------
+        (int, int)
+            (amount of coin `j` received, trading fee)
+        """
         rates = self.rates()
 
         # Use base_i or base_j if they are >= 0
@@ -257,6 +440,30 @@ class MetaPool:
         return dy, dy_fee
 
     def calc_withdraw_one_coin(self, token_amount, i, use_fee=True):
+        """
+        Calculate the amount in the i-th coin received from
+        redeeming the given amount of LP tokens.
+
+        By default, fees are deducted.
+
+        Parameters
+        ----------
+        token_amount: int
+            Amount of LP tokens to redeem
+        i: int
+            Index of coin to withdraw in.
+        use_fee: bool, default=True
+            Deduct fees.
+
+        Returns
+        -------
+        int
+            Redemption amount in i-th coin
+
+        Note
+        ----
+        This is a "view" function; it doesn't change the state of the pool.
+        """
         A = self.A
         xp = self._xp()
         D0 = self.D()
@@ -287,6 +494,19 @@ class MetaPool:
             return dy
 
     def add_liquidity(self, amounts):
+        """
+        Deposit coin amounts for LP token.
+
+        Parameters
+        ----------
+        amounts: list of int
+            Coin amounts to deposit
+
+        Returns
+        -------
+        int
+            LP token amount received for the deposit amounts.
+        """
         mint_amount, fees = self.calc_token_amount(amounts, use_fee=True)
         self.tokens += mint_amount
 
@@ -304,6 +524,21 @@ class MetaPool:
         return mint_amount
 
     def remove_liquidity_one_coin(self, token_amount, i):
+        """
+        Redeem given LP token amount for the i-th coin.
+
+        Parameters
+        ----------
+        token_amount: int
+            Amount of LP tokens to redeem
+        i: int
+            Index of coin to withdraw in
+
+        Returns
+        -------
+        int
+            Redemption amount in i-th coin
+        """
         dy, dy_fee = self.calc_withdraw_one_coin(token_amount, i, use_fee=True)
         admin_fee = dy_fee * self.admin_fee // 10**10
         self.x[i] -= dy + admin_fee
@@ -318,10 +553,30 @@ class MetaPool:
 
     def calc_token_amount(self, amounts, use_fee=False):
         """
+        Calculate the amount of LP tokens received for the given coin
+        deposit amounts.
+
         Fee logic is based on add_liquidity, which makes this more accurate than
         the `calc_token_amount` in the actual contract, which neglects fees.
 
-        By default, it's assumed you want the contract behavior.
+        By default, it's assumed you the same behavior as the vyper contract,
+        which is to NOT deduct fees.
+
+        Parameters
+        ----------
+        amounts: list of int
+            Coin amounts to be deposited.
+        use_fee: bool, default=False
+            Deduct fees.
+
+        Returns
+        -------
+        int
+            LP token amount received for the deposit amounts.
+
+        Note
+        ----
+        This is a "view" function; it doesn't change the state of the pool.
         """
         A = self.A
         old_balances = self.x
@@ -354,7 +609,20 @@ class MetaPool:
             return mint_amount
 
     def get_virtual_price(self):
-        """Return virtual dollars per LP token in 18 decimal precision."""
+        """
+        Returns the expected value of one LP token if the pool were
+        to become perfectly balanced (all coins revert to peg).
+
+        Returns
+        -------
+        int
+            Amount of the stableswap invariant, `D`, corresponding to
+            one LP token, in units of `D`.
+
+        Note
+        ----
+        This is a "view" function; it doesn't change the state of the pool.
+        """
         return self.D() * 10**18 // self.tokens
 
     def dynamic_fee(self, xpi, xpj):
@@ -364,35 +632,84 @@ class MetaPool:
             (self.fee_mul - 10**10) * 4 * xpi * xpj // xps2 + 10**10
         )
 
-    def dydxfee(self, i, j, dx=10**12):
+    def dydxfee(self, i, j):
         """
-        Returns price with fee, (dy[j]-fee)/dx[i]) given some dx[i]
+        Returns the spot price of i-th coin quoted in terms of j-th coin,
+        i.e. the ratio of output coin amount to input coin amount for
+        an "infinitesimally" small trade.
 
-        For metapools, the indices are assumed to include base pool
-        underlyer indices.
+        The indices are assumed to include base pool underlyer indices.
+
+        Trading fees are deducted.
+
+        Parameters
+        ----------
+        i: int
+            Index of coin to be priced; in a swapping context, this is
+            the "in"-token.
+        j: int
+            Index of quote currency; in a swapping context, this is the
+            "out"-token.
+
+        Returns
+        -------
+        float
+            Price of i-th coin quoted in j-th coin with fees deducted.
+
+        Note
+        ----
+        This is a "view" function; it doesn't change the state of the pool.
         """
-        return self.dydx(i, j, dx, use_fee=True)
+        return self.dydx(i, j, use_fee=True)
 
-    def dydx(self, i, j, dx=10**12, use_fee=False):
+    def dydx(self, i, j, use_fee=False):
         """
-        Returns price, dy[j]/dx[i], given some dx[i]
+        Returns the spot price of i-th coin quoted in terms of j-th coin,
+        i.e. the ratio of output coin amount to input coin amount for
+        an "infinitesimally" small trade.
 
-        For metapools, the indices are assumed to include base pool
-        underlyer indices.
+        The indices are assumed to include base pool underlyer indices.
 
-        --------------------------------
-        -- Metapool pricing formula ----
-        --------------------------------
-        z: primary coin balance
-        w: basepool virtual balance
-        x_i: basepool coin balances
+        Parameters
+        ----------
+        i: int
+            Index of coin to be priced; in a swapping context, this is
+            the "in"-token.
+        j: int
+            Index of quote currency; in a swapping context, this is the
+            "out"-token.
+        use_fee: bool, default=False
+            Deduct fees.
 
-        dz/dx_i = dz/dw  * dw/dx_i = dz/dw * dD/dx_i = dz/dw * D'
-        where D refers to the basepool
+        Returns
+        -------
+        float
+            Price of i-th coin quoted in j-th coin
 
-        D' = -1 * ( A * n ** (n+1) * prod(x_k) + D ** (n+1) / x_i)
-                / ( n ** n * prod(x_k) - A * n ** (n+1) * prod(x_k) - (n + 1) * D ** n
-        """
+        Note
+        ----
+        This is a "view" function; it doesn't change the state of the pool.
+
+        The following formulae are useful when swapping the primary stablecoin
+        for one of the basepool underlyers:
+
+            $z$: primary coin virtual balance\n
+            $w$: basepool virtual balance in the metapool \n
+            $x_i$: basepool coin virtual balances\n
+            $D$: basepool invariant\n
+
+            The chain rule gives:
+
+            .. math::
+                \\frac{dz}{dx_i} = \\frac{dz}{dw} \\frac{dw}{dx_i}
+                    = \\frac{dz}{dw} \\frac{dD}{dx_i} = \\frac{dz}{dw} D'
+
+            where
+
+            .. math::
+                D' = -1 ( A n^{n+1} \prod{x_k} + D^{n+1} / x_i)
+                        / ( n^n \prod{x_k} - A n^{n+1} \prod{x_k} - (n + 1) D^n
+        """  # noqa
         base_i = i - self.max_coin
         base_j = j - self.max_coin
 
@@ -433,6 +750,7 @@ class MetaPool:
             _dydx *= 1 - fee / 10**10
 
         else:  # i is from basepool
+            dx = 10**12
             base_inputs = [0] * self.basepool.n
             base_inputs[base_i] = dx * 10**18 // self.basepool.p[base_i]
 
@@ -460,6 +778,34 @@ class MetaPool:
         """
         Treats indices as applying to the "top-level" pool if a metapool.
         Basically this is the "regular" pricing calc with no special metapool handling.
+
+        Returns the spot price of i-th coin quoted in terms of j-th coin,
+        i.e. the ratio of output coin amount to input coin amount for
+        an "infinitesimally" small trade.
+
+        Defaults to no fees deducted.
+
+        Parameters
+        ----------
+        i: int
+            Index of coin to be priced; in a swapping context, this is
+            the "in"-token
+        j: int
+            Index of quote currency; in a swapping context, this is the
+            "out"-token
+        xp: list of int
+            "Virtual" coin balances, i.e. balances in units of D
+        use_fee: bool, default=False
+            Deduct fees
+
+        Returns
+        -------
+        float
+            Price of i-th coin quoted in j-th coin
+
+        Note
+        ----
+        This is a "view" function; it doesn't change the state of the pool.
         """
         xi = xp[i]
         xj = xp[j]

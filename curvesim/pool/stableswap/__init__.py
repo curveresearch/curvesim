@@ -1,3 +1,9 @@
+"""
+Submodule for Curve stableswap pools, including Pool, Metapool, and RaiPool classes.
+
+"""
+
+
 __all__ = ["Metapool", "Pool", "StableSwapSimInterface", "interface", "functions"]
 
 from .interfaces import StableSwapSimInterface  # noqa: F401
