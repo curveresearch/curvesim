@@ -17,7 +17,16 @@ Hello world
 Before digging into more interesting examples, let's check the installed package can
 run without issues.  In the console, run::
 
-    $ python3 -m curvesim.hello_world
+    $ python3 -m curvesim
+    Fetching CoinGecko price data...
+    Fetching historical volume...
+    Volume Multipliers:
+    2.159065993345862e-05
+    [3Crv] Simulating with {'A': 100, 'fee': 3000000}
+    [3Crv] Simulating with {'A': 100, 'fee': 4000000}
+    [3Crv] Simulating with {'A': 1000, 'fee': 3000000}
+    [3Crv] Simulating with {'A': 1000, 'fee': 4000000}
+    Elapsed time: 68.5599639415741
 
 
 Fetch a pool from a chain
@@ -185,6 +194,7 @@ Likely you will want to see the impact over a range of ``A`` values.  The ``A`` 
     [MIM-3LP3CRV-f] Simulating with {'A': 1250, 'fee': 4000000}
     [MIM-3LP3CRV-f] Simulating with {'A': 500, 'fee': 4000000}
 
+
 Run an arbitrage simulation varying multiple parameters
 --------------------------------------------------------
 
@@ -218,6 +228,10 @@ Other helpful parameters for :func:`.autosim` are:
 
     - ``test``: Sets ``A`` and ``fee`` params to a small set of values for testing purposes.
 
+.. Note::
+    Using the Nomics data source requires setting the NOMICS_API_KEY environment
+    variable with a paid nomics API key.
+
 
 Tips
 ----
@@ -229,20 +243,19 @@ By default, Curvesim uses Coingecko pricing and volume data.  You can specify
 Nomics as the data provider, by using ``src='nomics'`` in simulations
 
 In order to use this feature you will need to have the ``NOMICS_API_KEY``
-environment variable set. You can manually set one this running the python
-process, although for your convenience, Curvesim will automatically load any
+environment variable set. You can manually set this when running the python
+process; for your convenience, Curvesim will automatically load any
 env variables it finds in a local ``.env`` file.
+
 
 Parallel processing
 ^^^^^^^^^^^^^^^^^^^
 By default, Curvesim will use the maximum number of cores available to run
-simulations.  You can specify the exact number through the `ncpu` option.
+simulations.  You can specify the exact number through the ``ncpu`` option.
 
 For profiling the code, it is recommended to use ``ncpu=1``, as common
 profilers (such as ``cProfile``) will not produce accurate results otherwise.
 
-Note: Using the Nomics data source requires setting the NOMICS_API_KEY OS environment
-variable with a paid nomics API key
 
 
 Errors and Exceptions
@@ -251,7 +264,6 @@ Errors and Exceptions
 All exceptions that Curvesim explicitly raises inherit from
 :exc:`curvesim.exceptions.CurvesimException`.
 
-Here are some common error types that may be useful to know about.
 
 -----------------------
 
