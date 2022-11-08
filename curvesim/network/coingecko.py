@@ -208,3 +208,22 @@ _pool_prices_sync = sync(_pool_prices)
 coin_ids_from_addresses_sync = sync(coin_ids_from_addresses)
 coin_info_from_ids_sync = sync(coin_info_from_ids)
 crosschain_coin_addresses_sync = sync(crosschain_coin_addresses)
+
+
+if __name__ == "__main__":
+    coin_addresses = [
+        "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+        "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+    ]
+    chain = "mainnet"
+    print("Coin addresses:", coin_addresses)
+    print("Chain", chain)
+    coin_ids = coin_ids_from_addresses_sync(coin_addresses, chain)
+    print("Coin IDs:", coin_ids)
+
+    vs_ccy = "USD"
+    days = 1
+    prices, volumes = pool_prices(coin_addresses, vs_ccy, days)
+    print(prices.head())
+    print(volumes.head())
