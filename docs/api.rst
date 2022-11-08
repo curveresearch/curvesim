@@ -33,10 +33,13 @@ Curve Pools
 .. autoclass:: curvesim.pool.Pool
    :inherited-members:
 
-.. autoclass:: curvesim.pool.MetaPool
+.. autoclass:: curvesim.pool.CurvePool
    :inherited-members:
 
-.. autoclass:: curvesim.pool.RaiPool
+.. autoclass:: curvesim.pool.CurveMetaPool
+   :inherited-members:
+
+.. autoclass:: curvesim.pool.CurveRaiPool
    :inherited-members:
 
 

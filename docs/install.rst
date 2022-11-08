@@ -9,7 +9,7 @@ code option.
 
 
 $ python3 -m pip install curvesim
---------------------------------
+---------------------------------
 
 To install Curvesim, simply run this simple command in your terminal of choice::
 
