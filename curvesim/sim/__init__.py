@@ -83,7 +83,7 @@ def autosim(pool=None, chain="mainnet", pool_data=None, **kwargs):
         1: limits trade volumes proportionally to market volume for each pair
         2: limits trade volumes equally across pairs
         3: mode 2 for trades with meta-pool asset, mode 1 for basepool-only trades
-    ncpu : int, default=4
+    ncpu : int, default=os.cpu_count()
         Number of cores to use.
     Returns
     -------
