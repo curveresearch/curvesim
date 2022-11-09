@@ -18,9 +18,10 @@ When working on the codebase, to avoid dependency issues it is recommended to us
 
 
 ## Documentation
-
 Check out the full documentation at https://curvesim.readthedocs.io/
 
+## Licensing
+Portions of the codebase are authorized derivatives of code owned by Curve.fi (Swiss Stake GbmH).  These are the vyper snippets used for testing and the python code derived from them; there are copyright notices placed appropriately.  The rest of the codebase has an MIT license.
 
 ## Basic Use: Autosim
 The autosim() function simulates existing Curve pools with a range of A and/or fee parameters. The function fetches pool properties (e.g., current pool size) and 2 months of price/volume data, runs multiple simulations in parallel, and saves results plots to the "results" directory. 
