@@ -1,3 +1,9 @@
+"""
+@title StableSwap
+@author Curve.Fi
+@license Copyright (c) Curve.Fi, 2020-2022 - all rights reserved
+@notice Pool for DAI/USDC/USDT
+"""
 from vyper.interfaces import ERC20
 
 interface CurveToken:

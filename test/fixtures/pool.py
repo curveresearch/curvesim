@@ -4,6 +4,7 @@ import boa
 import pytest
 
 _base_dir = os.path.dirname(__file__)
+_curve_dir = os.path.join(_base_dir, "curve")
 FAKE_ADDRESS = "0xCAFECAFECAFECAFECAFECAFECAFECAFECAFECAFE"
 
 
@@ -36,7 +37,7 @@ def _vyper_3pool(mainnet_3pool_state):
     mock_filepath = os.path.join(_base_dir, "lp_token_mock.vy")
     lp_token = boa.load(mock_filepath, lp_total_supply)
 
-    pool_filepath = os.path.join(_base_dir, "basepool.vy")
+    pool_filepath = os.path.join(_curve_dir, "basepool.vy")
     owner = FAKE_ADDRESS
     coins = [FAKE_ADDRESS] * 3
     A = mainnet_3pool_state["A"]
@@ -53,7 +54,7 @@ def _vyper_3pool(mainnet_3pool_state):
 @pytest.fixture(scope="session")
 def _vyper_metapool(_vyper_3pool):
     """Initialize vyper fixture using mainnet values."""
-    metapool_filepath = os.path.join(_base_dir, "metapool.vy")
+    metapool_filepath = os.path.join(_curve_dir, "metapool.vy")
     name = "SIM-3Pool"
     symbol = "SIM3CRV-f"
     coin = FAKE_ADDRESS

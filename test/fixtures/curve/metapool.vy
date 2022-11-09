@@ -1,3 +1,10 @@
+"""
+@title StableSwap
+@author Curve.Fi
+@license Copyright (c) Curve.Fi, 2020-2021 - all rights reserved
+@notice 3pool metapool implementation contract
+@dev ERC20 support for return True/revert, return True/False, return None
+"""
 interface ERC20:
     def approve(_spender: address, _amount: uint256): nonpayable
     def balanceOf(_owner: address) -> uint256: view
