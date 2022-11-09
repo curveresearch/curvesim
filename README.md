@@ -6,8 +6,8 @@
 ![PyPI - License](https://img.shields.io/pypi/l/curvesim)
 
 
-# CurveSim
-CurveSim simulates Curve finance pools with optimal arbitrageurs trading against them. It's primary use is to determine optimal amplitude (A) and fee parameters given historical price and volume feeds.
+# Curvesim
+Curvesim simulates Curve finance pools with optimal arbitrageurs trading against them. It's primary use is to determine optimal amplitude (A) and fee parameters given historical price and volume feeds.
 
 #### Dependencies:
 The maintainers use Python 3.8 or above.  Likely the code should be fine for Python versions from 3.6 onward.
