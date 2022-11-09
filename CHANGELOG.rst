@@ -10,7 +10,7 @@ Added
 
 - Multi-chain pool data support via the Convex Community subgraph.
 
-- Network submodule uses `asyncio` for concurrency.
+- New network subpackage uses `asyncio` for concurrency.
 
 - Pool_data and price_data submodules added.
 
@@ -22,27 +22,32 @@ Added
 - Support use of environment variable (and loading from `.env` file) for
   `NOMICS_API_KEY`.
   
-- Pipeline and iterators submodules added to support custom simulation pipelines.
+- Pipeline and iterators submodules added to support custom simulation pipelines.  This will allow
+  more complex arbitrage scenarios and let users create bespoke simulations.
 
-- Pool simulation interfaces added for additional simulation optimization.
+- Pool simulation interfaces added to decouple pool implementations from the simulation framework.
+  The interfaces enable additional runtime optimizations.
 
 - Standard volume-limited arbitrage simulation re-implemented using the new pipeline framework.
 
-- Pools initiated from external data now store their metadata in pool.metadata.
+- Pools initiated from external data now store their metadata in pool.metadata for introspection
+  and debugging.
 
 - Create versioning structure to bump versions which will reflect in the
   changelog and future package releases.
+
+- Added end-to-end tests for simulation runs that run in continuous integration.
+  Unit tests added for pool calculations.  Increasing test coverage with component-level
+  tests will be a key part of getting to v1.
 
 
 
 Removed
 -------
 
-- pool/data.py
+- sim() and psim() replaced by pipeline framework.
 
-- Sim() and psim() replaced by pipeline framework.
-
-- PoolDF CSVs no longer needed for pool data lookup.
+- PoolDF CSVs no longer used for pool data lookup.
 
 
 Changed
@@ -53,14 +58,14 @@ Changed
 - Frequently used calculations such as `D`, `y`, and `dydxfee` use the GNU Multiple
   Precision Arithmetic Library (GMP) to speed up big integer arithmetic.
 
-- For regular pools, the `dydxfee` function uses a pricing derivation from calculus
-  instead of bumping a pool balance and recalculating.
+- The spot pricing function, `dydxfee`, uses a derivation from calculus instead of bumping
+  a pool balance and recalculating, with the exception of a certain case for 
+  metapools.
 
-- Pool class was split into two classes, `CurvePool` and `CurveMetaPool`.
+- The monolithic `Pool` class was split into a generic base class, with derived classes
+  `CurvePool`, `CurveMetaPool`, and `CurveRaiPool`.
 
-- `CurveRaiPool` was added as a subclass of `CurveMetaPool`.
-
-- Bonding curve and order-book methods changed to standalone functions.
+- Bonding curve and order-book `Pool` methods changed to standalone functions.
 
 - "Price depth" metrics now report liquidity density (i.e., % change in holdings per 
   % change in price).
@@ -79,3 +84,5 @@ Fixed
 - Subgraph volume query was updated due to a recent update.
 
 - Fixed bug in vol_mode=2 for non-meta-pools
+
+- Various updates to pool calculations to align the results with their on-chain equivalents.
