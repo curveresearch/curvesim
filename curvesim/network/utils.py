@@ -1,6 +1,6 @@
 import asyncio
-import concurrent
 import functools
+from concurrent.futures import ThreadPoolExecutor
 
 from gmpy2 import mpz
 
@@ -26,6 +26,19 @@ def compute_D(xp, A):
     return D
 
 
+# "extra" event loop for special but important use-cases,
+# such as running inside a Jupyter Notebook, which already
+# runs an event loop for "convenient" await syntax.
+_loop = None
+
+
+def _setupExtraEventLoop():
+    """Sets up the extra event loop for scheduling."""
+    global _loop
+    _loop = asyncio.new_event_loop()
+    ThreadPoolExecutor().submit(_loop.run_forever)
+
+
 def sync(func):
     """
     Returns a sync version of an async function.
@@ -46,16 +59,14 @@ def sync(func):
         loop = event_loop or asyncio.get_event_loop()
         coro = func(*args, **kwargs)
         if loop.is_running():
-            try:
-                future = asyncio.run_coroutine_threadsafe(coro, loop)
-                res = future.result(timeout=60)
-            except concurrent.futures.TimeoutError as e:
-                print("The coroutine took too long, cancelling the task...")
-                future.cancel()
-                raise e
-            except Exception as e:
-                print("The coroutine raised an exception: {!r}".format(e))
-                raise e
+            # If for some reason, we are trying to make async code
+            # synchronous inside a running event loop, we are
+            # probably in something like a Jupyter notebook.
+            if not _loop:
+                _setupExtraEventLoop()
+            future = asyncio.run_coroutine_threadsafe(coro, _loop)
+            res = future.result()
+
         else:
             res = loop.run_until_complete(coro)
 
