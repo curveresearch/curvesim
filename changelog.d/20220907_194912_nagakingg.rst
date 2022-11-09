@@ -1,3 +1,0 @@
-Changed
--------
-- Fixed bug in vol_mode=2 for non-meta-pools
