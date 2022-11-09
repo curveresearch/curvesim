@@ -105,4 +105,4 @@ Discord:
 License
 -------
 
-The project is licensed under the MIT license.
+Portions of the codebase are authorized derivatives of code owned by Curve.fi (Swiss Stake GbmH).  These are the vyper snippets used for testing (`test/fixtures/curve`) and the python code derived from them (`curvesim/pool/stableswap`); there are copyright notices placed appropriately.  The rest of the codebase has an MIT license.
