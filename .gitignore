@@ -17,3 +17,6 @@ __pycache__/
 
 # hypothesis
 /.hypothesis
+
+# Sphinx
+/docs/_build

@@ -1,9 +1,14 @@
+"""
+Network connector for on-chain data
+"""
+
 from asyncio import gather, sleep
 
 from web3 import AsyncHTTPProvider, Web3
 from web3.eth import AsyncEth
 
 from .http import HTTP
+from .utils import sync
 
 # Chain explorer
 ETHERSCAN = ("https://api.etherscan.io/api", "PT1D9IGAPPPRFMD312V9GARWW93BS9ZV6V")
@@ -11,7 +16,17 @@ ETHERSCAN = ("https://api.etherscan.io/api", "PT1D9IGAPPPRFMD312V9GARWW93BS9ZV6V
 
 async def explorer(params):
     """
-    params: module, action, kwargs
+    Async function to retrieve data from the chain explorer (Etherscan).
+
+    Parameters
+    ----------
+    params : dict
+        Must include keys for module, action, and any required arguments for the query.
+
+    Returns
+    -------
+    dict
+        Query result
 
     """
     params.update({"apikey": ETHERSCAN[1]})
@@ -31,6 +46,19 @@ async def explorer(params):
 
 
 async def ABI(address):
+    """
+    Async function to retrieves ABI from the chain explorer (Etherscan).
+
+    Parameters
+    ----------
+    address : str
+        Address for the contract on Ethereum mainnet.
+
+    Returns
+    -------
+    abi : str
+
+    """
     p = {
         "module": "contract",
         "action": "getabi",
@@ -57,13 +85,26 @@ W3 = Web3(
 
 
 async def contract(address, abi=None):
+    """
+    Creates an async Web3py contract object.
+
+    Parameters
+    ----------
+    address : str
+        Address for the contract on Ethereum mainnet.
+
+    Returns
+    -------
+    contract : web3.contract.AsyncContract
+
+    """
     abi = abi or await ABI(address)
 
     c = W3.eth.contract(address=address, abi=abi)
     return c
 
 
-async def underlying_coin_address(address):
+async def _underlying_coin_address(address):
     c = await contract(address)
 
     fns = ["upgradeToAndCall", "underlying", "token"]
@@ -89,9 +130,36 @@ async def underlying_coin_address(address):
 
 
 async def underlying_coin_addresses(addresses):
-    tasks = []
-    for address in addresses:
-        tasks.append(underlying_coin_address(address))
-    addrs = await gather(*tasks)
+    """
+    Async function to get the underlying coin addresses for lending tokens
+    (aTokens, cTokens, and yTokens).
+
+    Parameters
+    ----------
+    addresses : iterable of str
+        Addresses for the lending tokens on Ethereum mainnet.
+
+    Returns
+    -------
+    addresses : list of str
+        The addresses of the underlying tokens.
+
+    """
+    if isinstance(addresses, str):
+        addrs = await _underlying_coin_address(addresses)
+
+    else:
+        tasks = []
+        for address in addresses:
+            tasks.append(_underlying_coin_address(address))
+
+        addrs = await gather(*tasks)
 
     return addrs
+
+
+# Sync
+explorer_sync = sync(explorer)
+ABI_sync = sync(ABI)
+contract_sync = sync(contract)
+underlying_coin_addresses_sync = sync(underlying_coin_addresses)

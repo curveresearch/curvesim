@@ -1,3 +1,6 @@
+"""
+Network connector for Coingecko.
+"""
 import asyncio
 from datetime import datetime, timedelta, timezone
 from itertools import combinations
@@ -6,15 +9,33 @@ import numpy as np
 import pandas as pd
 
 from .http import HTTP
+from .utils import sync
 
 URL = "https://api.coingecko.com/api/v3/"
 
+PLATFORMS = {
+    "mainnet": "ethereum",
+    "arbitrum": "arbitrum-one",
+    "polygon": "polygon-pos",
+    "optimism": "optimistic-ethereum",
+    "xdai": "xdai",
+    "fantom": "fantom",
+    "avalanche": "avalanche",
+    "matic:": "polygon-pos",
+}
 
-async def get_prices(coin_id, vs_currency, days):
+
+async def _get_prices(coin_id, vs_currency, days):
     url = URL + f"coins/{coin_id}/market_chart"
     p = {"vs_currency": vs_currency, "days": days}
 
     r = await HTTP.get(url, params=p)
+
+    return r
+
+
+async def get_prices(coin_id, vs_currency, days):
+    r = await _get_prices(coin_id, vs_currency, days)
 
     # Format data
     data = pd.DataFrame(r["prices"], columns=["timestamp", "prices"])
@@ -58,12 +79,27 @@ async def _pool_prices(coins, vs_currency, days):
 
 
 def pool_prices(coins, vs_currency, days):
+    """
+    Pull price and volume data for given coins, quoted in given
+    quote currency for given days.
+
+    Parameters
+    ----------
+    coins: list of str
+        List of coin addresses.
+    vs_currency: str
+        Symbol for quote currency.
+    days: int
+        Number of days to pull data for.
+
+    Returns
+    -------
+    pair of pandas.Series
+        prices Series and volumes Series
+    """
     # Get data
-    loop = asyncio.get_event_loop()
-
-    coins = loop.run_until_complete(coin_ids_from_addresses(coins, "mainnet"))
-
-    qprices, qvolumes = loop.run_until_complete(_pool_prices(coins, vs_currency, days))
+    coins = coin_ids_from_addresses_sync(coins, "mainnet")
+    qprices, qvolumes = _pool_prices_sync(coins, vs_currency, days)
 
     # Compute prices by coin pairs
     combos = list(combinations(range(len(coins)), 2))
@@ -84,7 +120,7 @@ def pool_prices(coins, vs_currency, days):
     return prices, volumes
 
 
-async def coin_id_from_address(address, chain):
+async def _coin_id_from_address(address, chain):
     address = address.lower()
     chain = PLATFORMS[chain.lower()]
     url = URL + f"coins/{chain}/contract/{address}"
@@ -97,16 +133,20 @@ async def coin_id_from_address(address, chain):
 
 
 async def coin_ids_from_addresses(addresses, chain):
-    tasks = []
-    for addr in addresses:
-        tasks.append(coin_id_from_address(addr, chain))
+    if isinstance(addresses, str):
+        coin_ids = await _coin_id_from_address(addresses, chain)
 
-    coin_ids = await asyncio.gather(*tasks)
+    else:
+        tasks = []
+        for addr in addresses:
+            tasks.append(_coin_id_from_address(addr, chain))
+
+        coin_ids = await asyncio.gather(*tasks)
 
     return coin_ids
 
 
-async def coin_info_from_id(ID, chain, chain_out="mainnet"):
+async def _coin_info_from_id(ID, chain, chain_out="mainnet"):
     chain = PLATFORMS[chain.lower()]
     chain_out = PLATFORMS[chain_out.lower()]
     url = URL + f"coins/{ID}"
@@ -119,18 +159,21 @@ async def coin_info_from_id(ID, chain, chain_out="mainnet"):
 
 
 async def coin_info_from_ids(IDs, chain, chain_out="mainnet"):
-    tasks = []
-    for ID in IDs:
-        tasks.append(coin_info_from_id(ID, chain, chain_out=chain_out))
+    if isinstance(IDs, str):
+        addresses, symbols = await _coin_info_from_id(IDs, chain, chain_out=chain_out)
 
-    r = await asyncio.gather(*tasks)
+    else:
+        tasks = []
+        for ID in IDs:
+            tasks.append(_coin_info_from_id(ID, chain, chain_out=chain_out))
 
-    addresses, symbols = list(zip(*r))
+        r = await asyncio.gather(*tasks)
+        addresses, symbols = list(zip(*r))
 
     return addresses, symbols
 
 
-async def crosschain_coin_address(address, chain_in, chain_out):
+async def _crosschain_coin_address(address, chain_in, chain_out):
     if chain_in == "mainnet" and chain_out == "mainnet":
         return address
 
@@ -147,22 +190,40 @@ async def crosschain_coin_address(address, chain_in, chain_out):
 
 
 async def crosschain_coin_addresses(addresses, chain_in, chain_out):
-    tasks = []
-    for addr in addresses:
-        tasks.append(crosschain_coin_address(addr, chain_in, chain_out))
+    if isinstance(addresses, str):
+        addresses_out = await _crosschain_coin_address(addresses, chain_in, chain_out)
 
-    addresses_out = await asyncio.gather(*tasks)
+    else:
+        tasks = []
+        for addr in addresses:
+            tasks.append(_crosschain_coin_address(addr, chain_in, chain_out))
+
+        addresses_out = await asyncio.gather(*tasks)
 
     return addresses_out
 
 
-PLATFORMS = {
-    "mainnet": "ethereum",
-    "arbitrum": "arbitrum-one",
-    "polygon": "polygon-pos",
-    "optimism": "optimistic-ethereum",
-    "xdai": "xdai",
-    "fantom": "fantom",
-    "avalanche": "avalanche",
-    "matic:": "polygon-pos",
-}
+# Sync
+_pool_prices_sync = sync(_pool_prices)
+coin_ids_from_addresses_sync = sync(coin_ids_from_addresses)
+coin_info_from_ids_sync = sync(coin_info_from_ids)
+crosschain_coin_addresses_sync = sync(crosschain_coin_addresses)
+
+
+if __name__ == "__main__":
+    coin_addresses = [
+        "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+        "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+    ]
+    chain = "mainnet"
+    print("Coin addresses:", coin_addresses)
+    print("Chain", chain)
+    coin_ids = coin_ids_from_addresses_sync(coin_addresses, chain)
+    print("Coin IDs:", coin_ids)
+
+    vs_ccy = "USD"
+    days = 1
+    prices, volumes = pool_prices(coin_addresses, vs_ccy, days)
+    print(prices.head())
+    print(volumes.head())

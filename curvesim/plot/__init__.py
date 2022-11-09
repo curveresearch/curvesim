@@ -1,3 +1,9 @@
+"""
+Plotters to visualize simulation results.
+
+This code is likely to be changed soon.
+"""
+
 import os
 
 import matplotlib.pyplot as plt
@@ -34,13 +40,12 @@ def plotsims(
     axs[0, 0].set_xlabel("Amplitude (A)")
     axs[0, 0].set_ylabel("Annualized Returns")
 
-    axs[0, 1].plot(A_list, np.median(depth, axis=1) * 100, "k", zorder=1, label="Med")
-    axs[0, 1].plot(A_list, np.min(depth, axis=1) * 100, "k--", zorder=1, label="Min")
-    axs[0, 1].scatter(A_list, np.median(depth, axis=1) * 100, c=colors, zorder=2)
-    axs[0, 1].scatter(A_list, np.min(depth, axis=1) * 100, c=colors, zorder=2)
-    axs[0, 1].yaxis.set_major_formatter(mtick.PercentFormatter())
+    axs[0, 1].plot(A_list, np.median(depth, axis=1), "k", zorder=1, label="Med")
+    axs[0, 1].plot(A_list, np.min(depth, axis=1), "k--", zorder=1, label="Min")
+    axs[0, 1].scatter(A_list, np.median(depth, axis=1), c=colors, zorder=2)
+    axs[0, 1].scatter(A_list, np.min(depth, axis=1), c=colors, zorder=2)
     axs[0, 1].set_xlabel("Amplitude (A)")
-    axs[0, 1].set_ylabel("Price Depth (.1%)")
+    axs[0, 1].set_ylabel("Liquidity Density")
     axs[0, 1].legend(loc="lower right")
 
     axs[0, 2].plot(A_list, bal.median(axis=1), "k", zorder=1, label="Med")
@@ -109,10 +114,9 @@ def plotsims(
 
     # Depth
     for i in range(len(colors)):
-        axs[1, 1].plot(depth.iloc[i] * 100, color=colors[i])
+        axs[1, 1].plot(depth.iloc[i], color=colors[i])
 
-    axs[1, 1].set_ylabel("Price Depth")
-    axs[1, 1].yaxis.set_major_formatter(mtick.PercentFormatter())
+    axs[1, 1].set_ylabel("Liquidity Density")
     plt.setp(axs[1, 1].xaxis.get_majorticklabels(), rotation=40, ha="right")
 
     # Distribution of log returns
@@ -165,8 +169,8 @@ def plotsimsfee(A_list, fee_list, ar, bal, depth, volume, err, show=True, saveas
     cbar = fig.colorbar(im, ax=axs[1, 0])
 
     # Median Depth
-    im = axs[0, 1].imshow(depth.median(axis=1).unstack("fee") * 100, cmap="plasma")
-    axs[0, 1].set_title("Med. Depth (.1%)")
+    im = axs[0, 1].imshow(depth.median(axis=1).unstack("fee"), cmap="plasma")
+    axs[0, 1].set_title("Median Liquidity Density")
     axs[0, 1].set_xlabel("Fee (%)")
     axs[0, 1].set_ylabel("Amplitude (A)")
     axs[0, 1].set_xticks(np.arange(len(fee_list)))
@@ -178,8 +182,8 @@ def plotsimsfee(A_list, fee_list, ar, bal, depth, volume, err, show=True, saveas
     cbar.ax.yaxis.set_major_formatter(mtick.PercentFormatter())
 
     # Minimum Depth
-    im = axs[1, 1].imshow(depth.min(axis=1).unstack("fee") * 100, cmap="plasma")
-    axs[1, 1].set_title("Min. Depth (.1%)")
+    im = axs[1, 1].imshow(depth.min(axis=1).unstack("fee"), cmap="plasma")
+    axs[1, 1].set_title("Minimum Liquidity Density")
     axs[1, 1].set_xlabel("Fee (%)")
     axs[1, 1].set_ylabel("Amplitude (A)")
     axs[1, 1].set_xticks(np.arange(len(fee_list)))
@@ -221,9 +225,7 @@ def plotsimsfee(A_list, fee_list, ar, bal, depth, volume, err, show=True, saveas
         plt.show()
 
 
-def saveplots(
-    poolname, A_list, fee_list, ar, bal, depth, volume, pool_value, log_returns, err
-):
+def saveplots(poolname, A_list, fee_list, results):
     if not os.path.exists("results/" + poolname):
         os.makedirs("results/" + poolname)
 
@@ -231,11 +233,11 @@ def saveplots(
         plotsimsfee(
             A_list,
             fee_list,
-            ar,
-            bal,
-            depth,
-            volume,
-            err,
+            results["ar"],
+            results["bal"],
+            results["depth"],
+            results["volume"],
+            results["err"],
             show=False,
             saveas="results/" + poolname + "/summary",
         )
@@ -250,13 +252,13 @@ def saveplots(
 
         plotsims(
             A_list,
-            ar.loc[(slice(None), curr_fee), :],
-            bal.loc[(slice(None), curr_fee), :],
-            pool_value.loc[(slice(None), curr_fee), :],
-            depth.loc[(slice(None), curr_fee), :],
-            volume.loc[(slice(None), curr_fee), :],
-            log_returns.loc[(slice(None), curr_fee), :],
-            err.loc[(slice(None), curr_fee), :],
+            results["ar"].loc[(slice(None), curr_fee), :],
+            results["bal"].loc[(slice(None), curr_fee), :],
+            results["pool_value"].loc[(slice(None), curr_fee), :],
+            results["depth"].loc[(slice(None), curr_fee), :],
+            results["volume"].loc[(slice(None), curr_fee), :],
+            results["log_returns"].loc[(slice(None), curr_fee), :],
+            results["err"].loc[(slice(None), curr_fee), :],
             show=False,
             saveas=filename,
         )

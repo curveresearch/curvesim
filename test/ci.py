@@ -7,34 +7,30 @@ import curvesim
 
 if __name__ == "__main__":  # noqa: C901
     data_dir = os.path.join("test", "data")
-    pool_names = [
-        ("3pool", "3crv"),
-        ("aave", "a3CRV"),
-        ("frax", "FRAX3CRV-f"),
-        ("mim", "MIM-3LP3CRV-f "),
-    ]
+    pool_names = ["3CRV", "a3CRV", "FRAX3CRV-f", "MIM-3LP3CRV-f"]
 
     abs_tolerances = {
         "ar": 1.5e-4,
         "bal": 0.035,
-        "depth": 0.02,
+        "depth": 10,  # in liquidity density units
         "err": 0.01,
         "log_returns": 0,
         "p": 1e15,
-        "pool_value": 50000,
+        "pool_value": 0,  # in dollar units
         "volume": 0,
         "x": 0,
     }
-    rel_tolerances = {}
+
+    rel_tolerances = {"pool_value": 0.0001}
 
     skipped = ["log_returns", "volume", "x"]
 
     for pool_name in pool_names:
-        with open(os.path.join(data_dir, f"{pool_name[0]}-pooldata.pickle"), "rb") as f:
+        with open(os.path.join(data_dir, f"{pool_name}-pool_data.pickle"), "rb") as f:
             pool_data = pickle.load(f)
 
         res = curvesim.autosim(
-            pool_name[1],
+            pool_name,
             test=True,
             ncpu=4,
             src="local",
@@ -44,7 +40,7 @@ if __name__ == "__main__":  # noqa: C901
         # with open(os.path.join(data_dir, f"{pool_name}-res-test.pickle"), "rb") as f:
         #     res = pickle.load(f)
 
-        with open(os.path.join(data_dir, f"{pool_name[0]}-res.pickle"), "rb") as f:
+        with open(os.path.join(data_dir, f"{pool_name}-results.pickle"), "rb") as f:
             res_pkl = pickle.load(f)
 
         for (key, df1) in res.items():
