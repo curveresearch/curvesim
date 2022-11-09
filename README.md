@@ -74,14 +74,14 @@ import curvesim
 import numpy as np
 
 #Specify A values:
-res = curvesim.autosim('3crv', A=np.linspace(1000,20000,20))
+res = curvesim.autosim('3crv', A=range(1000,2001,100))
 
-#Specify fees (0.04% and 0.05%):
-res = curvesim.autosim('3crv', fee=[.0003, .0004])
+#Specify fees (0.03% and 0.04% with 10 decimal precision):
+res = curvesim.autosim('3crv', fee=[3000000, 4000000])
 
 #Specify custom A range and 0.03% fee
 #Note that single fee must still be a list
-res = curvesim.autosim('3crv', A=np.linspace(1000,20000,20), fee=[.0003])
+res = curvesim.autosim('3crv', A=range(1000,2001,100), fee=3000000)
 ```
 Additionally, a small number of A/fee values (2 each) can be set for testing purposes: 
 ```python
@@ -99,18 +99,18 @@ The following parameters are automatically specified by autosim(), but can be ov
 import curvesim
 
 #Simulate 3pool assuming total deposit of $10B, fee = 0.03%
-res = curvesim.autosim('3crv', D=10000000000, fee=[.0003])
+res = curvesim.autosim('3crv', D=10000000000, fee=3000000)
 
 #For metapools, specifying D effects the deposit in the metapool, but not the basepool
 #Simulate USDN metapool assuming total deposit of $1B, fee = 0.03%
-res = curvesim.autosim('usdn3crv', D=1000000000, fee=[.0003])
+res = curvesim.autosim('usdn3crv', D=1000000000, fee=3000000)
 
 #Simulate 3pool, limiting volume to 75% of market volume, fee = 0.03% 
 #Note: it is not reccomended to adjust this parameter, try vol_mode instead (see below)
-res = curvesim.autosim('3crv', vol_mult=.75, fee=[.0003])
+res = curvesim.autosim('3crv', vol_mult=.75, fee=3000000)
 
 #Simulate hypothetical 3pool with dynamic fee like AAVE pool, fee = 0.03% 
-res = curvesim.autosim('3crv', feemul=2*10**10, fee=[.0003])
+res = curvesim.autosim('3crv', feemul=2*10**10, fee=3000000)
 ```
 
 ### Volume Limits
@@ -126,7 +126,7 @@ We reccomend using the default vol_mode 1 in most cases. However, if that return
 
 ### Data Sources
 The "src" argument can be used to choose between 3 different data sources:
-* **src = "cg"**: CoinGecko API (free); default
+* **src = "coingecko"**: CoinGecko API (free); default
 * **src = "nomics"**: Nomics API (paid); set `NOMICS_API_KEY` as env variable or in `.env` file.
 * **src = "local"**: local data stored in the "data" folder
 
@@ -137,9 +137,5 @@ For comparison, compare 3pool_cg and 3pool_nomics results in the pools/demo dire
 
 ### Technical Parameters
 Additionally, one can specify:
-* **ncpu**: number of CPUs to use for parallel processing (default: 4); for use with profilers, e.g. `cProfile`, use `ncpu=1`.
-* **trunc**: a pair of indicies to truncate price/volume data to [trunc[0]:trunc[1]]
-
-## Simulating Hypothetical Pools
-If a pool does not already exist, you can directly input the relevant pool values into the psim() function.
-
+* **ncpu**: number of CPUs to use for parallel processing (default: all cores); for use with profilers, e.g. `cProfile`, use `ncpu=1`.
+* **days**: the number of days worth of data to use in the simulation (default: 60)
