@@ -108,31 +108,21 @@ def autosim(pool=None, chain="mainnet", pool_data=None, **kwargs):
     vol_mult : float or numpy.ndarray, default computed from data
         Value(s) multiplied by market volume to specify volume limits (overrides vol_mode).
 
-        Can be a scalar or vector with values for each pairwise coin combination
+        Can be a scalar or vector with values for each pairwise coin combination.
 
     vol_mode : int, default=1
         Modes for limiting trade volume.
-
         1: limits trade volumes proportionally to market volume for each pair
-
         2: limits trade volumes equally across pairs
-
         3: mode 2 for trades with meta-pool asset, mode 1 for basepool-only trades
 
-    ncpu : int, default=4
+    ncpu : int, default=os.cpu_count()
         Number of cores to use.
 
     Returns
     -------
     dict
         Dictionary of results, each value being a pandas.Series.
-
-
-    Raises
-    ------
-
-    Note
-    ----
     """
     assert any([pool, pool_data]), "Must input 'pool' or 'pool_data'"
 

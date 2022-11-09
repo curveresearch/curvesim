@@ -2,6 +2,7 @@
 Implements the volume-limited arbitrage pipeline.
 """
 
+import os
 import traceback
 from datetime import timedelta
 from functools import partial
@@ -36,7 +37,7 @@ def volume_limited_arbitrage(
     data_dir="data",
     vol_mult=None,
     vol_mode=1,
-    ncpu=4,
+    ncpu=None,
 ):
     """
     Implements the volume-limited arbitrage pipeline.
@@ -97,7 +98,7 @@ def volume_limited_arbitrage(
 
         3: mode 2 for trades with meta-pool asset, mode 1 for basepool-only trades
 
-    ncpu : int, default=4
+    ncpu : int, default=os.cpu_count()
         Number of cores to use.
 
     Returns
@@ -105,6 +106,9 @@ def volume_limited_arbitrage(
     dict
 
     """
+
+    if ncpu is None:
+        ncpu = os.cpu_count() if os.cpu_count() is not None else 1
 
     if test:
         variable_params = TEST_PARAMS
