@@ -20,3 +20,6 @@ __pycache__/
 
 # Sphinx
 /docs/_build
+
+# Jupyter
+/.ipynb_checkpoints
