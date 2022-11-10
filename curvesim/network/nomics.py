@@ -27,7 +27,7 @@ async def get_data(url, params, t_start, t_end, exp=1):
 
     # Get data
     tasks = []
-    for i, (start, end) in enumerate(zip(t_starts, t_ends)):
+    for start, end in zip(t_starts, t_ends):
         p = params.copy()
         p["start"] = start.strftime(FORMAT)
         p["end"] = end.strftime(FORMAT)
