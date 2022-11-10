@@ -1,4 +1,4 @@
-# pylint disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
 import os
 
 import boa

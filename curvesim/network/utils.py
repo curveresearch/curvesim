@@ -34,7 +34,8 @@ _loop = None
 
 def _setup_extra_event_loop():
     """Sets up the extra event loop for scheduling."""
-    global _loop  # pylint disable=global-statement
+    # pylint: disable=global-statement
+    global _loop
     _loop = asyncio.new_event_loop()
     ThreadPoolExecutor().submit(_loop.run_forever)
 
