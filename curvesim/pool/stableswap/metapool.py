@@ -124,7 +124,7 @@ class CurveMetaPool(Pool):
         return self.get_D(xp, A)
 
     def get_D(self, xp, A):
-        """
+        r"""
         Calculate D invariant iteratively using non-overflowing integer operations.
 
         Stableswap equation:
@@ -206,14 +206,14 @@ class CurveMetaPool(Pool):
         return self.get_D(xp, A)
 
     def get_y(self, i, j, x, xp):
-        """
+        r"""
         Calculate x[j] if one makes x[i] = x.
 
         The stableswap equation gives the following:
 
         .. math::
             x_1^2 + x_1 (\operatorname{sum'} - (A n^n - 1) D / (A n^n))
-               = D^{n+1}/(n^{2 * n} \operatorname{prod'} A)
+               = D^{n+1}/(n^{2 n} \operatorname{prod'} A)
 
         where :math:`\operatorname{sum'}` is the sum of all :math:`x_i` for :math:`i \\neq j` and
         :math:`\operatorname{prod'}` is the product of all :math:`x_i` for :math:`i \\neq j`.
