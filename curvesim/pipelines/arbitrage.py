@@ -546,12 +546,11 @@ def opt_arb_multi(pool_interface, prices, limits):  # noqa: C901
         # Format trades into tuples, ignore if dx=0
         dxs = res.x
 
-        for k in range(len(dxs)):
-            if isnan(dxs[k]):
-                dx = 0
-            else:
-                dx = int(dxs[k])
+        for k, dx in enumerate(dxs):
+            if isnan(dx):
+                continue
 
+            dx = int(dx)
             if dx > 0:
                 i = coins[k][0]
                 j = coins[k][1]
@@ -655,9 +654,7 @@ def get_trade_args(get_pool_price, get_bounds, error_function, prices, limits, c
 
         elif get_pool_price(j, i) - 1 / prices[k] > 0:
             try:
-                trade, error, res = opt_arb(
-                    get_bounds, error_function, j, i, 1 / prices[k]
-                )
+                trade, _, _ = opt_arb(get_bounds, error_function, j, i, 1 / prices[k])
                 x0.append(min(trade[2], int(limits[k] * 10**18)))
             except ValueError:
                 print(
