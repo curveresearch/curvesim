@@ -68,8 +68,6 @@ release:
 .PHONY: lint
 lint:
 	@echo ""
-	@make black
-	@echo ""
 	@make flake8
 	@echo ""
 	@make pylint
@@ -79,12 +77,13 @@ lint:
 .PHONY: black
 black:
 	@echo "$(REVERSE)Running$(RESET) $(BOLD)black$(RESET)..."
+	@black --version
 	@black .
 
 .PHONY: flake8
 flake8:
 	@echo "$(REVERSE)Running$(RESET) $(BOLD)flake8$(RESET)..."
-	@if ! flake8 ; then \
+	@if ! flake8 --version; then \
 	    echo "$(BOLD)flake8$(RESET): $(RED)FAILED$(RESET) checks" ;\
 	    exit 1 ;\
 	fi
