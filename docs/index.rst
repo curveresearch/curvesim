@@ -47,7 +47,7 @@ Arbitrage simulations to see results of varying fee and amplification (A) parame
     [3 rows x 1465 columns]
 
 
-Charts of the results are saved to the `results` folder.
+Charts of the results are saved to the ``results`` folder.
 
 
 Features
