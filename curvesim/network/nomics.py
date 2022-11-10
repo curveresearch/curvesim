@@ -27,13 +27,11 @@ async def get_data(url, params, t_start, t_end, exp=1):
 
     # Get data
     tasks = []
-    ps = []
-    for i in range(len(t_starts)):
+    for i, (start, end) in enumerate(zip(t_starts, t_ends)):
         p = params.copy()
-        p["start"] = t_starts[i].strftime(FORMAT)
-        p["end"] = t_ends[i].strftime(FORMAT)
-        ps.append(p)
-        tasks.append(HTTP.get(url, params=ps[i]))
+        p["start"] = start.strftime(FORMAT)
+        p["end"] = end.strftime(FORMAT)
+        tasks.append(HTTP.get(url, params=p))
 
     data = await asyncio.gather(*tasks)
     data = format_price_data(data, t_start, t_end, exp=exp)
