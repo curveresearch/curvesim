@@ -58,6 +58,7 @@ class SimInterface:
     def __init__(self):
         self.pool = None
         self.coin_indices = None
+        self.pool_state = None
 
     @staticmethod
     def _get_pool_state(pool):  # pylint: disable=method-hidden
