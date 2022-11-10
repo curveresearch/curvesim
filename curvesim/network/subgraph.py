@@ -9,6 +9,7 @@ import pandas as pd
 from eth_utils import to_checksum_address
 
 from ..exceptions import SubgraphResultError
+from ..overrides import override_subgraph_data
 from .http import HTTP
 from .utils import compute_D, sync
 
@@ -341,7 +342,7 @@ async def pool_snapshot(address, chain):
 
     data.update({"init_kwargs": init_kwargs})
 
-    return data
+    return override_subgraph_data(data, "pool_snapshot", (address, chain))
 
 
 convex_sync = sync(convex)
