@@ -370,7 +370,8 @@ def dydx_metapool_rai(*args, **kwargs):
 
 
 def dydx_rai(*args, p=None, **kwargs):
-    i, j = args[0:2]
+    i = args[0]
+    j = args[1]
     _dydx = dydx(*args, **kwargs)
     return _dydx * p[i] / p[j]
 
