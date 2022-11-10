@@ -2,16 +2,22 @@
 Network connector for on-chain data
 """
 
+import os
 from asyncio import gather, sleep
 
+from dotenv import load_dotenv
 from web3 import AsyncHTTPProvider, Web3
 from web3.eth import AsyncEth
 
 from .http import HTTP
 from .utils import sync
 
-# Chain explorer
-ETHERSCAN = ("https://api.etherscan.io/api", "PT1D9IGAPPPRFMD312V9GARWW93BS9ZV6V")
+load_dotenv()
+
+ETHERSCAN_API_KEY = os.environ.get("ETHERSCAN_API_KEY")
+ALCHEMY_API_KEY = os.environ.get("ALCHEMY_API_KEY")
+
+ETHERSCAN_URL = "https://api.etherscan.io/api"
 
 
 async def explorer(params):
@@ -29,11 +35,11 @@ async def explorer(params):
         Query result
 
     """
-    params.update({"apikey": ETHERSCAN[1]})
+    params.update({"apikey": ETHERSCAN_API_KEY})
 
     t_wait = 0.2
     while True:
-        r = await HTTP.get(ETHERSCAN[0], params=params)
+        r = await HTTP.get(ETHERSCAN_URL, params=params)
         result = r["result"]
 
         if result.startswith("Max rate limit reached"):
@@ -73,10 +79,7 @@ async def ABI(address):
 # Web3.py
 W3 = Web3(
     AsyncHTTPProvider(
-        (
-            "https://eth-mainnet.g.alchemy.com/v2/%s"
-            % "WLcYLj9I1w7wEOgKmzidN1z62sbFILUz"
-        ),
+        f"https://eth-mainnet.g.alchemy.com/v2/{ALCHEMY_API_KEY}",
         request_kwargs={"headers": {"Accept-Encoding": "gzip"}},
     ),
     modules={"eth": (AsyncEth,)},
@@ -110,13 +113,12 @@ async def _underlying_coin_address(address):
     fns = ["upgradeToAndCall", "underlying", "token"]
     n_fns = len(fns) - 1
 
-    for i in range(len(fns)):
-        fn = fns[i]
+    for i, fn in enumerate(fns):
         if fn in dir(c.functions):
             break
 
         if i == n_fns:
-            raise ValueError(("Could not find underlying token for %s" % address))
+            raise ValueError(f"Could not find underlying token for {address}")
 
     # Handle Aave proxy
     if fn == "upgradeToAndCall":
