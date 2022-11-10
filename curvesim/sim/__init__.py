@@ -153,7 +153,7 @@ def _parse_arguments(**kwargs):
             if isinstance(val, int):
                 fixed_params.update({key: val})
 
-            elif all([isinstance(v, int) for v in val]):
+            elif all(isinstance(v, int) for v in val):
                 variable_params.update({key: val})
 
             else:
@@ -164,7 +164,7 @@ def _parse_arguments(**kwargs):
                 fixed_params.setdefault("basepool", {})
                 fixed_params["basepool"].update({key[:-5]: val})
 
-            elif all([isinstance(v, int) for v in val]):
+            elif all(isinstance(v, int) for v in val):
                 variable_params.setdefault("basepool", {})
                 variable_params["basepool"].update({key[:-5]: val})
 
