@@ -69,14 +69,14 @@ def plotsims(
 
     # Legend
     handles = []
-    for i in range(len(colors)):
+    for i, color in enumerate(colors):
         handles.append(
             Line2D(
                 [0],
                 [0],
                 marker="o",
                 color="w",
-                markerfacecolor=colors[i],
+                markerfacecolor=color,
                 markersize=10,
             )
         )
@@ -91,30 +91,30 @@ def plotsims(
     fig, axs = plt.subplots(3, 2, constrained_layout=True, figsize=(8, 5))
 
     # Pool value
-    for i in range(len(colors)):
-        axs[0, 0].plot(pool_value.iloc[i], color=colors[i])
+    for i, color in enumerate(colors):
+        axs[0, 0].plot(pool_value.iloc[i], color=color)
 
     axs[0, 0].set_ylabel("Pool Value")
     plt.setp(axs[0, 0].xaxis.get_majorticklabels(), rotation=40, ha="right")
     axs[0, 0].yaxis.get_major_formatter().set_useOffset(False)
 
     # Balance
-    for i in range(len(colors)):
-        axs[0, 1].plot(bal.iloc[i], color=colors[i])
+    for i, color in enumerate(colors):
+        axs[0, 1].plot(bal.iloc[i], color=color)
 
     axs[0, 1].set_ylabel("Pool Balance")
     plt.setp(axs[0, 1].xaxis.get_majorticklabels(), rotation=40, ha="right")
 
     # Volume
-    for i in range(len(colors)):
-        axs[1, 0].plot(volume.T.resample("1D").sum().T.iloc[i], color=colors[i])
+    for i, color in enumerate(colors):
+        axs[1, 0].plot(volume.T.resample("1D").sum().T.iloc[i], color=color)
 
     axs[1, 0].set_ylabel("Daily Volume")
     plt.setp(axs[1, 0].xaxis.get_majorticklabels(), rotation=40, ha="right")
 
     # Depth
-    for i in range(len(colors)):
-        axs[1, 1].plot(depth.iloc[i], color=colors[i])
+    for i, color in enumerate(colors):
+        axs[1, 1].plot(depth.iloc[i], color=color)
 
     axs[1, 1].set_ylabel("Liquidity Density")
     plt.setp(axs[1, 1].xaxis.get_majorticklabels(), rotation=40, ha="right")
