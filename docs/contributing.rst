@@ -9,60 +9,70 @@ This document lays out guidelines and advice for contributing to this project.
 Code Contributions
 ------------------
 
-Steps for Submitting Code
-~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Submission checklist
+~~~~~~~~~~~~~~~~~~~~
 
 When contributing code, you'll want to follow this checklist:
 
-1. Fork the repository on GitHub.
-2. Create a new branch, naming it appropriately.
-2. Run the tests to confirm they all pass on your system. If they don't, you'll
-   need to investigate why they fail. If you're unable to diagnose this
-   yourself, raise it as a bug report by following the guidelines in this
-   document: :ref:`bug-reports`.
-3. Write tests that demonstrate your bug or feature. Ensure that they fail.
-4. Make your change.
-5. Run the entire test suite again, confirming that all tests pass *including
-   the ones you just added*.
-6. Ensure the formatting and lint checks pass.
-6. Open a Pull Request (PR) to the main repository's ``main`` branch.
-   Make sure to check the box "Allow edits from maintainers".
+    1. Fork the repository on GitHub.
+
+    2. Create a new branch, naming it appropriately.
+
+    3. Run the tests to confirm they all pass on your system. If they don't, you'll
+       need to investigate why they fail. If you're unable to diagnose this
+       yourself, raise it as a bug report by following the guidelines in this
+       document: :ref:`bug-reports`.
+
+    4. Write tests that demonstrate your bug or feature. Ensure that they fail.
+
+    5. Make your change.
+
+    6. Run the entire test suite again, confirming that all tests pass *including
+       the ones you just added*.
+
+    7. Ensure the formatting and lint checks pass.
+
+    8. Open a Pull Request (PR) to the main repository's ``main`` branch.
+       Make sure to check the box "Allow edits from maintainers".
+
+
+Create a Virtual Environment
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+First create a virtual env and install all the dev dependencies (``requirements.txt``).
+The following steps all assume you are working out of a virtual env with all
+dependencies installed.
 
 
 Running the Tests
 ~~~~~~~~~~~~~~~~~
 
-First create a virtual env and install all the dev dependencies (`requirements.txt`).
+Unit tests::
 
-Unit tests:
+    $ pytest
 
-```console
-$ pytest
-```
+End-to-end tests::
 
-End-to-end tests:
+    $ python -m test.ci
 
-```console
-$ python -m test.ci
-```
 
 Lint your code
 ~~~~~~~~~~~~~~
 
 The repo follows standard Python style guidelines such as PEP8.  Consistent formatting
-is enforced by running `black` and more problematic code smells are detected via
-`flake8` and `pylint`.  For convenience, you can run all these using `make`:
+is enforced by running ``black`` and more problematic code smells are detected via
+``flake8`` and ``pylint``.  For convenience, you can run all these using ``make`` 
+(they should have been installed as part of your virtual env)::
 
-```console
-$ make black
-$ make lint
-```
+    $ make black
+    $ make lint
 
 The first command will format all python files in the repo.  Ensure you commit these
 changes since continuous integration (CI) will fail if it detects non-compliance with
-`black`.  
+``black``.  
 
-The second command will run `flake8` and `pylilnt` using the repo's configurations for
+The second command will run ``flake8`` and ``pylint`` using the repo's configurations for
 those linters.  Note that we have made very few changes to the default settings.
 Again, ensure this check passes because CI will fail otherwise.
 
@@ -72,22 +82,6 @@ Code Review
 
 Every contribution will be reviewed by one of the maintainers.  Feedback may require
 you to make changes before the contribution is merged into the repo.
-
-
-Code Style
-~~~~~~~~~~
-
-Several tools are used to maintain a consistent code style: 
-
-- `black`
-- `flake8`
-- `pylint`
-
-You should install these (via `pip`) and use them on your code changes
-before opening a PR.  They will be used during the continuous integration (CI)
-process that is run when a PR is opened and any errors will cause the CI
-to fail.
-
 
 
 Documentation Contributions
