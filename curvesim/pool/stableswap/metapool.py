@@ -160,7 +160,7 @@ class CurveMetaPool(Pool):
         Dprev = 0
         S = sum(xp)
         D = S
-        Ann = self.A * self.n
+        Ann = A * self.n
         D = mpz(D)
         Ann = mpz(Ann)
         while abs(D - Dprev) > 1:

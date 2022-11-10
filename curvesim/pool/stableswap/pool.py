@@ -148,7 +148,7 @@ class CurvePool(Pool):
         S = sum(xp)
         D = S
         n = self.n
-        Ann = self.A * n
+        Ann = A * n
         D = mpz(D)
         Ann = mpz(Ann)
         while abs(D - Dprev) > 1:
