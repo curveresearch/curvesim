@@ -31,7 +31,7 @@ def run_pipeline(param_sampler, price_sampler, strategy, ncpu=4):
 
     """
     if ncpu > 1:
-        price_sampler_data = [d for d in price_sampler]
+        price_sampler_data = list(price_sampler)
         args = [(pool, params, price_sampler_data) for pool, params in param_sampler]
 
         with cpu_pool(ncpu) as clust:
@@ -54,6 +54,18 @@ class SimInterface:
 
     This component is likely to change.
     """
+
+    def __init__(self):
+        self.pool = None
+        self.coin_indices = None
+
+    @staticmethod
+    def _get_pool_state(pool):  # pylint: disable=method-hidden
+        raise NotImplementedError
+
+    @staticmethod
+    def _init_coin_indices(metadata):  # pylint: disable=method-hidden
+        raise NotImplementedError
 
     def price(self, coin_in, coin_out, use_fee=True):
         raise NotImplementedError
