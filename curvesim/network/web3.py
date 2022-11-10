@@ -2,20 +2,15 @@
 Network connector for on-chain data
 """
 
-import os
 from asyncio import gather, sleep
 
-from dotenv import load_dotenv
 from web3 import AsyncHTTPProvider, Web3
 from web3.eth import AsyncEth
 
+from curvesim.utils import get_env_var
+
 from .http import HTTP
 from .utils import sync
-
-load_dotenv()
-
-ETHERSCAN_API_KEY = os.environ.get("ETHERSCAN_API_KEY")
-ALCHEMY_API_KEY = os.environ.get("ALCHEMY_API_KEY")
 
 ETHERSCAN_URL = "https://api.etherscan.io/api"
 
@@ -35,7 +30,8 @@ async def explorer(params):
         Query result
 
     """
-    params.update({"apikey": ETHERSCAN_API_KEY})
+    etherscan_api_key = get_env_var("ETHERSCAN_API_KEY")
+    params.update({"apikey": etherscan_api_key})
 
     t_wait = 0.2
     while True:
@@ -76,15 +72,22 @@ async def ABI(address):
     return abi
 
 
-# Web3.py
-W3 = Web3(
-    AsyncHTTPProvider(
-        f"https://eth-mainnet.g.alchemy.com/v2/{ALCHEMY_API_KEY}",
-        request_kwargs={"headers": {"Accept-Encoding": "gzip"}},
-    ),
-    modules={"eth": (AsyncEth,)},
-    middlewares=[],
-)
+_web3 = None
+
+
+def _load_web3():
+    alchemy_api_key = get_env_var("ALCHEMY_API_KEY")
+    global _web3  # pylint: disable=global-statement
+    if not _web3:
+        _web3 = Web3(
+            AsyncHTTPProvider(
+                f"https://eth-mainnet.g.alchemy.com/v2/{alchemy_api_key}",
+                request_kwargs={"headers": {"Accept-Encoding": "gzip"}},
+            ),
+            modules={"eth": (AsyncEth,)},
+            middlewares=[],
+        )
+    return _web3
 
 
 async def contract(address, abi=None):
@@ -102,8 +105,8 @@ async def contract(address, abi=None):
 
     """
     abi = abi or await ABI(address)
-
-    c = W3.eth.contract(address=address, abi=abi)
+    w3 = _load_web3()
+    c = w3.eth.contract(address=address, abi=abi)
     return c
 
 

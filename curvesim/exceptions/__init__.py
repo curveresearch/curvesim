@@ -8,3 +8,7 @@ class SubgraphError(CurvesimException):
 
 class SubgraphResultError(SubgraphError):
     """Raised when subgraph results aren't as expected"""
+
+
+class MissingEnvVarError(CurvesimException, RuntimeError):
+    """Environment variable is missing."""
