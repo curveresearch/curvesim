@@ -665,7 +665,7 @@ class CurveMetaPool(Pool):
         return self.dydx(i, j, use_fee=True)
 
     def dydx(self, i, j, use_fee=False):
-        """
+        r"""
         Returns the spot price of i-th coin quoted in terms of j-th coin,
         i.e. the ratio of output coin amount to input coin amount for
         an "infinitesimally" small trade.
