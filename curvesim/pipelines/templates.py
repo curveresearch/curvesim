@@ -55,6 +55,12 @@ class SimInterface:
     This component is likely to change.
     """
 
+    def price(self, coin_in, coin_out, use_fee=True):
+        raise NotImplementedError
+
+    def test_trade(self, coin_in, coin_out, dx, state=None):
+        raise NotImplementedError
+
     def _set_pool_interface(self, pool, pool_function_dict):
         """
         Binds the pool and functions used in simulation to the interface.
