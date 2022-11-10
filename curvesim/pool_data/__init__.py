@@ -90,16 +90,17 @@ class PoolData:
             except AttributeError:
                 print(f"Cached {attr[1:]} already cleared")
 
-    def pool(self, balanced=(True, True)):
+    def pool(self, balanced=True, balanced_base=True):
         """
         Constructs a pool object based on the stored data.
 
         Parameters
         ----------
-        balanced : tuple, default=(True,True)
+        balanced : bool, default=True
             If True, balances the pool value across assets.
 
-            The second element refers to the basepool, if present.
+        balanced_base : bool, default=True
+            If True and pool is metapool, balances the basepool value across assets.
 
         Returns
         -------
@@ -113,11 +114,11 @@ class PoolData:
                 kwargs.update({"D": reserves})
             return kwargs
 
-        kwargs = bal(self.dict["init_kwargs"].copy(), balanced[0])
+        kwargs = bal(self.dict["init_kwargs"].copy(), balanced)
 
         if self.dict["basepool"]:
             bp_kwargs = self.dict["basepool"]["init_kwargs"].copy()
-            bp_kwargs = bal(bp_kwargs, balanced[1])
+            bp_kwargs = bal(bp_kwargs, balanced_base)
             kwargs.update({"basepool": CurvePool(**bp_kwargs)})
 
             r = self.redemption_prices()
