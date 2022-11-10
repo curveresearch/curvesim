@@ -1,3 +1,5 @@
+"""Simple health check for the package."""
+# pylint: disable=redefined-outer-name
 import time
 
 from .sim import autosim

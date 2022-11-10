@@ -1,6 +1,7 @@
 """
 Network connector for LLama Airforce REST API.
 """
+# pylint: disable=redefined-outer-name
 from asyncio import gather
 
 from eth_utils import to_checksum_address

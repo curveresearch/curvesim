@@ -29,7 +29,7 @@ TEST_PARAMS = {"A": [100, 1000], "fee": [3000000, 4000000]}
 
 def volume_limited_arbitrage(
     pool_data,
-    variable_params=DEFAULT_PARAMS,
+    variable_params=None,
     fixed_params=None,
     test=False,
     days=60,
@@ -106,12 +106,13 @@ def volume_limited_arbitrage(
     dict
 
     """
+    if variable_params is None:
+        variable_params = DEFAULT_PARAMS
+    if test:
+        variable_params = TEST_PARAMS
 
     if ncpu is None:
         ncpu = os.cpu_count() if os.cpu_count() is not None else 1
-
-    if test:
-        variable_params = TEST_PARAMS
 
     pool = pool_data.pool()
     coins = pool_data.coins()
@@ -183,8 +184,8 @@ def strategy(pool, params, price_sampler, vol_mult):
     for prices, volumes, timestamp in price_sampler:
         limits = volumes * vol_mult
         pool_interface.next_timestamp(timestamp)
-        trades, errors, res = trader.compute_trades(prices, limits)
-        trades_done, volume = trader.do_trades(trades)
+        trades, errors, _ = trader.compute_trades(prices, limits)
+        _, volume = trader.do_trades(trades)
 
         metrics.update(trader.pool_interface, errors, volume)
 
@@ -264,7 +265,7 @@ class Arbitrageur:
         trades_done = []
         for trade in trades:
             i, j, dx = trade
-            dy, dy_fee = self.pool_interface.trade(i, j, dx)
+            dy, _ = self.pool_interface.trade(i, j, dx)
             trades_done.append(trade + (dy,))
 
             if max_coin:
@@ -351,13 +352,15 @@ class Metrics:
 
     @staticmethod
     def compute_balance(xp):
+        """Compute imbalance factor."""
         n = len(xp)
         xp = array(xp)
         bal = 1 - sum(abs(xp / sum(xp) - 1 / n)) / (2 * (n - 1) / n)
         return bal
 
     @staticmethod
-    def compute_price_depth(pool_interface, size=0.001):
+    def compute_price_depth(pool_interface):
+        """Compute price depth."""
         combos = pool_interface.base_index_combos
 
         LD = []

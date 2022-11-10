@@ -1,3 +1,4 @@
+"""Package to simulate Curve pool."""
 __all__ = ["autosim", "__version__", "__version_info__"]
 
 from .sim import autosim
