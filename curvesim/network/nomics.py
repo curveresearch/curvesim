@@ -353,13 +353,13 @@ def pool_prices(  # noqa: C901
 
 
 def local_pool_prices(  # noqa: C901
-    coins=[],
+    coins=None,
     quote=None,
     quotediv=False,
     t_start=None,
     t_end=None,
     resample=None,
-    pairs=[],
+    pairs=None,
     data_dir="data",
 ):
     """
@@ -400,6 +400,8 @@ def local_pool_prices(  # noqa: C901
     pzero : pandas.Series
         Proportion of timestamps with zero volume.
     """
+    coins = coins or []
+    pairs = pairs or []
 
     if pairs and coins:
         raise ValueError("Use only 'coins' or 'pairs', not both.")
