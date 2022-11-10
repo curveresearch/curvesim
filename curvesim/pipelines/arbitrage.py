@@ -421,6 +421,7 @@ def format_results(results, parameters, timestamps):
     pool_value = DataFrame(pool_value, index=p_list, columns=timestamps)
     depth = DataFrame(price_depth, index=p_list, columns=timestamps)
     volume = DataFrame(volume, index=p_list, columns=timestamps)
+    # pylint: disable-next=no-member
     log_returns = DataFrame(log(pool_value).diff(axis=1).iloc[:, 1:])
 
     try:
