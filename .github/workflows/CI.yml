@@ -26,15 +26,14 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Lint
-        run: |
-          flake8 --version
-          flake8 .
-
       - name: Format
         run: |
           black --version
           black . --check
+
+      - name: Lint
+        run: |
+          make lint
 
       - name: Unit tests
         run: |
