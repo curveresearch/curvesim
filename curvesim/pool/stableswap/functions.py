@@ -350,8 +350,10 @@ def dydx(i, j, xp, A, fee=None, fee_mul=None, **kwargs):
 
 
 def dydx_metapool_rai(*args, **kwargs):
-    i, j = args[0:2]
-    rates, rates_base = args[4:6]
+    i = args[0]
+    j = args[1]
+    rates = args[4]
+    rates_base = args[5]
     max_coin = args[8]
 
     dydx = dydx_metapool(*args, **kwargs)
