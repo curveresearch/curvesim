@@ -219,13 +219,13 @@ def update(coins, quote, t_start, t_end, pairs=False, data_dir="data"):  # noqa:
 
 
 def pool_prices(  # noqa: C901
-    coins=[],
+    coins=None,
     quote=None,
     quotediv=False,
     t_start=None,
     t_end=None,
     resample=None,
-    pairs=[],
+    pairs=None,
     data_dir="data",
 ):
     """
@@ -267,6 +267,9 @@ def pool_prices(  # noqa: C901
         Proportion of timestamps with zero volume.
     """
     loop = asyncio.get_event_loop()
+
+    coins = coins or []
+    pairs = pairs or []
 
     if pairs and coins:
         raise ValueError("Use only 'coins' or 'pairs', not both.")
