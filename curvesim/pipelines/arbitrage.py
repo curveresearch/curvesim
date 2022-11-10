@@ -85,7 +85,8 @@ def volume_limited_arbitrage(
         relative path to saved price data folder
 
     vol_mult : float or numpy.ndarray, default computed from data
-        Value(s) multiplied by market volume to specify volume limits (overrides vol_mode).
+        Value(s) multiplied by market volume to specify volume limits
+        (overrides vol_mode).
 
         Can be a scalar or vector with values for each pairwise coin combination.
 
@@ -202,7 +203,7 @@ class Arbitrageur:
         Parameters
         ----------
         pool_interface :
-            Simulation interface to :class:`.Pool`, :class:`.MetaPool`, or :class:`.RaiPool`.
+            Simulation interface to a subclass of :class:`.Pool`.
 
         """
         self.pool_interface = pool_interface
@@ -323,11 +324,11 @@ class Metrics:
         Parameters
         ----------
         pool_interface :
-            Simulation interface to :class:`.Pool`, :class:`.MetaPool`, or :class:`.RaiPool`.
+            Simulation interface to a subclass of :class:`.Pool`.
 
         errors : numpy.ndarray
-            Post-trade price error between pool price and market price for each token pair
-            (returned from :meth:`Arbitrageur.compute_trades`).
+            Post-trade price error between pool price and market price for each token
+            pair (returned from :meth:`Arbitrageur.compute_trades`).
 
         trade_volume: int
             Total volume of trades in 18 decimal precision
@@ -450,17 +451,20 @@ def format_results(results, parameters, timestamps):
 # Optimizers
 def opt_arb(get_bounds, error_function, i, j, p):
     """
-    Estimates a single trade to optimally arbitrage coin[i] for coin[j] given external
-    price p (base: i, quote: j). p must be less than dy[j]/dx[i], including fees
+    Estimates a single trade to optimally arbitrage coin[i] for coin[j] given
+    external price p (base: i, quote: j).
+
+    p must be less than dy[j]/dx[i], including fees.
 
     Parameters
     ----------
     get_bounds : callable
-        Function that returns bounds on trade size hypotheses for any token pairs (i,j).
+        Function that returns bounds on trade size hypotheses for any
+        token pairs (i,j).
 
     error_function: callable
-        Error function that returns the difference between pool price and market price (p)
-        after some trade (coin_i, coin_j, trade_size)
+        Error function that returns the difference between pool price and
+        market price (p) after some trade (coin_i, coin_j, trade_size)
 
     i : int
         Index for the input coin (base)
@@ -499,7 +503,7 @@ def opt_arb_multi(pool_interface, prices, limits):  # noqa: C901
     Parameters
     ----------
     pool_interface :
-        Simulation interface to :class:`Pool`, :class:`MetaPool`, or :class:`RaiPool`.
+        Simulation interface to a subclass of :class:`Pool`.
 
     prices : pandas.Series
         Current market prices from the price_sampler
@@ -581,8 +585,8 @@ def opt_arb_multi(pool_interface, prices, limits):  # noqa: C901
 
 def get_trade_args(get_pool_price, get_bounds, error_function, prices, limits, combos):
     """
-    Returns initial guesses (x0), bounds (lo, hi), ordered coin-pairs, and price targets
-    used to estimate the optimal set of arbitrage trades.
+    Returns initial guesses (x0), bounds (lo, hi), ordered coin-pairs, and
+    price targets used to estimate the optimal set of arbitrage trades.
 
     Parameters
     ----------
@@ -590,11 +594,12 @@ def get_trade_args(get_pool_price, get_bounds, error_function, prices, limits, c
         Function that returns the pool price for any token pair (i,j)
 
     get_bounds : callable
-        Function that returns bounds on trade size hypotheses for any token pairs (i,j).
+        Function that returns bounds on trade size hypotheses for
+        any token pairs (i,j).
 
     error_function: callable
-        Error function that returns the difference between pool price and market price (p)
-        after some trade (coin_i, coin_j, trade_size)
+        Error function that returns the difference between pool price and
+        market price (p) after some trade (coin_i, coin_j, trade_size)
 
     prices : iterable
         External market prices for each coin-pair

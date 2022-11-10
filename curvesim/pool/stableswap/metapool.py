@@ -138,8 +138,8 @@ class CurveMetaPool(Pool):
              d_{j+1} = (A n^n \sum{x_i} + n d_j^{n+1} / (n^n \prod{x_i}))
                      / (A n^n + (n+1) d_j^n/(n^n \prod{x_i}) - 1)
 
-        Replace :math:`A n^n` by `An` and :math:`d_j^{n+1}/(n^n \prod{x_i})` by :math:`D_p` to
-        arrive at the iterative formula in the code.
+        Replace :math:`A n^n` by `An` and :math:`d_j^{n+1}/(n^n \prod{x_i})` by
+        :math:`D_p` to arrive at the iterative formula in the code.
 
         Parameters
         ----------
@@ -215,8 +215,9 @@ class CurveMetaPool(Pool):
             x_1^2 + x_1 (\operatorname{sum'} - (A n^n - 1) D / (A n^n))
                = D^{n+1}/(n^{2 n} \operatorname{prod'} A)
 
-        where :math:`\operatorname{sum'}` is the sum of all :math:`x_i` for :math:`i \\neq j` and
-        :math:`\operatorname{prod'}` is the product of all :math:`x_i` for :math:`i \\neq j`.
+        where :math:`\operatorname{sum'}` is the sum of all :math:`x_i` for
+        :math:`i \\neq j` and :math:`\operatorname{prod'}` is the product
+        of all :math:`x_i` for :math:`i \\neq j`.
 
         This is a quadratic equation in :math:`x_j`.
 
@@ -240,7 +241,8 @@ class CurveMetaPool(Pool):
         Returns
         -------
         int
-            The balance of the j-th coin, in units of D, for the other coin balances given.
+            The balance of the j-th coin, in units of D, for the other
+            coin balances given.
 
         Note
         ----
@@ -779,7 +781,8 @@ class CurveMetaPool(Pool):
     def _dydx(self, i, j, xp, use_fee=False):
         """
         Treats indices as applying to the "top-level" pool if a metapool.
-        Basically this is the "regular" pricing calc with no special metapool handling.
+        Basically this is the "regular" pricing calc with no special metapool
+        handling.
 
         Returns the spot price of i-th coin quoted in terms of j-th coin,
         i.e. the ratio of output coin amount to input coin amount for
