@@ -7,10 +7,13 @@ from curvesim.exceptions import MissingEnvVarError
 load_dotenv()
 
 
-_DEFAULT = object()
+# Dummy value for optional default arg
+# so that any value, including `None`,
+# can be set as a default.
+_NOT_VALUE = object()
 
 
-def get_env_var(var_name, default=_DEFAULT):
+def get_env_var(var_name, default=_NOT_VALUE):
     """
     Retrieve environment variable.
 
@@ -33,7 +36,7 @@ def get_env_var(var_name, default=_DEFAULT):
     """
     var_value = os.getenv(var_name)
     if var_value is None:
-        if default is _DEFAULT:
+        if default is _NOT_VALUE:
             raise MissingEnvVarError(f"Could not get env var: '{var_name}'")
         else:
             return default
