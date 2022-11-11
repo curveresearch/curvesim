@@ -88,3 +88,7 @@ Fixed
 - Fixed bug in vol_mode=2 for non-meta-pools
 
 - Various updates to pool calculations to align the results with their on-chain equivalents.
+
+- Codebase is much more PEP8 compliant with consistent style and formatting due to
+  the enforced usage of tools such as `black`, `flake8`, and `pylint`.  This is particularly
+  important as we onboard more contributors to the repo.
