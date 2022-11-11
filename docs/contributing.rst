@@ -24,7 +24,8 @@ When contributing code, you'll want to follow this checklist:
        yourself, raise it as a bug report by following the guidelines in this
        document: :ref:`bug-reports`.
 
-    4. Write tests that demonstrate your bug or feature. Ensure that they fail.
+    4. If you're reporting a bug, write tests that demonstrate the bug and ensure 
+       that they fail.
 
     5. Make your change.
 
