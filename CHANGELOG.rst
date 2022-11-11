@@ -20,7 +20,9 @@ Added
 - `python3 -m curvesim` will do a demo sim run so users can check everything is setup properly.
 
 - Support use of environment variable (and loading from `.env` file) for
-  `NOMICS_API_KEY`.
+  `NOMICS_API_KEY`, `ALCHEMY_API_KEY`, and `ETHERSCAN_API_KEY`.  The latter two are optional
+  in that the package provides default keys, but it is recommended to use your own if you need
+  the functionality (currently only for pulling coin data for lending pools).
   
 - Pipeline and iterators submodules added to support custom simulation pipelines.  This will allow
   more complex arbitrage scenarios and let users create bespoke simulations.
