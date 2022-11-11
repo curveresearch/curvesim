@@ -27,13 +27,11 @@ async def get_data(url, params, t_start, t_end, exp=1):
 
     # Get data
     tasks = []
-    ps = []
-    for i in range(len(t_starts)):
+    for start, end in zip(t_starts, t_ends):
         p = params.copy()
-        p["start"] = t_starts[i].strftime(FORMAT)
-        p["end"] = t_ends[i].strftime(FORMAT)
-        ps.append(p)
-        tasks.append(HTTP.get(url, params=ps[i]))
+        p["start"] = start.strftime(FORMAT)
+        p["end"] = end.strftime(FORMAT)
+        tasks.append(HTTP.get(url, params=p))
 
     data = await asyncio.gather(*tasks)
     data = format_price_data(data, t_start, t_end, exp=exp)
@@ -219,13 +217,13 @@ def update(coins, quote, t_start, t_end, pairs=False, data_dir="data"):  # noqa:
 
 
 def pool_prices(  # noqa: C901
-    coins=[],
+    coins=None,
     quote=None,
     quotediv=False,
     t_start=None,
     t_end=None,
     resample=None,
-    pairs=[],
+    pairs=None,
     data_dir="data",
 ):
     """
@@ -267,6 +265,9 @@ def pool_prices(  # noqa: C901
         Proportion of timestamps with zero volume.
     """
     loop = asyncio.get_event_loop()
+
+    coins = coins or []
+    pairs = pairs or []
 
     if pairs and coins:
         raise ValueError("Use only 'coins' or 'pairs', not both.")
@@ -350,13 +351,13 @@ def pool_prices(  # noqa: C901
 
 
 def local_pool_prices(  # noqa: C901
-    coins=[],
+    coins=None,
     quote=None,
     quotediv=False,
     t_start=None,
     t_end=None,
     resample=None,
-    pairs=[],
+    pairs=None,
     data_dir="data",
 ):
     """
@@ -397,6 +398,8 @@ def local_pool_prices(  # noqa: C901
     pzero : pandas.Series
         Proportion of timestamps with zero volume.
     """
+    coins = coins or []
+    pairs = pairs or []
 
     if pairs and coins:
         raise ValueError("Use only 'coins' or 'pairs', not both.")

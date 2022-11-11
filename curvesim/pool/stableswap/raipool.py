@@ -52,8 +52,8 @@ class CurveRaiPool(CurveMetaPool):
         r = self.redemption_prices.price.asof(timestamp)
         self.p[0] = int(r)
 
-    def dydx(self, i, j, dx=10**12, use_fee=False):
-        _dydx = super().dydx(i, j, dx, use_fee=use_fee)
+    def dydx(self, i, j, use_fee=False):
+        _dydx = super().dydx(i, j, use_fee=use_fee)
 
         if i >= self.max_coin and j < self.max_coin:
             base_i = i - self.max_coin

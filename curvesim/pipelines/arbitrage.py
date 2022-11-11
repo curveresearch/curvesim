@@ -29,7 +29,7 @@ TEST_PARAMS = {"A": [100, 1000], "fee": [3000000, 4000000]}
 
 def volume_limited_arbitrage(
     pool_data,
-    variable_params=DEFAULT_PARAMS,
+    variable_params=None,
     fixed_params=None,
     test=False,
     days=60,
@@ -85,7 +85,8 @@ def volume_limited_arbitrage(
         relative path to saved price data folder
 
     vol_mult : float or numpy.ndarray, default computed from data
-        Value(s) multiplied by market volume to specify volume limits (overrides vol_mode).
+        Value(s) multiplied by market volume to specify volume limits
+        (overrides vol_mode).
 
         Can be a scalar or vector with values for each pairwise coin combination.
 
@@ -106,12 +107,13 @@ def volume_limited_arbitrage(
     dict
 
     """
+    if variable_params is None:
+        variable_params = DEFAULT_PARAMS
+    if test:
+        variable_params = TEST_PARAMS
 
     if ncpu is None:
         ncpu = os.cpu_count() if os.cpu_count() is not None else 1
-
-    if test:
-        variable_params = TEST_PARAMS
 
     pool = pool_data.pool()
     coins = pool_data.coins()
@@ -183,8 +185,8 @@ def strategy(pool, params, price_sampler, vol_mult):
     for prices, volumes, timestamp in price_sampler:
         limits = volumes * vol_mult
         pool_interface.next_timestamp(timestamp)
-        trades, errors, res = trader.compute_trades(prices, limits)
-        trades_done, volume = trader.do_trades(trades)
+        trades, errors, _ = trader.compute_trades(prices, limits)
+        _, volume = trader.do_trades(trades)
 
         metrics.update(trader.pool_interface, errors, volume)
 
@@ -201,7 +203,7 @@ class Arbitrageur:
         Parameters
         ----------
         pool_interface :
-            Simulation interface to :class:`.Pool`, :class:`.MetaPool`, or :class:`.RaiPool`.
+            Simulation interface to a subclass of :class:`.Pool`.
 
         """
         self.pool_interface = pool_interface
@@ -264,7 +266,7 @@ class Arbitrageur:
         trades_done = []
         for trade in trades:
             i, j, dx = trade
-            dy, dy_fee = self.pool_interface.trade(i, j, dx)
+            dy, _ = self.pool_interface.trade(i, j, dx)
             trades_done.append(trade + (dy,))
 
             if max_coin:
@@ -322,11 +324,11 @@ class Metrics:
         Parameters
         ----------
         pool_interface :
-            Simulation interface to :class:`.Pool`, :class:`.MetaPool`, or :class:`.RaiPool`.
+            Simulation interface to a subclass of :class:`.Pool`.
 
         errors : numpy.ndarray
-            Post-trade price error between pool price and market price for each token pair
-            (returned from :meth:`Arbitrageur.compute_trades`).
+            Post-trade price error between pool price and market price for each token
+            pair (returned from :meth:`Arbitrageur.compute_trades`).
 
         trade_volume: int
             Total volume of trades in 18 decimal precision
@@ -351,13 +353,15 @@ class Metrics:
 
     @staticmethod
     def compute_balance(xp):
+        """Compute imbalance factor."""
         n = len(xp)
         xp = array(xp)
         bal = 1 - sum(abs(xp / sum(xp) - 1 / n)) / (2 * (n - 1) / n)
         return bal
 
     @staticmethod
-    def compute_price_depth(pool_interface, size=0.001):
+    def compute_price_depth(pool_interface):
+        """Compute price depth."""
         combos = pool_interface.base_index_combos
 
         LD = []
@@ -418,6 +422,7 @@ def format_results(results, parameters, timestamps):
     pool_value = DataFrame(pool_value, index=p_list, columns=timestamps)
     depth = DataFrame(price_depth, index=p_list, columns=timestamps)
     volume = DataFrame(volume, index=p_list, columns=timestamps)
+    # pylint: disable-next=no-member
     log_returns = DataFrame(log(pool_value).diff(axis=1).iloc[:, 1:])
 
     try:
@@ -446,17 +451,20 @@ def format_results(results, parameters, timestamps):
 # Optimizers
 def opt_arb(get_bounds, error_function, i, j, p):
     """
-    Estimates a single trade to optimally arbitrage coin[i] for coin[j] given external
-    price p (base: i, quote: j). p must be less than dy[j]/dx[i], including fees
+    Estimates a single trade to optimally arbitrage coin[i] for coin[j] given
+    external price p (base: i, quote: j).
+
+    p must be less than dy[j]/dx[i], including fees.
 
     Parameters
     ----------
     get_bounds : callable
-        Function that returns bounds on trade size hypotheses for any token pairs (i,j).
+        Function that returns bounds on trade size hypotheses for any
+        token pairs (i,j).
 
     error_function: callable
-        Error function that returns the difference between pool price and market price (p)
-        after some trade (coin_i, coin_j, trade_size)
+        Error function that returns the difference between pool price and
+        market price (p) after some trade (coin_i, coin_j, trade_size)
 
     i : int
         Index for the input coin (base)
@@ -495,7 +503,7 @@ def opt_arb_multi(pool_interface, prices, limits):  # noqa: C901
     Parameters
     ----------
     pool_interface :
-        Simulation interface to :class:`Pool`, :class:`MetaPool`, or :class:`RaiPool`.
+        Simulation interface to a subclass of :class:`Pool`.
 
     prices : pandas.Series
         Current market prices from the price_sampler
@@ -542,12 +550,11 @@ def opt_arb_multi(pool_interface, prices, limits):  # noqa: C901
         # Format trades into tuples, ignore if dx=0
         dxs = res.x
 
-        for k in range(len(dxs)):
-            if isnan(dxs[k]):
-                dx = 0
-            else:
-                dx = int(dxs[k])
+        for k, dx in enumerate(dxs):
+            if isnan(dx):
+                continue
 
+            dx = int(dx)
             if dx > 0:
                 i = coins[k][0]
                 j = coins[k][1]
@@ -578,8 +585,8 @@ def opt_arb_multi(pool_interface, prices, limits):  # noqa: C901
 
 def get_trade_args(get_pool_price, get_bounds, error_function, prices, limits, combos):
     """
-    Returns initial guesses (x0), bounds (lo, hi), ordered coin-pairs, and price targets
-    used to estimate the optimal set of arbitrage trades.
+    Returns initial guesses (x0), bounds (lo, hi), ordered coin-pairs, and
+    price targets used to estimate the optimal set of arbitrage trades.
 
     Parameters
     ----------
@@ -587,11 +594,12 @@ def get_trade_args(get_pool_price, get_bounds, error_function, prices, limits, c
         Function that returns the pool price for any token pair (i,j)
 
     get_bounds : callable
-        Function that returns bounds on trade size hypotheses for any token pairs (i,j).
+        Function that returns bounds on trade size hypotheses for
+        any token pairs (i,j).
 
     error_function: callable
-        Error function that returns the difference between pool price and market price (p)
-        after some trade (coin_i, coin_j, trade_size)
+        Error function that returns the difference between pool price and
+        market price (p) after some trade (coin_i, coin_j, trade_size)
 
     prices : iterable
         External market prices for each coin-pair
@@ -651,9 +659,7 @@ def get_trade_args(get_pool_price, get_bounds, error_function, prices, limits, c
 
         elif get_pool_price(j, i) - 1 / prices[k] > 0:
             try:
-                trade, error, res = opt_arb(
-                    get_bounds, error_function, j, i, 1 / prices[k]
-                )
+                trade, _, _ = opt_arb(get_bounds, error_function, j, i, 1 / prices[k])
                 x0.append(min(trade[2], int(limits[k] * 10**18)))
             except ValueError:
                 print(

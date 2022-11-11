@@ -14,6 +14,8 @@ from .raipool import CurveRaiPool
 
 class StableSwapSimInterface(SimInterface):
     def __init__(self, pool):
+        super().__init__()
+
         pool_function_dict = stableswap_interface_fns[type(pool)]
         self._set_pool_interface(pool, pool_function_dict)
 

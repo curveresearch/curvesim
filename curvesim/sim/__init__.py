@@ -12,14 +12,16 @@ from curvesim.pool_data import get as get_pool_data
 
 def autosim(pool=None, chain="mainnet", pool_data=None, **kwargs):
     """
-    The autosim() function simulates existing Curve pools with a range of parameters
-    (e.g., the amplitude parameter, A, and/or the exchange fee). The function fetches pool
-    properties (e.g., current pool size) and 2 months of price/volume data,
-    runs multiple simulations in parallel, and saves results plots to the "results" directory.
+    The autosim() function simulates existing Curve pools with a range of
+    parameters (e.g., the amplitude parameter, A, and/or the exchange fee).
 
-    Curve pools from any chain supported by the Convex Community Subgraphs can be simulated directly
-    by inputting the pool's address or symbol. For factory pools, the pool and LP token use the same
-    symbol. For earlier pools, we use the LP token symbol.
+    The function fetches pool properties (e.g., current pool size) and 2
+    months of price/volume data, runs multiple simulations in parallel, and
+    saves results plots to the "results" directory.
+
+    Curve pools from any chain supported by the Convex Community Subgraphs
+    can be simulated directly by inputting the pool's address or its LP
+    token symbol.
 
     Parameters
     ----------
@@ -30,10 +32,11 @@ def autosim(pool=None, chain="mainnet", pool_data=None, **kwargs):
             Either `pool` or `pool_data` must be provided.
 
         .. warning::
-            An LP token symbol need not be unique.  In particular, factory pools
-            are deployed permissionlessly and no checks are done to ensure unique
-            LP token symbol.  Currently the first pool retrieved from the subgraph
-            is used, which can be effectively random if token symbols clash.
+            An LP token symbol need not be unique.  In particular, factory
+            pools are deployed permissionlessly and no checks are done to
+            ensure unique LP token symbol.  Currently the first pool
+            retrieved from the subgraph is used, which can be effectively
+            random if token symbols clash.
 
     chain: str, default='mainnet'
         Identifier for blockchain or layer2.  Supported values are:
@@ -83,8 +86,8 @@ def autosim(pool=None, chain="mainnet", pool_data=None, **kwargs):
         For basepool, use **fee_mul_base**.
 
     admin_fee : int, default=0 * 10**9
-        Fees taken for the DAO.  For factory pools, it is half of the total fees,
-        as was typical for previous non-factory pools.
+        Fees taken for the DAO.  For factory pools, it is half of the total
+        fees, as was typical for previous non-factory pools.
 
         Units are fixed-point percentage of `fee`, e.g. 5 * 10**9 is
         50% of the total fees.
@@ -106,9 +109,11 @@ def autosim(pool=None, chain="mainnet", pool_data=None, **kwargs):
         Relative path to saved data folder.
 
     vol_mult : float or numpy.ndarray, default computed from data
-        Value(s) multiplied by market volume to specify volume limits (overrides vol_mode).
+        Value(s) multiplied by market volume to specify volume limits
+        (overrides vol_mode).
 
-        Can be a scalar or vector with values for each pairwise coin combination.
+        Can be a scalar or vector with values for each pairwise coin
+        combination.
 
     vol_mode : int, default=1
         Modes for limiting trade volume.
@@ -153,7 +158,7 @@ def _parse_arguments(**kwargs):
             if isinstance(val, int):
                 fixed_params.update({key: val})
 
-            elif all([isinstance(v, int) for v in val]):
+            elif all(isinstance(v, int) for v in val):
                 variable_params.update({key: val})
 
             else:
@@ -164,7 +169,7 @@ def _parse_arguments(**kwargs):
                 fixed_params.setdefault("basepool", {})
                 fixed_params["basepool"].update({key[:-5]: val})
 
-            elif all([isinstance(v, int) for v in val]):
+            elif all(isinstance(v, int) for v in val):
                 variable_params.setdefault("basepool", {})
                 variable_params["basepool"].update({key[:-5]: val})
 

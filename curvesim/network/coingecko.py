@@ -1,6 +1,7 @@
 """
 Network connector for Coingecko.
 """
+# pylint: disable=redefined-outer-name
 import asyncio
 from datetime import datetime, timedelta, timezone
 from itertools import combinations

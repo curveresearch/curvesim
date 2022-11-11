@@ -32,7 +32,7 @@ def plotsims(
     colors = plt.cm.viridis(np.linspace(0, 1, len(A_list)))
 
     # Summary stats
-    fig, axs = plt.subplots(2, 3, constrained_layout=True, figsize=(8, 5))
+    _, axs = plt.subplots(2, 3, constrained_layout=True, figsize=(8, 5))
 
     axs[0, 0].plot(ar.unstack(level=1) * 100, "k", zorder=1)
     axs[0, 0].scatter(A_list, ar * 100, c=colors, zorder=2)
@@ -69,14 +69,14 @@ def plotsims(
 
     # Legend
     handles = []
-    for i in range(len(colors)):
+    for i, color in enumerate(colors):
         handles.append(
             Line2D(
                 [0],
                 [0],
                 marker="o",
                 color="w",
-                markerfacecolor=colors[i],
+                markerfacecolor=color,
                 markersize=10,
             )
         )
@@ -88,33 +88,33 @@ def plotsims(
         plt.savefig(saveas + "_1.png")
 
     # Time-series Data
-    fig, axs = plt.subplots(3, 2, constrained_layout=True, figsize=(8, 5))
+    _, axs = plt.subplots(3, 2, constrained_layout=True, figsize=(8, 5))
 
     # Pool value
-    for i in range(len(colors)):
-        axs[0, 0].plot(pool_value.iloc[i], color=colors[i])
+    for i, color in enumerate(colors):
+        axs[0, 0].plot(pool_value.iloc[i], color=color)
 
     axs[0, 0].set_ylabel("Pool Value")
     plt.setp(axs[0, 0].xaxis.get_majorticklabels(), rotation=40, ha="right")
     axs[0, 0].yaxis.get_major_formatter().set_useOffset(False)
 
     # Balance
-    for i in range(len(colors)):
-        axs[0, 1].plot(bal.iloc[i], color=colors[i])
+    for i, color in enumerate(colors):
+        axs[0, 1].plot(bal.iloc[i], color=color)
 
     axs[0, 1].set_ylabel("Pool Balance")
     plt.setp(axs[0, 1].xaxis.get_majorticklabels(), rotation=40, ha="right")
 
     # Volume
-    for i in range(len(colors)):
-        axs[1, 0].plot(volume.T.resample("1D").sum().T.iloc[i], color=colors[i])
+    for i, color in enumerate(colors):
+        axs[1, 0].plot(volume.T.resample("1D").sum().T.iloc[i], color=color)
 
     axs[1, 0].set_ylabel("Daily Volume")
     plt.setp(axs[1, 0].xaxis.get_majorticklabels(), rotation=40, ha="right")
 
     # Depth
-    for i in range(len(colors)):
-        axs[1, 1].plot(depth.iloc[i], color=colors[i])
+    for i, color in enumerate(colors):
+        axs[1, 1].plot(depth.iloc[i], color=color)
 
     axs[1, 1].set_ylabel("Liquidity Density")
     plt.setp(axs[1, 1].xaxis.get_majorticklabels(), rotation=40, ha="right")
@@ -136,7 +136,7 @@ def plotsims(
         plt.show()
 
 
-def plotsimsfee(A_list, fee_list, ar, bal, depth, volume, err, show=True, saveas=False):
+def plotsimsfee(A_list, fee_list, ar, bal, depth, volume, show=True, saveas=False):
     """
     Plots 2D summary output of Asims when multiple fees are used
 
@@ -237,7 +237,6 @@ def saveplots(poolname, A_list, fee_list, results):
             results["bal"],
             results["depth"],
             results["volume"],
-            results["err"],
             show=False,
             saveas="results/" + poolname + "/summary",
         )

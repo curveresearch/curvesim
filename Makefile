@@ -1,5 +1,11 @@
 .DEFAULT_GOAL := help
 
+# ANSI escape codes
+BOLD := \033[1m
+RESET := \033[0m
+REVERSE := \033[7m
+RED := \033[0;31m
+
 .PHONY: help
 help:
 	@echo ""
@@ -10,6 +16,12 @@ help:
 	@echo "changelog_update       update changelog from recent entries"
 	@echo ""
 	@echo "hooks                  install Git hooks"
+	@echo ""
+	@echo "lint                   linting checks through flake8 and pylint"
+	@echo "flake8                 lint using flake8"
+	@echo "pylint                 lint using pylint"
+	@echo ""
+	@echo "release                upload new pypi release using twine"
 	@echo ""
 
 VENV_PATH := $(PWD)/env
@@ -45,3 +57,43 @@ changelog_entry:
 changelog_update:
 	@VERSION=`python -c "from curvesim import __version__; print(__version__)"`; \
 	scriv collect --version=$${VERSION}
+
+.PHONY: release
+release:
+	pip install build twine
+	python -m build
+	twine upload dist/*
+	rm -fr dist curvesim.egg-info
+
+.PHONY: lint
+lint:
+	@echo ""
+	@make flake8
+	@echo ""
+	@make pylint
+	@echo ""
+	@echo "Linting checks passed 🏆"
+
+.PHONY: black
+black:
+	@echo "$(REVERSE)Running$(RESET) $(BOLD)black$(RESET)..."
+	@black --version
+	@black .
+
+.PHONY: flake8
+flake8:
+	@echo "$(REVERSE)Running$(RESET) $(BOLD)flake8$(RESET)..."
+	@if ! flake8 --version; then \
+	    echo "$(BOLD)flake8$(RESET): $(RED)FAILED$(RESET) checks" ;\
+	    exit 1 ;\
+	fi
+	@echo "flake8 passed 🍄"
+
+.PHONY: pylint
+pylint:
+	@echo "$(REVERSE)Running$(RESET) $(BOLD)pylint$(RESET)..."
+	@echo ""
+	@./check_pylint_score.py curvesim test
+	@echo ""
+	@echo "pylint passed ⚙️"
+

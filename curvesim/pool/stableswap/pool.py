@@ -111,7 +111,7 @@ class CurvePool(Pool):
         return self.get_D(xp, A)
 
     def get_D(self, xp, A):
-        """
+        r"""
         Calculate D invariant iteratively using non-overflowing integer operations.
 
         Stableswap equation:
@@ -125,8 +125,8 @@ class CurvePool(Pool):
              d_{j+1} = (A n^n \sum{x_i} + n d_j^{n+1} / (n^n \prod{x_i}))
                      / (A n^n + (n+1) d_j^n/(n^n \prod{x_i}) - 1)
 
-        Replace :math:`A n^n` by `An` and :math:`d_j^{n+1}/(n^n \prod{x_i})` by :math:`D_p` to
-        arrive at the iterative formula in the code.
+        Replace :math:`A n^n` by `An` and :math:`d_j^{n+1}/(n^n \prod{x_i})` by
+        :math:`D_p` to arrive at the iterative formula in the code.
 
         Parameters
         ----------
@@ -148,7 +148,7 @@ class CurvePool(Pool):
         S = sum(xp)
         D = S
         n = self.n
-        Ann = self.A * n
+        Ann = A * n
         D = mpz(D)
         Ann = mpz(Ann)
         while abs(D - Dprev) > 1:
@@ -186,17 +186,18 @@ class CurvePool(Pool):
         return self.get_D(xp, A)
 
     def get_y(self, i, j, x, xp):
-        """
+        r"""
         Calculate x[j] if one makes x[i] = x.
 
         The stableswap equation gives the following:
 
         .. math::
             x_1^2 + x_1 (\operatorname{sum'} - (A n^n - 1) D / (A n^n))
-               = D^{n+1}/(n^{2 * n} \operatorname{prod'} A)
+               = D^{n+1}/(n^{2 n} \operatorname{prod'} A)
 
-        where :math:`\operatorname{sum'}` is the sum of all :math:`x_i` for :math:`i \\neq j` and
-        :math:`\operatorname{prod'}` is the product of all :math:`x_i` for :math:`i \\neq j`.
+        where :math:`\operatorname{sum'}` is the sum of all :math:`x_i` for
+        :math:`i \\neq j` and :math:`\operatorname{prod'}` is the product
+        of all :math:`x_i` for :math:`i \\neq j`.
 
         This is a quadratic equation in :math:`x_j`.
 
@@ -220,7 +221,8 @@ class CurvePool(Pool):
         Returns
         -------
         int
-            The balance of the j-th coin, in units of D, for the other coin balances given.
+            The balance of the j-th coin, in units of D, for the other
+            coin balances given.
 
         Note
         ----

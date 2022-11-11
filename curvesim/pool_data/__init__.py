@@ -62,6 +62,9 @@ class PoolData:
 
         """
         self.dict = metadata_dict
+        self._volume = None
+        self._redemption_prices = None
+
         if cache_data:
             self.set_cache(days=days)
 
@@ -73,7 +76,6 @@ class PoolData:
         ----------
         days : int, default=60
             number of days to pull data for
-
         """
         self.volume(days=days, store=True)
         self.redemption_prices(store=True)
@@ -81,14 +83,9 @@ class PoolData:
     def clear_cache(self):
         """
         Clears any cached data.
-
         """
-        attrs = ["_volume", "_redemption_prices"]
-        for attr in attrs:
-            try:
-                delattr(self, attr)
-            except AttributeError:
-                print(f"Cached {attr[1:]} already cleared")
+        self._volume = None
+        self._redemption_prices = None
 
     def pool(self, balanced=True, balanced_base=True):
         """
@@ -105,7 +102,6 @@ class PoolData:
         Returns
         -------
         Pool
-
         """
 
         def bal(kwargs, balanced):
@@ -205,7 +201,7 @@ class PoolData:
             Total volume summed across the specified number of days.
 
         """
-        if get_cache and hasattr(self, "_volume"):
+        if get_cache and self._volume is not None:
             print("Getting cached historical volume...")
             return self._volume
 
@@ -288,7 +284,7 @@ class PoolData:
             Timestamped redemption prices across the specified number of days.
 
         """
-        if get_cache and hasattr(self, "_redemption_prices"):
+        if get_cache and self._redemption_prices is not None:
             print("Getting cached redemption prices...")
             return self._redemption_prices
 

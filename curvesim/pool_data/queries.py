@@ -28,7 +28,7 @@ def from_address(address, chain):
     return data
 
 
-def from_symbol(symbol, chain, balanced=(True, True)):
+def from_symbol(symbol, chain):
     address = symbol_address_sync(symbol, chain)
 
     data = from_address(address, chain)

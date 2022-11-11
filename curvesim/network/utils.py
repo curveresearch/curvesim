@@ -32,8 +32,9 @@ def compute_D(xp, A):
 _loop = None
 
 
-def _setupExtraEventLoop():
+def _setup_extra_event_loop():
     """Sets up the extra event loop for scheduling."""
+    # pylint: disable=global-statement
     global _loop
     _loop = asyncio.new_event_loop()
     ThreadPoolExecutor().submit(_loop.run_forever)
@@ -63,7 +64,7 @@ def sync(func):
             # synchronous inside a running event loop, we are
             # probably in something like a Jupyter notebook.
             if not _loop:
-                _setupExtraEventLoop()
+                _setup_extra_event_loop()
             future = asyncio.run_coroutine_threadsafe(coro, _loop)
             res = future.result()
 
