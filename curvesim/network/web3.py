@@ -15,6 +15,18 @@ from .utils import sync
 ETHERSCAN_URL = "https://api.etherscan.io/api"
 
 
+def get_etherscan_api_key():
+    default_key = "PT1D9IGAPPPRFMD312V9GARWW93BS9ZV6V"
+    key = get_env_var("ETHERSCAN_API_KEY", default=default_key)
+    return key
+
+
+def get_alchemy_api_key():
+    default_key = "WLcYLj9I1w7wEOgKmzidN1z62sbFILUz"
+    key = get_env_var("ALCHEMY_API_KEY", default=default_key)
+    return key
+
+
 async def explorer(params):
     """
     Async function to retrieve data from the chain explorer (Etherscan).
@@ -30,7 +42,7 @@ async def explorer(params):
         Query result
 
     """
-    etherscan_api_key = get_env_var("ETHERSCAN_API_KEY")
+    etherscan_api_key = get_etherscan_api_key()
     params.update({"apikey": etherscan_api_key})
 
     t_wait = 0.2
@@ -76,7 +88,7 @@ _web3 = None
 
 
 def _load_web3():
-    alchemy_api_key = get_env_var("ALCHEMY_API_KEY")
+    alchemy_api_key = get_alchemy_api_key()
     global _web3  # pylint: disable=global-statement
     if not _web3:
         _web3 = Web3(
