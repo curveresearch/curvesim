@@ -7,11 +7,24 @@ from asyncio import gather, sleep
 from web3 import AsyncHTTPProvider, Web3
 from web3.eth import AsyncEth
 
+from curvesim.utils import get_env_var
+
 from .http import HTTP
 from .utils import sync
 
-# Chain explorer
-ETHERSCAN = ("https://api.etherscan.io/api", "PT1D9IGAPPPRFMD312V9GARWW93BS9ZV6V")
+ETHERSCAN_URL = "https://api.etherscan.io/api"
+
+
+def get_etherscan_api_key():
+    default_key = "PT1D9IGAPPPRFMD312V9GARWW93BS9ZV6V"
+    key = get_env_var("ETHERSCAN_API_KEY", default=default_key)
+    return key
+
+
+def get_alchemy_api_key():
+    default_key = "WLcYLj9I1w7wEOgKmzidN1z62sbFILUz"
+    key = get_env_var("ALCHEMY_API_KEY", default=default_key)
+    return key
 
 
 async def explorer(params):
@@ -29,11 +42,12 @@ async def explorer(params):
         Query result
 
     """
-    params.update({"apikey": ETHERSCAN[1]})
+    etherscan_api_key = get_etherscan_api_key()
+    params.update({"apikey": etherscan_api_key})
 
     t_wait = 0.2
     while True:
-        r = await HTTP.get(ETHERSCAN[0], params=params)
+        r = await HTTP.get(ETHERSCAN_URL, params=params)
         result = r["result"]
 
         if result.startswith("Max rate limit reached"):
@@ -70,18 +84,22 @@ async def ABI(address):
     return abi
 
 
-# Web3.py
-W3 = Web3(
-    AsyncHTTPProvider(
-        (
-            "https://eth-mainnet.g.alchemy.com/v2/%s"
-            % "WLcYLj9I1w7wEOgKmzidN1z62sbFILUz"
-        ),
-        request_kwargs={"headers": {"Accept-Encoding": "gzip"}},
-    ),
-    modules={"eth": (AsyncEth,)},
-    middlewares=[],
-)
+_web3 = None
+
+
+def _load_web3():
+    alchemy_api_key = get_alchemy_api_key()
+    global _web3  # pylint: disable=global-statement
+    if not _web3:
+        _web3 = Web3(
+            AsyncHTTPProvider(
+                f"https://eth-mainnet.g.alchemy.com/v2/{alchemy_api_key}",
+                request_kwargs={"headers": {"Accept-Encoding": "gzip"}},
+            ),
+            modules={"eth": (AsyncEth,)},
+            middlewares=[],
+        )
+    return _web3
 
 
 async def contract(address, abi=None):
@@ -99,8 +117,8 @@ async def contract(address, abi=None):
 
     """
     abi = abi or await ABI(address)
-
-    c = W3.eth.contract(address=address, abi=abi)
+    w3 = _load_web3()
+    c = w3.eth.contract(address=address, abi=abi)
     return c
 
 
@@ -110,13 +128,12 @@ async def _underlying_coin_address(address):
     fns = ["upgradeToAndCall", "underlying", "token"]
     n_fns = len(fns) - 1
 
-    for i in range(len(fns)):
-        fn = fns[i]
+    for i, fn in enumerate(fns):
         if fn in dir(c.functions):
             break
 
         if i == n_fns:
-            raise ValueError(("Could not find underlying token for %s" % address))
+            raise ValueError(f"Could not find underlying token for {address}")
 
     # Handle Aave proxy
     if fn == "upgradeToAndCall":

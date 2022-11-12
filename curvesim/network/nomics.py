@@ -7,18 +7,21 @@ from datetime import timedelta, timezone
 from itertools import combinations
 
 import pandas as pd
-from dotenv import load_dotenv
 from numpy import NaN
+
+from curvesim.utils import get_env_var
 
 from .http import HTTP
 from .utils import sync
 
-load_dotenv()
-key = os.environ.get("NOMICS_API_KEY")
 URL = "https://api.nomics.com/v1/"
 
 FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 ETH_addr = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
+
+
+def get_nomics_api_key():
+    return get_env_var("NOMICS_API_KEY")
 
 
 async def get_data(url, params, t_start, t_end, exp=1):
@@ -40,9 +43,14 @@ async def get_data(url, params, t_start, t_end, exp=1):
 
 
 async def get_mkt(market, t_start, t_end):
-    # Request parameters
+    nomics_api_key = get_nomics_api_key()
     url = URL + "exchange_candles"
-    p = {"key": key, "interval": "30m", "exchange": market[0], "market": market[1]}
+    p = {
+        "key": nomics_api_key,
+        "interval": "30m",
+        "exchange": market[0],
+        "market": market[1],
+    }
 
     data = await get_data(url, p, t_start, t_end, exp=market[2])
 
@@ -50,9 +58,9 @@ async def get_mkt(market, t_start, t_end):
 
 
 async def get_agg(coins, t_start, t_end, exp=1):
-    # Request parameters
+    nomics_api_key = get_nomics_api_key()
     url = URL + "markets/candles"
-    p = {"key": key, "interval": "30m", "base": coins[0], "quote": coins[1]}
+    p = {"key": nomics_api_key, "interval": "30m", "base": coins[0], "quote": coins[1]}
 
     data = await get_data(url, p, t_start, t_end, exp=exp)
 
@@ -479,9 +487,10 @@ async def _coin_id_from_address(address):
     if address == ETH_addr:
         return "ETH"
 
+    nomics_api_key = get_nomics_api_key()
     url = URL + "currencies"
     address = address.lower()
-    p = {"key": key, "platform-contract": address}
+    p = {"key": nomics_api_key, "platform-contract": address}
 
     r = await HTTP.get(url, params=p)
 
