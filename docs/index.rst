@@ -47,7 +47,7 @@ Arbitrage simulations to see results of varying fee and amplification (A) parame
     [3 rows x 1465 columns]
 
 
-Charts of the results are saved to the `results` folder.
+Charts of the results are saved to the ``results`` folder.
 
 
 Features
@@ -79,7 +79,7 @@ Recent Changes / Announcements
    updates
 
 
-API documentation
+API Documentation
 -----------------
 
 .. toctree::
@@ -88,11 +88,17 @@ API documentation
    api
 
 
-Contribute
-----------
+Contributor Guide
+------------------
 
 - Issue Tracker: github.com/curveresearch/curvesim/issues
 - Source Code: github.com/curveresearch/curvesim
+
+.. toctree::
+   :maxdepth: 2
+
+   contributing
+
 
 Support
 -------
