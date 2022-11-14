@@ -62,7 +62,7 @@ By default, pools are simulated using:
 * on-chain or Curve Subgraph data about the pool
 * a broad range of A (16 values, 64 to 11,585) and fee (5 values, 0.02 to 0.06%) values
 * CoinGecko price/volume data
-* 4 parallel threads
+* all detected CPU cores
 
 However, all of these can be altered using optional keyword arguments.
 
