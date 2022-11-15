@@ -123,6 +123,8 @@ class PoolData:
             else:
                 pool = CurveRaiPool(r, **kwargs)
 
+            pool.basepool.metadata = self.dict["basepool"]
+
         else:
             pool = CurvePool(**kwargs)
 
