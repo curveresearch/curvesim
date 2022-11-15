@@ -93,7 +93,7 @@ Let's try doing something a little more interesting... pull a metapool::
     # fetch metapool, MIM-3CRV, off Mainnet
     >>> pool = curvesim.pool.get("0x5a6A4D54456819380173272A5E8E9B9904BdF41B", chain="mainnet")
     >>> pool.basepool
-    <curvesim.pool.stableswap.pool.Pool at 0x7fa8e1b9f6d0>
+    <CurvePool address=0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7 chain=mainnet>
 
     # trade between primary stablecoin of the metapool versus a basepool underlyer
     >>> pool.exchange_underlying(3, 0, dx)
@@ -177,9 +177,20 @@ impacting the pool's ability to handle large trades while holding imbalanced res
     [MIM-3LP3CRV-f] Simulating with {'A': 875, 'fee': 3000000}
     [MIM-3LP3CRV-f] Simulating with {'A': 875, 'fee': 4000000}
 
-The ``res`` dictionary holds different time series showing different aspects of risk and reward, such as annualized returns, pool total value, imbalance factor, and volume.
 
-Charts are saved in the ``results`` folder.
+Charts showing different aspects of risk and reward are saved in the ``results`` folder.
+
+The output dictionary, ``res``, contains pandas dataframes for all of the data plotted in the figures:
+
+  - **ar**: annualized returns
+  - **bal**: balance parameter over time, bal=1 when in perfect balance, and bal=0 when all holdings are in 1 coin
+  - **pool_value**: time series of pool's value (based on virtual price)
+  - **depth**: time series of price depth, averaged across pool's coins
+  - **volume**: time series of pool volume
+  - **log_returns**: log returns over time
+  - **err**: time series of absolute price errors, (dy-fee)/dx - p, summed across coin pairs
+  - **x**: time series of pool holdings
+  - **p**: time series of pool precisions (incl. basepool virtual price and/or RAI redemption price)
 
 Likely you will want to see the impact over a range of ``A`` values.  The ``A`` and ``fee`` parameters will accept either a integer or iterables of integers; note ``fee`` values are in units of basis points multiplied by 10**6.::
     
@@ -217,7 +228,12 @@ Fine-tuning the simulator
 -------------------------
 Other helpful parameters for :func:`.autosim` are:
 
-    - ``src``: data source for prices and volumes.  Allowed values are 'coingecko', 'nomics', or 'local'
+    - ``src``: data source for prices and volumes.  Allowed values are:
+
+      - **"coingecko"**: CoinGecko API (free); default
+      - **"nomics"**: Nomics API (paid); set ``NOMICS_API_KEY`` as env variable or in ``.env`` file.
+      - **"local"**: local data stored in the "data" folder
+
     - ``ncpu``: Number of cores to use.
     - ``days``: Number of days to fetch data for.
     - ``vol_mode``: Modes for limiting trade volume
@@ -236,16 +252,26 @@ Other helpful parameters for :func:`.autosim` are:
 Tips
 ----
 
-Price data source
-^^^^^^^^^^^^^^^^^
+Pricing data
+^^^^^^^^^^^^^^^
 
-By default, Curvesim uses Coingecko pricing and volume data.  You can specify 
-Nomics as the data provider, by using ``src='nomics'`` in simulations
+By default, Curvesim uses Coingecko pricing and volume data.  If you have a paid
+API key for Nomics, you can specify Nomics as the data provider, by using
+``src='nomics'`` in simulations
 
-In order to use this feature you will need to have the ``NOMICS_API_KEY``
-environment variable set. You can manually set this when running the python
-process; for your convenience, Curvesim will automatically load any
-env variables it finds in a local ``.env`` file.
+In order to use this feature you will need to set the ``NOMICS_API_KEY``
+environment variable. You can manually set this when starting the python
+process or include it in a local ``.env`` file which Curvesim will automatically
+load.
+
+
+Note on CoinGecko vs. Nomics Data
+""""""""""""""""""""""""""""""""""
+
+While Nomics provides 30-minute-interval data for each specific coin-pair, CoinGecko provides prices *per coin* in 1-hour intervals. Each coin's price is computed relative to all its trading pairs and converted to a quote currency (e.g., USD), with volume summed across all trading pairs. Therefore, market volume taken from CoinGecko is often much higher than one can expect for a specific coin-pair. This issue is largely ameloriated by our volume limiting approach, with CoinGecko results typically mirroring Nomics results qualitatively, but it should be noted that CoinGecko data may be less reliable than Nomics data for certain simulations.
+
+For comparison, compare ``3pool_cg`` and ``3pool_nomics`` results in the ``results/demo`` direectory.
+
 
 
 Parallel processing
