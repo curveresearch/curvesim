@@ -469,12 +469,13 @@ class CurveMetaPool(Pool):
         This is a "view" function; it doesn't change the state of the pool.
         """
         A = self.A
-        xp = self._xp()
+        rates = self.rates()
+        xp = self._xp_mem(rates, self.x)
         D0 = self.D()
         D1 = D0 - token_amount * D0 // self.tokens
 
         new_y = self.get_y_D(A, i, xp, D1)
-        dy_before_fee = (xp[i] - new_y) * 10**18 // self.p[i]
+        dy_before_fee = (xp[i] - new_y) * 10**18 // rates[i]
 
         xp_reduced = xp
         if self.fee and use_fee:
@@ -490,7 +491,7 @@ class CurveMetaPool(Pool):
                 xp_reduced[j] -= _fee * dx_expected // 10**10
 
         dy = xp[i] - self.get_y_D(A, i, xp_reduced, D1)
-        dy = (dy - 1) * 10**18 // self.p[i]
+        dy = (dy - 1) * 10**18 // rates[i]
         if use_fee:
             dy_fee = dy_before_fee - dy
             return dy, dy_fee
