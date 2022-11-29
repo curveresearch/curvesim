@@ -347,7 +347,7 @@ def _test_trade_meta(state, pricing_fn, i, j, dx):
     xp = pool_functions.get_xp(state.x, state.rates)
     exchange_args = (
         state.x,
-        state.p,
+        state.rates,
         state.A,
         state.fee,
         state.admin_fee,

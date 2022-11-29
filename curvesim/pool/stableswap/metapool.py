@@ -336,8 +336,9 @@ class CurveMetaPool(Pool):
         >>> pool.exchange(0, 1, 150 * 10**6)
         (149939820, 59999)
         """
-        xp = self._xp()
-        x = xp[i] + dx * self.p[i] // 10**18
+        rates = self.rates()
+        xp = self._xp_mem(rates, self.x)
+        x = xp[i] + dx * rates[i] // 10**18
         y = self.get_y(i, j, x, xp)
         dy = xp[j] - y - 1
 
@@ -349,7 +350,7 @@ class CurveMetaPool(Pool):
         admin_fee = fee * self.admin_fee // 10**10
 
         # Convert all to real units
-        rate = self.p[j]
+        rate = rates[j]
         dy = (dy - fee) * 10**18 // rate
         fee = fee * 10**18 // rate
         admin_fee = admin_fee * 10**18 // rate
