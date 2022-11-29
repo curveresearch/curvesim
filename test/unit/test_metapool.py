@@ -23,7 +23,7 @@ def initialize_metapool(vyper_metapool, vyper_3pool):
     A = vyper_metapool.A()
     n_coins = vyper_metapool.N_COINS()
     balances = [vyper_metapool.balances(i) for i in range(n_coins)]
-    p = [vyper_metapool.rates(i) for i in range(n_coins)]
+    p = [vyper_metapool.p(i) for i in range(n_coins)]
     lp_total_supply = vyper_metapool.totalSupply()
     fee = vyper_metapool.fee()
     admin_fee = vyper_metapool.admin_fee()

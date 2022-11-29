@@ -166,6 +166,17 @@ def rates(i: uint256) -> uint256:
     else:
         raise
 
+# sim: function added for pool sim testing
+@view
+@external
+def p(i: uint256) -> uint256:
+    if i == 0:
+        return self.rate_multiplier
+    elif i == 1:
+        return 1000000000000000000
+    else:
+        raise
+
 
 # sim: function added for pool sim testing
 @view
