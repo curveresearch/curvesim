@@ -336,8 +336,9 @@ class CurveMetaPool(Pool):
         >>> pool.exchange(0, 1, 150 * 10**6)
         (149939820, 59999)
         """
-        xp = self._xp()
-        x = xp[i] + dx * self.p[i] // 10**18
+        rates = self.rates()
+        xp = self._xp_mem(rates, self.x)
+        x = xp[i] + dx * rates[i] // 10**18
         y = self.get_y(i, j, x, xp)
         dy = xp[j] - y - 1
 
@@ -349,7 +350,7 @@ class CurveMetaPool(Pool):
         admin_fee = fee * self.admin_fee // 10**10
 
         # Convert all to real units
-        rate = self.p[j]
+        rate = rates[j]
         dy = (dy - fee) * 10**18 // rate
         fee = fee * 10**18 // rate
         admin_fee = admin_fee * 10**18 // rate
@@ -469,12 +470,13 @@ class CurveMetaPool(Pool):
         This is a "view" function; it doesn't change the state of the pool.
         """
         A = self.A
-        xp = self._xp()
+        rates = self.rates()
+        xp = self._xp_mem(rates, self.x)
         D0 = self.D()
         D1 = D0 - token_amount * D0 // self.tokens
 
         new_y = self.get_y_D(A, i, xp, D1)
-        dy_before_fee = (xp[i] - new_y) * 10**18 // self.p[i]
+        dy_before_fee = (xp[i] - new_y) * 10**18 // rates[i]
 
         xp_reduced = xp
         if self.fee and use_fee:
@@ -490,7 +492,7 @@ class CurveMetaPool(Pool):
                 xp_reduced[j] -= _fee * dx_expected // 10**10
 
         dy = xp[i] - self.get_y_D(A, i, xp_reduced, D1)
-        dy = (dy - 1) * 10**18 // self.p[i]
+        dy = (dy - 1) * 10**18 // rates[i]
         if use_fee:
             dy_fee = dy_before_fee - dy
             return dy, dy_fee
