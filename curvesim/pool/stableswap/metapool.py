@@ -19,7 +19,7 @@ class CurveMetaPool(Pool):
         D,
         n,
         basepool,
-        p=None,
+        rate_multiplier=10**18,
         tokens=None,
         fee=4 * 10**6,
         fee_mul=None,
@@ -36,8 +36,8 @@ class CurveMetaPool(Pool):
             number of coins
         basepool: :class:`curvesim.pool.Pool`
             basepool for the metapool
-        p: list of int, optional
-            precision and rate adjustments, defaults to 10**18 each coin
+        rate_multiplier: int, optional
+            precision and rate adjustment, defaults to 10**18
         tokens: int
             LP token supply
         fee: int, optional
@@ -64,10 +64,7 @@ class CurveMetaPool(Pool):
                 raise ValueError(f"{_p} too high: decimals must be >= 6.")
         self.basepool = basepool
 
-        if p:
-            self.p = p
-        else:
-            self.p = [10**18] * n
+        self.rate_multiplier = rate_multiplier
 
         if isinstance(D, list):
             self.x = D
@@ -553,9 +550,8 @@ class CurveMetaPool(Pool):
         return dy, dy_fee
 
     def rates(self):
-        rates = self.p[:]
-        rates[self.max_coin] = self.basepool.get_virtual_price()
-        return rates
+        base_virtual_price = self.basepool.get_virtual_price()
+        return [self.rate_multiplier, base_virtual_price]
 
     def calc_token_amount(self, amounts, use_fee=False):
         """
