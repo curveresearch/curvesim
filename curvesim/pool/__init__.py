@@ -33,7 +33,7 @@ def make(
     D,
     n,
     basepool=None,
-    p=None,
+    rates=None,
     rate_multiplier=None,
     tokens=None,
     fee=4 * 10**6,
@@ -62,7 +62,7 @@ def make(
     basepool: dict, optional
         a dict cointaining the arguments for instantiating a basepool
 
-    p: list of int, optional
+    rates: list of int, optional
         precisions for each coin
 
     rate_multiplier: int, optional
@@ -96,8 +96,8 @@ def make(
     -------
     :class:`Pool`
     """
-    if p and rate_multiplier:
-        raise CurvesimValueError("Should have only `p` or `rate_multiplier`.")
+    if rates and rate_multiplier:
+        raise CurvesimValueError("Should have only `rates` or `rate_multiplier`.")
 
     if basepool:
         pool = CurveMetaPool(
@@ -117,7 +117,7 @@ def make(
             A,
             D,
             n,
-            p=p,
+            rates=rates,
             tokens=tokens,
             fee=fee,
             fee_mul=fee_mul,
