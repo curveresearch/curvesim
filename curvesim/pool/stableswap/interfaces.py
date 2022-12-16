@@ -93,8 +93,14 @@ MetaPoolState = namedtuple(
 
 
 # Functions for stableswap.CurvePool
-def _get_pool_state(p):
-    return PoolState(p.x[:], p.p[:], p.A, p.fee, p.fee_mul, p.tokens, p.admin_fee)
+def _get_pool_state(pool):
+    if isinstance(pool, CurveMetaPool):
+        p = pool.rates()
+    else:
+        p = pool.p
+    return PoolState(
+        pool.balances[:], p, pool.A, pool.fee, pool.fee_mul, pool.tokens, pool.admin_fee
+    )
 
 
 def _precisions(self):
@@ -213,7 +219,6 @@ def _get_metapool_state(pool):
 
     args = [arg for pair in state_pairs for arg in pair]
     args[-1] = pool.rates()
-    args = args
 
     return MetaPoolState(*args)
 
