@@ -124,7 +124,7 @@ def test_get_y_D(vyper_metapool, vyper_3pool, dx, i, j):
     A = python_metapool.A
     D = python_metapool.D()
     rates = python_metapool.rates
-    balances = python_metapool.x
+    balances = python_metapool.balances
     vyper_balances = [vyper_metapool.balances(i) for i in range(2)]
     assert balances == vyper_balances
     virtual_balances = convert_to_virtual_balances(rates, balances)
@@ -177,7 +177,7 @@ def test_add_liquidity(vyper_metapool, vyper_3pool, x0, x1):
     amounts = convert_to_real_balances(rates, _balances)
 
     old_vyper_balances = [vyper_metapool.balances(i) for i in range(len(_balances))]
-    balances = python_metapool.x
+    balances = python_metapool.balances
     assert balances == old_vyper_balances
 
     lp_total_supply = vyper_metapool.totalSupply()
@@ -188,7 +188,7 @@ def test_add_liquidity(vyper_metapool, vyper_3pool, x0, x1):
     assert lp_amount == expected_lp_amount
 
     expected_balances = [vyper_metapool.balances(i) for i in range(len(_balances))]
-    new_balances = python_metapool.x
+    new_balances = python_metapool.balances
     assert new_balances == expected_balances
 
 
@@ -209,7 +209,7 @@ def test_exchange(vyper_metapool, vyper_3pool, dx, i, j):
     python_metapool = initialize_metapool(vyper_metapool, vyper_3pool)
 
     old_vyper_balances = [vyper_metapool.balances(i) for i in range(2)]
-    balances = python_metapool.x
+    balances = python_metapool.balances
     assert balances == old_vyper_balances
 
     # convert to real units
@@ -221,7 +221,7 @@ def test_exchange(vyper_metapool, vyper_3pool, dx, i, j):
     assert dy == expected_dy
 
     expected_balances = [vyper_metapool.balances(i) for i in range(2)]
-    new_balances = python_metapool.x
+    new_balances = python_metapool.balances
     assert new_balances == expected_balances
 
 
@@ -244,11 +244,11 @@ def test_exchange_underlying(vyper_metapool, vyper_3pool, dx, i, j):
 
     # check metapool balances
     old_vyper_balances = [vyper_metapool.balances(i) for i in range(2)]
-    balances = python_metapool.x
+    balances = python_metapool.balances
     assert balances == old_vyper_balances
     # check basepool balances
     old_vyper_balances = [vyper_3pool.balances(i) for i in range(3)]
-    balances = python_basepool.x
+    balances = python_basepool.balances
     assert balances == old_vyper_balances
 
     # convert to real units
@@ -265,11 +265,11 @@ def test_exchange_underlying(vyper_metapool, vyper_3pool, dx, i, j):
 
     # check metapool balances
     expected_balances = [vyper_metapool.balances(i) for i in range(2)]
-    new_balances = python_metapool.x
+    new_balances = python_metapool.balances
     assert new_balances == expected_balances
     # check basepool balances
     expected_balances = [vyper_3pool.balances(i) for i in range(3)]
-    new_balances = python_basepool.x
+    new_balances = python_basepool.balances
     assert new_balances == expected_balances
 
 
@@ -303,7 +303,7 @@ def test_remove_liquidity_one_coin(vyper_metapool, vyper_3pool, amount, i):
     python_metapool = initialize_metapool(vyper_metapool, vyper_3pool)
 
     old_vyper_balances = [vyper_metapool.balances(i) for i in range(2)]
-    balances = python_metapool.x
+    balances = python_metapool.balances
     assert balances == old_vyper_balances
 
     old_vyper_supply = vyper_metapool.totalSupply()
@@ -315,7 +315,7 @@ def test_remove_liquidity_one_coin(vyper_metapool, vyper_3pool, amount, i):
     expected_lp_supply = vyper_metapool.totalSupply()
 
     python_metapool.remove_liquidity_one_coin(amount, i)
-    coin_balance = python_metapool.x[i]
+    coin_balance = python_metapool.balances[i]
     lp_supply = python_metapool.tokens
 
     assert coin_balance == expected_coin_balance

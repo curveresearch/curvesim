@@ -189,7 +189,7 @@ def test_add_liquidity(vyper_3pool, x0, x1, x2):
     amounts = [b * 10**18 // r for b, r in zip(_balances, rates)]
 
     old_vyper_balances = [vyper_3pool.balances(i) for i in range(len(_balances))]
-    balances = python_3pool.x
+    balances = python_3pool.balances
     assert balances == old_vyper_balances
 
     lp_total_supply = vyper_3pool.totalSupply()
@@ -200,7 +200,7 @@ def test_add_liquidity(vyper_3pool, x0, x1, x2):
     assert lp_amount == expected_lp_amount
 
     expected_balances = [vyper_3pool.balances(i) for i in range(len(_balances))]
-    new_balances = python_3pool.x
+    new_balances = python_3pool.balances
     assert new_balances == expected_balances
 
 
@@ -221,7 +221,7 @@ def test_exchange(vyper_3pool, dx, i, j):
     python_3pool = initialize_pool(vyper_3pool)
 
     old_vyper_balances = [vyper_3pool.balances(i) for i in range(3)]
-    balances = python_3pool.x
+    balances = python_3pool.balances
     assert balances == old_vyper_balances
 
     # convert to real units
@@ -233,7 +233,7 @@ def test_exchange(vyper_3pool, dx, i, j):
     assert dy == expected_dy
 
     expected_balances = [vyper_3pool.balances(i) for i in range(3)]
-    new_balances = python_3pool.x
+    new_balances = python_3pool.balances
     assert new_balances == expected_balances
 
 
@@ -267,7 +267,7 @@ def test_remove_liquidity_one_coin(vyper_3pool, amount, i):
     python_3pool = initialize_pool(vyper_3pool)
 
     old_vyper_balances = [vyper_3pool.balances(i) for i in range(3)]
-    balances = python_3pool.x
+    balances = python_3pool.balances
     assert balances == old_vyper_balances
 
     old_vyper_supply = vyper_3pool.totalSupply()
@@ -279,7 +279,7 @@ def test_remove_liquidity_one_coin(vyper_3pool, amount, i):
     expected_lp_supply = vyper_3pool.totalSupply()
 
     python_3pool.remove_liquidity_one_coin(amount, i)
-    coin_balance = python_3pool.x[i]
+    coin_balance = python_3pool.balances[i]
     lp_supply = python_3pool.tokens
 
     assert coin_balance == expected_coin_balance

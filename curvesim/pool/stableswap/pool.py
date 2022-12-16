@@ -30,7 +30,7 @@ class CurvePool(Pool):
         A : int
             Amplification coefficient; this is :math:`A n^{n-1}` in the whitepaper.
         D : int or list of int
-            coin balances or virtual total balance
+            virtual total balance or pool coin balances in native token units
         n: int
             number of coins
         rates: list of int
@@ -50,15 +50,15 @@ class CurvePool(Pool):
         rates = rates or [10**18] * n
 
         if isinstance(D, list):
-            x = D
+            balances = D
         else:
-            x = [D // n * 10**18 // _p for _p in rates]
+            balances = [D // n * 10**18 // _p for _p in rates]
 
         self.A = A
         self.n = n
         self.fee = fee
         self.rates = rates
-        self.x = x
+        self.balances = balances
         self.tokens = tokens or self.D()
         self.fee_mul = fee_mul
         self.admin_fee = admin_fee
@@ -66,23 +66,11 @@ class CurvePool(Pool):
         self.n_total = n
         self.admin_balances = [0] * n
 
-    @property
-    def balances(self):
-        """
-        Alias to adhere closer to vyper interface.
-
-        Returns
-        -------
-        list of int
-            pool coin balances in native token units
-        """
-        return self.x
-
     def next_timestamp(self, *args, **kwargs):
         pass
 
     def _xp(self):
-        return [x * p // 10**18 for x, p in zip(self.x, self.rates)]
+        return [x * p // 10**18 for x, p in zip(self.balances, self.rates)]
 
     def D(self, xp=None):
         """
@@ -338,8 +326,8 @@ class CurvePool(Pool):
         admin_fee = admin_fee * 10**18 // rate
         assert dy >= 0
 
-        self.x[i] += dx
-        self.x[j] -= dy + admin_fee
+        self.balances[i] += dx
+        self.balances[j] -= dy + admin_fee
         self.admin_balances[j] += admin_fee
         return dy, fee
 
@@ -414,13 +402,13 @@ class CurvePool(Pool):
         mint_amount, fees = self.calc_token_amount(amounts, use_fee=True)
         self.tokens += mint_amount
 
-        balances = self.x
+        balances = self.balances
         afee = self.admin_fee
         admin_fees = [f * afee // 10**10 for f in fees]
         new_balances = [
             bal + amt - fee for bal, amt, fee in zip(balances, amounts, admin_fees)
         ]
-        self.x = new_balances
+        self.balances = new_balances
         self.admin_balances = [t + a for t, a in zip(self.admin_balances, admin_fees)]
 
         return mint_amount
@@ -443,7 +431,7 @@ class CurvePool(Pool):
         """
         dy, dy_fee = self.calc_withdraw_one_coin(token_amount, i, use_fee=True)
         admin_fee = dy_fee * self.admin_fee // 10**10
-        self.x[i] -= dy + admin_fee
+        self.balances[i] -= dy + admin_fee
         self.admin_balances[i] += admin_fee
         self.tokens -= token_amount
         return dy, dy_fee
@@ -476,10 +464,10 @@ class CurvePool(Pool):
         This is a "view" function; it doesn't change the state of the pool.
         """
         A = self.A
-        old_balances = self.x
+        old_balances = self.balances
         D0 = self.get_D_mem(old_balances, A)
 
-        new_balances = self.x[:]
+        new_balances = self.balances[:]
         for i in range(self.n):
             new_balances[i] += amounts[i]
         D1 = self.get_D_mem(new_balances, A)
