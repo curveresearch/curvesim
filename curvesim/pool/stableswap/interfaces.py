@@ -100,7 +100,7 @@ def _get_pool_state(pool):
     if isinstance(pool, CurveMetaPool):
         p = pool.rate_multiplier
     else:
-        p = pool.p[:]
+        p = pool.rates[:]
     return PoolState(
         pool.balances[:], p, pool.A, pool.fee, pool.fee_mul, pool.tokens, pool.admin_fee
     )
@@ -221,7 +221,7 @@ def _get_metapool_state(pool):
     state_pairs = zip(_get_pool_state(pool), _get_pool_state(pool.basepool))
 
     args = [arg for pair in state_pairs for arg in pair]
-    args[-1] = pool.rates()
+    args[-1] = pool.rates[:]
 
     return MetaPoolState(*args)
 

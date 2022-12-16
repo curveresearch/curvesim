@@ -61,5 +61,5 @@ class CurveRaiPool(CurveMetaPool):
 
     def _dydx(self, i, j, xp, use_fee=False):
         dydx = super()._dydx(i, j, xp, use_fee=use_fee)
-        rates = self.rates()
+        rates = self.rates
         return dydx * rates[i] / rates[j]

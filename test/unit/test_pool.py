@@ -12,7 +12,7 @@ def initialize_pool(vyper_pool):
     A = vyper_pool.A()
     n_coins = vyper_pool.N_COINS()
     balances = [vyper_pool.balances(i) for i in range(n_coins)]
-    p = [vyper_pool.rates(i) for i in range(n_coins)]
+    rates = [vyper_pool.rates(i) for i in range(n_coins)]
     lp_total_supply = vyper_pool.totalSupply()
     fee = vyper_pool.fee()
     admin_fee = vyper_pool.admin_fee()
@@ -20,7 +20,7 @@ def initialize_pool(vyper_pool):
         A,
         D=balances,
         n=n_coins,
-        p=p,
+        rates=rates,
         tokens=lp_total_supply,
         fee=fee,
         admin_fee=admin_fee,
@@ -98,14 +98,14 @@ def test_get_D_balanced():
         295949605740077,
         295949605740077,
     ]
-    p = [10**18, 10**30, 10**30]
+    rates = [10**18, 10**30, 10**30]
     n_coins = 3
     A = 5858
 
-    pool = CurvePool(A, D=balances, n=n_coins, p=p)
+    pool = CurvePool(A, D=balances, n=n_coins, rates=rates)
     D = pool.D()
 
-    virtualized_balances = [b * p // 10**18 for b, p in zip(balances, p)]
+    virtualized_balances = [b * p // 10**18 for b, p in zip(balances, rates)]
     expected_D = sum(virtualized_balances)
 
     assert D == expected_D

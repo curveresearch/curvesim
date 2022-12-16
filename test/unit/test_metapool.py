@@ -123,7 +123,7 @@ def test_get_y_D(vyper_metapool, vyper_3pool, dx, i, j):
     python_metapool = initialize_metapool(vyper_metapool, vyper_3pool)
     A = python_metapool.A
     D = python_metapool.D()
-    rates = python_metapool.rates()
+    rates = python_metapool.rates
     balances = python_metapool.x
     vyper_balances = [vyper_metapool.balances(i) for i in range(2)]
     assert balances == vyper_balances
@@ -345,9 +345,9 @@ def test_dydxfee(x0, x1, b0, b1, b2, i, j):
     admin_fee = 5 * 10**9
 
     base_A = 3000
-    base_p = [10**18, 10**30, 10**30]
+    base_rates = [10**18, 10**30, 10**30]
     base_balances = [b0, b1, b2]
-    base_balances = convert_to_real_balances(base_p, base_balances)
+    base_balances = convert_to_real_balances(base_rates, base_balances)
     base_n = len(base_balances)
     base_tokens = sum(base_balances)
     base_fee = 1 * 10**6
@@ -356,7 +356,7 @@ def test_dydxfee(x0, x1, b0, b1, b2, i, j):
         base_A,
         D=base_balances,
         n=base_n,
-        p=base_p,
+        rates=base_rates,
         tokens=base_tokens,
         fee=base_fee,
         admin_fee=admin_fee,
@@ -384,7 +384,7 @@ def test_dydxfee(x0, x1, b0, b1, b2, i, j):
 
     _dydx = metapool.dydxfee(i, j)
 
-    rates = [rate_multiplier] + base_p
+    rates = [rate_multiplier] + base_rates
     _dx = 10**12
     dx = _dx * 10**18 // rates[i]
     dy, _ = metapool.exchange_underlying(i, j, dx)

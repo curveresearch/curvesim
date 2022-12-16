@@ -18,7 +18,7 @@ class CurvePool(Pool):
         A,
         D,
         n,
-        p=None,
+        rates=None,
         tokens=None,
         fee=4 * 10**6,
         fee_mul=None,
@@ -33,7 +33,7 @@ class CurvePool(Pool):
             coin balances or virtual total balance
         n: int
             number of coins
-        p: list of int
+        rates: list of int
             precision and rate adjustments
         tokens: int
             LP token supply
@@ -47,17 +47,17 @@ class CurvePool(Pool):
         # FIXME: set admin_fee default back to 5 * 10**9
         # once sim code is updated.  Right now we use 0
         # to pass the CI tests.
-        p = p or [10**18] * n
+        rates = rates or [10**18] * n
 
         if isinstance(D, list):
             x = D
         else:
-            x = [D // n * 10**18 // _p for _p in p]
+            x = [D // n * 10**18 // _p for _p in rates]
 
         self.A = A
         self.n = n
         self.fee = fee
-        self.p = p
+        self.rates = rates
         self.x = x
         self.tokens = tokens or self.D()
         self.fee_mul = fee_mul
@@ -82,7 +82,7 @@ class CurvePool(Pool):
         pass
 
     def _xp(self):
-        return [x * p // 10**18 for x, p in zip(self.x, self.p)]
+        return [x * p // 10**18 for x, p in zip(self.x, self.rates)]
 
     def D(self, xp=None):
         """
@@ -182,7 +182,7 @@ class CurvePool(Pool):
         ----
         This is a "view" function; it doesn't change the state of the pool.
         """
-        xp = [x * p // 10**18 for x, p in zip(balances, self.p)]
+        xp = [x * p // 10**18 for x, p in zip(balances, self.rates)]
         return self.get_D(xp, A)
 
     def get_y(self, i, j, x, xp):
@@ -320,7 +320,7 @@ class CurvePool(Pool):
         (149939820, 59999)
         """
         xp = self._xp()
-        x = xp[i] + dx * self.p[i] // 10**18
+        x = xp[i] + dx * self.rates[i] // 10**18
         y = self.get_y(i, j, x, xp)
         dy = xp[j] - y - 1
 
@@ -332,7 +332,7 @@ class CurvePool(Pool):
         admin_fee = fee * self.admin_fee // 10**10
 
         # Convert all to real units
-        rate = self.p[j]
+        rate = self.rates[j]
         dy = (dy - fee) * 10**18 // rate
         fee = fee * 10**18 // rate
         admin_fee = admin_fee * 10**18 // rate
@@ -374,7 +374,7 @@ class CurvePool(Pool):
         D1 = D0 - token_amount * D0 // self.tokens
 
         new_y = self.get_y_D(A, i, xp, D1)
-        dy_before_fee = (xp[i] - new_y) * 10**18 // self.p[i]
+        dy_before_fee = (xp[i] - new_y) * 10**18 // self.rates[i]
 
         xp_reduced = xp
         if self.fee and use_fee:
@@ -390,7 +390,7 @@ class CurvePool(Pool):
                 xp_reduced[j] -= _fee * dx_expected // 10**10
 
         dy = xp[i] - self.get_y_D(A, i, xp_reduced, D1)
-        dy = (dy - 1) * 10**18 // self.p[i]
+        dy = (dy - 1) * 10**18 // self.rates[i]
         if use_fee:
             dy_fee = dy_before_fee - dy
             return dy, dy_fee
