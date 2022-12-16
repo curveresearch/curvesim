@@ -7,7 +7,7 @@ class CurveRaiPool(CurveMetaPool):
 
     """
 
-    def __init__(self, redemption_prices, *args, p=None, n=None, **kwargs):
+    def __init__(self, redemption_prices, *args, **kwargs):
         """
         Parameters
         ----------
@@ -20,8 +20,8 @@ class CurveRaiPool(CurveMetaPool):
             coin balances or virtual total balance
         n: int
             number of coins
-        p: list of int
-            precision and rate adjustments
+        rate_multiplier: int
+            precision and rate adjustment for primary stable in metapool
         tokens : int
             LP token supply
         fee : int, optional
@@ -32,11 +32,9 @@ class CurveRaiPool(CurveMetaPool):
             percentage of `fee` with 10**10 precision (default = 50%)
         """
         self.redemption_prices = redemption_prices
+        rate_multiplier = int(redemption_prices.price[0])
 
-        p = p or [10**18] * n
-        p[0] = int(redemption_prices.price[0])
-
-        super().__init__(p=p, n=n, *args, **kwargs)
+        super().__init__(*args, rate_multiplier=rate_multiplier, **kwargs)
 
     def next_timestamp(self, timestamp, *args, **kwargs):
         """
@@ -50,14 +48,14 @@ class CurveRaiPool(CurveMetaPool):
         """
 
         r = self.redemption_prices.price.asof(timestamp)
-        self.p[0] = int(r)
+        self.rate_multiplier = int(r)
 
     def dydx(self, i, j, use_fee=False):
         _dydx = super().dydx(i, j, use_fee=use_fee)
 
-        if i >= self.max_coin and j < self.max_coin:
+        if i >= self.max_coin and j == 0:
             base_i = i - self.max_coin
-            _dydx = _dydx * self.basepool.p[base_i] / self.p[j]
+            _dydx = _dydx * self.basepool.p[base_i] / self.rate_multiplier
 
         return _dydx
 
