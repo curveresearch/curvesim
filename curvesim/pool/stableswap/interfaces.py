@@ -76,7 +76,7 @@ MetaPoolState = namedtuple(
     [
         "x",
         "x_base",
-        "p",
+        "rate_multiplier",
         "p_base",
         "A",
         "A_base",
@@ -220,7 +220,7 @@ def _get_metapool_state(pool):
 
 def _precisions_metapool(self):
     state = self.get_pool_state()
-    return state.p[0 : self.max_coin] + state.p_base
+    return [state.rate_multiplier] + state.p_base
 
 
 def _init_metapool_coin_indices(metadata):
