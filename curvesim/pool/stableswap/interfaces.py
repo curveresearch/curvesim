@@ -395,7 +395,7 @@ def _make_metapool_error_fns(self):  # noqa: C901
         state.fee_base,
     ]
 
-    p_all = state.p[0:max_coin] + state.p_base
+    p_all = [state.rate_multiplier] + state.p_base
     xp_meta = pool_functions.get_xp(state.x, state.rates)
     xp_base = pool_functions.get_xp(state.x_base, state.p_base)
 
