@@ -720,8 +720,7 @@ class CurveMetaPool(Pool):
             _dydx = self.basepool.dydx(base_i, base_j, use_fee=use_fee)
             return float(_dydx)
 
-        rates = self.p[:]
-        rates[self.max_coin] = self.basepool.get_virtual_price()
+        rates = self.rates()
         xp = [mpz(x) * p // 10**18 for x, p in zip(self.x, rates)]
 
         bp = self.basepool

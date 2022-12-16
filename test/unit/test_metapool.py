@@ -363,7 +363,8 @@ def test_dydxfee(x0, x1, b0, b1, b2, i, j):
     )
 
     A = 1365
-    p = [10**18, 10**18]
+    rate_multiplier = 10**18
+    p = [rate_multiplier, 10**18]
     balances = [x0, x1]
     balances = convert_to_real_balances(p, balances)
     n = len(balances)
@@ -375,7 +376,7 @@ def test_dydxfee(x0, x1, b0, b1, b2, i, j):
         D=balances,
         n=n,
         basepool=basepool,
-        p=p,
+        rate_multiplier=rate_multiplier,
         tokens=tokens,
         fee=fee,
         admin_fee=admin_fee,
@@ -383,7 +384,7 @@ def test_dydxfee(x0, x1, b0, b1, b2, i, j):
 
     _dydx = metapool.dydxfee(i, j)
 
-    rates = p[:1] + base_p
+    rates = [rate_multiplier] + base_p
     _dx = 10**12
     dx = _dx * 10**18 // rates[i]
     dy, _ = metapool.exchange_underlying(i, j, dx)
