@@ -23,17 +23,17 @@ def initialize_metapool(vyper_metapool, vyper_3pool):
     A = vyper_metapool.A()
     n_coins = vyper_metapool.N_COINS()
     balances = [vyper_metapool.balances(i) for i in range(n_coins)]
-    p = [vyper_metapool.p(i) for i in range(n_coins)]
     lp_total_supply = vyper_metapool.totalSupply()
     fee = vyper_metapool.fee()
     admin_fee = vyper_metapool.admin_fee()
+    rate_multiplier = vyper_metapool.rate_multiplier()
     basepool = initialize_pool(vyper_3pool)
     metapool = CurveMetaPool(
         A,
         D=balances,
         n=n_coins,
         basepool=basepool,
-        p=p,
+        rate_multiplier=rate_multiplier,
         tokens=lp_total_supply,
         fee=fee,
         admin_fee=admin_fee,
