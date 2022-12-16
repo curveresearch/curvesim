@@ -21,6 +21,7 @@ __all__ = [
     "CurveRaiPool",
 ]
 
+from curvesim.exceptions import CurvesimValueError
 from curvesim.pool_data import get as _get_pool_data
 
 from .base import Pool
@@ -33,6 +34,7 @@ def make(
     n,
     basepool=None,
     p=None,
+    rate_multiplier=None,
     tokens=None,
     fee=4 * 10**6,
     fee_mul=None,
@@ -63,6 +65,9 @@ def make(
     p: list of int, optional
         precisions for each coin
 
+    rate_multiplier: int, optional
+        precision and rate adjustment for primary stable in metapool
+
     tokens: int, optional
         Total LP token supply.
 
@@ -91,13 +96,16 @@ def make(
     -------
     :class:`Pool`
     """
+    if p and rate_multiplier:
+        raise CurvesimValueError("Should have only `p` or `rate_multiplier`.")
+
     if basepool:
         pool = CurveMetaPool(
             A,
             D,
             n,
             basepool,
-            p=p,
+            rate_multiplier=rate_multiplier,
             tokens=tokens,
             fee=fee,
             fee_mul=fee_mul,

@@ -12,3 +12,7 @@ class SubgraphResultError(SubgraphError):
 
 class MissingEnvVarError(CurvesimException, RuntimeError):
     """Environment variable is missing."""
+
+
+class CurvesimValueError(CurvesimException, ValueError):
+    """Raised when an argument has an inappropriate value (but the right type)."""
