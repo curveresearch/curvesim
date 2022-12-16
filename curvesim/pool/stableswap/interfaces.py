@@ -38,7 +38,10 @@ class StableSwapSimInterface(SimInterface):
         state = self.get_pool_state()
 
         x = getattr(state, "x_base", state.x)
-        p = getattr(state, "p_base", state.p)
+        if hasattr(state, "p_base"):
+            p = state.p_base
+        else:
+            p = state.p
 
         if i == "bp_token":
             i = self.max_coin
@@ -370,7 +373,7 @@ def _test_trade_meta(state, pricing_fn, i, j, dx):
     xp_post = pool_functions.get_xp(output[0], state.rates)
 
     dydx = pricing_fn(
-        i, j, xp_post, state.A, p=state.p, fee=state.fee, fee_mul=state.fee_mul
+        i, j, xp_post, state.A, p=state.rates, fee=state.fee, fee_mul=state.fee_mul
     )
 
     return (dydx,) + output

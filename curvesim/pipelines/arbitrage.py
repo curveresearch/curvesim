@@ -343,7 +343,10 @@ class Metrics:
 
         """
         pool_state = pool_interface.get_pool_state()
-        p = getattr(pool_state, "rates", pool_state.p)
+        if hasattr(pool_state, "rates"):
+            p = pool_state.rates
+        else:
+            p = pool_state.p
 
         xp = get_xp(pool_state.x, p)
         bal = self.compute_balance(xp)
