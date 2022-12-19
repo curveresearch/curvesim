@@ -4,7 +4,7 @@ from gmpy2 import mpz
 from numpy import isnan
 
 from .. import functions as pool_functions
-from .pool import _get_pool_state
+from .pool import _get_pool_state as get_state
 
 MetaPoolState = namedtuple(
     "MetaPoolState",
@@ -27,8 +27,8 @@ MetaPoolState = namedtuple(
 )
 
 
-def _get_metapool_state(pool):
-    state_pairs = zip(_get_pool_state(pool), _get_pool_state(pool.basepool))
+def _get_pool_state(pool):
+    state_pairs = zip(get_state(pool), get_state(pool.basepool))
 
     args = [arg for pair in state_pairs for arg in pair]
     args[-1] = pool.rates[:]
@@ -36,12 +36,12 @@ def _get_metapool_state(pool):
     return MetaPoolState(*args)
 
 
-def _precisions_metapool(self):
+def precisions(self):
     state = self.get_pool_state()
     return [state.rate_multiplier] + state.p_base
 
 
-def _init_metapool_coin_indices(metadata):
+def _init_coin_indices(metadata):
     meta_coin_names = metadata["coins"]["names"][:-1]
     base_coin_names = metadata["basepool"]["coins"]["names"]
 
@@ -56,7 +56,7 @@ def _init_metapool_coin_indices(metadata):
     return coin_dict
 
 
-def _metapool_price(self, coin_in, coin_out, use_fee=True):
+def price(self, coin_in, coin_out, use_fee=True):
     i, j = self.get_coin_indices(coin_in, coin_out)
 
     # Basepool LP token not used
@@ -77,7 +77,7 @@ def _metapool_price(self, coin_in, coin_out, use_fee=True):
         return self.pool._dydx(i, j, xp=xp, use_fee=use_fee)
 
 
-def _metapool_trade(self, i, j, size):
+def trade(self, i, j, size):
     pool = self.pool
     trade_fn = pool.exchange_underlying
 
@@ -100,7 +100,7 @@ def _metapool_trade(self, i, j, size):
     return output
 
 
-def _metapool_test_trade(self, coin_in, coin_out, dx, state=None):
+def test_trade(self, coin_in, coin_out, dx, state=None):
     i, j = self.get_coin_indices(coin_in, coin_out)
     state = state or self.get_pool_state()
     max_coin = self.max_coin
@@ -189,7 +189,7 @@ def _test_trade_meta(state, pricing_fn, i, j, dx):
     return (dydx,) + output
 
 
-def _make_metapool_error_fns(self):  # noqa: C901
+def make_error_fns(self):  # noqa: C901
     # Note: for performance, does not support string coin-names
 
     state = self.get_pool_state()
@@ -307,14 +307,3 @@ def _make_metapool_error_fns(self):  # noqa: C901
         return errors
 
     return get_trade_bounds, post_trade_price_error, post_trade_price_error_multi
-
-
-stableswap_metapool_fns = (
-    _metapool_price,
-    _metapool_trade,
-    _metapool_test_trade,
-    _make_metapool_error_fns,
-    _precisions_metapool,
-    _get_metapool_state,
-    _init_metapool_coin_indices,
-)

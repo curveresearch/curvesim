@@ -50,7 +50,7 @@ def run_pipeline(param_sampler, price_sampler, strategy, ncpu=4):
 class SimPool:
     """
     A template class for creating simulation interfaces for pools.
-    See pool.stablewap.interfaces.StableSwapSimInterface
+    See pool.stablewap.interfaces.StableSwapSimPool
 
     This component is likely to change.
     """

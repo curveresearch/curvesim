@@ -6,7 +6,6 @@ from curvesim.pool.stableswap.metapool import CurveMetaPool
 
 from .. import functions as pool_functions
 
-# Namedtuples for pool states
 PoolState = namedtuple(
     "PoolState", ["x", "p", "A", "fee", "fee_mul", "tokens", "admin_fee"]
 )
@@ -22,24 +21,24 @@ def _get_pool_state(pool):
     )
 
 
-def _precisions(self):
+def precisions(self):
     state = self.get_pool_state()
     return state.p
 
 
-def _init_pool_coin_indices(metadata):
+def _init_coin_indices(metadata):
     coin_names = metadata["coins"]["names"]
     coin_indices = range(len(coin_names))
     return dict(zip(coin_names, coin_indices))
 
 
-def _price(self, coin_in, coin_out, use_fee=True):
+def price(self, coin_in, coin_out, use_fee=True):
     i, j = self.get_coin_indices(coin_in, coin_out)
     assert i != j
     return self.pool.dydx(i, j, use_fee=use_fee)
 
 
-def _trade(self, coin_in, coin_out, size):
+def trade(self, coin_in, coin_out, size):
     i, j = self.get_coin_indices(coin_in, coin_out)
     assert i != j
 
@@ -49,7 +48,7 @@ def _trade(self, coin_in, coin_out, size):
     return output
 
 
-def _test_trade(self, coin_in, coin_out, dx, state=None):
+def test_trade(self, coin_in, coin_out, dx, state=None):
     i, j = self.get_coin_indices(coin_in, coin_out)
     assert i != j
 
@@ -67,7 +66,7 @@ def _test_trade(self, coin_in, coin_out, dx, state=None):
     return (dydx,) + output
 
 
-def _make_error_fns(self):
+def make_error_fns(self):
     # Note: for performance, does not support string coin-names
 
     state = self.get_pool_state()
@@ -130,14 +129,3 @@ def _make_error_fns(self):
         return errors
 
     return get_trade_bounds, post_trade_price_error, post_trade_price_error_multi
-
-
-stableswap_pool_fns = (
-    _price,
-    _trade,
-    _test_trade,
-    _make_error_fns,
-    _precisions,
-    _get_pool_state,
-    _init_pool_coin_indices,
-)
