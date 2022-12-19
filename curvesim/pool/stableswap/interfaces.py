@@ -16,10 +16,10 @@ class StableSwapSimInterface(SimInterface):
     def __init__(self, pool):
         super().__init__()
 
-        pool_function_dict = stableswap_interface_fns[type(pool)]
+        pool_function_dict = _STABLESWAP_INTERFACE_FUNCTIONS[type(pool)]
         self._set_pool_interface(pool, pool_function_dict)
 
-        self.pricing_fns = stableswap_pricing_fns[type(pool)]
+        self.pricing_fns = _STABLESWAP_PRICING_FUNCTIONS[type(pool)]
         self.next_timestamp = self.pool.next_timestamp
 
         all_idx = range(pool.n_total)
@@ -532,14 +532,20 @@ stableswap_metapool_fns = (
 
 stableswap_pool_fns = dict(zip(interface_functions, stableswap_pool_fns))
 stableswap_metapool_fns = dict(zip(interface_functions, stableswap_metapool_fns))
-stableswap_interface_fns = {
+_STABLESWAP_INTERFACE_FUNCTIONS = {
     CurvePool: stableswap_pool_fns,
     CurveMetaPool: stableswap_metapool_fns,
     CurveRaiPool: stableswap_metapool_fns,
 }
 
-stableswap_pricing_fns = {
+_STABLESWAP_PRICING_FUNCTIONS = {
     CurvePool: (pool_functions.dydx, pool_functions.dydx),
     CurveMetaPool: (pool_functions.dydx_metapool, pool_functions.dydx),
     CurveRaiPool: (pool_functions.dydx_metapool_rai, pool_functions.dydx_rai),
 }
+
+
+def register_interface(pool_type, functions, pricing_functions):
+    func_dict = dict(zip(interface_functions, functions))
+    _STABLESWAP_INTERFACE_FUNCTIONS[pool_type] = func_dict
+    _STABLESWAP_PRICING_FUNCTIONS[pool_type] = pricing_functions
