@@ -13,6 +13,21 @@ class CurveMetaPool(Pool):
     Basic stableswap metapool implementation in Python.
     """
 
+    __slots__ = (
+        "A",
+        "n",
+        "max_coin",
+        "fee",
+        "admin_fee",
+        "basepool",
+        "rate_multiplier",
+        "balances",
+        "n_total",
+        "tokens",
+        "fee_mul",
+        "collected_admin_fees",
+    )
+
     def __init__(
         self,
         A,

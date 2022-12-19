@@ -13,6 +13,20 @@ class CurvePool(Pool):
     Basic stableswap implementation in Python.
     """
 
+    __slots__ = (
+        "A",
+        "n",
+        "fee",
+        "rates",
+        "balances",
+        "tokens",
+        "fee_mul",
+        "admin_fee",
+        "r",
+        "n_total",
+        "admin_balances",
+    )
+
     def __init__(
         self,
         A,
