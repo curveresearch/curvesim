@@ -47,7 +47,7 @@ def run_pipeline(param_sampler, price_sampler, strategy, ncpu=4):
     return results
 
 
-class SimInterface:
+class SimPool:
     """
     A template class for creating simulation interfaces for pools.
     See pool.stablewap.interfaces.StableSwapSimInterface
@@ -71,7 +71,16 @@ class SimInterface:
     def price(self, coin_in, coin_out, use_fee=True):
         raise NotImplementedError
 
+    def trade(self, coin_in, coin_out, size):
+        raise NotImplementedError
+
     def test_trade(self, coin_in, coin_out, dx, state=None):
+        raise NotImplementedError
+
+    def make_error_fns(self):
+        raise NotImplementedError
+
+    def precisions(self):
         raise NotImplementedError
 
     def _set_pool_interface(self, pool, pool_function_dict):

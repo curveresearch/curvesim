@@ -7,11 +7,11 @@ __all__ = [
     "CurveMetaPool",
     "CurvePool",
     "CurveRaiPool",
-    "StableSwapSimInterface",
+    "StableSwapSimPool",
 ]
 
 
-from .interfaces import StableSwapSimInterface
+from .interfaces import StableSwapSimPool
 from .metapool import CurveMetaPool
 from .pool import CurvePool
 from .raipool import CurveRaiPool

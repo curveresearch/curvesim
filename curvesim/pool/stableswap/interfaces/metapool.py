@@ -1,78 +1,10 @@
 from collections import namedtuple
-from itertools import combinations
 
 from gmpy2 import mpz
 from numpy import isnan
 
-from curvesim.pipelines.templates import SimInterface
-
-from . import functions as pool_functions
-from .metapool import CurveMetaPool
-from .pool import CurvePool
-from .raipool import CurveRaiPool
-
-
-class StableSwapSimInterface(SimInterface):
-    def __init__(self, pool):
-        super().__init__()
-
-        pool_function_dict = _STABLESWAP_INTERFACE_FUNCTIONS[type(pool)]
-        self._set_pool_interface(pool, pool_function_dict)
-
-        self.pricing_fns = _STABLESWAP_PRICING_FUNCTIONS[type(pool)]
-        self.next_timestamp = self.pool.next_timestamp
-
-        all_idx = range(pool.n_total)
-        base_idx = list(range(pool.n))
-        self.max_coin = getattr(pool, "max_coin", None)
-
-        if self.max_coin:
-            base_idx[self.max_coin] = "bp_token"
-
-        self.index_combos = list(combinations(all_idx, 2))
-        self.base_index_combos = list(combinations(base_idx, 2))
-
-    def get_liquidity_density(self, coin_in, coin_out, factor=10**8):
-        # Fix: won't work for trades between meta-pool and basepool
-        i, j = self.get_coin_indices(coin_in, coin_out)
-        state = self.get_pool_state()
-
-        x = getattr(state, "x_base", state.x)
-        if hasattr(state, "p_base"):
-            p = state.p_base
-        else:
-            p = state.p
-
-        if i == "bp_token":
-            i = self.max_coin
-            x = state.x
-            p = state.rates
-
-        if j == "bp_token":
-            j = self.max_coin
-            x = state.x
-            p = state.rates
-
-        xp = pool_functions.get_xp(x, p)
-
-        price_pre = self.price(coin_in, coin_out)
-        output = self.test_trade(coin_in, coin_out, xp[i] // factor, state=state)
-        price_post = output[0]
-        LD1 = price_pre / ((price_pre - price_post) * factor)
-
-        price_pre = self.price(coin_out, coin_in)
-        output = self.test_trade(coin_out, coin_in, xp[j] // factor, state=state)
-        price_post = output[0]
-        LD2 = price_pre / ((price_pre - price_post) * factor)
-
-        return (LD1 + LD2) / 2
-
-
-# Namedtuples for pool states
-PoolState = namedtuple(
-    "PoolState", ["x", "p", "A", "fee", "fee_mul", "tokens", "admin_fee"]
-)
-
+from .. import functions as pool_functions
+from .pool import _get_pool_state
 
 MetaPoolState = namedtuple(
     "MetaPoolState",
@@ -95,128 +27,6 @@ MetaPoolState = namedtuple(
 )
 
 
-# Functions for stableswap.CurvePool
-def _get_pool_state(pool):
-    if isinstance(pool, CurveMetaPool):
-        p = pool.rate_multiplier
-    else:
-        p = pool.rates[:]
-    return PoolState(
-        pool.balances[:], p, pool.A, pool.fee, pool.fee_mul, pool.tokens, pool.admin_fee
-    )
-
-
-def _precisions(self):
-    state = self.get_pool_state()
-    return state.p
-
-
-def _init_pool_coin_indices(metadata):
-    coin_names = metadata["coins"]["names"]
-    coin_indices = range(len(coin_names))
-    return dict(zip(coin_names, coin_indices))
-
-
-def _price(self, coin_in, coin_out, use_fee=True):
-    i, j = self.get_coin_indices(coin_in, coin_out)
-    assert i != j
-    return self.pool.dydx(i, j, use_fee=use_fee)
-
-
-def _trade(self, coin_in, coin_out, size):
-    i, j = self.get_coin_indices(coin_in, coin_out)
-    assert i != j
-
-    output = self.pool.exchange(i, j, size)
-    self.set_pool_state()
-
-    return output
-
-
-def _test_trade(self, coin_in, coin_out, dx, state=None):
-    i, j = self.get_coin_indices(coin_in, coin_out)
-    assert i != j
-
-    state = state or self.get_pool_state()
-    exchange_args = (state.x, state.p, state.A, state.fee, state.admin_fee)
-
-    output = pool_functions.exchange(i, j, dx, *exchange_args, fee_mul=state.fee_mul)
-
-    xp_post = [x * p // 10**18 for x, p in zip(output[0], state.p)]
-
-    dydx = pool_functions.dydx(
-        i, j, xp_post, state.A, fee=state.fee, fee_mul=state.fee_mul
-    )
-
-    return (dydx,) + output
-
-
-def _make_error_fns(self):
-    # Note: for performance, does not support string coin-names
-
-    state = self.get_pool_state()
-    args = [state.x, state.p, state.A, state.fee, state.admin_fee]
-    xp = pool_functions.get_xp(state.x, state.p)
-
-    def get_trade_bounds(i, j):
-        xp_j = int(xp[j] * 0.01)
-        high = pool_functions.get_y(j, i, xp_j, xp, state.A) - xp[i]
-
-        return (0, high)
-
-    def post_trade_price_error(dx, i, j, price_target):
-        dx = int(dx) * 10**18 // state.p[i]
-
-        if dx > 0:
-            output = pool_functions.exchange(
-                i, j, dx, xp=xp, *args, fee_mul=state.fee_mul
-            )
-
-            xp_post = pool_functions.get_xp(output[0], state.p)
-        else:
-            xp_post = xp
-
-        dydx = pool_functions.dydx(
-            i, j, xp_post, state.A, fee=state.fee, fee_mul=state.fee_mul
-        )
-
-        return dydx - price_target
-
-    def post_trade_price_error_multi(dxs, price_targets, coins):
-        _args = args[:]
-        _xp = xp
-
-        # Do trades
-        for k, pair in enumerate(coins):
-            i, j = pair
-
-            if isnan(dxs[k]):
-                dx = 0
-            else:
-                dx = int(dxs[k]) * 10**18 // state.p[i]
-
-            if dx > 0:
-                output = pool_functions.exchange(
-                    i, j, dx, *_args, fee_mul=state.fee_mul, xp=_xp
-                )
-
-                _args[0] = output[0]  # update x
-                _xp = pool_functions.get_xp(_args[0], state.p)
-
-        # Record price errors
-        errors = []
-        for k, pair in enumerate(coins):
-            dydx = pool_functions.dydx(
-                *pair, _xp, state.A, fee=state.fee, fee_mul=state.fee_mul
-            )
-            errors.append(dydx - price_targets[k])
-
-        return errors
-
-    return get_trade_bounds, post_trade_price_error, post_trade_price_error_multi
-
-
-# Functions for stableswap.CurveMetaPool
 def _get_metapool_state(pool):
     state_pairs = zip(_get_pool_state(pool), _get_pool_state(pool.basepool))
 
@@ -499,27 +309,6 @@ def _make_metapool_error_fns(self):  # noqa: C901
     return get_trade_bounds, post_trade_price_error, post_trade_price_error_multi
 
 
-# Functions to set for each pool types
-interface_functions = (
-    "price",
-    "trade",
-    "test_trade",
-    "make_error_fns",
-    "precisions",
-    "_get_pool_state",  # required
-    "_init_coin_indices",  # required
-)
-
-stableswap_pool_fns = (
-    _price,
-    _trade,
-    _test_trade,
-    _make_error_fns,
-    _precisions,
-    _get_pool_state,
-    _init_pool_coin_indices,
-)
-
 stableswap_metapool_fns = (
     _metapool_price,
     _metapool_trade,
@@ -529,23 +318,3 @@ stableswap_metapool_fns = (
     _get_metapool_state,
     _init_metapool_coin_indices,
 )
-
-stableswap_pool_fns = dict(zip(interface_functions, stableswap_pool_fns))
-stableswap_metapool_fns = dict(zip(interface_functions, stableswap_metapool_fns))
-_STABLESWAP_INTERFACE_FUNCTIONS = {
-    CurvePool: stableswap_pool_fns,
-    CurveMetaPool: stableswap_metapool_fns,
-    CurveRaiPool: stableswap_metapool_fns,
-}
-
-_STABLESWAP_PRICING_FUNCTIONS = {
-    CurvePool: (pool_functions.dydx, pool_functions.dydx),
-    CurveMetaPool: (pool_functions.dydx_metapool, pool_functions.dydx),
-    CurveRaiPool: (pool_functions.dydx_metapool_rai, pool_functions.dydx_rai),
-}
-
-
-def register_interface(pool_type, functions, pricing_functions):
-    func_dict = dict(zip(interface_functions, functions))
-    _STABLESWAP_INTERFACE_FUNCTIONS[pool_type] = func_dict
-    _STABLESWAP_PRICING_FUNCTIONS[pool_type] = pricing_functions

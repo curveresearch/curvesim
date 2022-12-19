@@ -14,7 +14,7 @@ from scipy.optimize import least_squares, root_scalar
 from ..iterators.param_samplers import Grid
 from ..iterators.price_samplers import PriceVolume
 from ..plot import saveplots
-from ..pool.stableswap import StableSwapSimInterface
+from ..pool.stableswap import StableSwapSimPool
 from ..pool.stableswap.functions import get_D, get_xp
 from .templates import run_pipeline
 from .utils import compute_volume_multipliers
@@ -182,7 +182,7 @@ def strategy(pool, params, price_sampler, vol_mult):
 
     """
 
-    pool_interface = StableSwapSimInterface(pool)
+    pool_interface = StableSwapSimPool(pool)
     trader = Arbitrageur(pool_interface)
     metrics = Metrics()
 
