@@ -93,24 +93,22 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
             return self._dydx(i, j, xp=xp, use_fee=use_fee)
 
     def trade(self, i, j, size):
-        trade_fn = self.exchange_underlying
-
-        if isinstance(i, str):
-            i = self.coin_indices[i]
-            if i == "bp_token":
-                i = self.max_coin
-                trade_fn = self.exchange
-
-        if isinstance(j, str):
-            j = self.coin_indices[j]
-            if j == "bp_token":
-                j = self.max_coin
-                trade_fn = self.exchange
-
+        """
+        Trade between two coins in a pool.
+        Coin index runs over basepool underlyers.
+        We count only volume when one coin is the primary stable.
+        """
         assert i != j
-        output = trade_fn(i, j, size)
 
-        return output
+        out_amount, fee = self.exchange_underlying(i, j, size)
+
+        max_coin = self.max_coin
+        if i < max_coin or j < max_coin:
+            volume = size * self.precisions()[i] // 10**18  # in D units
+        else:
+            volume = 0
+
+        return out_amount, fee, volume
 
     def test_trade(self, coin_in, coin_out, dx, state=None):
         i, j = self.get_coin_indices(coin_in, coin_out)

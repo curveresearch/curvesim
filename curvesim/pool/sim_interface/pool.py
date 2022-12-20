@@ -47,9 +47,11 @@ class SimCurvePool(SimStableswapBase, CurvePool):
         i, j = self.get_coin_indices(coin_in, coin_out)
         assert i != j
 
-        output = self.exchange(i, j, size)
+        out_amount, fee = self.exchange(i, j, size)
+        # in D units
+        volume = size * self.precisions()[i] // 10**18
 
-        return output
+        return out_amount, fee, volume
 
     def test_trade(self, coin_in, coin_out, dx, state=None):
         i, j = self.get_coin_indices(coin_in, coin_out)

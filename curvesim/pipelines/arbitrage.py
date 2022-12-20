@@ -264,23 +264,16 @@ class Arbitrageur:
         if len(trades) == 0:
             return [], 0
 
-        p = self.pool_precisions
-        max_coin = self.max_coin
-
-        volume = 0
+        total_volume = 0
         trades_done = []
         for trade in trades:
             i, j, dx = trade
-            dy, _ = self.pool.trade(i, j, dx)
+            dy, _, volume = self.pool.trade(i, j, dx)
             trades_done.append(trade + (dy,))
 
-            if max_coin:
-                if i < max_coin or j < max_coin:
-                    volume += dx * p[i] // 10**18  # in D units
-            else:
-                volume += dx * p[i] // 10**18  # in D units
+            total_volume += volume
 
-        return trades_done, volume
+        return trades_done, total_volume
 
 
 # Metrics
