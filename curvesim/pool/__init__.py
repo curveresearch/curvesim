@@ -19,12 +19,16 @@ __all__ = [
     "CurvePool",
     "CurveMetaPool",
     "CurveRaiPool",
+    "SimCurvePool",
+    "SimCurveMetaPool",
+    "SimCurveRaiPool",
 ]
 
 from curvesim.exceptions import CurvesimValueError
 from curvesim.pool_data import get as _get_pool_data
 
 from .base import Pool
+from .sim_interface import SimCurveMetaPool, SimCurvePool, SimCurveRaiPool
 from .stableswap import CurveMetaPool, CurvePool, CurveRaiPool
 
 

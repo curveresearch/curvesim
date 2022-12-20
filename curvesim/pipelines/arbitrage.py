@@ -14,7 +14,6 @@ from scipy.optimize import least_squares, root_scalar
 from ..iterators.param_samplers import Grid
 from ..iterators.price_samplers import PriceVolume
 from ..plot import saveplots
-from ..pool.stableswap import StableSwapSimPool
 from ..pool.stableswap.functions import get_D, get_xp
 from .templates import run_pipeline
 from .utils import compute_volume_multipliers
@@ -115,7 +114,7 @@ def volume_limited_arbitrage(
     if ncpu is None:
         ncpu = os.cpu_count() if os.cpu_count() is not None else 1
 
-    pool = pool_data.pool()
+    pool = pool_data.sim_pool()
     coins = pool_data.coins()
 
     param_sampler = Grid(pool, variable_params, fixed_params=fixed_params)
@@ -181,21 +180,20 @@ def strategy(pool, params, price_sampler, vol_mult):
     metrics : tuple of lists
 
     """
-
-    pool_interface = StableSwapSimPool(pool)
-    trader = Arbitrageur(pool_interface)
+    trader = Arbitrageur(pool)
     metrics = Metrics()
 
-    symbol = pool_interface.pool.metadata["symbol"]
+    # symbol = pool.pool.metadata["symbol"]
+    symbol = pool.metadata["symbol"]
     print(f"[{symbol}] Simulating with {params}")
 
     for prices, volumes, timestamp in price_sampler:
         limits = volumes * vol_mult
-        pool_interface.next_timestamp(timestamp)
+        pool.next_timestamp(timestamp)
         trades, errors, _ = trader.compute_trades(prices, limits)
         _, volume = trader.do_trades(trades)
 
-        metrics.update(trader.pool_interface, errors, volume)
+        metrics.update(trader.pool, errors, volume)
 
     return metrics()
 
@@ -205,17 +203,17 @@ class Arbitrageur:
     Computes, executes, and reports out arbitrage trades.
     """
 
-    def __init__(self, pool_interface):
+    def __init__(self, pool):
         """
         Parameters
         ----------
-        pool_interface :
+        pool :
             Simulation interface to a subclass of :class:`.Pool`.
 
         """
-        self.pool_interface = pool_interface
-        self.pool_precisions = pool_interface.precisions()
-        self.max_coin = pool_interface.max_coin
+        self.pool = pool
+        self.pool_precisions = pool.precisions()
+        self.max_coin = pool.max_coin
 
     def compute_trades(self, prices, volume_limits):
         """
@@ -242,7 +240,7 @@ class Arbitrageur:
             Results object from the numerical optimizer.
 
         """
-        trades, errors, res = opt_arb_multi(self.pool_interface, prices, volume_limits)
+        trades, errors, res = opt_arb_multi(self.pool, prices, volume_limits)
         return trades, errors, res
 
     def do_trades(self, trades):
@@ -273,7 +271,7 @@ class Arbitrageur:
         trades_done = []
         for trade in trades:
             i, j, dx = trade
-            dy, _ = self.pool_interface.trade(i, j, dx)
+            dy, _ = self.pool.trade(i, j, dx)
             trades_done.append(trade + (dy,))
 
             if max_coin:
@@ -324,13 +322,13 @@ class Metrics:
 
         return records
 
-    def update(self, pool_interface, errors, trade_volume):
+    def update(self, pool, errors, trade_volume):
         """
         Computes and stores pool metrics for each timestep.
 
         Parameters
         ----------
-        pool_interface :
+        pool :
             Simulation interface to a subclass of :class:`.Pool`.
 
         errors : numpy.ndarray
@@ -342,7 +340,7 @@ class Metrics:
             (returned from :meth:`Arbitrageur.do_trades`).
 
         """
-        pool_state = pool_interface.get_pool_state()
+        pool_state = pool.get_pool_state()
         if hasattr(pool_state, "rates"):
             p = pool_state.rates
         else:
@@ -350,7 +348,7 @@ class Metrics:
 
         xp = get_xp(pool_state.x, p)
         bal = self.compute_balance(xp)
-        price_depth = self.compute_price_depth(pool_interface)
+        price_depth = self.compute_price_depth(pool)
         value = get_D(xp, pool_state.A) / 10**18
 
         self.xs.append(pool_state.x)
@@ -370,13 +368,13 @@ class Metrics:
         return bal
 
     @staticmethod
-    def compute_price_depth(pool_interface):
+    def compute_price_depth(pool):
         """Compute price depth."""
-        combos = pool_interface.base_index_combos
+        combos = pool.base_index_combos
 
         LD = []
         for i, j in combos:
-            ld = pool_interface.get_liquidity_density(i, j)
+            ld = pool.get_liquidity_density(i, j)
             LD.append(ld)
         return LD
 
@@ -506,13 +504,13 @@ def opt_arb(get_bounds, error_function, i, j, p):
     return trade, error, res
 
 
-def opt_arb_multi(pool_interface, prices, limits):  # noqa: C901
+def opt_arb_multi(pool, prices, limits):  # noqa: C901
     """
     Computes trades to optimally arbitrage the pool, constrained by volume limits.
 
     Parameters
     ----------
-    pool_interface :
+    pool :
         Simulation interface to a subclass of :class:`Pool`.
 
     prices : pandas.Series
@@ -534,14 +532,14 @@ def opt_arb_multi(pool_interface, prices, limits):  # noqa: C901
         Results object from the numerical optimizer.
 
     """
-    get_bounds, error_function, error_function_multi = pool_interface.make_error_fns()
+    get_bounds, error_function, error_function_multi = pool.make_error_fns()
     x0, lo, hi, coins, price_targets = get_trade_args(
-        pool_interface.price,
+        pool.price,
         get_bounds,
         error_function,
         prices,
         limits,
-        pool_interface.index_combos,
+        pool.index_combos,
     )
 
     # Find trades that minimize difference between

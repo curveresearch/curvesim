@@ -2,26 +2,20 @@ from itertools import combinations
 
 from curvesim.pipelines.templates import SimPool
 
-from .. import functions as pool_functions
-from . import registry
+from ..stableswap import functions as pool_functions
 
 
-class StableSwapSimPool(SimPool):
-    def __init__(self, pool):
-        super().__init__()
+class SimStableswapBase(SimPool):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-        pool_function_dict = registry.get_stableswap_interface_functions(type(pool))
-        self._set_pool_interface(pool, pool_function_dict)
+        all_idx = range(self.n_total)
+        base_idx = list(range(self.n))
 
-        self.pricing_fns = registry.get_stableswap_pricing_functions(type(pool))
-        self.next_timestamp = self.pool.next_timestamp
-
-        all_idx = range(pool.n_total)
-        base_idx = list(range(pool.n))
-        self.max_coin = getattr(pool, "max_coin", None)
-
-        if self.max_coin:
+        if hasattr(self, "max_coin"):
             base_idx[self.max_coin] = "bp_token"
+        else:
+            self.max_coin = None
 
         self.index_combos = list(combinations(all_idx, 2))
         self.base_index_combos = list(combinations(base_idx, 2))

@@ -9,6 +9,7 @@ from numpy import array
 
 from ..network.subgraph import redemption_prices_sync as _redemption_prices
 from ..network.subgraph import volume_sync as _volume
+from ..pool.sim_interface import SimCurveMetaPool, SimCurvePool, SimCurveRaiPool
 from ..pool.stableswap import CurveMetaPool, CurvePool, CurveRaiPool
 from .queries import from_address, from_symbol
 
@@ -127,6 +128,51 @@ class PoolData:
 
         else:
             pool = CurvePool(**kwargs)
+
+        pool.metadata = self.dict
+
+        return pool
+
+    def sim_pool(self, balanced=True, balanced_base=True):
+        """
+        Constructs a pool object based on the stored data.
+
+        Parameters
+        ----------
+        balanced : bool, default=True
+            If True, balances the pool value across assets.
+
+        balanced_base : bool, default=True
+            If True and pool is metapool, balances the basepool value across assets.
+
+        Returns
+        -------
+        Pool
+        """
+
+        def bal(kwargs, balanced):
+            reserves = kwargs.pop("reserves")
+            if not balanced:
+                kwargs.update({"D": reserves})
+            return kwargs
+
+        kwargs = bal(self.dict["init_kwargs"].copy(), balanced)
+
+        if self.dict["basepool"]:
+            bp_kwargs = self.dict["basepool"]["init_kwargs"].copy()
+            bp_kwargs = bal(bp_kwargs, balanced_base)
+            kwargs.update({"basepool": CurvePool(**bp_kwargs)})
+
+            r = self.redemption_prices()
+            if r is None:
+                pool = SimCurveMetaPool(**kwargs)
+            else:
+                pool = SimCurveRaiPool(r, **kwargs)
+
+            pool.basepool.metadata = self.dict["basepool"]
+
+        else:
+            pool = SimCurvePool(**kwargs)
 
         pool.metadata = self.dict
 

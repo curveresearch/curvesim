@@ -1,5 +1,4 @@
 from multiprocessing import Pool as cpu_pool
-from types import MethodType
 
 
 def run_pipeline(param_sampler, price_sampler, strategy, ncpu=4):
@@ -55,17 +54,11 @@ class SimPool:
     This component is likely to change.
     """
 
-    def __init__(self):
-        self.pool = None
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.coin_indices = None
-        self.pool_state = None
 
-    @staticmethod
-    def _get_pool_state(pool):  # pylint: disable=method-hidden
-        raise NotImplementedError
-
-    @staticmethod
-    def _init_coin_indices(metadata):  # pylint: disable=method-hidden
+    def _init_coin_indices(self, metadata):
         raise NotImplementedError
 
     def price(self, coin_in, coin_out, use_fee=True):
@@ -83,54 +76,19 @@ class SimPool:
     def precisions(self):
         raise NotImplementedError
 
-    def _set_pool_interface(self, pool, pool_function_dict):
-        """
-        Binds the pool and functions used in simulation to the interface.
-
-        Parameters
-        ----------
-        pool :
-            A pool object.
-
-        pool_function_dict : dict
-            A dict with interface method names as keys, and functions as values.
-
-            Note: Currently, _get_pool_state, and _init_coin_indices are required.
-
-        """
-        self.pool = pool
-        pool_function_dict = pool_function_dict.copy()
-
-        # Set Required Functions
-        self._get_pool_state = pool_function_dict.pop("_get_pool_state")
-        self._init_coin_indices = pool_function_dict.pop("_init_coin_indices")
-
-        # Set Additional Functions
-        for interface_fn, pool_fn in pool_function_dict.items():
-            bound_method = MethodType(pool_fn, self)
-            setattr(self, interface_fn, bound_method)
-
-        self.coin_indices = self._init_coin_indices(self.pool.metadata)
-        self.set_pool_state()
+    @property
+    def pricing_fns(self):
+        raise NotImplementedError
 
     def get_pool_state(self):
-        """
-        Gets pool state using the provided _get_pool_state method
-        """
-        return self._get_pool_state(self.pool)
-
-    def set_pool_state(self):
-        """
-        Records the current pool state in the interface's pool_state atttribute.
-        """
-        self.pool_state = self.get_pool_state()
+        raise NotImplementedError
 
     def get_coin_indices(self, *coins):
         """
         Gets the pool indices for the input coin names.
         Uses the coin_indices set by _init_coin_indices.
         """
-        coin_indices = self.coin_indices
+        coin_indices = self.coin_indices or self._init_coin_indices(self.metadata)
         return [self._get_coin_index(coin_indices, c) for c in coins]
 
     @staticmethod
