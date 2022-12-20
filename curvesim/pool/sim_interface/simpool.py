@@ -1,3 +1,4 @@
+from abc import ABC
 from itertools import combinations
 
 from curvesim.pipelines.templates import SimPool
@@ -5,14 +6,17 @@ from curvesim.pipelines.templates import SimPool
 from ..stableswap import functions as pool_functions
 
 
-class SimStableswapBase(SimPool):
+class SimStableswapBase(SimPool, ABC):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        # pylint: disable=no-member
         all_idx = range(self.n_total)
         base_idx = list(range(self.n))
+        # pylint: enable=no-member
 
         if hasattr(self, "max_coin"):
+            # pylint: disable-next=E0203,E1126
             base_idx[self.max_coin] = "bp_token"
         else:
             self.max_coin = None
@@ -21,7 +25,7 @@ class SimStableswapBase(SimPool):
         self.base_index_combos = list(combinations(base_idx, 2))
 
     def get_liquidity_density(self, coin_in, coin_out, factor=10**8):
-        # Fix: won't work for trades between meta-pool and basepool
+        # FIXME: won't work for trades between meta-pool and basepool
         i, j = self.get_coin_indices(coin_in, coin_out)
         state = self.get_pool_state()
 

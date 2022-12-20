@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from multiprocessing import Pool as cpu_pool
 
 
@@ -46,7 +47,7 @@ def run_pipeline(param_sampler, price_sampler, strategy, ncpu=4):
     return results
 
 
-class SimPool:
+class SimPool(ABC):
     """
     A template class for creating simulation interfaces for pools.
     See pool.stablewap.interfaces.StableSwapSimPool
@@ -56,30 +57,49 @@ class SimPool:
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.coin_indices = None
+        self._coin_indices = None
 
-    def _init_coin_indices(self, metadata):
+    @property
+    def coin_indices(self):
+        if self._coin_indices:
+            indices = self._coin_indices
+        else:
+            # pylint: disable-next=no-member
+            indices = self._init_coin_indices(self.metadata)
+            self._coin_indices = indices
+        return indices
+
+    @staticmethod
+    @abstractmethod
+    def _init_coin_indices(metadata):
         raise NotImplementedError
 
+    @abstractmethod
     def price(self, coin_in, coin_out, use_fee=True):
         raise NotImplementedError
 
+    @abstractmethod
     def trade(self, coin_in, coin_out, size):
         raise NotImplementedError
 
+    @abstractmethod
     def test_trade(self, coin_in, coin_out, dx, state=None):
         raise NotImplementedError
 
+    @abstractmethod
     def make_error_fns(self):
         raise NotImplementedError
 
+    @abstractmethod
     def precisions(self):
         raise NotImplementedError
 
     @property
+    @abstractmethod
     def pricing_fns(self):
         raise NotImplementedError
 
+    @abstractmethod
     def get_pool_state(self):
         raise NotImplementedError
 
@@ -88,7 +108,7 @@ class SimPool:
         Gets the pool indices for the input coin names.
         Uses the coin_indices set by _init_coin_indices.
         """
-        coin_indices = self.coin_indices or self._init_coin_indices(self.metadata)
+        coin_indices = self.coin_indices
         return [self._get_coin_index(coin_indices, c) for c in coins]
 
     @staticmethod
