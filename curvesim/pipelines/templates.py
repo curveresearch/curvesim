@@ -73,8 +73,3 @@ class SimPool(ABC):
     @abstractmethod
     def make_error_fns(self):
         raise NotImplementedError
-
-    @property
-    @abstractmethod
-    def pricing_fns(self):
-        raise NotImplementedError

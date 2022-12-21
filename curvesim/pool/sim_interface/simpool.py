@@ -75,5 +75,6 @@ class SimStableswapBase(SimPool, ABC):
         return LD
 
     @property
+    @abstractmethod
     def _base_index_combos(self):
         raise NotImplementedError

@@ -19,10 +19,6 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
         p_base = self.basepool.rates[:]
         return [self.rate_multiplier, *p_base]
 
-    @property
-    def pricing_fns(self):
-        return (pool_functions.dydx_metapool, pool_functions.dydx)
-
     def _init_coin_indices(self):
         metadata = self.metadata
         meta_coin_names = metadata["coins"]["names"][:-1]
@@ -94,7 +90,7 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
         """
         i, j = self.get_coin_indices(coin_in, coin_out)
         max_coin = self.max_coin
-        get_dydx, _get_dydx = self.pricing_fns
+        get_dydx, _get_dydx = pool_functions.dydx_metapool, pool_functions.dydx
 
         # Basepool LP token not used in trade
         if i != "bp_token" and j != "bp_token":
@@ -115,7 +111,7 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
     def make_error_fns(self):  # noqa: C901
         # Note: for performance, does not support string coin-names
 
-        get_dydx = self.pricing_fns[0]
+        get_dydx = pool_functions.dydx_metapool
         max_coin = self.max_coin
         args = [
             self.balances,

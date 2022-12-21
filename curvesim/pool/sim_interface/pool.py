@@ -16,10 +16,6 @@ class SimCurvePool(SimStableswapBase, CurvePool):
     def _precisions(self):
         return self.rates[:]
 
-    @property
-    def pricing_fns(self):
-        return (pool_functions.dydx, pool_functions.dydx)
-
     def _init_coin_indices(self):
         coin_names = self.metadata["coins"]["names"]
         coin_indices = range(len(coin_names))
