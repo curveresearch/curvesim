@@ -85,30 +85,37 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
         self,
         coin_in,
         coin_out,
-        dx,
+        factor,
     ):
         """
         Trade between top-level coins.
         """
         i, j = self.get_coin_indices(coin_in, coin_out)
+
+        x = self.balances
+        p = self.rates
+        xp = pool_functions.get_xp(x, p)
+
         max_coin = self.max_coin
         get_dydx, _get_dydx = pool_functions.dydx_metapool, pool_functions.dydx
 
         # Basepool LP token not used in trade
         if i != "bp_token" and j != "bp_token":
-            return _test_trade_underlying(self, get_dydx, i, j, dx, max_coin)
+            size = xp[i] // factor
+            return _test_trade_underlying(self, get_dydx, i, j, size, max_coin)
 
         # Basepool LP token used in trade
-        else:
-            if i == "bp_token":
-                i = max_coin
+        if i == "bp_token":
+            i = max_coin
 
-            if j == "bp_token":
-                j = max_coin
+        if j == "bp_token":
+            j = max_coin
 
-            if i == j:
-                raise CurvesimValueError("Duplicate coin indices.")
-            return _test_trade_meta(self, _get_dydx, i, j, dx)
+        if i == j:
+            raise CurvesimValueError("Duplicate coin indices.")
+
+        size = xp[i] // factor
+        return _test_trade_meta(self, _get_dydx, i, j, size)
 
     def make_error_fns(self):  # noqa: C901
         # Note: for performance, does not support string coin-names

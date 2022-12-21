@@ -40,12 +40,19 @@ class SimCurvePool(SimStableswapBase, CurvePool):
 
         return out_amount, fee, volume
 
-    def _test_trade(self, coin_in, coin_out, dx):
+    def _test_trade(self, coin_in, coin_out, factor):
         i, j = self.get_coin_indices(coin_in, coin_out)
+
+        x = self.balances
+        p = self.rates
+        xp = pool_functions.get_xp(x, p)
+        size = xp[i] // factor
 
         exchange_args = (self.balances, self.rates, self.A, self.fee, self.admin_fee)
 
-        output = pool_functions.exchange(i, j, dx, *exchange_args, fee_mul=self.fee_mul)
+        output = pool_functions.exchange(
+            i, j, size, *exchange_args, fee_mul=self.fee_mul
+        )
 
         xp_post = [x * p // 10**18 for x, p in zip(output[0], self.rates)]
 

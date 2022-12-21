@@ -3,8 +3,6 @@ from abc import ABC, abstractmethod
 from curvesim.exceptions import CurvesimValueError
 from curvesim.pipelines.templates import SimPool
 
-from ..stableswap import functions as pool_functions
-
 
 class SimStableswapBase(SimPool, ABC):
     def __init__(self, *args, **kwargs):
@@ -47,25 +45,13 @@ class SimStableswapBase(SimPool, ABC):
         Only for top-level liquidity density.  Cannot compare between
         coins in basepool and primary stablecoin in metapool.
         """
-        i, j = self.get_coin_indices(coin_in, coin_out)
-
-        if i == "bp_token":
-            i = self.max_coin
-        if j == "bp_token":
-            j = self.max_coin
-
-        x = self.balances
-        p = self.rates
-
-        xp = pool_functions.get_xp(x, p)
-
         price_pre = self.price(coin_in, coin_out)
-        output = self._test_trade(coin_in, coin_out, xp[i] // factor)
+        output = self._test_trade(coin_in, coin_out, factor)
         price_post = output[0]
         LD1 = price_pre / ((price_pre - price_post) * factor)
 
         price_pre = self.price(coin_out, coin_in)
-        output = self._test_trade(coin_out, coin_in, xp[j] // factor)
+        output = self._test_trade(coin_out, coin_in, factor)
         price_post = output[0]
         LD2 = price_pre / ((price_pre - price_post) * factor)
 
