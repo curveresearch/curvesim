@@ -3,6 +3,7 @@ from itertools import combinations
 from gmpy2 import mpz
 from numpy import isnan
 
+from curvesim.exceptions import CurvesimValueError
 from curvesim.pool.sim_interface.simpool import SimStableswapBase
 from curvesim.pool.stableswap.metapool import CurveMetaPool
 
@@ -46,7 +47,6 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
 
         # Basepool LP token not used
         if i != "bp_token" and j != "bp_token":
-            assert i != j
             return self.dydx(i, j, use_fee=use_fee)
 
         # Basepool LP token used
@@ -57,7 +57,8 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
             if j == "bp_token":
                 j = self.max_coin
 
-            assert i != j
+            if i == j:
+                raise CurvesimValueError("Duplicate coin indices.")
             xp = self._xp()
             return self._dydx(i, j, xp=xp, use_fee=use_fee)
 
@@ -67,7 +68,8 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
         Coin index runs over basepool underlyers.
         We count only volume when one coin is the primary stable.
         """
-        assert i != j
+        if i == j:
+            raise CurvesimValueError("Duplicate coin indices.")
 
         out_amount, fee = self.exchange_underlying(i, j, size)
 
@@ -94,7 +96,6 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
 
         # Basepool LP token not used in trade
         if i != "bp_token" and j != "bp_token":
-            assert i != j
             return _test_trade_underlying(self, get_dydx, i, j, dx, max_coin)
 
         # Basepool LP token used in trade
@@ -105,7 +106,8 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
             if j == "bp_token":
                 j = max_coin
 
-            assert i != j
+            if i == j:
+                raise CurvesimValueError("Duplicate coin indices.")
             return _test_trade_meta(self, _get_dydx, i, j, dx)
 
     def make_error_fns(self):  # noqa: C901

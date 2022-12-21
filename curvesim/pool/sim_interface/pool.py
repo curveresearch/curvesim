@@ -29,12 +29,10 @@ class SimCurvePool(SimStableswapBase, CurvePool):
 
     def price(self, coin_in, coin_out, use_fee=True):
         i, j = self.get_coin_indices(coin_in, coin_out)
-        assert i != j
         return self.dydx(i, j, use_fee=use_fee)
 
     def trade(self, coin_in, coin_out, size):
         i, j = self.get_coin_indices(coin_in, coin_out)
-        assert i != j
 
         out_amount, fee = self.exchange(i, j, size)
         # in D units
@@ -44,7 +42,6 @@ class SimCurvePool(SimStableswapBase, CurvePool):
 
     def test_trade(self, coin_in, coin_out, dx):
         i, j = self.get_coin_indices(coin_in, coin_out)
-        assert i != j
 
         exchange_args = (self.balances, self.rates, self.A, self.fee, self.admin_fee)
 

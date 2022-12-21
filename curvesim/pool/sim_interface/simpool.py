@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+from curvesim.exceptions import CurvesimValueError
 from curvesim.pipelines.templates import SimPool
 
 from ..stableswap import functions as pool_functions
@@ -35,6 +36,9 @@ class SimStableswapBase(SimPool, ABC):
             if isinstance(coin_id, str):
                 coin_id = self.coin_indices[coin_id]
             coin_indices.append(coin_id)
+
+        if len(coin_indices) != len(set(coin_indices)):
+            raise CurvesimValueError("Duplicate coin indices.")
 
         return coin_indices
 
