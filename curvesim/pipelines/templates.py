@@ -1,3 +1,6 @@
+"""
+Functions and interfaces used in the simulation pipeline framework.
+"""
 from abc import ABC, abstractmethod
 from multiprocessing import Pool as cpu_pool
 
@@ -49,10 +52,9 @@ def run_pipeline(param_sampler, price_sampler, strategy, ncpu=4):
 
 class SimPool(ABC):
     """
-    A template class for creating simulation interfaces for pools.
-    See pool.stablewap.interfaces.StableSwapSimPool
+    The interface that must be implemented by pools used in simulations.
 
-    This component is likely to change.
+    See curvesim.pool.sim_interface for implementations.
     """
 
     def __init__(self, *args, **kwargs):
@@ -60,16 +62,73 @@ class SimPool(ABC):
 
     @abstractmethod
     def price(self, coin_in, coin_out, use_fee=True):
+        """
+        Returns the spot price of `coin_in` quoted in terms of `coin_out`,
+        i.e. the ratio of output coin amount to input coin amount for
+        an "infinitesimally" small trade.
+
+        Coin IDs should be strings but as a legacy feature integer indices
+        corresponding to the pool implementation are allowed (caveat lector).
+
+        The indices are assumed to include base pool underlyer indices.
+
+        Parameters
+        ----------
+        coin_in : str, int
+            ID of coin to be priced; in a swapping context, this is
+            the "in"-token.
+        coin_out : str, int
+            ID of quote currency; in a swapping context, this is the
+            "out"-token.
+        use_fee: bool, default=False
+            Deduct fees.
+
+        Returns
+        -------
+        float
+            Price of `coin_in` quoted in `coin_out`
+        """
         raise NotImplementedError
 
     @abstractmethod
     def trade(self, coin_in, coin_out, size):
+        """
+        Perform an exchange between two coins.
+
+        Coin IDs should be strings but as a legacy feature integer indices
+        corresponding to the pool implementation are allowed (caveat lector).
+
+        Parameters
+        ----------
+        coin_in : str, int
+            ID of "in" coin.
+        coin_out : str, int
+            ID of "out" coin.
+        size : int
+            Amount of coin `i` being exchanged.
+
+        Returns
+        -------
+        (int, int, int)
+            (amount of coin `j` received, trading fee, volume)
+
+            Note that coin amounts and fee are in native token units but `volume`
+            is normalized to be in the same units as pool value.  This enables
+            cross-token comparisons and totaling of volume.
+        """
         raise NotImplementedError
 
     @abstractmethod
-    def test_trade(self, coin_in, coin_out, dx, state=None):
+    def get_price_depth(self):
+        """
+        Returns the price depth between pairs of coins in the pool.
+        """
         raise NotImplementedError
 
     @abstractmethod
     def make_error_fns(self):
+        """
+        Returns the pricing error functions needed for determining the
+        optimal arbitrage in simulations.
+        """
         raise NotImplementedError

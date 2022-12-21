@@ -1,3 +1,4 @@
+"""Miscellaneous utility functions."""
 from math import factorial
 
 from numpy import append

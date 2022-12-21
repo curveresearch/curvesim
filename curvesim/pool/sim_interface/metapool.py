@@ -81,7 +81,7 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
 
         return out_amount, fee, volume
 
-    def test_trade(
+    def _test_trade(
         self,
         coin_in,
         coin_out,

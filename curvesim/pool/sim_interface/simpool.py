@@ -60,12 +60,12 @@ class SimStableswapBase(SimPool, ABC):
         xp = pool_functions.get_xp(x, p)
 
         price_pre = self.price(coin_in, coin_out)
-        output = self.test_trade(coin_in, coin_out, xp[i] // factor)
+        output = self._test_trade(coin_in, coin_out, xp[i] // factor)
         price_post = output[0]
         LD1 = price_pre / ((price_pre - price_post) * factor)
 
         price_pre = self.price(coin_out, coin_in)
-        output = self.test_trade(coin_out, coin_in, xp[j] // factor)
+        output = self._test_trade(coin_out, coin_in, xp[j] // factor)
         price_post = output[0]
         LD2 = price_pre / ((price_pre - price_post) * factor)
 
@@ -81,4 +81,8 @@ class SimStableswapBase(SimPool, ABC):
     @property
     @abstractmethod
     def _base_index_combos(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def _test_trade(self, coin_in, coin_out, dx):
         raise NotImplementedError
