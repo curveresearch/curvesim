@@ -90,10 +90,6 @@ class SimPool(ABC):
     def make_error_fns(self):
         raise NotImplementedError
 
-    @abstractmethod
-    def precisions(self):
-        raise NotImplementedError
-
     @property
     @abstractmethod
     def pricing_fns(self):

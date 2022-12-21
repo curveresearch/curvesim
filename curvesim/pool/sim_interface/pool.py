@@ -24,9 +24,9 @@ class SimCurvePool(SimStableswapBase, CurvePool):
             self.admin_fee,
         )
 
-    def precisions(self):
-        state = self.get_pool_state()
-        return state.p
+    @property
+    def _precisions(self):
+        return self.rates[:]
 
     @property
     def pricing_fns(self):
@@ -49,7 +49,7 @@ class SimCurvePool(SimStableswapBase, CurvePool):
 
         out_amount, fee = self.exchange(i, j, size)
         # in D units
-        volume = size * self.precisions()[i] // 10**18
+        volume = size * self._precisions[i] // 10**18
 
         return out_amount, fee, volume
 

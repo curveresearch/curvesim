@@ -212,7 +212,6 @@ class Arbitrageur:
 
         """
         self.pool = pool
-        self.pool_precisions = pool.precisions()
         self.max_coin = pool.max_coin
 
     def compute_trades(self, prices, volume_limits):

@@ -49,9 +49,10 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
 
         return MetaPoolState(*args)
 
-    def precisions(self):
-        state = self.get_pool_state()
-        return [state.rate_multiplier] + state.p_base
+    @property
+    def _precisions(self):
+        p_base = self.basepool.rates[:]
+        return [self.rate_multiplier, *p_base]
 
     @property
     def pricing_fns(self):
@@ -104,7 +105,7 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
 
         max_coin = self.max_coin
         if i < max_coin or j < max_coin:
-            volume = size * self.precisions()[i] // 10**18  # in D units
+            volume = size * self._precisions[i] // 10**18  # in D units
         else:
             volume = 0
 
