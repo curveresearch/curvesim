@@ -1,58 +1,18 @@
-from collections import namedtuple
 from itertools import combinations
 
 from gmpy2 import mpz
 from numpy import isnan
 
-from curvesim.pool.sim_interface.pool import PoolState
 from curvesim.pool.sim_interface.simpool import SimStableswapBase
 from curvesim.pool.stableswap.metapool import CurveMetaPool
 
 from ..stableswap import functions as pool_functions
-
-MetaPoolState = namedtuple(
-    "MetaPoolState",
-    [
-        "x",
-        "x_base",
-        "rate_multiplier",
-        "p_base",
-        "A",
-        "A_base",
-        "fee",
-        "fee_base",
-        "fee_mul",
-        "fee_mul_base",
-        "tokens",
-        "tokens_base",
-        "admin_fee",
-        "rates",
-    ],
-)
-
-
-def get_state(pool):
-    if isinstance(pool, CurveMetaPool):
-        p = pool.rate_multiplier
-    else:
-        p = pool.rates[:]
-    return PoolState(
-        pool.balances[:], p, pool.A, pool.fee, pool.fee_mul, pool.tokens, pool.admin_fee
-    )
 
 
 class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.metadata = None  # set later by factory
-
-    def get_pool_state(self):
-        state_pairs = zip(get_state(self), get_state(self.basepool))
-
-        args = [arg for pair in state_pairs for arg in pair]
-        args[-1] = self.rates[:]
-
-        return MetaPoolState(*args)
 
     @property
     def _precisions(self):
@@ -123,19 +83,23 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
 
         return out_amount, fee, volume
 
-    def test_trade(self, coin_in, coin_out, dx, state=None):
+    def test_trade(
+        self,
+        coin_in,
+        coin_out,
+        dx,
+    ):
         """
         Trade between top-level coins.
         """
         i, j = self.get_coin_indices(coin_in, coin_out)
-        state = state or self.get_pool_state()
         max_coin = self.max_coin
         get_dydx, _get_dydx = self.pricing_fns
 
         # Basepool LP token not used in trade
         if i != "bp_token" and j != "bp_token":
             assert i != j
-            return _test_trade_underlying(state, get_dydx, i, j, dx, max_coin)
+            return _test_trade_underlying(self, get_dydx, i, j, dx, max_coin)
 
         # Basepool LP token used in trade
         else:
@@ -146,30 +110,29 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
                 j = max_coin
 
             assert i != j
-            return _test_trade_meta(state, _get_dydx, i, j, dx)
+            return _test_trade_meta(self, _get_dydx, i, j, dx)
 
     def make_error_fns(self):  # noqa: C901
         # Note: for performance, does not support string coin-names
 
-        state = self.get_pool_state()
         get_dydx = self.pricing_fns[0]
         max_coin = self.max_coin
         args = [
-            state.x,
-            state.x_base,
-            state.rates,
-            state.p_base,
-            state.A,
-            state.A_base,
+            self.balances,
+            self.basepool.balances,
+            self.rates,
+            self.basepool.rates,
+            self.A,
+            self.basepool.A,
             max_coin,
-            state.tokens_base,
-            state.fee,
-            state.fee_base,
+            self.basepool.tokens,
+            self.fee,
+            self.basepool.fee,
         ]
 
-        p_all = [state.rate_multiplier] + state.p_base
-        xp_meta = pool_functions.get_xp(state.x, state.rates)
-        xp_base = pool_functions.get_xp(state.x_base, state.p_base)
+        p_all = [self.rate_multiplier] + self.basepool.rates
+        xp_meta = pool_functions.get_xp(self.balances, self.rates)
+        xp_base = pool_functions.get_xp(self.basepool.balances, self.basepool.rates)
 
         all_idx = range(self.n_total)
         index_combos = list(combinations(all_idx, 2))
@@ -186,14 +149,16 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
 
             if base_i < 0 or base_j < 0:
                 xp_j = int(xp_meta[meta_j] * 0.01)
-                high = pool_functions.get_y(meta_j, meta_i, xp_j, xp_meta, state.A)
+                high = pool_functions.get_y(meta_j, meta_i, xp_j, xp_meta, self.A)
                 high -= xp_meta[meta_i]
-                # high = high * 10**18 // state.rates[meta_i]
+                # high = high * 10**18 // self.rates[meta_i]
             else:
                 xp_j = int(xp_base[base_j] * 0.01)
-                high = pool_functions.get_y(base_j, base_i, xp_j, xp_base, state.A_base)
+                high = pool_functions.get_y(
+                    base_j, base_i, xp_j, xp_base, self.basepool.A
+                )
                 high -= xp_base[base_i]
-                # high = high * 10**18 // state.p_base[base_i]
+                # high = high * 10**18 // self.p_base[base_i]
 
             return (0, high)
 
@@ -204,19 +169,19 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
 
             if dx > 0:
                 output = pool_functions.exchange_underlying(
-                    i, j, dx, *_args, admin_fee=state.admin_fee, base_xp=xp_base
+                    i, j, dx, *_args, admin_fee=self.admin_fee, base_xp=xp_base
                 )
 
                 # Update x, x_base, rates and tokens
                 tokens_base = output[2]
                 xp_base_post = [
-                    x * p // 10**18 for x, p in zip(output[1], state.p_base)
+                    x * p // 10**18 for x, p in zip(output[1], self.basepool.rates)
                 ]
                 vp_base = pool_functions.get_virtual_price(
-                    xp_base_post, state.A_base, tokens_base
+                    xp_base_post, self.basepool.A, tokens_base
                 )
 
-                rates = state.rates[:]
+                rates = self.rates[:]
                 rates[max_coin] = vp_base
 
                 _args[0:3] = output[0:2] + (rates,)
@@ -244,19 +209,20 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
 
                 if dx > 0:
                     output = pool_functions.exchange_underlying(
-                        i, j, dx, *_args, admin_fee=state.admin_fee, base_xp=_xp_base
+                        i, j, dx, *_args, admin_fee=self.admin_fee, base_xp=_xp_base
                     )
 
                     # Update x, x_base, rates and tokens
                     tokens_base = output[2]
                     _xp_base = [
-                        x * p // 10**18 for x, p in zip(output[1], state.p_base)
+                        x * p // 10**18
+                        for x, p in zip(output[1], self.basepool.rates)
                     ]
                     vp_base = pool_functions.get_virtual_price(
-                        _xp_base, state.A_base, tokens_base
+                        _xp_base, self.basepool.A, tokens_base
                     )
 
-                    rates = state.rates[:]
+                    rates = self.rates[:]
                     rates[max_coin] = vp_base
 
                     _args[0:3] = output[0:2] + (rates,)
@@ -282,16 +248,16 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
 
 def _test_trade_underlying(state, pricing_fn, i, j, dx, max_coin):
     args = [
-        state.x,
-        state.x_base,
+        state.balances,
+        state.basepool.balances,
         state.rates,
-        state.p_base,
+        state.basepool.rates,
         state.A,
-        state.A_base,
+        state.basepool.A,
         max_coin,
-        state.tokens_base,
+        state.basepool.tokens,
         state.fee,
-        state.fee_base,
+        state.basepool.fee,
     ]
 
     output = pool_functions.exchange_underlying(
@@ -304,8 +270,10 @@ def _test_trade_underlying(state, pricing_fn, i, j, dx, max_coin):
     # Update rates and tokens if needed
     if i < max_coin or j < max_coin:
         tokens_base = output[2]
-        xp_base = pool_functions.get_xp(output[1], state.p_base)
-        vp_base = pool_functions.get_virtual_price(xp_base, state.A_base, tokens_base)
+        xp_base = pool_functions.get_xp(output[1], state.basepool.rates)
+        vp_base = pool_functions.get_virtual_price(
+            xp_base, state.basepool.A, tokens_base
+        )
 
         rates = state.rates[:]
         rates[max_coin] = vp_base
@@ -319,9 +287,9 @@ def _test_trade_underlying(state, pricing_fn, i, j, dx, max_coin):
 
 
 def _test_trade_meta(state, pricing_fn, i, j, dx):
-    xp = pool_functions.get_xp(state.x, state.rates)
+    xp = pool_functions.get_xp(state.balances, state.rates)
     exchange_args = (
-        state.x,
+        state.balances,
         state.rates,
         state.A,
         state.fee,

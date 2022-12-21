@@ -331,18 +331,16 @@ class Metrics:
             (returned from :meth:`Arbitrageur.do_trades`).
 
         """
-        pool_state = pool.get_pool_state()
-        if hasattr(pool_state, "rates"):
-            p = pool_state.rates
-        else:
-            p = pool_state.p
+        p = pool.rates[:]
+        x = pool.balances[:]
+        A = pool.A
 
-        xp = get_xp(pool_state.x, p)
+        xp = get_xp(x, p)
         bal = self.compute_balance(xp)
         price_depth = self.compute_price_depth(pool)
-        value = get_D(xp, pool_state.A) / 10**18
+        value = get_D(xp, A) / 10**18
 
-        self.xs.append(pool_state.x)
+        self.xs.append(x)
         self.ps.append(p)
         self.pool_balance.append(bal)
         self.pool_value.append(value)

@@ -44,29 +44,24 @@ class SimStableswapBase(SimPool, ABC):
         coins in basepool and primary stablecoin in metapool.
         """
         i, j = self.get_coin_indices(coin_in, coin_out)
-        state = self.get_pool_state()
 
         if i == "bp_token":
             i = self.max_coin
-            x = state.x
-            p = state.rates
-        elif j == "bp_token":
+        if j == "bp_token":
             j = self.max_coin
-            x = state.x
-            p = state.rates
-        else:
-            x = state.x
-            p = state.p
+
+        x = self.balances
+        p = self.rates
 
         xp = pool_functions.get_xp(x, p)
 
         price_pre = self.price(coin_in, coin_out)
-        output = self.test_trade(coin_in, coin_out, xp[i] // factor, state=state)
+        output = self.test_trade(coin_in, coin_out, xp[i] // factor)
         price_post = output[0]
         LD1 = price_pre / ((price_pre - price_post) * factor)
 
         price_pre = self.price(coin_out, coin_in)
-        output = self.test_trade(coin_out, coin_in, xp[j] // factor, state=state)
+        output = self.test_trade(coin_out, coin_in, xp[j] // factor)
         price_post = output[0]
         LD2 = price_pre / ((price_pre - price_post) * factor)
 

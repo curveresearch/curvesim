@@ -57,22 +57,6 @@ class SimPool(ABC):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._coin_indices = None
-
-    @property
-    def coin_indices(self):
-        if self._coin_indices:
-            indices = self._coin_indices
-        else:
-            # pylint: disable-next=no-member
-            indices = self._init_coin_indices(self.metadata)
-            self._coin_indices = indices
-        return indices
-
-    @staticmethod
-    @abstractmethod
-    def _init_coin_indices(metadata):
-        raise NotImplementedError
 
     @abstractmethod
     def price(self, coin_in, coin_out, use_fee=True):
@@ -94,25 +78,3 @@ class SimPool(ABC):
     @abstractmethod
     def pricing_fns(self):
         raise NotImplementedError
-
-    @abstractmethod
-    def get_pool_state(self):
-        raise NotImplementedError
-
-    def get_coin_indices(self, *coins):
-        """
-        Gets the pool indices for the input coin names.
-        Uses the coin_indices set by _init_coin_indices.
-        """
-        coin_indices = self.coin_indices
-        return [self._get_coin_index(coin_indices, c) for c in coins]
-
-    @staticmethod
-    def _get_coin_index(coin_indices, coin_id):
-        """
-        Gets the index for a single coin based on its name.
-        Uses the coin_indices set by _init_coin_indices.
-        """
-        if isinstance(coin_id, str):
-            coin_id = coin_indices[coin_id]
-        return coin_id
