@@ -91,20 +91,16 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
         Trade between top-level coins.
         """
         i, j = self.get_coin_indices(coin_in, coin_out)
+        if "bp_token" not in (i, j):
+            raise CurvesimValueError("Must be trade with basepool token.")
 
         x = self.balances
         p = self.rates
         xp = pool_functions.get_xp(x, p)
 
         max_coin = self.max_coin
-        get_dydx, _get_dydx = pool_functions.dydx_metapool, pool_functions.dydx
+        _get_dydx = pool_functions.dydx
 
-        # Basepool LP token not used in trade
-        if i != "bp_token" and j != "bp_token":
-            size = xp[i] // factor
-            return _test_trade_underlying(self, get_dydx, i, j, size, max_coin)
-
-        # Basepool LP token used in trade
         if i == "bp_token":
             i = max_coin
 
@@ -249,46 +245,6 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
             post_trade_price_error_multi,
             index_combos,
         )
-
-
-def _test_trade_underlying(state, pricing_fn, i, j, dx, max_coin):
-    args = [
-        state.balances,
-        state.basepool.balances,
-        state.rates,
-        state.basepool.rates,
-        state.A,
-        state.basepool.A,
-        max_coin,
-        state.basepool.tokens,
-        state.fee,
-        state.basepool.fee,
-    ]
-
-    output = pool_functions.exchange_underlying(
-        i, j, dx, *args, admin_fee=state.admin_fee
-    )
-
-    # Update x values
-    args[0:2] = output[0:2]
-
-    # Update rates and tokens if needed
-    if i < max_coin or j < max_coin:
-        tokens_base = output[2]
-        xp_base = pool_functions.get_xp(output[1], state.basepool.rates)
-        vp_base = pool_functions.get_virtual_price(
-            xp_base, state.basepool.A, tokens_base
-        )
-
-        rates = state.rates[:]
-        rates[max_coin] = vp_base
-
-        args[2] = rates
-        args[7] = tokens_base
-
-    dydx = pricing_fn(i, j, *args)
-
-    return (dydx,) + output
 
 
 def _test_trade_meta(state, pricing_fn, i, j, dx):
