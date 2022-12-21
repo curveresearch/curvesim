@@ -78,6 +78,13 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
 
         return coin_dict
 
+    @property
+    def _base_index_combos(self):
+        base_idx = list(range(self.n))
+        base_idx[self.max_coin] = "bp_token"
+        base_index_combos = list(combinations(base_idx, 2))
+        return base_index_combos
+
     def price(self, coin_in, coin_out, use_fee=True):
         i, j = self.get_coin_indices(coin_in, coin_out)
 

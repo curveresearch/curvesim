@@ -42,6 +42,12 @@ class SimCurvePool(SimStableswapBase, CurvePool):
         coin_indices = range(len(coin_names))
         return dict(zip(coin_names, coin_indices))
 
+    @property
+    def _base_index_combos(self):
+        base_idx = list(range(self.n))
+        base_index_combos = list(combinations(base_idx, 2))
+        return base_index_combos
+
     def price(self, coin_in, coin_out, use_fee=True):
         i, j = self.get_coin_indices(coin_in, coin_out)
         assert i != j

@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from itertools import combinations
 
 from curvesim.pipelines.templates import SimPool
 
@@ -47,21 +46,17 @@ class SimStableswapBase(SimPool, ABC):
         i, j = self.get_coin_indices(coin_in, coin_out)
         state = self.get_pool_state()
 
-        x = getattr(state, "x_base", state.x)
-        if hasattr(state, "p_base"):
-            p = state.p_base
-        else:
-            p = state.p
-
         if i == "bp_token":
             i = self.max_coin
             x = state.x
             p = state.rates
-
-        if j == "bp_token":
+        elif j == "bp_token":
             j = self.max_coin
             x = state.x
             p = state.rates
+        else:
+            x = state.x
+            p = state.p
 
         xp = pool_functions.get_xp(x, p)
 
@@ -78,16 +73,12 @@ class SimStableswapBase(SimPool, ABC):
         return (LD1 + LD2) / 2
 
     def get_price_depth(self):
-        base_idx = list(range(self.n))
-
-        if hasattr(self, "max_coin"):
-            # pylint: disable-next=E0203,E1126
-            base_idx[self.max_coin] = "bp_token"
-
-        base_index_combos = list(combinations(base_idx, 2))
-
         LD = []
-        for i, j in base_index_combos:
+        for i, j in self._base_index_combos:
             ld = self.get_liquidity_density(i, j)
             LD.append(ld)
         return LD
+
+    @property
+    def _base_index_combos(self):
+        raise NotImplementedError
