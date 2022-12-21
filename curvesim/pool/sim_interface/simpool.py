@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from itertools import combinations
 
 from curvesim.pipelines.templates import SimPool
@@ -9,23 +9,41 @@ from ..stableswap import functions as pool_functions
 class SimStableswapBase(SimPool, ABC):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._coin_indices = None
 
-        # pylint: disable=no-member
-        all_idx = range(self.n_total)
-        base_idx = list(range(self.n))
-        # pylint: enable=no-member
+    @abstractmethod
+    def _init_coin_indices(self):
+        """Produces the coin ID to index mapping from the pool's metadata."""
+        raise NotImplementedError
 
-        if hasattr(self, "max_coin"):
-            # pylint: disable-next=E0203,E1126
-            base_idx[self.max_coin] = "bp_token"
+    @property
+    def coin_indices(self):
+        """Return dict mapping coin ID to index."""
+        if self._coin_indices:
+            indices = self._coin_indices
         else:
-            self.max_coin = None
+            indices = self._init_coin_indices()
+            self._coin_indices = indices
+        return indices
 
-        self.index_combos = list(combinations(all_idx, 2))
-        self.base_index_combos = list(combinations(base_idx, 2))
+    def get_coin_indices(self, *coins_ids):
+        """
+        Gets the pool indices for the input coin names.
+        Uses the coin_indices set by _init_coin_indices.
+        """
+        coin_indices = []
+        for coin_id in coins_ids:
+            if isinstance(coin_id, str):
+                coin_id = self.coin_indices[coin_id]
+            coin_indices.append(coin_id)
+
+        return coin_indices
 
     def get_liquidity_density(self, coin_in, coin_out, factor=10**8):
-        # FIXME: won't work for trades between meta-pool and basepool
+        """
+        Only for top-level liquidity density.  Cannot compare between
+        coins in basepool and primary stablecoin in metapool.
+        """
         i, j = self.get_coin_indices(coin_in, coin_out)
         state = self.get_pool_state()
 
@@ -58,3 +76,18 @@ class SimStableswapBase(SimPool, ABC):
         LD2 = price_pre / ((price_pre - price_post) * factor)
 
         return (LD1 + LD2) / 2
+
+    def get_price_depth(self):
+        base_idx = list(range(self.n))
+
+        if hasattr(self, "max_coin"):
+            # pylint: disable-next=E0203,E1126
+            base_idx[self.max_coin] = "bp_token"
+
+        base_index_combos = list(combinations(base_idx, 2))
+
+        LD = []
+        for i, j in base_index_combos:
+            ld = self.get_liquidity_density(i, j)
+            LD.append(ld)
+        return LD

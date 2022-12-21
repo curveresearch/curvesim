@@ -1,4 +1,5 @@
 from collections import namedtuple
+from itertools import combinations
 
 from gmpy2 import mpz
 from numpy import isnan
@@ -41,6 +42,10 @@ def get_state(pool):
 
 
 class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.metadata = None  # set later by factory
+
     def get_pool_state(self):
         state_pairs = zip(get_state(self), get_state(self.basepool))
 
@@ -58,8 +63,8 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
     def pricing_fns(self):
         return (pool_functions.dydx_metapool, pool_functions.dydx)
 
-    @staticmethod
-    def _init_coin_indices(metadata):
+    def _init_coin_indices(self):
+        metadata = self.metadata
         meta_coin_names = metadata["coins"]["names"][:-1]
         base_coin_names = metadata["basepool"]["coins"]["names"]
 
@@ -112,6 +117,9 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
         return out_amount, fee, volume
 
     def test_trade(self, coin_in, coin_out, dx, state=None):
+        """
+        Trade between top-level coins.
+        """
         i, j = self.get_coin_indices(coin_in, coin_out)
         state = state or self.get_pool_state()
         max_coin = self.max_coin
@@ -155,6 +163,9 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
         p_all = [state.rate_multiplier] + state.p_base
         xp_meta = pool_functions.get_xp(state.x, state.rates)
         xp_base = pool_functions.get_xp(state.x_base, state.p_base)
+
+        all_idx = range(self.n_total)
+        index_combos = list(combinations(all_idx, 2))
 
         def get_trade_bounds(i, j):
             base_i = i - max_coin
@@ -254,7 +265,12 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
 
             return errors
 
-        return get_trade_bounds, post_trade_price_error, post_trade_price_error_multi
+        return (
+            get_trade_bounds,
+            post_trade_price_error,
+            post_trade_price_error_multi,
+            index_combos,
+        )
 
 
 def _test_trade_underlying(state, pricing_fn, i, j, dx, max_coin):

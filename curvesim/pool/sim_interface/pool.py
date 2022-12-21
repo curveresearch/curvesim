@@ -1,4 +1,5 @@
 from collections import namedtuple
+from itertools import combinations
 
 from numpy import isnan
 
@@ -12,6 +13,10 @@ PoolState = namedtuple(
 
 
 class SimCurvePool(SimStableswapBase, CurvePool):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.metadata = None  # set later by factory
+
     def get_pool_state(self):
         p = self.rates[:]
         return PoolState(
@@ -32,9 +37,8 @@ class SimCurvePool(SimStableswapBase, CurvePool):
     def pricing_fns(self):
         return (pool_functions.dydx, pool_functions.dydx)
 
-    @staticmethod
-    def _init_coin_indices(metadata):
-        coin_names = metadata["coins"]["names"]
+    def _init_coin_indices(self):
+        coin_names = self.metadata["coins"]["names"]
         coin_indices = range(len(coin_names))
         return dict(zip(coin_names, coin_indices))
 
@@ -78,6 +82,9 @@ class SimCurvePool(SimStableswapBase, CurvePool):
         state = self.get_pool_state()
         args = [state.x, state.p, state.A, state.fee, state.admin_fee]
         xp = pool_functions.get_xp(state.x, state.p)
+
+        all_idx = range(self.n_total)
+        index_combos = list(combinations(all_idx, 2))
 
         def get_trade_bounds(i, j):
             xp_j = int(xp[j] * 0.01)
@@ -134,4 +141,9 @@ class SimCurvePool(SimStableswapBase, CurvePool):
 
             return errors
 
-        return get_trade_bounds, post_trade_price_error, post_trade_price_error_multi
+        return (
+            get_trade_bounds,
+            post_trade_price_error,
+            post_trade_price_error_multi,
+            index_combos,
+        )

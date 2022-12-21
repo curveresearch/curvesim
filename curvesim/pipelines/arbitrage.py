@@ -212,7 +212,6 @@ class Arbitrageur:
 
         """
         self.pool = pool
-        self.max_coin = pool.max_coin
 
     def compute_trades(self, prices, volume_limits):
         """
@@ -362,13 +361,7 @@ class Metrics:
     @staticmethod
     def compute_price_depth(pool):
         """Compute price depth."""
-        combos = pool.base_index_combos
-
-        LD = []
-        for i, j in combos:
-            ld = pool.get_liquidity_density(i, j)
-            LD.append(ld)
-        return LD
+        return pool.get_price_depth()
 
 
 def format_results(results, parameters, timestamps):
@@ -524,14 +517,19 @@ def opt_arb_multi(pool, prices, limits):  # noqa: C901
         Results object from the numerical optimizer.
 
     """
-    get_bounds, error_function, error_function_multi = pool.make_error_fns()
+    (
+        get_bounds,
+        error_function,
+        error_function_multi,
+        index_combos,
+    ) = pool.make_error_fns()
     x0, lo, hi, coins, price_targets = get_trade_args(
         pool.price,
         get_bounds,
         error_function,
         prices,
         limits,
-        pool.index_combos,
+        index_combos,
     )
 
     # Find trades that minimize difference between
