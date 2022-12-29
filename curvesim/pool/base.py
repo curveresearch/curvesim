@@ -28,6 +28,18 @@ class Pool:
         return "0x" + "0" * 40
 
     @property
+    def coin_names(self):
+        if hasattr(self, "metadata"):
+            return self.metadata["coins"]["names"]
+        return []
+
+    @property
+    def coin_addresses(self):
+        if hasattr(self, "metadata"):
+            return self.metadata["coins"]["addresses"]
+        return []
+
+    @property
     def chain(self):
         """Chain for this pool"""
         if hasattr(self, "metadata"):

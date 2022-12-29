@@ -10,15 +10,13 @@ from .simpool import SimStableswapBase
 class SimCurvePool(SimStableswapBase, CurvePool):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.metadata = None  # set later by factory
 
     @property
     def _precisions(self):
         return self.rates[:]
 
     def _init_coin_indices(self):
-        coin_names = self.metadata["coins"]["names"]
-        return {name: i for i, name in enumerate(coin_names)}
+        return {name: i for i, name in enumerate(self.coin_names)}
 
     @property
     def _base_index_combos(self):

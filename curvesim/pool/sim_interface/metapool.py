@@ -13,7 +13,6 @@ from ..stableswap import functions as pool_functions
 class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.metadata = None  # set later by factory
 
     @property
     def _precisions(self):
@@ -21,10 +20,9 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
         return [self.rate_multiplier, *p_base]
 
     def _init_coin_indices(self):
-        metadata = self.metadata
-        meta_coin_names = metadata["coins"]["names"][:-1]
-        base_coin_names = metadata["basepool"]["coins"]["names"]
-        bp_token_name = metadata["coins"]["names"][-1]
+        meta_coin_names = self.coin_names[:-1]
+        base_coin_names = self.basepool.coin_names
+        bp_token_name = self.coin_names[-1]
 
         # indexing from primary stable, through basepool underlyers,
         # and then basepool LP token.
