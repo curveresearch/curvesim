@@ -1,3 +1,4 @@
+import functools
 import os
 
 from dotenv import load_dotenv
@@ -42,3 +43,23 @@ def get_env_var(var_name, default=_NOT_VALUE):
             return default
 
     return var_value
+
+
+def cache(user_function, /):
+    """
+    Simple lightweight unbounded cache.  Sometimes called "memoize".
+
+    Returns the same as lru_cache(maxsize=None), creating a thin wrapper
+    around a dictionary lookup for the function arguments. Because it
+    never needs to evict old values, this is smaller and faster than
+    lru_cache() with a size limit.
+
+    The cache is threadsafe so the wrapped function can be used in
+    multiple threads.
+
+    ----
+    This isn't in functools until python 3.9, so we copy over the
+    implementation as in:
+    https://github.com/python/cpython/blob/3.11/Lib/functools.py#L648
+    """
+    return functools.lru_cache(maxsize=None)(user_function)

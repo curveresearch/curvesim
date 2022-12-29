@@ -2,12 +2,12 @@ from abc import ABC, abstractmethod
 
 from curvesim.exceptions import CurvesimValueError
 from curvesim.pipelines.templates import SimPool
+from curvesim.utils import cache
 
 
 class SimStableswapBase(SimPool, ABC):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._coin_indices = None
 
     @abstractmethod
     def _init_coin_indices(self):
@@ -15,14 +15,10 @@ class SimStableswapBase(SimPool, ABC):
         raise NotImplementedError
 
     @property
+    @cache
     def coin_indices(self):
         """Return dict mapping coin ID to index."""
-        if self._coin_indices:
-            indices = self._coin_indices
-        else:
-            indices = self._init_coin_indices()
-            self._coin_indices = indices
-        return indices
+        return self._init_coin_indices()
 
     def get_coin_indices(self, *coins_ids):
         """
@@ -70,5 +66,5 @@ class SimStableswapBase(SimPool, ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def _test_trade(self, coin_in, coin_out, dx):
+    def _test_trade(self, coin_in, coin_out, factor):
         raise NotImplementedError
