@@ -31,6 +31,7 @@ def get(address_or_symbol, chain="mainnet"):
     PoolData
 
     """
+    # TODO: validate function arguments
     if address_or_symbol.startswith("0x"):
         from_x = from_address
     else:
