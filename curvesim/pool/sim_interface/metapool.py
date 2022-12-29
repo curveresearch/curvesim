@@ -26,8 +26,7 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
         base_coin_names = metadata["basepool"]["coins"]["names"]
 
         coin_names = meta_coin_names + base_coin_names
-        coin_indices = range(len(coin_names))
-        coin_dict = dict(zip(coin_names, coin_indices))
+        coin_dict = {name: i for i, name in enumerate(coin_names)}
 
         bp_token_name = metadata["coins"]["names"][-1]
         bp_token_dict = dict.fromkeys([bp_token_name, "bp_token"], "bp_token")

@@ -18,8 +18,7 @@ class SimCurvePool(SimStableswapBase, CurvePool):
 
     def _init_coin_indices(self):
         coin_names = self.metadata["coins"]["names"]
-        coin_indices = range(len(coin_names))
-        return dict(zip(coin_names, coin_indices))
+        return {name: i for i, name in enumerate(coin_names)}
 
     @property
     def _base_index_combos(self):
