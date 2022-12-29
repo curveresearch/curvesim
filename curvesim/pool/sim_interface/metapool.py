@@ -24,40 +24,44 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
         metadata = self.metadata
         meta_coin_names = metadata["coins"]["names"][:-1]
         base_coin_names = metadata["basepool"]["coins"]["names"]
-
-        coin_names = meta_coin_names + base_coin_names
-        coin_dict = {name: i for i, name in enumerate(coin_names)}
-
         bp_token_name = metadata["coins"]["names"][-1]
-        bp_token_dict = dict.fromkeys([bp_token_name, "bp_token"], "bp_token")
-        coin_dict.update(bp_token_dict)
+
+        # indexing from primary stable, through basepool underlyers,
+        # and then basepool LP token.
+        coin_names = [*meta_coin_names, *base_coin_names, bp_token_name]
+        coin_dict = {name: i for i, name in enumerate(coin_names)}
 
         return coin_dict
 
     @property
     def _base_index_combos(self):
+        """
+        Our convention for the basepool LP token index is to use
+        the total number of stablecoins (including basepool).
+        This removes ambiguity as it is one "off the end" and thus
+        either doesn't exist or is the basepool LP token.
+        """
         base_idx = list(range(self.n))
-        base_idx[self.max_coin] = "bp_token"
-        base_index_combos = list(combinations(base_idx, 2))
+        base_idx[self.max_coin] = self.n_total
+        base_index_combos = combinations(base_idx, 2)
         return base_index_combos
 
     def price(self, coin_in, coin_out, use_fee=True):
         i, j = self.get_coin_indices(coin_in, coin_out)
+        bp_token_index = self.n_total
 
-        # Basepool LP token not used
-        if i != "bp_token" and j != "bp_token":
+        if bp_token_index not in (i, j):
             return self.dydx(i, j, use_fee=use_fee)
-
-        # Basepool LP token used
         else:
-            if i == "bp_token":
+            if i == bp_token_index:
                 i = self.max_coin
 
-            if j == "bp_token":
+            if j == bp_token_index:
                 j = self.max_coin
 
             if i == j:
                 raise CurvesimValueError("Duplicate coin indices.")
+
             xp = self._xp()
             return self._dydx(i, j, xp=xp, use_fee=use_fee)
 
@@ -90,7 +94,8 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
         Trade between top-level coins.
         """
         i, j = self.get_coin_indices(coin_in, coin_out)
-        if "bp_token" not in (i, j):
+        bp_token_index = self.n_total
+        if bp_token_index not in (i, j):
             raise CurvesimValueError("Must be trade with basepool token.")
 
         x = self.balances
@@ -100,10 +105,10 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
         max_coin = self.max_coin
         _get_dydx = pool_functions.dydx
 
-        if i == "bp_token":
+        if i == bp_token_index:
             i = max_coin
 
-        if j == "bp_token":
+        if j == bp_token_index:
             j = max_coin
 
         if i == j:
@@ -135,7 +140,7 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
         xp_base = pool_functions.get_xp(self.basepool.balances, self.basepool.rates)
 
         all_idx = range(self.n_total)
-        index_combos = list(combinations(all_idx, 2))
+        index_combos = combinations(all_idx, 2)
 
         def get_trade_bounds(i, j):
             base_i = i - max_coin

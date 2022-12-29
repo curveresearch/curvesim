@@ -22,8 +22,8 @@ class SimCurvePool(SimStableswapBase, CurvePool):
 
     @property
     def _base_index_combos(self):
-        base_idx = list(range(self.n))
-        base_index_combos = list(combinations(base_idx, 2))
+        base_idx = range(self.n)
+        base_index_combos = combinations(base_idx, 2)
         return base_index_combos
 
     def price(self, coin_in, coin_out, use_fee=True):
@@ -68,7 +68,7 @@ class SimCurvePool(SimStableswapBase, CurvePool):
         xp = pool_functions.get_xp(self.balances, self.rates)
 
         all_idx = range(self.n_total)
-        index_combos = list(combinations(all_idx, 2))
+        index_combos = combinations(all_idx, 2)
 
         def get_trade_bounds(i, j):
             xp_j = int(xp[j] * 0.01)
