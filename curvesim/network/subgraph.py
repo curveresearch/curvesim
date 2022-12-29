@@ -67,7 +67,11 @@ async def convex(chain, q):
     """
     url = CONVEX_COMMUNITY_URL % chain
     r = await query(url, q)
-    return r
+    if "data" not in r:
+        raise SubgraphResultError(
+            f"No data returned from Convex: chain: {chain}, query: {q}"
+        )
+    return r["data"]
 
 
 async def symbol_address(symbol, chain):
@@ -114,22 +118,18 @@ async def symbol_address(symbol, chain):
         % symbol
     )
 
-    r = await convex(chain, q)
-    if "data" not in r:
-        raise SubgraphResultError(
-            f"No data returned from Convex: chain: {chain}, query: {q}"
-        )
+    data = await convex(chain, q)
 
-    if len(r["data"]["pools"]) > 1:
+    if len(data["pools"]) > 1:
         pool_list = "\n\n"
-        for pool in r["data"]["pools"]:
+        for pool in data["pools"]:
             pool_list += f"\"{pool['symbol']}\": {pool['address']}\n"
 
         raise SubgraphResultError(
             "Multiple pools returned for symbol query:" + pool_list
         )
 
-    addr = to_checksum_address(r["data"]["pools"][0]["address"])
+    addr = to_checksum_address(data["pools"][0]["address"])
 
     return addr
 
@@ -162,14 +162,14 @@ async def _volume(address, chain, days=60):
         int(t_end.timestamp()),
     )
 
-    r = await convex(chain, q)
-    r = r["data"]["swapVolumeSnapshots"]
-    r_length = len(r)
+    data = await convex(chain, q)
+    snapshots = data["swapVolumeSnapshots"]
+    num_snapshots = len(snapshots)
 
-    if r_length < days:
-        print(f"Warning: only {r_length}/{days} days of pool volume returned")
+    if num_snapshots < days:
+        print(f"Warning: only {num_snapshots}/{days} days of pool volume returned")
 
-    return r
+    return snapshots
 
 
 async def volume(addresses, chain, days=60):
@@ -441,3 +441,14 @@ async def redemption_prices(address=RAI_ADDR[0], chain=RAI_ADDR[1], days=60, n=1
 
 
 redemption_prices_sync = sync(redemption_prices)
+
+if __name__ == "__main__":
+    chain = "mainnet"
+    symbol = "3Crv"
+    print("Chain:", chain)
+    print("Symbol:", symbol)
+    address = symbol_address_sync(symbol, chain)
+    print("Address:", address)
+    _volume_sync = sync(_volume)
+    volumes = _volume_sync(address, chain, days=2)
+    print("Volumes:", volumes)
