@@ -307,8 +307,7 @@ class PoolData:
         """
         if self.dict["basepool"]:
             return CurveMetaPool
-        else:
-            return CurvePool
+        return CurvePool
 
     def redemption_prices(self, days=60, store=False, get_cache=True):
         """

@@ -1,3 +1,5 @@
+"""Utlity functions for general usage in Curvesim."""
+
 import functools
 import os
 
@@ -39,8 +41,7 @@ def get_env_var(var_name, default=_NOT_VALUE):
     if var_value is None:
         if default is _NOT_VALUE:
             raise MissingEnvVarError(f"Could not get env var: '{var_name}'")
-        else:
-            return default
+        return default
 
     return var_value
 

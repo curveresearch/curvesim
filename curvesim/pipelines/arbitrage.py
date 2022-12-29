@@ -610,7 +610,7 @@ def get_trade_args(get_pool_price, get_bounds, error_function, prices, limits, c
     coins : list of tuples
         Ordered list of token pairs
 
-    price_targs : list of floats
+    price_targets : list of floats
         Ordered list of price targets for each token pair
 
     """
@@ -618,59 +618,51 @@ def get_trade_args(get_pool_price, get_bounds, error_function, prices, limits, c
     lo = []
     hi = []
     coins = []
-    price_targs = []
+    price_targets = []
 
     for k, pair in enumerate(combos):
         i, j = pair
+        limit = int(limits[k] * 10**18)
         lo.append(0)
-        hi.append(int(limits[k] * 10**18) + 1)
+        hi.append(limit + 1)
 
         if get_pool_price(i, j) - prices[k] > 0:
-            try:
-                trade, _, _ = opt_arb(get_bounds, error_function, i, j, prices[k])
-                x0.append(min(trade[2], int(limits[k] * 10**18)))
-            except ValueError:
-                print(
-                    "Warning: Opt_arb error,",
-                    "Pair:",
-                    (i, j),
-                    "Pool price:",
-                    get_pool_price(i, j),
-                    "Target Price:",
-                    prices[k],
-                    "Diff:",
-                    get_pool_price(i, j) - prices[k],
-                )
-                x0.append(0)
-
-            coins.append((i, j))
-            price_targs.append(prices[k])
-
+            price = prices[k]
+            in_index = i
+            out_index = j
         elif get_pool_price(j, i) - 1 / prices[k] > 0:
-            try:
-                trade, _, _ = opt_arb(get_bounds, error_function, j, i, 1 / prices[k])
-                x0.append(min(trade[2], int(limits[k] * 10**18)))
-            except ValueError:
-                print(
-                    "Warning: Opt_arb error,",
-                    "Pair:",
-                    (j, i),
-                    "Pool price:",
-                    get_pool_price(j, i),
-                    "Target Price:",
-                    1 / prices[k],
-                    "Diff:",
-                    get_pool_price(j, i) - 1 / prices[k],
-                )
-                x0.append(0)
-
-            coins.append((j, i))
-            price_targs.append(1 / prices[k])
-
+            price = 1 / prices[k]
+            in_index = j
+            out_index = i
         else:
             x0.append(0)
             coins.append((i, j))
-            price_targs.append(prices[k])
+            price_targets.append(prices[k])
+            continue
+
+        try:
+            trade, _, _ = opt_arb(
+                get_bounds, error_function, in_index, out_index, price
+            )
+            size = min(trade[2], limit)
+            x0.append(size)
+        except ValueError:
+            pool_price = get_pool_price(in_index, out_index)
+            print(
+                "Warning: Opt_arb error,",
+                "Pair:",
+                (in_index, out_index),
+                "Pool price:",
+                pool_price,
+                "Target Price:",
+                price,
+                "Diff:",
+                pool_price - price,
+            )
+            x0.append(0)
+
+        coins.append((in_index, out_index))
+        price_targets.append(price)
 
     # Order trades in terms of expected size
     order = sorted(range(len(x0)), reverse=True, key=x0.__getitem__)
@@ -678,6 +670,6 @@ def get_trade_args(get_pool_price, get_bounds, error_function, prices, limits, c
     lo = [lo[i] for i in order]
     hi = [hi[i] for i in order]
     coins = [coins[i] for i in order]
-    price_targs = [price_targs[i] for i in order]
+    price_targets = [price_targets[i] for i in order]
 
-    return x0, lo, hi, coins, price_targs
+    return x0, lo, hi, coins, price_targets
