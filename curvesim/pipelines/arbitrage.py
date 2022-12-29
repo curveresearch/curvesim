@@ -137,9 +137,7 @@ def volume_limited_arbitrage(
 
     p_keys = sorted(variable_params.keys())
     if p_keys == ["A", "fee"]:
-        symbol = pool.symbol
-        address = pool.address
-        folder_name = _plot_folder_name(symbol, address)
+        folder_name = pool.folder_name
         saveplots(
             folder_name,
             variable_params["A"],
@@ -148,10 +146,6 @@ def volume_limited_arbitrage(
         )
 
     return results
-
-
-def _plot_folder_name(symbol, address):
-    return symbol.lower() + "_" + address[:7].lower()
 
 
 # Strategy

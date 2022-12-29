@@ -29,12 +29,14 @@ class Pool:
 
     @property
     def coin_names(self):
+        """Symbols for the pool coins."""
         if hasattr(self, "metadata"):
             return self.metadata["coins"]["names"]
         return []
 
     @property
     def coin_addresses(self):
+        """Addresses for the pool coins."""
         if hasattr(self, "metadata"):
             return self.metadata["coins"]["addresses"]
         return []
@@ -59,6 +61,15 @@ class Pool:
         if hasattr(self, "metadata"):
             return self.metadata["symbol"]
         return "Custom"
+
+    @property
+    def folder_name(self):
+        """Name of folder containing saved sim results."""
+        if hasattr(self, "metadata"):
+            symbol = self.symbol
+            address = self.address
+            return symbol.lower() + "_" + address[:7].lower()
+        return "custom_pool_" + str(hash(self))
 
     def __repr__(self):
         return f"<{self.__class__.__name__} address={self.address} chain={self.chain}>"
