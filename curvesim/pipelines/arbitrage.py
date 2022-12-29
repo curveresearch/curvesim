@@ -177,8 +177,7 @@ def strategy(pool, params, price_sampler, vol_mult):
     trader = Arbitrageur(pool)
     metrics = Metrics()
 
-    # symbol = pool.pool.metadata["symbol"]
-    symbol = pool.metadata["symbol"]
+    symbol = pool.symbol
     print(f"[{symbol}] Simulating with {params}")
 
     for prices, volumes, timestamp in price_sampler:
