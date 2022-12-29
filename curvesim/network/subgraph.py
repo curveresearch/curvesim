@@ -115,6 +115,10 @@ async def symbol_address(symbol, chain):
     )
 
     r = await convex(chain, q)
+    if "data" not in r:
+        raise SubgraphResultError(
+            f"No data returned from Convex: chain: {chain}, query: {q}"
+        )
 
     if len(r["data"]["pools"]) > 1:
         pool_list = "\n\n"
