@@ -25,7 +25,7 @@ class CurveMetaPool(Pool):
         "n_total",
         "tokens",
         "fee_mul",
-        "collected_admin_fees",
+        "admin_balances",
     )
 
     def __init__(
@@ -89,7 +89,7 @@ class CurveMetaPool(Pool):
         self.n_total = n + basepool.n - 1
         self.tokens = tokens
         self.fee_mul = fee_mul
-        self.collected_admin_fees = [0] * n
+        self.admin_balances = [0] * n
 
     def next_timestamp(self, *args, **kwargs):
         pass
@@ -357,7 +357,7 @@ class CurveMetaPool(Pool):
 
         self.balances[i] += dx
         self.balances[j] -= dy + admin_fee
-        self.collected_admin_fees[j] += admin_fee
+        self.admin_balances[j] += admin_fee
         return dy, fee
 
     def exchange_underlying(self, i, j, dx):
@@ -431,7 +431,7 @@ class CurveMetaPool(Pool):
             self.balances[meta_i] += dx
             # When rounding errors happen, we undercharge admin fee in favor of LP
             self.balances[meta_j] -= dy + dy_admin_fee
-            self.collected_admin_fees[meta_j] += dy_admin_fee
+            self.admin_balances[meta_j] += dy_admin_fee
 
             # Withdraw from the base pool if needed
             if base_j >= 0:
@@ -522,9 +522,7 @@ class CurveMetaPool(Pool):
             bal + amt - fee for bal, amt, fee in zip(balances, amounts, admin_fees)
         ]
         self.balances = new_balances
-        self.collected_admin_fees = [
-            t + a for t, a in zip(self.collected_admin_fees, admin_fees)
-        ]
+        self.admin_balances = [t + a for t, a in zip(self.admin_balances, admin_fees)]
 
         return mint_amount
 
@@ -547,7 +545,7 @@ class CurveMetaPool(Pool):
         dy, dy_fee = self.calc_withdraw_one_coin(token_amount, i, use_fee=True)
         admin_fee = dy_fee * self.admin_fee // 10**10
         self.balances[i] -= dy + admin_fee
-        self.collected_admin_fees[i] += admin_fee
+        self.admin_balances[i] += admin_fee
         self.tokens -= token_amount
         return dy, dy_fee
 
