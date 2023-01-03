@@ -1,11 +1,15 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 
 from curvesim.exceptions import CurvesimValueError
 from curvesim.pipelines.templates import SimPool
+from curvesim.pool.snapshot import CurvePoolBalanceSnapshot, SnapshotMixin
 from curvesim.utils import cache
 
 
-class SimStableswapBase(SimPool, ABC):
+class SimStableswapBase(SimPool, SnapshotMixin):
+
+    snapshot_class = CurvePoolBalanceSnapshot
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

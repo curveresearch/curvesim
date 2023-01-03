@@ -16,3 +16,7 @@ class MissingEnvVarError(CurvesimException, RuntimeError):
 
 class CurvesimValueError(CurvesimException, ValueError):
     """Raised when an argument has an inappropriate value (but the right type)."""
+
+
+class SnapshotError(CurvesimException):
+    """Error using a snapshot."""
