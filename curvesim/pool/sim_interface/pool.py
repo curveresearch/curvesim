@@ -53,9 +53,7 @@ class SimCurvePool(SimStableswapBase, CurvePool):
 
         xp_post = [x * p // 10**18 for x, p in zip(output[0], self.rates)]
 
-        dydx = pool_functions.dydx(
-            i, j, xp_post, self.A, fee=self.fee, fee_mul=self.fee_mul
-        )
+        dydx = self._dydx(i, j, xp_post, use_fee=True)
 
         return (dydx,) + output
 
@@ -86,9 +84,7 @@ class SimCurvePool(SimStableswapBase, CurvePool):
             else:
                 xp_post = xp
 
-            dydx = pool_functions.dydx(
-                i, j, xp_post, self.A, fee=self.fee, fee_mul=self.fee_mul
-            )
+            dydx = self._dydx(i, j, xp_post, use_fee=True)
 
             return dydx - price_target
 
@@ -116,9 +112,8 @@ class SimCurvePool(SimStableswapBase, CurvePool):
             # Record price errors
             errors = []
             for k, pair in enumerate(coins):
-                dydx = pool_functions.dydx(
-                    *pair, _xp, self.A, fee=self.fee, fee_mul=self.fee_mul
-                )
+                i, j = pair
+                dydx = self._dydx(i, j, _xp, use_fee=True)
                 errors.append(dydx - price_targets[k])
 
             return errors
