@@ -42,7 +42,7 @@ class SimCurvePool(SimStableswapBase, CurvePool):
 
         x = self.balances
         p = self.rates
-        xp = pool_functions.get_xp(x, p)
+        xp = self._xp_mem(x, p)
         size = xp[i] // factor
 
         exchange_args = (self.balances, self.rates, self.A, self.fee, self.admin_fee)
@@ -63,7 +63,7 @@ class SimCurvePool(SimStableswapBase, CurvePool):
         # Note: for performance, does not support string coin-names
 
         args = [self.balances, self.rates, self.A, self.fee, self.admin_fee]
-        xp = pool_functions.get_xp(self.balances, self.rates)
+        xp = self._xp_mem(self.balances, self.rates)
 
         all_idx = range(self.n_total)
         index_combos = combinations(all_idx, 2)
@@ -82,7 +82,7 @@ class SimCurvePool(SimStableswapBase, CurvePool):
                     i, j, dx, xp=xp, *args, fee_mul=self.fee_mul
                 )
 
-                xp_post = pool_functions.get_xp(output[0], self.rates)
+                xp_post = self._xp_mem(output[0], self.rates)
             else:
                 xp_post = xp
 
@@ -111,7 +111,7 @@ class SimCurvePool(SimStableswapBase, CurvePool):
                     )
 
                     _args[0] = output[0]  # update x
-                    _xp = pool_functions.get_xp(_args[0], self.rates)
+                    _xp = self._xp_mem(_args[0], self.rates)
 
             # Record price errors
             errors = []
