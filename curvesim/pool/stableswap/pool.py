@@ -84,7 +84,12 @@ class CurvePool(Pool):
         pass
 
     def _xp(self):
-        return [x * p // 10**18 for x, p in zip(self.balances, self.rates)]
+        rates = self.rates
+        balances = self.balances
+        return self._xp_mem(rates, balances)
+
+    def _xp_mem(self, rates, balances):
+        return [x * p // 10**18 for x, p in zip(balances, rates)]
 
     def D(self, xp=None):
         """
@@ -585,6 +590,9 @@ class CurvePool(Pool):
         This is a "view" function; it doesn't change the state of the pool.
         """
         xp = self._xp()
+        return self._dydx(i, j, xp, use_fee)
+
+    def _dydx(self, i, j, xp, use_fee):
         xi = xp[i]
         xj = xp[j]
         n = self.n
