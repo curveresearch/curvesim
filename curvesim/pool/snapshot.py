@@ -4,9 +4,18 @@ from curvesim.exceptions import SnapshotError
 
 
 class SnapshotMixin:
+    """
+    Pool mixin to allow ability to snapshot partial states
+    and revert back to it.
+
+    Main class must have `snapshot_class` attribute, which
+    implements the `Snapshot` interface.
+    """
+
     snapshot_class = None
 
     def get_snapshot(self):
+        """Saves the pool's partial state."""
         if not self.snapshot_class:
             raise SnapshotError("Snapshot class is not set.")
 
@@ -14,21 +23,57 @@ class SnapshotMixin:
         return snapshot
 
     def revert_to_snapshot(self, snapshot):
+        """
+        Reverts state to the given partial state.
+
+        Parameters
+        -----------
+        snapshot: Snapshot
+            The saved data from a prior pool state.
+        """
         snapshot.restore(self)
 
 
 class Snapshot(ABC):
+    """
+    This class allows customization of snapshot logic, i.e.
+    controls how partial states are produced and restored.
+    """
+
     @classmethod
     @abstractmethod
     def create(cls, pool):
+        """
+        Create a snapshot of the pool's state.
+
+        Parameters
+        -----------
+        pool: object
+            The object whose state we are saving as a snapshot.
+
+        Returns
+        -------
+        Snapshot
+            The saved data from the pool state.
+        """
         raise NotImplementedError
 
     @abstractmethod
     def restore(self, pool):
+        """
+        Update the pool's state using the snapshot data.
+
+        Parameters
+        -----------
+        pool: object
+            The object whose state we have saved as a snapshot.
+        """
         raise NotImplementedError
 
 
 class CurvePoolBalanceSnapshot(Snapshot):
+    """Snapshot that saves pool balances and admin balances."""
+
     def __init__(self, balances, admin_balances):
         self.balances = balances
         self.admin_balances = admin_balances

@@ -1,3 +1,4 @@
+"""Base SimPool implementation for Curve stableswap pools, both regular and meta."""
 from abc import abstractmethod
 
 from curvesim.exceptions import CurvesimValueError
@@ -7,6 +8,14 @@ from curvesim.utils import cache
 
 
 class SimStableswapBase(SimPool, SnapshotMixin):
+    """
+    This base class contains common logic useful for all Curve
+    stableswap implementations used in arbitrage pipelines:
+
+    - translate from coin names to Curve pool indices
+    - compute liquidity density of a coin pair and price-depth
+    - ability to snapshot balances and revert balance changes
+    """
 
     snapshot_class = CurvePoolBalanceSnapshot
 
@@ -51,6 +60,7 @@ class SimStableswapBase(SimPool, SnapshotMixin):
         LD1 = price_pre / ((price_pre - price_post) * factor)
 
         price_pre = self.price(coin_out, coin_in)
+        # pylint: disable-next=arguments-out-of-order
         output = self._test_trade(coin_out, coin_in, factor)
         price_post = output[0]
         LD2 = price_pre / ((price_pre - price_post) * factor)
