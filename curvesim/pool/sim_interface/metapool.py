@@ -5,12 +5,16 @@ from numpy import isnan
 
 from curvesim.exceptions import CurvesimValueError
 from curvesim.pool.sim_interface.simpool import SimStableswapBase
+from curvesim.pool.snapshot import CurveMetaPoolBalanceSnapshot
 from curvesim.pool.stableswap.metapool import CurveMetaPool
 
 from ..stableswap import functions as pool_functions
 
 
 class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
+
+    snapshot_class = CurveMetaPoolBalanceSnapshot
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

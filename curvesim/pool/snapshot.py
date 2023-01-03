@@ -87,3 +87,37 @@ class CurvePoolBalanceSnapshot(Snapshot):
     def restore(self, pool):
         pool.balances = self.balances.copy()
         pool.admin_balances = self.admin_balances.copy()
+
+
+class CurveMetaPoolBalanceSnapshot(Snapshot):
+    """
+    Snapshot that saves pool balances and admin balances
+    and also the basepool balances and LP total supply.
+    """
+
+    def __init__(
+        self, balances, admin_balances, bp_balances, bp_admin_balances, bp_tokens
+    ):
+        self.balances = balances
+        self.admin_balances = admin_balances
+        self.bp_balances = bp_balances
+        self.bp_admin_balances = bp_admin_balances
+        self.bp_tokens = bp_tokens
+
+    @classmethod
+    def create(cls, pool):
+        balances = pool.balances.copy()
+        admin_balances = pool.admin_balances.copy()
+        basepool = pool.basepool
+        bp_balances = basepool.balances.copy()
+        bp_admin_balances = basepool.admin_balances.copy()
+        bp_tokens = basepool.tokens
+        return cls(balances, admin_balances, bp_balances, bp_admin_balances, bp_tokens)
+
+    def restore(self, pool):
+        pool.balances = self.balances.copy()
+        pool.admin_balances = self.admin_balances.copy()
+        basepool = pool.basepool
+        basepool.balances = self.bp_balances.copy()
+        basepool.admin_balances = self.bp_admin_balances.copy()
+        basepool.tokens = self.bp_tokens
