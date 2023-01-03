@@ -98,7 +98,7 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
 
         x = self.balances
         p = self.rates
-        xp = pool_functions.get_xp(x, p)
+        xp = self._xp_mem(x, p)
 
         max_coin = self.max_coin
         _get_dydx = pool_functions.dydx
@@ -134,8 +134,8 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
         ]
 
         p_all = [self.rate_multiplier] + self.basepool.rates
-        xp_meta = pool_functions.get_xp(self.balances, self.rates)
-        xp_base = pool_functions.get_xp(self.basepool.balances, self.basepool.rates)
+        xp_meta = self._xp_mem(self.balances, self.rates)
+        xp_base = self._xp_mem(self.basepool.balances, self.basepool.rates)
 
         all_idx = range(self.n_total)
         index_combos = combinations(all_idx, 2)
@@ -249,16 +249,16 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
         )
 
 
-def _test_trade_meta(state, pricing_fn, i, j, dx):
-    xp = pool_functions.get_xp(state.balances, state.rates)
+def _test_trade_meta(self, pricing_fn, i, j, dx):
+    xp = self._xp_mem(self.balances, self.rates)
     exchange_args = (
-        state.balances,
-        state.rates,
-        state.A,
-        state.fee,
-        state.admin_fee,
+        self.balances,
+        self.rates,
+        self.A,
+        self.fee,
+        self.admin_fee,
         xp,
-        state.fee_mul,
+        self.fee_mul,
     )
 
     output = pool_functions.exchange(
@@ -268,10 +268,10 @@ def _test_trade_meta(state, pricing_fn, i, j, dx):
         *exchange_args,
     )
 
-    xp_post = pool_functions.get_xp(output[0], state.rates)
+    xp_post = self._xp_mem(output[0], self.rates)
 
     dydx = pricing_fn(
-        i, j, xp_post, state.A, p=state.rates, fee=state.fee, fee_mul=state.fee_mul
+        i, j, xp_post, self.A, p=self.rates, fee=self.fee, fee_mul=self.fee_mul
     )
 
     return (dydx,) + output
