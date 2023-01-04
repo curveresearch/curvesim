@@ -185,7 +185,7 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
 
         def post_trade_price_error_multi(dxs, price_targets, coins):
             _args = args[:]
-            _xp_base = xp_base
+            _xp_base = xp_base[:]
 
             # Do trades
             snapshot = self.get_snapshot()
@@ -218,13 +218,23 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
                     _args[0:3] = output[0:2] + (rates,)
                     _args[7] = tokens_base
 
-                    self.exchange_underlying(i, j, dx)
+                    expected_dy, _ = self.exchange_underlying(i, j, dx)
+
+                    dy = output[3]
 
                     try:
                         assert self.balances == _args[0]
                     except:
                         print(self.balances)
                         print(_args[0])
+                        print("i", i)
+                        print("j", j)
+                        print("dx", dx)
+                        print("expected_dy", expected_dy)
+                        print("dy", dy)
+                        print("_args", _args)
+                        print("rates", rates)
+                        print("expected rates", self.rates)
                     # assert self.basepool.balances == _args[1]
 
             # Record price errors
