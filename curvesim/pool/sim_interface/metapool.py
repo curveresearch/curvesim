@@ -162,16 +162,12 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
 
             if base_i < 0 or base_j < 0:
                 xp_j = int(xp_meta[meta_j] * 0.01)
-                high = pool_functions.get_y(meta_j, meta_i, xp_j, xp_meta, self.A)
+                high = self.get_y(meta_j, meta_i, xp_j, xp_meta)
                 high -= xp_meta[meta_i]
-                # high = high * 10**18 // self.rates[meta_i]
             else:
                 xp_j = int(xp_base[base_j] * 0.01)
-                high = pool_functions.get_y(
-                    base_j, base_i, xp_j, xp_base, self.basepool.A
-                )
+                high = self.basepool.get_y(base_j, base_i, xp_j, xp_base)
                 high -= xp_base[base_i]
-                # high = high * 10**18 // self.p_base[base_i]
 
             return (0, high)
 
