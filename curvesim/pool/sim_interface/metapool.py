@@ -172,34 +172,14 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
             return (0, high)
 
         def post_trade_price_error(dx, i, j, price_target):
-            _args = args[:]
-
             dx = int(dx) * 10**18 // p_all[i]
 
+            snapshot = self.get_snapshot()
             if dx > 0:
-                output = pool_functions.exchange_underlying(
-                    i, j, dx, *_args, admin_fee=self.admin_fee, base_xp=xp_base
-                )
+                self.exchange_underlying(i, j, dx)
 
-                # Update x, x_base, rates and tokens
-                tokens_base = output[2]
-                xp_base_post = [
-                    x * p // 10**18 for x, p in zip(output[1], self.basepool.rates)
-                ]
-                vp_base = pool_functions.get_virtual_price(
-                    xp_base_post, self.basepool.A, tokens_base
-                )
-
-                rates = self.rates[:]
-                rates[max_coin] = vp_base
-
-                _args[0:3] = output[0:2] + (rates,)
-                _args[7] = tokens_base
-
-            else:
-                xp_base_post = xp_base
-
-            dydx = get_dydx(i, j, *_args, base_xp=xp_base_post)
+            dydx = self.dydxfee(i, j)
+            self.revert_to_snapshot(snapshot)
 
             return dydx - price_target
 
