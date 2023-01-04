@@ -184,6 +184,9 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
             return dydx - price_target
 
         def post_trade_price_error_multi(dxs, price_targets, coins):
+            _args = args[:]
+            _xp_base = xp_base
+
             # Do trades
             snapshot = self.get_snapshot()
             for k, pair in enumerate(coins):
@@ -195,13 +198,41 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
                     dx = int(dxs[k]) * 10**18 // p_all[i]
 
                 if dx > 0:
+                    output = pool_functions.exchange_underlying(
+                        i, j, dx, *_args, admin_fee=self.admin_fee, base_xp=_xp_base
+                    )
+
+                    # Update x, x_base, rates and tokens
+                    tokens_base = output[2]
+                    _xp_base = [
+                        x * p // 10**18
+                        for x, p in zip(output[1], self.basepool.rates)
+                    ]
+                    vp_base = pool_functions.get_virtual_price(
+                        _xp_base, self.basepool.A, tokens_base
+                    )
+
+                    rates = self.rates[:]
+                    rates[max_coin] = vp_base
+
+                    _args[0:3] = output[0:2] + (rates,)
+                    _args[7] = tokens_base
+
                     self.exchange_underlying(i, j, dx)
+
+                    try:
+                        assert self.balances == _args[0]
+                    except:
+                        print(self.balances)
+                        print(_args[0])
+                    # assert self.basepool.balances == _args[1]
 
             # Record price errors
             errors = []
+            _xp_base = [mpz(x) for x in _xp_base]
             for k, pair in enumerate(coins):
-                i, j = pair
-                dydx = self.dydxfee(i, j)
+
+                dydx = get_dydx(*pair, *_args, base_xp=_xp_base)
                 errors.append(dydx - price_targets[k])
 
             self.revert_to_snapshot(snapshot)
