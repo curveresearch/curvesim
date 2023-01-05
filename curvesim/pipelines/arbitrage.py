@@ -326,6 +326,8 @@ class Metrics:
         p = pool.rates[:]
         x = pool.balances[:]
 
+        # FIXME: this logic uses stableswap specific functionality
+        # and should be replaced by generic `SimPool` methods
         xp = pool._xp()
         bal = self.compute_balance(xp)
         price_depth = self.compute_price_depth(pool)
