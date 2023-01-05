@@ -55,7 +55,7 @@ class CurveRaiPool(CurveMetaPool):
 
         if i >= self.max_coin and j == 0:
             base_i = i - self.max_coin
-            _dydx = _dydx * self.basepool.p[base_i] / self.rate_multiplier
+            _dydx = _dydx * self.basepool.rates[base_i] / self.rate_multiplier
 
         return _dydx
 
