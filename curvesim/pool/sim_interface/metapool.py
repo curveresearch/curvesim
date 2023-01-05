@@ -1,14 +1,11 @@
 from itertools import combinations
 
-from gmpy2 import mpz
 from numpy import isnan
 
 from curvesim.exceptions import CurvesimValueError
 from curvesim.pool.sim_interface.simpool import SimStableswapBase
 from curvesim.pool.snapshot import CurveMetaPoolBalanceSnapshot
 from curvesim.pool.stableswap.metapool import CurveMetaPool
-
-from ..stableswap import functions as pool_functions
 
 
 class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
@@ -128,20 +125,7 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
     def make_error_fns(self):  # noqa: C901
         # Note: for performance, does not support string coin-names
 
-        get_dydx = pool_functions.dydx_metapool
         max_coin = self.max_coin
-        args = [
-            self.balances,
-            self.basepool.balances,
-            self.rates,
-            self.basepool.rates,
-            self.A,
-            self.basepool.A,
-            max_coin,
-            self.basepool.tokens,
-            self.fee,
-            self.basepool.fee,
-        ]
 
         p_all = [self.rate_multiplier] + self.basepool.rates
         xp_meta = self._xp_mem(self.balances, self.rates)
@@ -184,9 +168,6 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
             return dydx - price_target
 
         def post_trade_price_error_multi(dxs, price_targets, coins):
-            _args = args[:]
-            _xp_base = xp_base[:]
-
             # Do trades
             snapshot = self.get_snapshot()
             for k, pair in enumerate(coins):
@@ -198,51 +179,13 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
                     dx = int(dxs[k]) * 10**18 // p_all[i]
 
                 if dx > 0:
-                    output = pool_functions.exchange_underlying(
-                        i, j, dx, *_args, admin_fee=self.admin_fee, base_xp=_xp_base
-                    )
-
-                    # Update x, x_base, rates and tokens
-                    tokens_base = output[2]
-                    _xp_base = [
-                        x * p // 10**18
-                        for x, p in zip(output[1], self.basepool.rates)
-                    ]
-                    vp_base = pool_functions.get_virtual_price(
-                        _xp_base, self.basepool.A, tokens_base
-                    )
-
-                    rates = self.rates[:]
-                    rates[max_coin] = vp_base
-
-                    _args[0:3] = output[0:2] + (rates,)
-                    _args[7] = tokens_base
-
-                    expected_dy, _ = self.exchange_underlying(i, j, dx)
-
-                    dy = output[3]
-
-                    try:
-                        assert self.balances == _args[0]
-                    except:
-                        print(self.balances)
-                        print(_args[0])
-                        print("i", i)
-                        print("j", j)
-                        print("dx", dx)
-                        print("expected_dy", expected_dy)
-                        print("dy", dy)
-                        print("_args", _args)
-                        print("rates", rates)
-                        print("expected rates", self.rates)
-                    # assert self.basepool.balances == _args[1]
+                    self.exchange_underlying(i, j, dx)
 
             # Record price errors
             errors = []
-            _xp_base = [mpz(x) for x in _xp_base]
             for k, pair in enumerate(coins):
-
-                dydx = get_dydx(*pair, *_args, base_xp=_xp_base)
+                i, j = pair
+                dydx = self.dydxfee(i, j)
                 errors.append(dydx - price_targets[k])
 
             self.revert_to_snapshot(snapshot)
