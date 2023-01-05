@@ -14,7 +14,6 @@ from scipy.optimize import least_squares, root_scalar
 from ..iterators.param_samplers import Grid
 from ..iterators.price_samplers import PriceVolume
 from ..plot import saveplots
-from ..pool.stableswap.functions import get_D, get_xp
 from .templates import run_pipeline
 from .utils import compute_volume_multipliers
 
@@ -326,12 +325,11 @@ class Metrics:
         """
         p = pool.rates[:]
         x = pool.balances[:]
-        A = pool.A
 
-        xp = get_xp(x, p)
+        xp = pool._xp()
         bal = self.compute_balance(xp)
         price_depth = self.compute_price_depth(pool)
-        value = get_D(xp, A) / 10**18
+        value = pool.D() / 10**18
 
         self.xs.append(x)
         self.ps.append(p)
