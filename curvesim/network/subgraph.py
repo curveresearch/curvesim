@@ -251,7 +251,7 @@ async def _pool_snapshot(address, chain):
     )
 
     r = await convex(chain, q)
-    r = r["data"]["dailyPoolSnapshots"][0]
+    r = r["dailyPoolSnapshots"][0]
 
     return r
 
