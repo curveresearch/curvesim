@@ -1,3 +1,4 @@
+"""Pool fixtures to test against vyper implementation.  Uses titanoboa."""
 # pylint: disable=redefined-outer-name
 import os
 
@@ -88,11 +89,19 @@ def _vyper_metapool(_vyper_3pool):
 
 @pytest.fixture(scope="function")
 def vyper_3pool(_vyper_3pool):
+    """
+    Function-scope fixture using titanoboa's snapshotting
+    feature to avoid expensive loading.
+    """
     with boa.env.anchor():
         yield _vyper_3pool
 
 
 @pytest.fixture(scope="function")
 def vyper_metapool(_vyper_metapool):
+    """
+    Function-scope fixture using titanoboa's snapshotting
+    feature to avoid expensive loading.
+    """
     with boa.env.anchor():
         yield _vyper_metapool
