@@ -3,7 +3,7 @@ from abc import abstractmethod
 
 from curvesim.exceptions import CurvesimValueError
 from curvesim.pipelines.templates import SimPool
-from curvesim.pool.snapshot import CurvePoolBalanceSnapshot, SnapshotMixin
+from curvesim.pool.snapshot import SnapshotMixin
 from curvesim.utils import cache
 
 
@@ -17,10 +17,9 @@ class SimStableswapBase(SimPool, SnapshotMixin):
     - ability to snapshot balances and revert balance changes
     """
 
-    snapshot_class = CurvePoolBalanceSnapshot
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    # need to configure in derived class otherwise the
+    # snapshotting will not work
+    snapshot_class = None
 
     @abstractmethod
     def _init_coin_indices(self):

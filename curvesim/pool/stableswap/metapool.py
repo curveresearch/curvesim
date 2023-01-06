@@ -28,6 +28,7 @@ class CurveMetaPool(Pool):
         "admin_balances",
     )
 
+    # pylint: disable=too-many-arguments
     def __init__(
         self,
         A,

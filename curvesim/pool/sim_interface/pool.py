@@ -2,13 +2,15 @@ from itertools import combinations
 
 from numpy import isnan
 
+from curvesim.pool.snapshot import CurvePoolBalanceSnapshot
+
 from ..stableswap import CurvePool
 from .simpool import SimStableswapBase
 
 
 class SimCurvePool(SimStableswapBase, CurvePool):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+
+    snapshot_class = CurvePoolBalanceSnapshot
 
     @property
     def _precisions(self):

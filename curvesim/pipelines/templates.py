@@ -57,9 +57,6 @@ class SimPool(ABC):
     See curvesim.pool.sim_interface for implementations.
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
     def prepare_for_trades(self, timestamp):
         """
         Does any necessary preparation before computing and doing trades.

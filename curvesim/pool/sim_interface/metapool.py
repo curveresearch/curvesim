@@ -12,9 +12,6 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
 
     snapshot_class = CurveMetaPoolBalanceSnapshot
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
     @property
     def _precisions(self):
         p_base = self.basepool.rates[:]
