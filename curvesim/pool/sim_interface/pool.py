@@ -46,12 +46,9 @@ class SimCurvePool(SimStableswapBase, CurvePool):
         xp = self._xp_mem(x, p)
         size = xp[i] // factor
 
-        snapshot = self.get_snapshot()
-
-        self.exchange(i, j, size)
-        dydx = self.dydxfee(i, j)
-
-        self.revert_to_snapshot(snapshot)
+        with self.use_snapshot_context():
+            self.exchange(i, j, size)
+            dydx = self.dydxfee(i, j)
 
         return (dydx,)
 
@@ -71,38 +68,35 @@ class SimCurvePool(SimStableswapBase, CurvePool):
         def post_trade_price_error(dx, i, j, price_target):
             dx = int(dx) * 10**18 // self.rates[i]
 
-            snapshot = self.get_snapshot()
+            with self.use_snapshot_context():
+                if dx > 0:
+                    self.exchange(i, j, dx)
 
-            if dx > 0:
-                self.exchange(i, j, dx)
-
-            dydx = self.dydxfee(i, j)
-            self.revert_to_snapshot(snapshot)
+                dydx = self.dydxfee(i, j)
 
             return dydx - price_target
 
         def post_trade_price_error_multi(dxs, price_targets, coins):
-            # Do trades
-            snapshot = self.get_snapshot()
-            for k, pair in enumerate(coins):
-                i, j = pair
+            with self.use_snapshot_context():
+                # Do trades
+                for k, pair in enumerate(coins):
+                    i, j = pair
 
-                if isnan(dxs[k]):
-                    dx = 0
-                else:
-                    dx = int(dxs[k]) * 10**18 // self.rates[i]
+                    if isnan(dxs[k]):
+                        dx = 0
+                    else:
+                        dx = int(dxs[k]) * 10**18 // self.rates[i]
 
-                if dx > 0:
-                    self.exchange(i, j, dx)
+                    if dx > 0:
+                        self.exchange(i, j, dx)
 
-            # Record price errors
-            errors = []
-            for k, pair in enumerate(coins):
-                i, j = pair
-                dydx = self.dydx(i, j)
-                errors.append(dydx - price_targets[k])
+                # Record price errors
+                errors = []
+                for k, pair in enumerate(coins):
+                    i, j = pair
+                    dydx = self.dydx(i, j)
+                    errors.append(dydx - price_targets[k])
 
-            self.revert_to_snapshot(snapshot)
             return errors
 
         return (

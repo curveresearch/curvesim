@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
 
 from curvesim.exceptions import SnapshotError
 
@@ -32,6 +33,29 @@ class SnapshotMixin:
             The saved data from a prior pool state.
         """
         snapshot.restore(self)
+
+    @contextmanager
+    def use_snapshot_context(self):
+        """
+        This context manager allows creating and reverting
+        to snapshots easily with the syntax:
+
+        with pool.use_snapshot_context() as snapshot:
+            pool.trade(i, j, dx)
+            ...
+            etc.
+
+        The pool state will be reverted after the `with` block
+        to the state prior to the block.
+
+        `as snapshot` can be omitted but is handy if you need to
+        log or introspect on the state.
+        """
+        snapshot = self.get_snapshot()
+        try:
+            yield snapshot
+        finally:
+            self.revert_to_snapshot(snapshot)
 
 
 class Snapshot(ABC):
