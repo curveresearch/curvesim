@@ -8,7 +8,7 @@ from gmpy2 import mpz
 from ..base import Pool
 
 
-class CurvePool(Pool):
+class CurvePool(Pool):  # pylint: disable=too-many-instance-attributes
     """
     Basic stableswap implementation in Python.
     """
@@ -27,7 +27,7 @@ class CurvePool(Pool):
         "admin_balances",
     )
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments
         self,
         A,
         D,
@@ -395,11 +395,12 @@ class CurvePool(Pool):
 
         dy = xp[i] - self.get_y_D(A, i, xp_reduced, D1)
         dy = (dy - 1) * 10**18 // self.rates[i]
+
         if use_fee:
             dy_fee = dy_before_fee - dy
             return dy, dy_fee
-        else:
-            return dy
+
+        return dy
 
     def add_liquidity(self, amounts):
         """
@@ -503,10 +504,11 @@ class CurvePool(Pool):
         D2 = self.get_D_mem(mint_balances, A)
 
         mint_amount = self.tokens * (D2 - D0) // D0
+
         if use_fee:
             return mint_amount, fees
-        else:
-            return mint_amount
+
+        return mint_amount
 
     def get_virtual_price(self):
         """

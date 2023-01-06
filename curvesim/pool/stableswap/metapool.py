@@ -8,7 +8,7 @@ from gmpy2 import mpz
 from ..base import Pool
 
 
-class CurveMetaPool(Pool):
+class CurveMetaPool(Pool):  # pylint: disable=too-many-instance-attributes
     """
     Basic stableswap metapool implementation in Python.
     """
@@ -490,11 +490,12 @@ class CurveMetaPool(Pool):
 
         dy = xp[i] - self.get_y_D(A, i, xp_reduced, D1)
         dy = (dy - 1) * 10**18 // rates[i]
+
         if use_fee:
             dy_fee = dy_before_fee - dy
             return dy, dy_fee
-        else:
-            return dy
+
+        return dy
 
     def add_liquidity(self, amounts):
         """
@@ -604,10 +605,11 @@ class CurveMetaPool(Pool):
         D2 = self.get_D_mem(rates, mint_balances, A)
 
         mint_amount = self.tokens * (D2 - D0) // D0
+
         if use_fee:
             return mint_amount, fees
-        else:
-            return mint_amount
+
+        return mint_amount
 
     def get_virtual_price(self):
         """
