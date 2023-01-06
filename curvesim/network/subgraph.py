@@ -13,6 +13,8 @@ from ..overrides import override_subgraph_data
 from .http import HTTP
 from .utils import compute_D, sync
 
+# pylint: disable=redefined-outer-name
+
 
 async def query(url, q):
     """
