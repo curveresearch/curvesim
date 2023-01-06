@@ -36,7 +36,7 @@ class CurveRaiPool(CurveMetaPool):
 
         super().__init__(*args, rate_multiplier=rate_multiplier, **kwargs)
 
-    def next_timestamp(self, timestamp, *args, **kwargs):
+    def next_timestamp(self, timestamp):
         """
         Updates the redemption price based on the input timestamp
 

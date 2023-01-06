@@ -80,7 +80,7 @@ class CurvePool(Pool):
         self.n_total = n
         self.admin_balances = [0] * n
 
-    def next_timestamp(self, *args, **kwargs):
+    def next_timestamp(self, timestamp):
         pass
 
     def _xp(self):

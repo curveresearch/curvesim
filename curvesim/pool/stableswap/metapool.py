@@ -91,7 +91,7 @@ class CurveMetaPool(Pool):
         self.fee_mul = fee_mul
         self.admin_balances = [0] * n
 
-    def next_timestamp(self, *args, **kwargs):
+    def next_timestamp(self, timestamp):
         pass
 
     def D(self, xp=None):
