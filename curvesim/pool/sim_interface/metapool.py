@@ -51,27 +51,26 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
 
         if bp_token_index not in (i, j):
             return self.dydx(i, j, use_fee=use_fee)
-        else:
-            if i == bp_token_index:
-                i = self.max_coin
 
-            if j == bp_token_index:
-                j = self.max_coin
+        if i == bp_token_index:
+            i = self.max_coin
 
-            if i == j:
-                raise CurvesimValueError("Duplicate coin indices.")
+        if j == bp_token_index:
+            j = self.max_coin
 
-            xp = self._xp()
-            return self._dydx(i, j, xp=xp, use_fee=use_fee)
+        if i == j:
+            raise CurvesimValueError("Duplicate coin indices.")
 
-    def trade(self, i, j, size):
+        xp = self._xp()
+        return self._dydx(i, j, xp=xp, use_fee=use_fee)
+
+    def trade(self, coin_in, coin_out, size):
         """
         Trade between two coins in a pool.
         Coin index runs over basepool underlyers.
         We count only volume when one coin is the primary stable.
         """
-        if i == j:
-            raise CurvesimValueError("Duplicate coin indices.")
+        i, j = self.get_coin_indices(coin_in, coin_out)
 
         out_amount, fee = self.exchange_underlying(i, j, size)
 
