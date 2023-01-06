@@ -1,3 +1,4 @@
+"""Unit tests for CurvePool"""
 from hypothesis import HealthCheck, assume, given, settings
 from hypothesis import strategies as st
 
@@ -141,7 +142,7 @@ def test_get_y_D(vyper_3pool):
 
     python_3pool = initialize_pool(vyper_3pool)
     A = python_3pool.A
-    virtual_balances = python_3pool._xp()
+    virtual_balances = python_3pool._xp()  # pylint: disable=protected-access
     D = python_3pool.D()
 
     i = 0

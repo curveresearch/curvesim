@@ -1,3 +1,10 @@
+"""
+Test the entire sim pipeline, starting with canned data.
+
+Technically these are not end-to-end tests since we don't pull the data,
+so besides the network code there is a lack of coverage around the
+`pool_data` and `price_data` packages.
+"""
 import os
 import pickle
 

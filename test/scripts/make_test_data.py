@@ -1,3 +1,4 @@
+"""Script to generate data for CI test"""
 import os
 import pickle
 import shutil
@@ -9,6 +10,12 @@ from curvesim.pipelines.arbitrage import volume_limited_arbitrage as pipeline
 
 
 def main():
+    """
+    Script starts a multiprocessing pool so needs to be wrapped in a
+    function to avoid recursively importing and creating sub-processes,
+    cf subsection "Safe importing of main module" of
+    https://docs.python.org/3/library/multiprocessing.html#multiprocessing-programming
+    """
     data_dir = os.path.join("data")
     test_data_dir = os.path.join("test", "data")
     pool_names = [
@@ -56,8 +63,5 @@ def main():
             pickle.dump(results, f)
 
 
-# this check ensures the script doesn't recursively create
-# subprocesses upon import, cf subsection "Safe importing of main module" of
-# https://docs.python.org/3/library/multiprocessing.html#multiprocessing-programming
 if __name__ == "__main__":
     main()

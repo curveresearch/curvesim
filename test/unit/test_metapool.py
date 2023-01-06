@@ -1,3 +1,4 @@
+"""Unit tests for CurveMetaPool"""
 import pytest
 from hypothesis import HealthCheck, assume, given, settings
 from hypothesis import strategies as st
@@ -8,10 +9,12 @@ from .test_pool import initialize_pool
 
 
 def convert_to_virtual_balances(rates, balances):
+    """Convert from native token units to D units."""
     return [b * p // 10**18 for b, p in zip(balances, rates)]
 
 
 def convert_to_real_balances(rates, balances):
+    """Convert from D units to native token units."""
     return [b * 10**18 // p for b, p in zip(balances, rates)]
 
 
