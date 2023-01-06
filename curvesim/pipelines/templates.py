@@ -60,6 +60,22 @@ class SimPool(ABC):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    def prepare_for_trades(self, timestamp):
+        """
+        Does any necessary preparation before computing and doing trades.
+
+        The input timestamp can be used to fetch any auxiliary data
+        needed to prep the state.
+
+        Base implementation is a no-op.
+
+        Parameters
+        ----------
+        timestamp : datetime.datetime
+            the time to sample from
+        """
+        pass
+
     @abstractmethod
     def price(self, coin_in, coin_out, use_fee=True):
         """

@@ -181,7 +181,7 @@ def strategy(pool, params, price_sampler, vol_mult):
 
     for prices, volumes, timestamp in price_sampler:
         limits = volumes * vol_mult
-        pool.next_timestamp(timestamp)
+        pool.prepare_for_trades(timestamp)
         trades, errors, _ = trader.compute_trades(prices, limits)
         _, volume = trader.do_trades(trades)
 

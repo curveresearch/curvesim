@@ -7,21 +7,19 @@ class CurveRaiPool(CurveMetaPool):
 
     """
 
-    def __init__(self, redemption_prices, *args, **kwargs):
+    def __init__(self, redemption_price, *args, **kwargs):
         """
         Parameters
         ----------
-        redemption_prices : pandas.DataFrame
-            timestamped redemption prices
-            (see :meth:`.PoolData.redemption_prices()`)
+        redemption_price : int
+            redemption price for the pool; functionally equivalent to `rate_multiplier`
+            for a factory metapool
         A : int
             Amplification coefficient; this is :math:`A n^{n-1}` in the whitepaper.
         D : int or list of int
             coin balances or virtual total balance
         n: int
             number of coins
-        rate_multiplier: int
-            precision and rate adjustment for primary stable in metapool
         tokens : int
             LP token supply
         fee : int, optional
@@ -31,24 +29,7 @@ class CurveRaiPool(CurveMetaPool):
         admin_fee : int, optional
             percentage of `fee` with 10**10 precision (default = 50%)
         """
-        self.redemption_prices = redemption_prices
-        rate_multiplier = int(redemption_prices.price[0])
-
-        super().__init__(*args, rate_multiplier=rate_multiplier, **kwargs)
-
-    def next_timestamp(self, timestamp):
-        """
-        Updates the redemption price based on the input timestamp
-
-        Parameters
-        ----------
-        timestamp : datetime.datetime
-            the time to sample from
-
-        """
-
-        r = self.redemption_prices.price.asof(timestamp)
-        self.rate_multiplier = int(r)
+        super().__init__(*args, rate_multiplier=redemption_price, **kwargs)
 
     def dydx(self, i, j, use_fee=False):
         _dydx = super().dydx(i, j, use_fee=use_fee)
