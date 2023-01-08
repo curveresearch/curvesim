@@ -29,7 +29,15 @@ pool_settings = config[SECTION_HEADING.strip("][")]
 poolname = pool_settings.get("address") or pool_settings.get("symbol")
 chain = pool_settings.get("chain", "mainnet")
 test = pool_settings.getboolean("test", False)
+vol_mult = pool_settings.getfloat("vol_mult", None)  # only handle float for now
+vol_mode = pool_settings.getint("vol_mode", 1)
 
-settings_dict = {"poolname": poolname, "chain": chain, "test": test}
+settings_dict = {
+    "poolname": poolname,
+    "chain": chain,
+    "test": test,
+    "vol_mult": vol_mult,
+    "vol_mode": vol_mode,
+}
 
 print(json.dumps(settings_dict))
