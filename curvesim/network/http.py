@@ -1,12 +1,13 @@
 """
 General utility for http requests.
 """
-from aiohttp import ClientSession
-from tenacity import retry, stop_after_attempt, wait_random
+from aiohttp import ClientResponseError, ClientSession
+from tenacity import retry, stop_after_attempt, wait_random_exponential
 
-stop_rule = stop_after_attempt(5)
-wait_rule = wait_random(min=0.5, max=1.5)
 from curvesim.exceptions import HttpClientError
+
+stop_rule = stop_after_attempt(10)
+wait_rule = wait_random_exponential(multiplier=1, min=2, max=20)
 
 
 class HTTP:
