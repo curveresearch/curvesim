@@ -1,3 +1,4 @@
+"""Unit tests for the SnapshotMixin and derived subclasses of Snapshot."""
 import pytest
 
 from curvesim.exceptions import SnapshotError
@@ -6,12 +7,14 @@ from curvesim.pool.snapshot import SnapshotMixin
 
 
 def test_snapshot_raises_exception():
+    """Test error thrown for missing snapshot class."""
     obj = SnapshotMixin()
     with pytest.raises(SnapshotError):
         obj.get_snapshot()
 
 
 def test_pool_balance_snapshot():
+    """Test balances are copied and reset properly for SimCurvePool."""
     pool = SimCurvePool(A=250, D=1000000 * 10**18, n=2, admin_fee=5 * 10**9)
 
     snapshot = pool.get_snapshot()
@@ -30,6 +33,7 @@ def test_pool_balance_snapshot():
 
 
 def test_metapool_balance_snapshot():
+    """Test balances are copied and reset properly for SimCurveMetaPool."""
     basepool = SimCurvePool(A=1000, D=2750000 * 10**18, n=2, admin_fee=5 * 10**9)
     pool = SimCurveMetaPool(
         A=250, D=4000000 * 10**18, n=2, admin_fee=5 * 10**9, basepool=basepool
@@ -82,6 +86,7 @@ def test_metapool_balance_snapshot():
 
 
 def test_snapshot_context():
+    """Test context manager."""
     pool = SimCurvePool(A=250, D=1000000 * 10**18, n=2, admin_fee=5 * 10**9)
 
     pre_balances = pool.balances.copy()
