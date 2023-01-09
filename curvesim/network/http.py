@@ -6,6 +6,7 @@ from tenacity import retry, stop_after_attempt, wait_random
 
 stop_rule = stop_after_attempt(5)
 wait_rule = wait_random(min=0.5, max=1.5)
+from curvesim.exceptions import HttpClientError
 
 
 class HTTP:
@@ -18,11 +19,19 @@ class HTTP:
         if params is not None:
             kwargs.update({"params": params})
 
-        async with ClientSession() as session:
-            async with session.get(**kwargs) as resp:
-                r = await resp.json()
+        try:
+            async with ClientSession() as session:
+                async with session.get(**kwargs) as resp:
+                    resp.raise_for_status()
+                    json_data = await resp.json()
+        except ClientResponseError as e:
+            message = e.message
+            status = e.status
+            url = e.request_info.url
+            # pylint: disable-next=raise-missing-from
+            raise HttpClientError(status, message, url)
 
-        return r
+        return json_data
 
     @staticmethod
     @retry(stop=stop_rule, wait=wait_rule)
@@ -32,8 +41,16 @@ class HTTP:
         if json is not None:
             kwargs.update({"json": json})
 
-        async with ClientSession() as session:
-            async with session.post(**kwargs) as resp:
-                r = await resp.json()
+        try:
+            async with ClientSession() as session:
+                async with session.post(**kwargs) as resp:
+                    resp.raise_for_status()
+                    json_data = await resp.json()
+        except ClientResponseError as e:
+            message = e.message
+            status = e.status
+            url = e.request_info.url
+            # pylint: disable-next=raise-missing-from
+            raise HttpClientError(status, message, url)
 
-        return r
+        return json_data
