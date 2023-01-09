@@ -25,6 +25,7 @@ DEFAULT_PARAMS = {
 TEST_PARAMS = {"A": [100, 1000], "fee": [3000000, 4000000]}
 
 
+# pylint: disable-next=too-many-arguments
 def volume_limited_arbitrage(
     pool_data,
     variable_params=None,
@@ -259,7 +260,7 @@ class Arbitrageur:
         for trade in trades:
             i, j, dx = trade
             dy, _, volume = self.pool.trade(i, j, dx)
-            trades_done.append(trade + (dy,))
+            trades_done.append((i, j, dx, dy))
 
             total_volume += volume
 
