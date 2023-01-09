@@ -54,14 +54,12 @@ class SimStableswapBase(SimPool, SnapshotMixin):
         coins in basepool and primary stablecoin in metapool.
         """
         price_pre = self.price(coin_in, coin_out)
-        output = self._test_trade(coin_in, coin_out, factor)
-        price_post = output[0]
+        price_post = self._test_trade(coin_in, coin_out, factor)
         LD1 = price_pre / ((price_pre - price_post) * factor)
 
         price_pre = self.price(coin_out, coin_in)
         # pylint: disable-next=arguments-out-of-order
-        output = self._test_trade(coin_out, coin_in, factor)
-        price_post = output[0]
+        price_post = self._test_trade(coin_out, coin_in, factor)
         LD2 = price_pre / ((price_pre - price_post) * factor)
 
         return (LD1 + LD2) / 2

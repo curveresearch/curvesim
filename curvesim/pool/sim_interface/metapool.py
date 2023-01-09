@@ -110,9 +110,9 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
             self.exchange(i, j, dx)
 
             xp_post = self._xp()
-            dydx = self._dydx(i, j, xp_post, use_fee=True)
+            price = self._dydx(i, j, xp_post, use_fee=True)
 
-        return (dydx,)
+        return price
 
     def make_error_fns(self):  # noqa: C901
         # Note: for performance, does not support string coin-names

@@ -45,9 +45,9 @@ class SimCurvePool(SimStableswapBase, CurvePool):
 
         with self.use_snapshot_context():
             self.exchange(i, j, size)
-            dydx = self.dydxfee(i, j)
+            price = self.dydxfee(i, j)
 
-        return (dydx,)
+        return price
 
     def make_error_fns(self):
         # Note: for performance, does not support string coin-names
