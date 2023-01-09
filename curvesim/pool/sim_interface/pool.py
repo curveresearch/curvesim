@@ -41,10 +41,7 @@ class SimCurvePool(SimStableswapBase, CurvePool):
     def _test_trade(self, coin_in, coin_out, factor):
         i, j = self.get_coin_indices(coin_in, coin_out)
 
-        x = self.balances
-        p = self.rates
-        xp = self._xp_mem(x, p)
-        size = xp[i] // factor
+        size = self.balances[i] // factor
 
         with self.use_snapshot_context():
             self.exchange(i, j, size)

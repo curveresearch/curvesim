@@ -104,8 +104,7 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
         if i == j:
             raise CurvesimValueError("Duplicate coin indices.")
 
-        xp = self._xp()
-        dx = xp[i] // factor
+        dx = self.balances[i] // factor
 
         with self.use_snapshot_context():
             self.exchange(i, j, dx)
