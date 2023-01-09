@@ -4,7 +4,7 @@ from abc import abstractmethod
 from curvesim.exceptions import CurvesimValueError
 from curvesim.pipelines.templates import SimPool
 from curvesim.pool.snapshot import SnapshotMixin
-from curvesim.utils import cache
+from curvesim.utils import cache, override
 
 
 class SimStableswapBase(SimPool, SnapshotMixin):
@@ -64,6 +64,7 @@ class SimStableswapBase(SimPool, SnapshotMixin):
 
         return (LD1 + LD2) / 2
 
+    @override
     def get_price_depth(self):
         LD = []
         for i, j in self._base_index_combos:

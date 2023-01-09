@@ -3,6 +3,7 @@ from itertools import combinations
 from numpy import isnan
 
 from curvesim.pool.snapshot import CurvePoolBalanceSnapshot
+from curvesim.utils import override
 
 from ..stableswap import CurvePool
 from .simpool import SimStableswapBase
@@ -25,10 +26,12 @@ class SimCurvePool(SimStableswapBase, CurvePool):
         base_index_combos = combinations(base_idx, 2)
         return base_index_combos
 
+    @override
     def price(self, coin_in, coin_out, use_fee=True):
         i, j = self.get_coin_indices(coin_in, coin_out)
         return self.dydx(i, j, use_fee=use_fee)
 
+    @override
     def trade(self, coin_in, coin_out, size):
         i, j = self.get_coin_indices(coin_in, coin_out)
 
@@ -39,6 +42,11 @@ class SimCurvePool(SimStableswapBase, CurvePool):
         return out_amount, fee, volume
 
     def _test_trade(self, coin_in, coin_out, factor):
+        """
+        This does the trade but leaves balances unaffected.
+
+        Used to compute liquidity density.
+        """
         i, j = self.get_coin_indices(coin_in, coin_out)
 
         size = self.balances[i] // factor
@@ -49,6 +57,7 @@ class SimCurvePool(SimStableswapBase, CurvePool):
 
         return price
 
+    @override
     def make_error_fns(self):
         # Note: for performance, does not support string coin-names
 

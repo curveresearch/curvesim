@@ -6,6 +6,7 @@ from curvesim.exceptions import CurvesimValueError
 from curvesim.pool.sim_interface.simpool import SimStableswapBase
 from curvesim.pool.snapshot import CurveMetaPoolBalanceSnapshot
 from curvesim.pool.stableswap.metapool import CurveMetaPool
+from curvesim.utils import override
 
 
 class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
@@ -42,6 +43,7 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
         base_index_combos = combinations(base_idx, 2)
         return base_index_combos
 
+    @override
     def price(self, coin_in, coin_out, use_fee=True):
         i, j = self.get_coin_indices(coin_in, coin_out)
         bp_token_index = self.n_total
@@ -61,6 +63,7 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
         xp = self._xp()
         return self._dydx(i, j, xp=xp, use_fee=use_fee)
 
+    @override
     def trade(self, coin_in, coin_out, size):
         """
         Trade between two coins in a pool.
@@ -86,7 +89,9 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
         factor,
     ):
         """
-        Trade between top-level coins.
+        Trade between top-level coins but leaves balances affected.
+
+        Used to compute liquidity density.
         """
         i, j = self.get_coin_indices(coin_in, coin_out)
         bp_token_index = self.n_total
@@ -114,6 +119,7 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
 
         return price
 
+    @override
     def make_error_fns(self):  # noqa: C901
         # Note: for performance, does not support string coin-names
 
