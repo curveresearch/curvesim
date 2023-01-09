@@ -1,7 +1,8 @@
 """
 General utility for http requests.
 """
-from aiohttp import ClientResponseError, ClientSession
+import aiohttp
+from aiohttp import ClientResponseError
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 
 from curvesim.exceptions import HttpClientError
@@ -21,10 +22,9 @@ class HTTP:
             kwargs.update({"params": params})
 
         try:
-            async with ClientSession() as session:
-                async with session.get(**kwargs) as resp:
-                    resp.raise_for_status()
-                    json_data = await resp.json()
+            async with aiohttp.request("GET", **kwargs) as resp:
+                resp.raise_for_status()
+                json_data = await resp.json()
         except ClientResponseError as e:
             message = e.message
             status = e.status
@@ -43,10 +43,9 @@ class HTTP:
             kwargs.update({"json": json})
 
         try:
-            async with ClientSession() as session:
-                async with session.post(**kwargs) as resp:
-                    resp.raise_for_status()
-                    json_data = await resp.json()
+            async with aiohttp.request("POST", **kwargs) as resp:
+                resp.raise_for_status()
+                json_data = await resp.json()
         except ClientResponseError as e:
             message = e.message
             status = e.status
