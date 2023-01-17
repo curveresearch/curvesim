@@ -19,16 +19,12 @@ class CurveCryptoPool:
         admin_fee: int,
         ma_half_time: int,
         initial_price: int,
-        token: str,
+        token,
         coins,
-        precisions: int,
+        precisions,
     ):
-        # Pack A and gamma:
-        # shifted A + gamma
-        A_gamma: int = A << 128
-        A_gamma = A_gamma | gamma
-        self.initial_A_gamma = A_gamma
-        self.future_A_gamma = A_gamma
+        self.A = A
+        self.gamma = gamma
 
         self.mid_fee = mid_fee
         self.out_fee = out_fee
