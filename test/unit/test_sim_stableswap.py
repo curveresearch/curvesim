@@ -1,3 +1,4 @@
+"""Unit tests for SimStableswapBase"""
 from itertools import combinations
 
 import pytest
@@ -10,6 +11,11 @@ from curvesim.utils import override
 
 
 class FakeSimStableswap(SimStableswapBase):
+    """
+    Fake implementation of a subclass of `SimStableswapBase`
+    for testing purposes.
+    """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.n = 3
@@ -38,7 +44,10 @@ class FakeSimStableswap(SimStableswapBase):
 
     @override
     def _test_trade(self, coin_in, coin_out, factor):
-        return
+        pre_price = self.price(coin_in, coin_out)
+        # post_price should be less than pre_price
+        post_price = 0.90 * pre_price
+        return post_price
 
     @override
     def make_error_fns(self):
@@ -139,4 +148,7 @@ def test_do_trades(sim_stableswap):
 
 
 def test_price_depth(sim_stableswap):
-    ...
+    price_depth = sim_stableswap.get_price_depth()
+    assert len(price_depth) == 3
+    for d in price_depth:
+        assert d > 0
