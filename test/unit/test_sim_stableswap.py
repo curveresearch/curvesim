@@ -46,6 +46,8 @@ class FakeSimStableswap(SimStableswapBase):
         index_combos = combinations(all_idx, 2)
         xp = self._xp
 
+        # pylint: disable=unused-argument
+
         def get_trade_bounds(i, j):
             high = xp[i]
             return (0, high)
@@ -79,7 +81,7 @@ class FakeSimStableswap(SimStableswapBase):
     def trade(self, coin_in, coin_out, size):
         out_amount = size
         fee = 0
-        volume = 0
+        volume = 10**18
         return out_amount, fee, volume
 
 
@@ -104,7 +106,7 @@ def test_sim_stableswap_coin_indices(sim_stableswap):
 
 
 def test_compute_trades(sim_stableswap):
-    """Test error functions and Arbitrageur.compute_trades"""
+    """Test error functions with Arbitrageur.compute_trades"""
     trader = Arbitrageur(sim_stableswap)
     prices = [1] * sim_stableswap.n
     volume_limits = [100000] * sim_stableswap.n
@@ -113,6 +115,27 @@ def test_compute_trades(sim_stableswap):
     for t in trades:
         size = t[2]
         assert size > 0
+
+
+def test_do_trades(sim_stableswap):
+    """Test trade method with Arbitrageur.do_trades"""
+    trader = Arbitrageur(sim_stableswap)
+    trades = []
+    trades_done, volume = trader.do_trades(trades)
+    assert trades_done == []  # pylint: disable=use-implicit-booleaness-not-comparison
+    assert volume == 0
+
+    trades = [
+        (0, 1, 99999999990000015900672),
+        (2, 0, 86980634902377172828160),
+        (2, 1, 86980634902377172828160),
+    ]
+    trades_done, volume = trader.do_trades(trades)
+    # volume is faked to produce 1 * 10**18 each trade
+    assert volume == len(trades) * 10**18
+    for t in trades_done:
+        # `trade` is faked to produce out amount equal to in amount
+        assert t[2] == t[3]
 
 
 def test_price_depth(sim_stableswap):
