@@ -15,7 +15,16 @@ class FakeSimStableswap(SimStableswapBase):
         self.n = 3
 
         # used for stubbing private methods
-        self._prices = [1.01, 0.98, 1.02, 1.003]
+        self._prices = [
+            1.01,
+            0.98,
+            1.003,
+            1.00002,
+            0.99992,
+            1.0000000001,
+            1.00000000000000000000001,
+        ]
+        self._price_counter = 0
         self._xp = [529818 * 10**18, 760033 * 10**18, 434901 * 10**18]
 
     @property
@@ -42,7 +51,8 @@ class FakeSimStableswap(SimStableswapBase):
             return (0, high)
 
         def post_trade_price_error(dx, i, j, price_target):
-            return 0.0000000123
+            price = self.price(i, j)
+            return price - price_target
 
         def post_trade_price_error_multi(dxs, price_targets, coins):
             errors = [0.00000001] * len(dxs)
@@ -57,7 +67,13 @@ class FakeSimStableswap(SimStableswapBase):
 
     @override
     def price(self, coin_in, coin_out, use_fee=True):
-        return self._prices[0]
+        prices = self._prices
+        counter = self._price_counter
+
+        price = prices[counter]
+        self._price_counter = (counter + 1) % len(prices)
+
+        return price
 
     @override
     def trade(self, coin_in, coin_out, size):
@@ -87,12 +103,16 @@ def test_sim_stableswap_coin_indices(sim_stableswap):
     assert result == [1, 2]
 
 
-def test_trade(sim_stableswap):
+def test_compute_trades(sim_stableswap):
+    """Test error functions and Arbitrageur.compute_trades"""
     trader = Arbitrageur(sim_stableswap)
     prices = [1] * sim_stableswap.n
     volume_limits = [100000] * sim_stableswap.n
     trades, _, _ = trader.compute_trades(prices, volume_limits)
-    print(trades)
+    assert len(trades) == 3
+    for t in trades:
+        size = t[2]
+        assert size > 0
 
 
 def test_price_depth(sim_stableswap):
