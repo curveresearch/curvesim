@@ -291,8 +291,7 @@ def pool_prices(  # noqa: C901
             symbol_pairs = list(combinations(coins, 2))
 
     elif pairs:
-        pairs = coin_ids_from_addresses_sync(pairs, event_loop=loop)
-        symbol_pairs = pairs
+        symbol_pairs = coin_ids_from_addresses_sync(pairs, event_loop=loop)
 
     else:
         raise ValueError("Must use one of 'coins' or 'pairs'.")

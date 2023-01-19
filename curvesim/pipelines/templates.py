@@ -1,5 +1,8 @@
+"""
+Functions and interfaces used in the simulation pipeline framework.
+"""
+from abc import ABC, abstractmethod
 from multiprocessing import Pool as cpu_pool
-from types import MethodType
 
 
 def run_pipeline(param_sampler, price_sampler, strategy, ncpu=4):
@@ -47,89 +50,98 @@ def run_pipeline(param_sampler, price_sampler, strategy, ncpu=4):
     return results
 
 
-class SimInterface:
+class SimPool(ABC):
     """
-    A template class for creating simulation interfaces for pools.
-    See pool.stablewap.interfaces.StableSwapSimInterface
+    The interface that must be implemented by pools used in simulations.
 
-    This component is likely to change.
+    See curvesim.pool.sim_interface for implementations.
     """
 
-    def __init__(self):
-        self.pool = None
-        self.coin_indices = None
-        self.pool_state = None
-
-    @staticmethod
-    def _get_pool_state(pool):  # pylint: disable=method-hidden
-        raise NotImplementedError
-
-    @staticmethod
-    def _init_coin_indices(metadata):  # pylint: disable=method-hidden
-        raise NotImplementedError
-
-    def price(self, coin_in, coin_out, use_fee=True):
-        raise NotImplementedError
-
-    def test_trade(self, coin_in, coin_out, dx, state=None):
-        raise NotImplementedError
-
-    def _set_pool_interface(self, pool, pool_function_dict):
+    def prepare_for_trades(self, timestamp):
         """
-        Binds the pool and functions used in simulation to the interface.
+        Does any necessary preparation before computing and doing trades.
+
+        The input timestamp can be used to fetch any auxiliary data
+        needed to prep the state.
+
+        Base implementation is a no-op.
 
         Parameters
         ----------
-        pool :
-            A pool object.
-
-        pool_function_dict : dict
-            A dict with interface method names as keys, and functions as values.
-
-            Note: Currently, _get_pool_state, and _init_coin_indices are required.
-
+        timestamp : datetime.datetime
+            the time to sample from
         """
-        self.pool = pool
-        pool_function_dict = pool_function_dict.copy()
+        pass
 
-        # Set Required Functions
-        self._get_pool_state = pool_function_dict.pop("_get_pool_state")
-        self._init_coin_indices = pool_function_dict.pop("_init_coin_indices")
+    @abstractmethod
+    def price(self, coin_in, coin_out, use_fee=True):
+        """
+        Returns the spot price of `coin_in` quoted in terms of `coin_out`,
+        i.e. the ratio of output coin amount to input coin amount for
+        an "infinitesimally" small trade.
 
-        # Set Additional Functions
-        for interface_fn, pool_fn in pool_function_dict.items():
-            bound_method = MethodType(pool_fn, self)
-            setattr(self, interface_fn, bound_method)
+        Coin IDs should be strings but as a legacy feature integer indices
+        corresponding to the pool implementation are allowed (caveat lector).
 
-        self.coin_indices = self._init_coin_indices(self.pool.metadata)
-        self.set_pool_state()
+        The indices are assumed to include base pool underlyer indices.
 
-    def get_pool_state(self):
-        """
-        Gets pool state using the provided _get_pool_state method
-        """
-        return self._get_pool_state(self.pool)
+        Parameters
+        ----------
+        coin_in : str, int
+            ID of coin to be priced; in a swapping context, this is
+            the "in"-token.
+        coin_out : str, int
+            ID of quote currency; in a swapping context, this is the
+            "out"-token.
+        use_fee: bool, default=False
+            Deduct fees.
 
-    def set_pool_state(self):
+        Returns
+        -------
+        float
+            Price of `coin_in` quoted in `coin_out`
         """
-        Records the current pool state in the interface's pool_state atttribute.
-        """
-        self.pool_state = self.get_pool_state()
+        raise NotImplementedError
 
-    def get_coin_indices(self, *coins):
+    @abstractmethod
+    def trade(self, coin_in, coin_out, size):
         """
-        Gets the pool indices for the input coin names.
-        Uses the coin_indices set by _init_coin_indices.
-        """
-        coin_indices = self.coin_indices
-        return [self._get_coin_index(coin_indices, c) for c in coins]
+        Perform an exchange between two coins.
 
-    @staticmethod
-    def _get_coin_index(coin_indices, coin_id):
+        Coin IDs should be strings but as a legacy feature integer indices
+        corresponding to the pool implementation are allowed (caveat lector).
+
+        Parameters
+        ----------
+        coin_in : str, int
+            ID of "in" coin.
+        coin_out : str, int
+            ID of "out" coin.
+        size : int
+            Amount of coin `i` being exchanged.
+
+        Returns
+        -------
+        (int, int, int)
+            (amount of coin `j` received, trading fee, volume)
+
+            Note that coin amounts and fee are in native token units but `volume`
+            is normalized to be in the same units as pool value.  This enables
+            cross-token comparisons and totaling of volume.
         """
-        Gets the index for a single coin based on its name.
-        Uses the coin_indices set by _init_coin_indices.
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_price_depth(self):
         """
-        if isinstance(coin_id, str):
-            coin_id = coin_indices[coin_id]
-        return coin_id
+        Returns the price depth between pairs of coins in the pool.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def make_error_fns(self):
+        """
+        Returns the pricing error functions needed for determining the
+        optimal arbitrage in simulations.
+        """
+        raise NotImplementedError

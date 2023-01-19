@@ -1,3 +1,4 @@
+"""Unit tests for CurveMetaPool"""
 import pytest
 from hypothesis import HealthCheck, assume, given, settings
 from hypothesis import strategies as st
@@ -8,10 +9,12 @@ from .test_pool import initialize_pool
 
 
 def convert_to_virtual_balances(rates, balances):
+    """Convert from native token units to D units."""
     return [b * p // 10**18 for b, p in zip(balances, rates)]
 
 
 def convert_to_real_balances(rates, balances):
+    """Convert from D units to native token units."""
     return [b * 10**18 // p for b, p in zip(balances, rates)]
 
 
@@ -23,17 +26,17 @@ def initialize_metapool(vyper_metapool, vyper_3pool):
     A = vyper_metapool.A()
     n_coins = vyper_metapool.N_COINS()
     balances = [vyper_metapool.balances(i) for i in range(n_coins)]
-    p = [vyper_metapool.p(i) for i in range(n_coins)]
     lp_total_supply = vyper_metapool.totalSupply()
     fee = vyper_metapool.fee()
     admin_fee = vyper_metapool.admin_fee()
+    rate_multiplier = vyper_metapool.rate_multiplier()
     basepool = initialize_pool(vyper_3pool)
     metapool = CurveMetaPool(
         A,
         D=balances,
         n=n_coins,
         basepool=basepool,
-        p=p,
+        rate_multiplier=rate_multiplier,
         tokens=lp_total_supply,
         fee=fee,
         admin_fee=admin_fee,
@@ -123,8 +126,8 @@ def test_get_y_D(vyper_metapool, vyper_3pool, dx, i, j):
     python_metapool = initialize_metapool(vyper_metapool, vyper_3pool)
     A = python_metapool.A
     D = python_metapool.D()
-    rates = python_metapool.rates()
-    balances = python_metapool.x
+    rates = python_metapool.rates
+    balances = python_metapool.balances
     vyper_balances = [vyper_metapool.balances(i) for i in range(2)]
     assert balances == vyper_balances
     virtual_balances = convert_to_virtual_balances(rates, balances)
@@ -177,7 +180,7 @@ def test_add_liquidity(vyper_metapool, vyper_3pool, x0, x1):
     amounts = convert_to_real_balances(rates, _balances)
 
     old_vyper_balances = [vyper_metapool.balances(i) for i in range(len(_balances))]
-    balances = python_metapool.x
+    balances = python_metapool.balances
     assert balances == old_vyper_balances
 
     lp_total_supply = vyper_metapool.totalSupply()
@@ -188,7 +191,7 @@ def test_add_liquidity(vyper_metapool, vyper_3pool, x0, x1):
     assert lp_amount == expected_lp_amount
 
     expected_balances = [vyper_metapool.balances(i) for i in range(len(_balances))]
-    new_balances = python_metapool.x
+    new_balances = python_metapool.balances
     assert new_balances == expected_balances
 
 
@@ -209,7 +212,7 @@ def test_exchange(vyper_metapool, vyper_3pool, dx, i, j):
     python_metapool = initialize_metapool(vyper_metapool, vyper_3pool)
 
     old_vyper_balances = [vyper_metapool.balances(i) for i in range(2)]
-    balances = python_metapool.x
+    balances = python_metapool.balances
     assert balances == old_vyper_balances
 
     # convert to real units
@@ -221,7 +224,7 @@ def test_exchange(vyper_metapool, vyper_3pool, dx, i, j):
     assert dy == expected_dy
 
     expected_balances = [vyper_metapool.balances(i) for i in range(2)]
-    new_balances = python_metapool.x
+    new_balances = python_metapool.balances
     assert new_balances == expected_balances
 
 
@@ -244,11 +247,11 @@ def test_exchange_underlying(vyper_metapool, vyper_3pool, dx, i, j):
 
     # check metapool balances
     old_vyper_balances = [vyper_metapool.balances(i) for i in range(2)]
-    balances = python_metapool.x
+    balances = python_metapool.balances
     assert balances == old_vyper_balances
     # check basepool balances
     old_vyper_balances = [vyper_3pool.balances(i) for i in range(3)]
-    balances = python_basepool.x
+    balances = python_basepool.balances
     assert balances == old_vyper_balances
 
     # convert to real units
@@ -265,11 +268,11 @@ def test_exchange_underlying(vyper_metapool, vyper_3pool, dx, i, j):
 
     # check metapool balances
     expected_balances = [vyper_metapool.balances(i) for i in range(2)]
-    new_balances = python_metapool.x
+    new_balances = python_metapool.balances
     assert new_balances == expected_balances
     # check basepool balances
     expected_balances = [vyper_3pool.balances(i) for i in range(3)]
-    new_balances = python_basepool.x
+    new_balances = python_basepool.balances
     assert new_balances == expected_balances
 
 
@@ -303,7 +306,7 @@ def test_remove_liquidity_one_coin(vyper_metapool, vyper_3pool, amount, i):
     python_metapool = initialize_metapool(vyper_metapool, vyper_3pool)
 
     old_vyper_balances = [vyper_metapool.balances(i) for i in range(2)]
-    balances = python_metapool.x
+    balances = python_metapool.balances
     assert balances == old_vyper_balances
 
     old_vyper_supply = vyper_metapool.totalSupply()
@@ -315,7 +318,7 @@ def test_remove_liquidity_one_coin(vyper_metapool, vyper_3pool, amount, i):
     expected_lp_supply = vyper_metapool.totalSupply()
 
     python_metapool.remove_liquidity_one_coin(amount, i)
-    coin_balance = python_metapool.x[i]
+    coin_balance = python_metapool.balances[i]
     lp_supply = python_metapool.tokens
 
     assert coin_balance == expected_coin_balance
@@ -345,9 +348,9 @@ def test_dydxfee(x0, x1, b0, b1, b2, i, j):
     admin_fee = 5 * 10**9
 
     base_A = 3000
-    base_p = [10**18, 10**30, 10**30]
+    base_rates = [10**18, 10**30, 10**30]
     base_balances = [b0, b1, b2]
-    base_balances = convert_to_real_balances(base_p, base_balances)
+    base_balances = convert_to_real_balances(base_rates, base_balances)
     base_n = len(base_balances)
     base_tokens = sum(base_balances)
     base_fee = 1 * 10**6
@@ -356,14 +359,15 @@ def test_dydxfee(x0, x1, b0, b1, b2, i, j):
         base_A,
         D=base_balances,
         n=base_n,
-        p=base_p,
+        rates=base_rates,
         tokens=base_tokens,
         fee=base_fee,
         admin_fee=admin_fee,
     )
 
     A = 1365
-    p = [10**18, 10**18]
+    rate_multiplier = 10**18
+    p = [rate_multiplier, 10**18]
     balances = [x0, x1]
     balances = convert_to_real_balances(p, balances)
     n = len(balances)
@@ -375,7 +379,7 @@ def test_dydxfee(x0, x1, b0, b1, b2, i, j):
         D=balances,
         n=n,
         basepool=basepool,
-        p=p,
+        rate_multiplier=rate_multiplier,
         tokens=tokens,
         fee=fee,
         admin_fee=admin_fee,
@@ -383,7 +387,7 @@ def test_dydxfee(x0, x1, b0, b1, b2, i, j):
 
     _dydx = metapool.dydxfee(i, j)
 
-    rates = p[:1] + base_p
+    rates = [rate_multiplier] + base_rates
     _dx = 10**12
     dx = _dx * 10**18 // rates[i]
     dy, _ = metapool.exchange_underlying(i, j, dx)

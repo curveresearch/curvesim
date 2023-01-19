@@ -30,7 +30,7 @@ hypothesis[numpy,pandas]==6.54.6
 
 # specify versions for titanboa as it doesn't provide bounds and this makes
 # pip choke on its dependency resolution
-titanoboa @ git+https://github.com/vyperlang/titanoboa@ad59fd9a9dc72057dfffdbb6db455ae0ff0f96e8
+titanoboa @ git+https://github.com/vyperlang/titanoboa@2a1b1c47ffc5ffe977d6cc775e4f037d31bdeee2
 py-evm==0.6.0a1
 
 sphinx==5.3.0 

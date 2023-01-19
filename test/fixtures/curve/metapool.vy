@@ -102,7 +102,7 @@ future_A: public(uint256)
 initial_A_time: public(uint256)
 future_A_time: public(uint256)
 
-rate_multiplier: uint256
+rate_multiplier: public(uint256)
 
 name: public(String[64])
 symbol: public(String[32])
@@ -163,17 +163,6 @@ def rates(i: uint256) -> uint256:
         return self.rate_multiplier
     elif i == 1:
         return Curve(self.basepool).get_virtual_price()
-    else:
-        raise
-
-# sim: function added for pool sim testing
-@view
-@external
-def p(i: uint256) -> uint256:
-    if i == 0:
-        return self.rate_multiplier
-    elif i == 1:
-        return 1000000000000000000
     else:
         raise
 

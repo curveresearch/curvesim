@@ -16,12 +16,20 @@ ETHERSCAN_URL = "https://api.etherscan.io/api"
 
 
 def get_etherscan_api_key():
+    """
+    Get the Etherscan API key from the environment.
+    Default to key provided by `curvesim` (not recommended).
+    """
     default_key = "PT1D9IGAPPPRFMD312V9GARWW93BS9ZV6V"
     key = get_env_var("ETHERSCAN_API_KEY", default=default_key)
     return key
 
 
 def get_alchemy_api_key():
+    """
+    Get the Alchemy API key from the environment.
+    Default to key provided by `curvesim` (not recommended).
+    """
     default_key = "WLcYLj9I1w7wEOgKmzidN1z62sbFILUz"
     key = get_env_var("ALCHEMY_API_KEY", default=default_key)
     return key

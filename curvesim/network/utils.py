@@ -1,3 +1,4 @@
+"""Common or miscellaneous utility functions"""
 import asyncio
 import functools
 from concurrent.futures import ThreadPoolExecutor
@@ -6,6 +7,7 @@ from gmpy2 import mpz
 
 
 def compute_D(xp, A):
+    """Standalone `D` calc neede for some data processing."""
     xp = list(map(int, xp))
     n = len(xp)
     S = sum(xp)
