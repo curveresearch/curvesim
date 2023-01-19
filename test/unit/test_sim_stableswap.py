@@ -48,31 +48,20 @@ class FakeSimStableswap(SimStableswapBase):
             high = xp[i]
             return (0, high)
 
-        solve_counter = 0
-
         def post_trade_price_error(dx, i, j, price_target):
-            nonlocal solve_counter
-            solve_counter += 1
             price = self.price(i, j)
-            print("****** trade size", dx, "i:", i, "j:", j)
-            print("pre price:", price)
+
+            # solver requires opposite signs for the value
+            # of the error function on the bounds
             lo, hi = get_trade_bounds(i, j)
             if abs(dx - lo) < 0.000000005:
                 price = 2
-                solve_counter = 0
+                return price - price_target
             elif abs(dx - hi) < 0.000000005:
                 price = 0
-                solve_counter = 0
+                return price - price_target
             else:
-                price_delta = abs(price_target - price) * 0.2 * solve_counter
-                if price < price_target:
-                    price += price_delta
-                else:
-                    price -= price_delta
-
-            error = price - price_target
-            print("post price:", price, "target:", price_target, "error:", error)
-            return error
+                return 0.00000001
 
         def post_trade_price_error_multi(dxs, price_targets, coins):
             errors = [0.00000001] * len(dxs)
