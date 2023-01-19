@@ -524,6 +524,14 @@ def opt_arb_multi(pool, prices, limits):  # noqa: C901
         index_combos,
     )
 
+    # Order trades in terms of expected size
+    order = sorted(range(len(x0)), reverse=True, key=x0.__getitem__)
+    x0 = [x0[i] for i in order]
+    lo = [lo[i] for i in order]
+    hi = [hi[i] for i in order]
+    coins = [coins[i] for i in order]
+    price_targets = [price_targets[i] for i in order]
+
     # Find trades that minimize difference between
     # pool price and external market price
     trades = []
@@ -664,13 +672,5 @@ def get_trade_args(get_pool_price, get_bounds, error_function, prices, limits, c
 
         coins.append((in_index, out_index))
         price_targets.append(price)
-
-    # Order trades in terms of expected size
-    order = sorted(range(len(x0)), reverse=True, key=x0.__getitem__)
-    x0 = [x0[i] for i in order]
-    lo = [lo[i] for i in order]
-    hi = [hi[i] for i in order]
-    coins = [coins[i] for i in order]
-    price_targets = [price_targets[i] for i in order]
 
     return x0, lo, hi, coins, price_targets
