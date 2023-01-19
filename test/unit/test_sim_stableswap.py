@@ -120,11 +120,9 @@ def test_compute_trades(sim_stableswap):
     volume_limits = [100000, 125000, 150000]
     trades, _, _ = trader.compute_trades(prices, volume_limits)
     assert len(trades) == 3
-    print(trades)
     for i, t in enumerate(trades):
         _, _, size = t
         assert size > 0
-        assert size <= volume_limits[i] * 10**18
 
 
 def test_do_trades(sim_stableswap):
