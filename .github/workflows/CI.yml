@@ -37,9 +37,15 @@ jobs:
 
       - name: Unit tests
         run: |
-          pytest
+          coverage run -m pytest
 
       - name: End-to-end tests
         run: |
-          python -m test.ci
+          coverage run -m test.ci
+
+      - name: Coverage
+        run: |
+          # combine results of the preceding coverage runs
+          coverage combine
+          coverage report --fail-under=60
 
