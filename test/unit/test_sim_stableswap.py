@@ -20,19 +20,6 @@ class FakeSimStableswap(SimStableswapBase):
         super().__init__(*args, **kwargs)
         self.n = 3
 
-        # used for stubbing private methods
-        self._prices = [
-            1.01,
-            0.98,
-            1.003,
-            1.00002,
-            0.99992,
-            1.0000000001,
-            1.00000000000000000000001,
-        ]
-        self._price_counter = 0
-        self._xp = [529818 * 10**18, 760033 * 10**18, 434901 * 10**18]
-
     @property
     @override
     def _base_index_combos(self):
@@ -53,17 +40,39 @@ class FakeSimStableswap(SimStableswapBase):
     def make_error_fns(self):
         all_idx = range(self.n)
         index_combos = combinations(all_idx, 2)
-        xp = self._xp
 
         # pylint: disable=unused-argument
 
         def get_trade_bounds(i, j):
+            xp = [529818 * 10**18, 760033 * 10**18, 434901 * 10**18]
             high = xp[i]
             return (0, high)
 
+        solve_counter = 0
+
         def post_trade_price_error(dx, i, j, price_target):
+            nonlocal solve_counter
+            solve_counter += 1
             price = self.price(i, j)
-            return price - price_target
+            print("****** trade size", dx, "i:", i, "j:", j)
+            print("pre price:", price)
+            lo, hi = get_trade_bounds(i, j)
+            if abs(dx - lo) < 0.000000005:
+                price = 2
+                solve_counter = 0
+            elif abs(dx - hi) < 0.000000005:
+                price = 0
+                solve_counter = 0
+            else:
+                price_delta = abs(price_target - price) * 0.2 * solve_counter
+                if price < price_target:
+                    price += price_delta
+                else:
+                    price -= price_delta
+
+            error = price - price_target
+            print("post price:", price, "target:", price_target, "error:", error)
+            return error
 
         def post_trade_price_error_multi(dxs, price_targets, coins):
             errors = [0.00000001] * len(dxs)
@@ -78,13 +87,14 @@ class FakeSimStableswap(SimStableswapBase):
 
     @override
     def price(self, coin_in, coin_out, use_fee=True):
-        prices = self._prices
-        counter = self._price_counter
-
-        price = prices[counter]
-        self._price_counter = (counter + 1) % len(prices)
-
-        return price
+        _prices = {
+            (0, 1): 1.0002,
+            (0, 2): 0.99821,
+            (1, 2): 0.989199,
+        }
+        for (i, j), p in _prices.copy().items():
+            _prices[(j, i)] = 1 / p
+        return _prices[(coin_in, coin_out)]
 
     @override
     def trade(self, coin_in, coin_out, size):
@@ -117,13 +127,15 @@ def test_sim_stableswap_coin_indices(sim_stableswap):
 def test_compute_trades(sim_stableswap):
     """Test error functions with Arbitrageur.compute_trades"""
     trader = Arbitrageur(sim_stableswap)
-    prices = [1] * sim_stableswap.n
-    volume_limits = [100000] * sim_stableswap.n
+    prices = [1.00, 1.01, 0.98]
+    volume_limits = [100000, 125000, 150000]
     trades, _, _ = trader.compute_trades(prices, volume_limits)
     assert len(trades) == 3
-    for t in trades:
-        size = t[2]
+    print(trades)
+    for i, t in enumerate(trades):
+        _, _, size = t
         assert size > 0
+        assert size <= volume_limits[i] * 10**18
 
 
 def test_do_trades(sim_stableswap):
