@@ -1,5 +1,27 @@
 import time
 
+ADMIN_ACTIONS_DELAY = 3 * 86400
+MIN_RAMP_TIME = 86400
+
+MAX_ADMIN_FEE = 10 * 10**9
+MIN_FEE = 5 * 10**5  # 0.5 bps
+MAX_FEE = 10 * 10**9
+MAX_A_CHANGE = 10
+NOISE_FEE = 10**5  # 0.1 bps
+
+MIN_GAMMA = 10**10
+MAX_GAMMA = 2 * 10**16
+
+
+EXP_PRECISION = 10**10
+
+N_COINS = 2
+PRECISION = 10**18  # The precision to convert to
+A_MULTIPLIER = 10000
+
+MIN_A = N_COINS**N_COINS * A_MULTIPLIER / 10
+MAX_A = N_COINS**N_COINS * A_MULTIPLIER * 100000
+
 
 def get_unix_timestamp():
     """Get the timestamp in Unix time."""
@@ -49,3 +71,12 @@ class CurveCryptoPool:
             raise ValueError("`coins` must have same length as `precisions`")
 
         self.n = len(coins)
+
+        self.balances = [0] * self.n
+        self.D = 0
+
+        self.xcp_profit = 0
+        self.xcp_profit_a = 0  # Full profit at last claim of admin fees
+        # Cached (fast to read) virtual price also used internally
+        self.virtual_price = 0
+        self.not_adjusted = False
