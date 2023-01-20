@@ -36,6 +36,10 @@ class CurveCryptoPool:
         self,
         A: int,
         gamma: int,
+        D,
+        n: int,
+        precisions: List[int],
+        tokens: int,
         mid_fee: int,
         out_fee: int,
         allowed_extra_profit: int,
@@ -44,10 +48,35 @@ class CurveCryptoPool:
         admin_fee: int,
         ma_half_time: int,
         initial_price: int,
-        tokens,
-        coins,
-        precisions,
     ):
+        """
+        Parameters
+        ----------
+        A : int
+            Amplification coefficient; this is :math:`A n^{n-1}` in the whitepaper.
+        gamma: int
+        D : int or list of int
+            virtual total balance or coin balances in native token units
+        n: int
+            number of coins
+        precisions: list of int
+            precision adjustments to convert native token units to 18 decimals;
+            this assumes tokens have at most 18 decimals
+            i.e. balance in native units * precision = balance in D units
+        tokens: int
+            LP token supply
+        mid_fee: int
+            fee with 10**10 precision
+        out_fee: int
+            fee with 10**10 precision
+        allowed_extra_profit: int
+        fee_gamma: int
+        adjustment_step:
+        admin_fee: int
+            percentage of `fee` with 10**10 precision
+        ma_half_time: int
+        initial_price: int
+        """
         self.A = A
         self.gamma = gamma
 
@@ -67,16 +96,17 @@ class CurveCryptoPool:
         self.xcp_profit_a = 10**18
 
         self.tokens = tokens
-        self.coins = coins
-        self.PRECISIONS = precisions
 
-        if len(coins) != len(precisions):
-            raise ValueError("`coins` must have same length as `precisions`")
+        self.n = n
+        self.precisions = precisions
 
-        self.n = len(coins)
+        if len(precisions) != len(n):
+            raise ValueError("`len(precisions)` must equal `n`")
 
-        self.balances = [0] * self.n
-        self.D = 0
+        if isinstance(D, list):
+            self.balances = D
+        else:
+            self.balances = [D // n // p for p in precisions]
 
         self.xcp_profit = 0
         self.xcp_profit_a = 0  # Full profit at last claim of admin fees
@@ -85,7 +115,7 @@ class CurveCryptoPool:
         self.not_adjusted = False
 
     def _xp(self) -> List[int]:
-        precisions = self.PRECISIONS
+        precisions = self.precisions
         return [
             self.balances[0] * precisions[0],
             self.balances[1] * precisions[1] * self.price_scale / PRECISION,
