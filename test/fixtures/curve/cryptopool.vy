@@ -104,13 +104,15 @@ MAX_A: constant(uint256) = N_COINS**N_COINS * A_MULTIPLIER * 100000
 
 EXP_PRECISION: constant(uint256) = 10**10
 
-N_COINS: constant(int128) = 2
+# sim: made public for pool sim testing
+N_COINS: public(constant(uint256)) = 2
+
 PRECISION: constant(uint256) = 10 ** 18  # The precision to convert to
 A_MULTIPLIER: constant(uint256) = 10000
 
 
 # Implementation can be changed by changing this constant
-WETH20: immutable(address)
+WETH20: constant(address) = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2
 
 
 token: public(address)
@@ -505,6 +507,7 @@ def halfpow(power: uint256) -> uint256:
             return result * S / 10**18
 
     raise "Did not converge"
+
 ### end of Math functions
 
 
@@ -1385,3 +1388,8 @@ def get_virtual_price() -> uint256:
 def price_oracle() -> uint256:
     return self.internal_price_oracle()
 
+# sim: added function for pool sim testing
+@view
+@external
+def totalSupply() -> uint256:
+    return CurveToken(self.token).totalSupply()

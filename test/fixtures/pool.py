@@ -87,6 +87,55 @@ def _vyper_metapool(_vyper_3pool):
     return metapool
 
 
+@pytest.fixture(scope="session")
+def _vyper_cryptopool():
+    """
+    Initialize vyper fixture for crypto pool
+    using default volatile pair settings
+    """
+    cryptopool_filepath = os.path.join(_curve_dir, "cryptopool.vy")
+
+    mock_filepath = os.path.join(_base_dir, "lp_token_mock.vy")
+    lp_total_supply = 16058582265844398171435049
+    lp_token = boa.load(mock_filepath, lp_total_supply)
+
+    coins = [FAKE_ADDRESS] * 2
+
+    # settings based on STG/USDC pool
+    A = 400000
+    gamma = 72500000000000
+    # unpacked_precisions = [10**0, 10**12]
+    precisions = 12 << 8
+    precisions = precisions | 0  # for explicitness
+    mid_fee = 26000000
+    out_fee = 45000000
+    allowed_extra_profit = 2000000000000
+    fee_gamma = 230000000000000
+    adjustment_step = 146000000000000
+    admin_fee = 5000000000
+    ma_half_time = 600
+    initial_price = 2238958867040413141
+
+    cryptopool = boa.load(
+        cryptopool_filepath,
+        A,
+        gamma,
+        mid_fee,
+        out_fee,
+        allowed_extra_profit,
+        fee_gamma,
+        adjustment_step,
+        admin_fee,
+        ma_half_time,
+        initial_price,
+        lp_token,
+        coins,
+        precisions,
+    )
+
+    return cryptopool
+
+
 @pytest.fixture(scope="function")
 def vyper_3pool(_vyper_3pool):
     """
@@ -105,3 +154,13 @@ def vyper_metapool(_vyper_metapool):
     """
     with boa.env.anchor():
         yield _vyper_metapool
+
+
+@pytest.fixture(scope="function")
+def vyper_cryptopool(_vyper_cryptopool):
+    """
+    Function-scope fixture using titanoboa's snapshotting
+    feature to avoid expensive loading.
+    """
+    with boa.env.anchor():
+        yield _vyper_cryptopool
