@@ -44,7 +44,7 @@ class CurveCryptoPool:
         admin_fee: int,
         ma_half_time: int,
         initial_price: int,
-        token,
+        tokens,
         coins,
         precisions,
     ):
@@ -66,7 +66,7 @@ class CurveCryptoPool:
 
         self.xcp_profit_a = 10**18
 
-        self.token = token
+        self.tokens = tokens
         self.coins = coins
         self.PRECISIONS = precisions
 
