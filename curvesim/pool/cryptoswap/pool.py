@@ -22,7 +22,7 @@ N_COINS = 2
 PRECISION = 10**18  # The precision to convert to
 A_MULTIPLIER = 10000
 
-MIN_A = N_COINS**N_COINS * A_MULTIPLIER / 10
+MIN_A = N_COINS**N_COINS * A_MULTIPLIER // 10
 MAX_A = N_COINS**N_COINS * A_MULTIPLIER * 100000
 
 
@@ -100,7 +100,7 @@ class CurveCryptoPool:
         self.n = n
         self.precisions = precisions
 
-        if len(precisions) != len(n):
+        if len(precisions) != n:
             raise ValueError("`len(precisions)` must equal `n`")
 
         if isinstance(D, list):
@@ -118,7 +118,7 @@ class CurveCryptoPool:
         precisions = self.precisions
         return [
             self.balances[0] * precisions[0],
-            self.balances[1] * precisions[1] * self.price_scale / PRECISION,
+            self.balances[1] * precisions[1] * self.price_scale // PRECISION,
         ]
 
     def _geometric_mean(self, unsorted_x: List[int], sort: bool) -> int:
@@ -137,7 +137,7 @@ class CurveCryptoPool:
             #     tmp = tmp * _x / D
             # D = D * ((N_COINS - 1) * 10**18 + tmp) / (N_COINS * 10**18)
             # line below makes it for 2 coins
-            D = (D + x[0] * x[1] / D) / N_COINS
+            D = (D + x[0] * x[1] // D) // N_COINS
             if D > D_prev:
                 diff = D - D_prev
             else:
@@ -168,7 +168,7 @@ class CurveCryptoPool:
         assert (
             x[0] > 10**9 - 1 and x[0] < 10**15 * 10**18 + 1
         )  # dev: unsafe values x[0]
-        assert x[1] * 10**18 / x[0] > 10**14 - 1  # dev: unsafe values x[i] (input)
+        assert x[1] * 10**18 // x[0] > 10**14 - 1  # dev: unsafe values x[i] (input)
 
         D: int = N_COINS * self._geometric_mean(x, False)
         S: int = x[0] + x[1]
@@ -180,7 +180,7 @@ class CurveCryptoPool:
             # for _x in x:
             #     K0 = K0 * _x * N_COINS / D
             # collapsed for 2 coins
-            K0: int = (10**18 * N_COINS**2) * x[0] / D * x[1] / D
+            K0: int = (10**18 * N_COINS**2) * x[0] // D * x[1] // D
 
             _g1k0: int = gamma + 10**18
             if _g1k0 > K0:
@@ -190,28 +190,28 @@ class CurveCryptoPool:
 
             # D / (A * N**N) * _g1k0**2 / gamma**2
             mul1: int = (
-                10**18 * D / gamma * _g1k0 / gamma * _g1k0 * A_MULTIPLIER / ANN
+                10**18 * D // gamma * _g1k0 // gamma * _g1k0 * A_MULTIPLIER // ANN
             )
 
             # 2*N*K0 / _g1k0
-            mul2: int = (2 * 10**18) * N_COINS * K0 / _g1k0
+            mul2: int = (2 * 10**18) * N_COINS * K0 // _g1k0
 
             neg_fprime: int = (
-                (S + S * mul2 / 10**18) + mul1 * N_COINS / K0 - mul2 * D / 10**18
+                (S + S * mul2 // 10**18) + mul1 * N_COINS // K0 - mul2 * D // 10**18
             )
 
             # D -= f / fprime
-            D_plus: int = D * (neg_fprime + S) / neg_fprime
-            D_minus: int = D * D / neg_fprime
+            D_plus: int = D * (neg_fprime + S) // neg_fprime
+            D_minus: int = D * D // neg_fprime
             if 10**18 > K0:
-                D_minus += D * (mul1 / neg_fprime) / 10**18 * (10**18 - K0) / K0
+                D_minus += D * (mul1 // neg_fprime) // 10**18 * (10**18 - K0) // K0
             else:
-                D_minus -= D * (mul1 / neg_fprime) / 10**18 * (K0 - 10**18) / K0
+                D_minus -= D * (mul1 // neg_fprime) // 10**18 * (K0 - 10**18) // K0
 
             if D_plus > D_minus:
                 D = D_plus - D_minus
             else:
-                D = (D_minus - D_plus) / 2
+                D = (D_minus - D_plus) // 2
 
             diff: int = 0
             if D > D_prev:
@@ -223,7 +223,7 @@ class CurveCryptoPool:
             ):  # Could reduce precision for gas efficiency here
                 # Test that we are safe with the next newton_y
                 for _x in x:
-                    frac: int = _x * 10**18 / D
+                    frac: int = _x * 10**18 // D
                     if frac < 10**16 or frac > 10**20:
                         raise CalculationError("Unsafe value for x[i]")
                 return D
