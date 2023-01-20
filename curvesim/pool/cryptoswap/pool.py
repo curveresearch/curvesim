@@ -1,7 +1,7 @@
 import time
 from typing import List
 
-from curvesim.exceptions import CalculationError
+from curvesim.exceptions import CalculationError, CurvesimValueError
 
 ADMIN_ACTIONS_DELAY = 3 * 86400
 MIN_RAMP_TIME = 86400
@@ -125,10 +125,10 @@ class CurveCryptoPool:
         Currently uses 60k gas
         """
         # Safety checks
-        assert ANN > MIN_A - 1 and ANN < MAX_A + 1  # dev: unsafe values A
-        assert (
-            gamma > MIN_GAMMA - 1 and gamma < MAX_GAMMA + 1
-        )  # dev: unsafe values gamma
+        if ANN > MAX_A or ANN < MIN_A:
+            raise CurvesimValueError("Unsafe value for A")
+        if gamma > MAX_GAMMA or gamma < MIN_GAMMA:
+            raise CurvesimValueError("Unsafe value for gamma")
 
         # Initial value of invariant D is that for constant-product invariant
         x: List[int] = x_unsorted
@@ -143,7 +143,7 @@ class CurveCryptoPool:
         D: int = N_COINS * self._geometric_mean(x, False)
         S: int = x[0] + x[1]
 
-        for i in range(255):
+        for _ in range(255):
             D_prev: int = D
 
             # K0: int = 10**18
@@ -194,9 +194,8 @@ class CurveCryptoPool:
                 # Test that we are safe with the next newton_y
                 for _x in x:
                     frac: int = _x * 10**18 / D
-                    assert (frac > 10**16 - 1) and (
-                        frac < 10**20 + 1
-                    )  # dev: unsafe values x[i]
+                    if frac < 10**16 or frac > 10**20:
+                        raise CalculationError("Unsafe value for x[i]")
                 return D
 
-        raise "Did not converge"
+        raise CalculationError("Did not converge")
