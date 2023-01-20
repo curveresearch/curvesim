@@ -20,3 +20,7 @@ class CurvesimValueError(CurvesimException, ValueError):
 
 class SnapshotError(CurvesimException):
     """Error using a snapshot."""
+
+
+class CalculationError(CurvesimException):
+    """Error during a mathematical calculation."""
