@@ -110,13 +110,14 @@ def test_newton_D(vyper_cryptopool, A, gamma, x0, x1):
     positive_balance,
     positive_balance,
     st.integers(min_value=0, max_value=1),
+    st.integers(min_value=0, max_value=25),
 )
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
     max_examples=5,
     deadline=None,
 )
-def test_newton_y(vyper_cryptopool, A, gamma, x0, x1, i):
+def test_newton_y(vyper_cryptopool, A, gamma, x0, x1, i, delta_perc):
     """Test get_y calculation against vyper implementation."""
 
     _balances = [x0, x1]
@@ -127,11 +128,27 @@ def test_newton_y(vyper_cryptopool, A, gamma, x0, x1, i):
     xp = vyper_cryptopool.eval("self.xp()")
     xp = list(xp)
     assume(0.02 < xp[0] / xp[1] < 50)
-    D = vyper_cryptopool.eval(f"self.newton_D({A}, {gamma}, {xp})")
-    expected_y = vyper_cryptopool.eval(f"self.newton_y({A}, {gamma}, {xp}, {D}, {i})")
 
-    # pylint: disable=protected-access
+    # vary D by delta_perc %
+    D = vyper_cryptopool.eval(f"self.newton_D({A}, {gamma}, {xp})")
+    D_changed = D * (100 - delta_perc) // 100
+    expected_y = vyper_cryptopool.eval(
+        f"self.newton_y({A}, {gamma}, {xp}, {D_changed}, {i})"
+    )
+
     pool = initialize_pool(vyper_cryptopool)
-    y = pool._newton_y(A, gamma, xp, D, i)
+    y = pool._newton_y(A, gamma, xp, D_changed, i)  # pylint: disable=protected-access
+
+    assert y == expected_y
+
+    # vary xp[j] by delta_perc %
+    xp_changed = xp.copy()
+    j = 1 - i
+    xp_changed[j] = xp[j] * (100 - delta_perc) // 100
+    expected_y = vyper_cryptopool.eval(
+        f"self.newton_y({A}, {gamma}, {xp_changed}, {D}, {i})"
+    )
+
+    y = pool._newton_y(A, gamma, xp_changed, D, i)  # pylint: disable=protected-access
 
     assert y == expected_y
