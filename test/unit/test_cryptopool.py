@@ -127,10 +127,27 @@ def test_halfpow(vyper_cryptopool, power):
     deadline=None,
 )
 def test_sqrt_int(vyper_cryptopool, number):
-    """Test halfpow calculation against vyper implementation."""
+    """Test sqrt_int calculation against vyper implementation."""
 
     expected_result = vyper_cryptopool.eval(f"self.sqrt_int({number})")
     result = _sqrt_int(number)
+
+    assert result == expected_result
+
+
+@given(st.integers(min_value=100))
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=5,
+    deadline=None,
+)
+def test_get_xcp(vyper_cryptopool, D):
+    """Test get_xcp calculation against vyper implementation."""
+
+    expected_result = vyper_cryptopool.eval(f"self.get_xcp({D})")
+
+    pool = initialize_pool(vyper_cryptopool)
+    result = pool._get_xcp(D)  # pylint: disable=protected-access
 
     assert result == expected_result
 

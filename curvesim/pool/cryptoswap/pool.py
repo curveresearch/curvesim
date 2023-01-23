@@ -205,6 +205,13 @@ class CurveCryptoPool:
             self.balances[1] * precisions[1] * self.price_scale // PRECISION,
         ]
 
+    def _get_xcp(self, D: int) -> int:
+        x: List[int] = [
+            D // N_COINS,
+            D * PRECISION // (self.price_scale * N_COINS),
+        ]
+        return _geometric_mean(x, True)
+
     @staticmethod
     def _newton_D(ANN: int, gamma: int, x_unsorted: List[int]) -> List[int]:
         """
