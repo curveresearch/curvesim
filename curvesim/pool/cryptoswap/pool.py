@@ -26,9 +26,35 @@ MIN_A = N_COINS**N_COINS * A_MULTIPLIER // 10
 MAX_A = N_COINS**N_COINS * A_MULTIPLIER * 100000
 
 
-def get_unix_timestamp():
+def _get_unix_timestamp():
     """Get the timestamp in Unix time."""
     return int(time.time())
+
+
+def _geometric_mean(unsorted_x: List[int], sort: bool) -> int:
+    """
+    (x[0] * x[1] * ...) ** (1/N)
+    """
+    x: List[int] = unsorted_x
+    if sort and x[0] < x[1]:
+        x = [unsorted_x[1], unsorted_x[0]]
+    D: int = x[0]
+    diff: int = 0
+    for _ in range(255):
+        D_prev: int = D
+        # tmp: uint256 = 10**18
+        # for _x in x:
+        #     tmp = tmp * _x / D
+        # D = D * ((N_COINS - 1) * 10**18 + tmp) / (N_COINS * 10**18)
+        # line below makes it for 2 coins
+        D = (D + x[0] * x[1] // D) // N_COINS
+        if D > D_prev:
+            diff = D - D_prev
+        else:
+            diff = D_prev - D
+        if diff <= 1 or diff * 10**18 < D:
+            return D
+    raise CalculationError("Did not converge")
 
 
 class CurveCryptoPool:
@@ -90,7 +116,7 @@ class CurveCryptoPool:
         self.price_scale = initial_price
         self._price_oracle = initial_price
         self.last_prices = initial_price
-        self.last_prices_timestamp = get_unix_timestamp()
+        self.last_prices_timestamp = _get_unix_timestamp()
         self.ma_half_time = ma_half_time
 
         self.xcp_profit_a = 10**18
@@ -121,32 +147,8 @@ class CurveCryptoPool:
             self.balances[1] * precisions[1] * self.price_scale // PRECISION,
         ]
 
-    def _geometric_mean(self, unsorted_x: List[int], sort: bool) -> int:
-        """
-        (x[0] * x[1] * ...) ** (1/N)
-        """
-        x: List[int] = unsorted_x
-        if sort and x[0] < x[1]:
-            x = [unsorted_x[1], unsorted_x[0]]
-        D: int = x[0]
-        diff: int = 0
-        for _ in range(255):
-            D_prev: int = D
-            # tmp: uint256 = 10**18
-            # for _x in x:
-            #     tmp = tmp * _x / D
-            # D = D * ((N_COINS - 1) * 10**18 + tmp) / (N_COINS * 10**18)
-            # line below makes it for 2 coins
-            D = (D + x[0] * x[1] // D) // N_COINS
-            if D > D_prev:
-                diff = D - D_prev
-            else:
-                diff = D_prev - D
-            if diff <= 1 or diff * 10**18 < D:
-                return D
-        raise CalculationError("Did not converge")
-
-    def _newton_D(self, ANN: int, gamma: int, x_unsorted: List[int]) -> List[int]:
+    @staticmethod
+    def _newton_D(ANN: int, gamma: int, x_unsorted: List[int]) -> List[int]:
         """
         Finding the invariant using Newton method.
         ANN is higher by the factor A_MULTIPLIER
@@ -170,7 +172,7 @@ class CurveCryptoPool:
         )  # dev: unsafe values x[0]
         assert x[1] * 10**18 // x[0] > 10**14 - 1  # dev: unsafe values x[i] (input)
 
-        D: int = N_COINS * self._geometric_mean(x, False)
+        D: int = N_COINS * _geometric_mean(x, False)
         S: int = x[0] + x[1]
 
         for _ in range(255):
@@ -227,5 +229,89 @@ class CurveCryptoPool:
                     if frac < 10**16 or frac > 10**20:
                         raise CalculationError("Unsafe value for x[i]")
                 return D
+
+        raise CalculationError("Did not converge")
+
+    @staticmethod
+    def _newton_y(ANN: int, gamma: int, x: List[int], D: int, i: int) -> int:
+        """
+        Calculating x[i] given other balances x[0..N_COINS-1] and invariant D
+        ANN = A * N**N
+        """
+        # Safety checks
+        assert ANN > MIN_A - 1 and ANN < MAX_A + 1  # dev: unsafe values A
+        assert (
+            gamma > MIN_GAMMA - 1 and gamma < MAX_GAMMA + 1
+        )  # dev: unsafe values gamma
+        assert D > 10**17 - 1 and D < 10**15 * 10**18 + 1  # dev: unsafe values D
+
+        x_j: int = x[1 - i]
+        y: int = D**2 // (x_j * N_COINS**2)
+        K0_i: int = (10**18 * N_COINS) * x_j // D
+        # S_i = x_j
+
+        # frac = x_j * 1e18 / D => frac = K0_i / N_COINS
+        assert (K0_i > 10**16 * N_COINS - 1) and (
+            K0_i < 10**20 * N_COINS + 1
+        )  # dev: unsafe values x[i]
+
+        # x_sorted: uint256[N_COINS] = x
+        # x_sorted[i] = 0
+        # x_sorted = self.sort(x_sorted)  # From high to low
+        # x[not i] instead of x_sorted since x_soted has only 1 element
+
+        convergence_limit: int = max(max(x_j // 10**14, D // 10**14), 100)
+
+        for j in range(255):
+            y_prev: int = y
+
+            K0: int = K0_i * y * N_COINS // D
+            S: int = x_j + y
+
+            _g1k0: int = gamma + 10**18
+            if _g1k0 > K0:
+                _g1k0 = _g1k0 - K0 + 1
+            else:
+                _g1k0 = K0 - _g1k0 + 1
+
+            # D / (A * N**N) * _g1k0**2 / gamma**2
+            mul1: int = (
+                10**18 * D // gamma * _g1k0 // gamma * _g1k0 * A_MULTIPLIER // ANN
+            )
+
+            # 2*K0 / _g1k0
+            mul2: int = 10**18 + (2 * 10**18) * K0 // _g1k0
+
+            yfprime: int = 10**18 * y + S * mul2 + mul1
+            _dyfprime: int = D * mul2
+            if yfprime < _dyfprime:
+                y = y_prev // 2
+                continue
+            else:
+                yfprime -= _dyfprime
+            fprime: int = yfprime // y
+
+            # y -= f / f_prime;  y = (y * fprime - f) / fprime
+            # y = (yfprime + 10**18 * D - 10**18 * S) // fprime + mul1 // fprime * (10**18 - K0) // K0
+            y_minus: int = mul1 // fprime
+            y_plus: int = (yfprime + 10**18 * D) // fprime + y_minus * 10**18 // K0
+            y_minus += 10**18 * S // fprime
+
+            if y_plus < y_minus:
+                y = y_prev // 2
+            else:
+                y = y_plus - y_minus
+
+            diff: int = 0
+            if y > y_prev:
+                diff = y - y_prev
+            else:
+                diff = y_prev - y
+            if diff < max(convergence_limit, y // 10**14):
+                frac: int = y * 10**18 // D
+                assert (frac > 10**16 - 1) and (
+                    frac < 10**20 + 1
+                )  # dev: unsafe value for y
+                return y
 
         raise CalculationError("Did not converge")
