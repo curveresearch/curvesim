@@ -3,7 +3,13 @@ from hypothesis import HealthCheck, assume, given, settings
 from hypothesis import strategies as st
 
 from curvesim.pool import CurveCryptoPool
-from curvesim.pool.cryptoswap.pool import MAX_A, MAX_GAMMA, MIN_A, MIN_GAMMA
+from curvesim.pool.cryptoswap.pool import (
+    MAX_A,
+    MAX_GAMMA,
+    MIN_A,
+    MIN_GAMMA,
+    _geometric_mean,
+)
 
 
 def initialize_pool(vyper_cryptopool):
@@ -76,6 +82,25 @@ def test_xp(vyper_cryptopool, x0, x1):
     xp = pool._xp()
 
     assert xp == expected_xp
+
+
+@given(positive_balance, positive_balance, st.booleans())
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=5,
+    deadline=None,
+)
+def test_geometric_mean(vyper_cryptopool, x0, x1, sort_flag):
+    """Test D calculation against vyper implementation."""
+
+    _balances = [x0, x1]
+    precisions = vyper_cryptopool.eval("self._get_precisions()")
+    xp = [x // p for x, p in zip(_balances, precisions)]
+
+    expected_result = vyper_cryptopool.eval(f"self.geometric_mean({xp}, {sort_flag})")
+    result = _geometric_mean(xp, sort_flag)
+
+    assert result == expected_result
 
 
 @given(amplification_coefficient, gamma_coefficient, positive_balance, positive_balance)
