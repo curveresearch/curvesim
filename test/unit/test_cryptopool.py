@@ -102,3 +102,36 @@ def test_newton_D(vyper_cryptopool, A, gamma, x0, x1):
     D = pool._newton_D(A, gamma, xp)
 
     assert D == expected_D
+
+
+@given(
+    amplification_coefficient,
+    gamma_coefficient,
+    positive_balance,
+    positive_balance,
+    st.integers(min_value=0, max_value=1),
+)
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=5,
+    deadline=None,
+)
+def test_newton_y(vyper_cryptopool, A, gamma, x0, x1, i):
+    """Test get_y calculation against vyper implementation."""
+
+    _balances = [x0, x1]
+    precisions = vyper_cryptopool.eval("self._get_precisions()")
+    balances = [x // p for x, p in zip(_balances, precisions)]
+
+    vyper_cryptopool.eval(f"self.balances={balances}")
+    xp = vyper_cryptopool.eval("self.xp()")
+    xp = list(xp)
+    assume(0.02 < xp[0] / xp[1] < 50)
+    D = vyper_cryptopool.eval(f"self.newton_D({A}, {gamma}, {xp})")
+    expected_y = vyper_cryptopool.eval(f"self.newton_y({A}, {gamma}, {xp}, {D}, {i})")
+
+    # pylint: disable=protected-access
+    pool = initialize_pool(vyper_cryptopool)
+    y = pool._newton_y(A, gamma, xp, D, i)
+
+    assert y == expected_y
