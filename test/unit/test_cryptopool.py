@@ -41,6 +41,10 @@ def initialize_pool(vyper_cryptopool):
         ma_half_time=ma_half_time,
         initial_price=price_scale,
     )
+
+    assert pool.A == vyper_cryptopool.A()
+    assert pool.gamma == vyper_cryptopool.gamma()
+
     return pool
 
 
