@@ -10,6 +10,7 @@ from curvesim.pool.cryptoswap.pool import (
     MIN_GAMMA,
     _geometric_mean,
     _halfpow,
+    _sqrt_int,
 )
 
 
@@ -115,6 +116,21 @@ def test_halfpow(vyper_cryptopool, power):
 
     expected_result = vyper_cryptopool.eval(f"self.halfpow({power})")
     result = _halfpow(power)
+
+    assert result == expected_result
+
+
+@given(st.integers(min_value=0))
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=5,
+    deadline=None,
+)
+def test_sqrt_int(vyper_cryptopool, number):
+    """Test halfpow calculation against vyper implementation."""
+
+    expected_result = vyper_cryptopool.eval(f"self.sqrt_int({number})")
+    result = _sqrt_int(number)
 
     assert result == expected_result
 

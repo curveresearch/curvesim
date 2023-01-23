@@ -95,6 +95,26 @@ def _halfpow(power: int) -> int:
     raise CalculationError("Did not converge")
 
 
+def _sqrt_int(x: int) -> int:
+    """
+    Originating from: https://github.com/vyperlang/vyper/issues/1266
+    """
+
+    if x == 0:
+        return 0
+
+    z: int = (x + 10**18) // 2
+    y: int = x
+
+    for i in range(256):
+        if z == y:
+            return y
+        y = z
+        z = (x * 10**18 // z + z) // 2
+
+    raise CalculationError("Did not converge")
+
+
 class CurveCryptoPool:
     def __init__(
         self,
