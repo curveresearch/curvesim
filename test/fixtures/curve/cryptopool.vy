@@ -196,7 +196,7 @@ def __init__(
     # Pack A and gamma:
     # shifted A + gamma
     A_gamma: uint256 = shift(A, 128)
-    A_gamma = bitwise_or(A_gamma, gamma)
+    A_gamma = A_gamma | gamma
     self.initial_A_gamma = A_gamma
     self.future_A_gamma = A_gamma
 
@@ -227,7 +227,7 @@ def __init__(
 def _get_precisions() -> uint256[2]:
     p0: uint256 = self.PRECISIONS
     p1: uint256 = 10 ** shift(p0, -8)
-    p0 = 10 ** bitwise_and(p0, 255)
+    p0 = 10 ** (p0 & 255)
     return [p0, p1]
 
 
@@ -245,7 +245,7 @@ def _A_gamma() -> uint256[2]:
     t1: uint256 = self.future_A_gamma_time
 
     A_gamma_1: uint256 = self.future_A_gamma
-    gamma1: uint256 = bitwise_and(A_gamma_1, 2**128-1)
+    gamma1: uint256 = A_gamma_1 & (2**128-1)
     A1: uint256 = shift(A_gamma_1, -128)
 
     if block.timestamp < t1:
@@ -254,7 +254,7 @@ def _A_gamma() -> uint256[2]:
         t0: uint256 = self.initial_A_gamma_time
 
         # Less readable but more compact way of writing and converting to uint256
-        # gamma0: uint256 = bitwise_and(A_gamma_0, 2**128-1)
+        # gamma0: uint256 = A_gamma_0 & (2**128-1)
         # A0: uint256 = shift(A_gamma_0, -128)
         # A1 = A0 + (A1 - A0) * (block.timestamp - t0) / (t1 - t0)
         # gamma1 = gamma0 + (gamma1 - gamma0) * (block.timestamp - t0) / (t1 - t0)
@@ -264,7 +264,7 @@ def _A_gamma() -> uint256[2]:
         t2: uint256 = t1 - t0
 
         A1 = (shift(A_gamma_0, -128) * t2 + A1 * t0) / t1
-        gamma1 = (bitwise_and(A_gamma_0, 2**128-1) * t2 + gamma1 * t0) / t1
+        gamma1 = ((A_gamma_0 & 2**128-1) * t2 + gamma1 * t0) / t1
 
     return [A1, gamma1]
 
@@ -1140,7 +1140,7 @@ def ramp_A_gamma(future_A: uint256, future_gamma: uint256, future_time: uint256)
 
     A_gamma: uint256[2] = self._A_gamma()
     initial_A_gamma: uint256 = shift(A_gamma[0], 128)
-    initial_A_gamma = bitwise_or(initial_A_gamma, A_gamma[1])
+    initial_A_gamma = initial_A_gamma | A_gamma[1]
 
     assert future_A > MIN_A-1
     assert future_A < MAX_A+1
@@ -1159,7 +1159,7 @@ def ramp_A_gamma(future_A: uint256, future_gamma: uint256, future_time: uint256)
     self.initial_A_gamma_time = block.timestamp
 
     future_A_gamma: uint256 = shift(future_A, 128)
-    future_A_gamma = bitwise_or(future_A_gamma, future_gamma)
+    future_A_gamma = future_A_gamma | future_gamma
     self.future_A_gamma_time = future_time
     self.future_A_gamma = future_A_gamma
 
@@ -1172,7 +1172,7 @@ def stop_ramp_A_gamma():
 
     A_gamma: uint256[2] = self._A_gamma()
     current_A_gamma: uint256 = shift(A_gamma[0], 128)
-    current_A_gamma = bitwise_or(current_A_gamma, A_gamma[1])
+    current_A_gamma = current_A_gamma | A_gamma[1]
     self.initial_A_gamma = current_A_gamma
     self.future_A_gamma = current_A_gamma
     self.initial_A_gamma_time = block.timestamp
