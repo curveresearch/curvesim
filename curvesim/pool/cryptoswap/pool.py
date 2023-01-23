@@ -57,6 +57,44 @@ def _geometric_mean(unsorted_x: List[int], sort: bool) -> int:
     raise CalculationError("Did not converge")
 
 
+def _halfpow(power: int) -> int:
+    """
+    1e18 * 0.5 ** (power/1e18)
+
+    Inspired by: https://github.com/balancer-labs/balancer-core/blob/master/contracts/BNum.sol#L128
+    """
+    intpow: int = power // 10**18
+    otherpow: int = power - intpow * 10**18
+    if intpow > 59:
+        return 0
+    result: int = 10**18 // (2**intpow)
+    if otherpow == 0:
+        return result
+
+    term: int = 10**18
+    x: int = 5 * 10**17
+    S: int = 10**18
+    neg: bool = False
+
+    for i in range(1, 256):
+        K: int = i * 10**18
+        c: int = K - 10**18
+        if otherpow > c:
+            c = otherpow - c
+            neg = not neg
+        else:
+            c -= otherpow
+        term = term * (c * x // 10**18) // K
+        if neg:
+            S -= term
+        else:
+            S += term
+        if term < EXP_PRECISION:
+            return result * S // 10**18
+
+    raise CalculationError("Did not converge")
+
+
 class CurveCryptoPool:
     def __init__(
         self,

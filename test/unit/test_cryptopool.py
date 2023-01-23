@@ -9,6 +9,7 @@ from curvesim.pool.cryptoswap.pool import (
     MIN_A,
     MIN_GAMMA,
     _geometric_mean,
+    _halfpow,
 )
 
 
@@ -68,7 +69,7 @@ gamma_coefficient = st.integers(min_value=MIN_GAMMA, max_value=MAX_GAMMA)
     deadline=None,
 )
 def test_xp(vyper_cryptopool, x0, x1):
-    """Test D calculation against vyper implementation."""
+    """Test xp calculation against vyper implementation."""
 
     _balances = [x0, x1]
     precisions = vyper_cryptopool.eval("self._get_precisions()")
@@ -91,7 +92,7 @@ def test_xp(vyper_cryptopool, x0, x1):
     deadline=None,
 )
 def test_geometric_mean(vyper_cryptopool, x0, x1, sort_flag):
-    """Test D calculation against vyper implementation."""
+    """Test geometric_mean calculation against vyper implementation."""
 
     _balances = [x0, x1]
     precisions = vyper_cryptopool.eval("self._get_precisions()")
@@ -99,6 +100,21 @@ def test_geometric_mean(vyper_cryptopool, x0, x1, sort_flag):
 
     expected_result = vyper_cryptopool.eval(f"self.geometric_mean({xp}, {sort_flag})")
     result = _geometric_mean(xp, sort_flag)
+
+    assert result == expected_result
+
+
+@given(st.integers(min_value=0))
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=5,
+    deadline=None,
+)
+def test_halfpow(vyper_cryptopool, power):
+    """Test halfpow calculation against vyper implementation."""
+
+    expected_result = vyper_cryptopool.eval(f"self.halfpow({power})")
+    result = _halfpow(power)
 
     assert result == expected_result
 
