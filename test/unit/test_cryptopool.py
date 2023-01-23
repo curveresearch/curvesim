@@ -58,6 +58,29 @@ positive_balance = st.integers(min_value=10**4 * D_UNIT, max_value=50**10 * D_UN
     max_examples=5,
     deadline=None,
 )
+def test_xp(vyper_cryptopool, x0, x1):
+    """Test D calculation against vyper implementation."""
+
+    _balances = [x0, x1]
+    precisions = vyper_cryptopool.eval("self._get_precisions()")
+    balances = [x // p for x, p in zip(_balances, precisions)]
+
+    vyper_cryptopool.eval(f"self.balances={balances}")
+    expected_xp = vyper_cryptopool.eval("self.xp()")
+    expected_xp = list(expected_xp)
+
+    pool = initialize_pool(vyper_cryptopool)
+    xp = pool._xp()
+
+    assert xp == expected_xp
+
+
+@given(positive_balance, positive_balance)
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=5,
+    deadline=None,
+)
 def test_newton_D(vyper_cryptopool, x0, x1):
     """Test D calculation against vyper implementation."""
 
