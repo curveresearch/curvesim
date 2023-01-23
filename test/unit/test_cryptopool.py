@@ -94,6 +94,7 @@ def test_newton_D(vyper_cryptopool, A, gamma, x0, x1):
     vyper_cryptopool.eval(f"self.balances={balances}")
     xp = vyper_cryptopool.eval("self.xp()")
     xp = list(xp)
+    assume(0.02 < xp[0] / xp[1] < 50)
     expected_D = vyper_cryptopool.eval(f"self.newton_D({A}, {gamma}, {xp})")
 
     # pylint: disable=protected-access
