@@ -44,13 +44,8 @@ def initialize_pool(vyper_cryptopool):
     return pool
 
 
-# We can assume the contract works on more extreme values; we only need
-# to be reasonably certain our results are consistent, so we can check
-# a smaller range.
-#
-# With 18 decimal precision, it seems reasonable to pick these bounds
 D_UNIT = 10**18
-positive_balance = st.integers(min_value=10**5 * D_UNIT, max_value=10**10 * D_UNIT)
+positive_balance = st.integers(min_value=10**4 * D_UNIT, max_value=50**10 * D_UNIT)
 
 
 @given(positive_balance, positive_balance, positive_balance)
@@ -73,8 +68,9 @@ def test_newton_D(vyper_cryptopool, x0, x1, x2):
     gamma = vyper_cryptopool.gamma()
     expected_D = vyper_cryptopool.eval(f"self.newton_D({A}, {gamma}, {xp})")
 
+    # pylint: disable=protected-access
     pool = initialize_pool(vyper_cryptopool)
-    xp = pool._xp()  # pylint: disable=protected-access
+    xp = pool._xp()
     A = pool.A
     gamma = pool.gamma
     D = pool._newton_D(A, gamma, xp)
