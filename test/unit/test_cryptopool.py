@@ -3,6 +3,7 @@ from hypothesis import HealthCheck, assume, given, settings
 from hypothesis import strategies as st
 
 from curvesim.pool import CurveCryptoPool
+from curvesim.pool.cryptoswap.pool import MAX_A, MAX_GAMMA, MIN_A, MIN_GAMMA
 
 
 def initialize_pool(vyper_cryptopool):
@@ -50,6 +51,8 @@ def initialize_pool(vyper_cryptopool):
 
 D_UNIT = 10**18
 positive_balance = st.integers(min_value=10**4 * D_UNIT, max_value=50**10 * D_UNIT)
+amplification_coefficient = st.integers(min_value=MIN_A, max_value=MAX_A)
+gamma_coefficient = st.integers(min_value=MIN_GAMMA, max_value=MAX_GAMMA)
 
 
 @given(positive_balance, positive_balance)
@@ -75,13 +78,13 @@ def test_xp(vyper_cryptopool, x0, x1):
     assert xp == expected_xp
 
 
-@given(positive_balance, positive_balance)
+@given(amplification_coefficient, gamma_coefficient, positive_balance, positive_balance)
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
     max_examples=5,
     deadline=None,
 )
-def test_newton_D(vyper_cryptopool, x0, x1):
+def test_newton_D(vyper_cryptopool, A, gamma, x0, x1):
     """Test D calculation against vyper implementation."""
 
     _balances = [x0, x1]
@@ -91,15 +94,10 @@ def test_newton_D(vyper_cryptopool, x0, x1):
     vyper_cryptopool.eval(f"self.balances={balances}")
     xp = vyper_cryptopool.eval("self.xp()")
     xp = list(xp)
-    A = vyper_cryptopool.A()
-    gamma = vyper_cryptopool.gamma()
     expected_D = vyper_cryptopool.eval(f"self.newton_D({A}, {gamma}, {xp})")
 
     # pylint: disable=protected-access
     pool = initialize_pool(vyper_cryptopool)
-    xp = pool._xp()
-    A = pool.A
-    gamma = pool.gamma
     D = pool._newton_D(A, gamma, xp)
 
     assert D == expected_D
