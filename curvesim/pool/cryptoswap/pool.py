@@ -380,3 +380,139 @@ class CurveCryptoPool:
                 return y
 
         raise CalculationError("Did not converge")
+
+    def _tweak_price(self, A: int, gamma: int, _xp: List[int], p_i: int, new_D: int):
+        price_oracle: int = self._price_oracle
+        last_prices: int = self.last_prices
+        price_scale: int = self.price_scale
+        last_prices_timestamp: int = self.last_prices_timestamp
+        p_new: int = 0
+
+        if last_prices_timestamp < block.timestamp:
+            # MA update required
+            ma_half_time: int = self.ma_half_time
+            alpha: int = self.halfpow(
+                (block.timestamp - last_prices_timestamp) * 10**18 / ma_half_time
+            )
+            price_oracle = (
+                last_prices * (10**18 - alpha) + price_oracle * alpha
+            ) / 10**18
+            self._price_oracle = price_oracle
+            self.last_prices_timestamp = block.timestamp
+
+        D_unadjusted: int = new_D  # Withdrawal methods know new D already
+        if new_D == 0:
+            # We will need this a few times (35k gas)
+            D_unadjusted = self._newton_D(A, gamma, _xp)
+
+        if p_i > 0:
+            last_prices = p_i
+
+        else:
+            # calculate real prices
+            __xp: List[int] = _xp
+            dx_price: int = __xp[0] / 10**6
+            __xp[0] += dx_price
+            last_prices = (
+                price_scale
+                * dx_price
+                / (_xp[1] - self._newton_y(A, gamma, __xp, D_unadjusted, 1))
+            )
+
+        self.last_prices = last_prices
+
+        total_supply: int = self.tokens
+        old_xcp_profit: int = self.xcp_profit
+        old_virtual_price: int = self.virtual_price
+
+        # Update profit numbers without price adjustment first
+        xp: List[int] = [
+            D_unadjusted / N_COINS,
+            D_unadjusted * PRECISION / (N_COINS * price_scale),
+        ]
+        xcp_profit: int = 10**18
+        virtual_price: int = 10**18
+
+        if old_virtual_price > 0:
+            xcp: int = _geometric_mean(xp, True)
+            virtual_price = 10**18 * xcp / total_supply
+            xcp_profit = old_xcp_profit * virtual_price / old_virtual_price
+
+            t: int = self.future_A_gamma_time
+            if virtual_price < old_virtual_price and t == 0:
+                raise "Loss"
+            if t == 1:
+                self.future_A_gamma_time = 0
+
+        self.xcp_profit = xcp_profit
+
+        norm: int = price_oracle * 10**18 / price_scale
+        if norm > 10**18:
+            norm -= 10**18
+        else:
+            norm = 10**18 - norm
+        adjustment_step: int = max(self.adjustment_step, norm / 5)
+
+        needs_adjustment: bool = self.not_adjusted
+        # if not needs_adjustment and (virtual_price-10**18 > (xcp_profit-10**18)/2 + self.allowed_extra_profit):
+        # (re-arrange for gas efficiency)
+        if (
+            not needs_adjustment
+            and (
+                virtual_price * 2 - 10**18
+                > xcp_profit + 2 * self.allowed_extra_profit
+            )
+            and (norm > adjustment_step)
+            and (old_virtual_price > 0)
+        ):
+            needs_adjustment = True
+            self.not_adjusted = True
+
+        if needs_adjustment:
+            if norm > adjustment_step and old_virtual_price > 0:
+                p_new = (
+                    price_scale * (norm - adjustment_step)
+                    + adjustment_step * price_oracle
+                ) / norm
+
+                # Calculate balances*prices
+                xp = [_xp[0], _xp[1] * p_new / price_scale]
+
+                # Calculate "extended constant product" invariant xCP and virtual price
+                D: int = self._newton_D(A, gamma, xp)
+                xp = [D / N_COINS, D * PRECISION / (N_COINS * p_new)]
+                # We reuse old_virtual_price here but it's not old anymore
+                old_virtual_price = (
+                    10**18 * self.geometric_mean(xp, True) / total_supply
+                )
+
+                # Proceed if we've got enough profit
+                # if (old_virtual_price > 10**18) and (2 * (old_virtual_price - 10**18) > xcp_profit - 10**18):
+                if (old_virtual_price > 10**18) and (
+                    2 * old_virtual_price - 10**18 > xcp_profit
+                ):
+                    self.price_scale = p_new
+                    self.D = D
+                    self.virtual_price = old_virtual_price
+
+                    return
+
+                else:
+                    self.not_adjusted = False
+
+                    # Can instead do another flag variable if we want to save bytespace
+                    self.D = D_unadjusted
+                    self.virtual_price = virtual_price
+                    self._claim_admin_fees()
+
+                    return
+
+        # If we are here, the price_scale adjustment did not happen
+        # Still need to update the profit counter and D
+        self.D = D_unadjusted
+        self.virtual_price = virtual_price
+
+        # norm appeared < adjustment_step after
+        if needs_adjustment:
+            self.not_adjusted = False
+            self._claim_admin_fees()
