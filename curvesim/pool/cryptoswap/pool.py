@@ -174,8 +174,10 @@ class CurveCryptoPool:
         self.price_scale = initial_price
         self._price_oracle = initial_price
         self.last_prices = initial_price
-        self.last_prices_timestamp = _get_unix_timestamp()
         self.ma_half_time = ma_half_time
+
+        self._block_timestamp = _get_unix_timestamp()
+        self.last_prices_timestamp = self._block_timestamp
 
         self.xcp_profit_a = 10**18
 
@@ -381,24 +383,28 @@ class CurveCryptoPool:
 
         raise CalculationError("Did not converge")
 
+    def _increment_timestamp(self):
+        self._block_timestamp += 12
+
     def _tweak_price(self, A: int, gamma: int, _xp: List[int], p_i: int, new_D: int):
         price_oracle: int = self._price_oracle
         last_prices: int = self.last_prices
         price_scale: int = self.price_scale
         last_prices_timestamp: int = self.last_prices_timestamp
+        block_timestamp: int = self._block_timestamp
         p_new: int = 0
 
-        if last_prices_timestamp < block.timestamp:
+        if last_prices_timestamp < block_timestamp:
             # MA update required
             ma_half_time: int = self.ma_half_time
             alpha: int = self.halfpow(
-                (block.timestamp - last_prices_timestamp) * 10**18 / ma_half_time
+                (block_timestamp - last_prices_timestamp) * 10**18 / ma_half_time
             )
             price_oracle = (
                 last_prices * (10**18 - alpha) + price_oracle * alpha
             ) / 10**18
             self._price_oracle = price_oracle
-            self.last_prices_timestamp = block.timestamp
+            self.last_prices_timestamp = block_timestamp
 
         D_unadjusted: int = new_D  # Withdrawal methods know new D already
         if new_D == 0:
