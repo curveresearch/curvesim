@@ -57,6 +57,16 @@ def initialize_pool(vyper_cryptopool):
     return pool
 
 
+def pack_A_gamma(A, gamma):
+    """
+    Need this to set A and gamma in the smart contract since they
+    are stored in packed format.
+    """
+    A_gamma = A << 128
+    A_gamma = A_gamma | gamma
+    return A_gamma
+
+
 D_UNIT = 10**18
 positive_balance = st.integers(min_value=10**4 * D_UNIT, max_value=50**10 * D_UNIT)
 amplification_coefficient = st.integers(min_value=MIN_A, max_value=MAX_A)
@@ -226,3 +236,34 @@ def test_newton_y(vyper_cryptopool, A, gamma, x0, x1, i, delta_perc):
     y = pool._newton_y(A, gamma, xp_changed, D, i)  # pylint: disable=protected-access
 
     assert y == expected_y
+
+
+@given(
+    amplification_coefficient,
+    gamma_coefficient,
+    positive_balance,
+    positive_balance,
+    positive_balance,
+)
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=5,
+    deadline=None,
+)
+def test_tweak_price(vyper_cryptopool, A, gamma, x0, x1, price):
+    _balances = [x0, x1]
+    precisions = vyper_cryptopool.eval("self._get_precisions()")
+    balances = [x // p for x, p in zip(_balances, precisions)]
+
+    vyper_cryptopool.eval(f"self.balances={balances}")
+    xp = vyper_cryptopool.eval("self.xp()")
+    xp = list(xp)
+    assume(0.02 < xp[0] / xp[1] < 50)
+
+    A_gamma = [A, gamma]
+    vyper_cryptopool.eval(f"self.tweak_price({A_gamma}, {xp}, {price}, 0)")
+
+    pool = initialize_pool(vyper_cryptopool)
+    pool._tweak_price(A, gamma, xp, price, 0)
+
+    assert pool.virtual_price == vyper_cryptopool.virtual_price()
