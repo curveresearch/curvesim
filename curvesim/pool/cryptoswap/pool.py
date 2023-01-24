@@ -26,6 +26,10 @@ MIN_A = N_COINS**N_COINS * A_MULTIPLIER // 10
 MAX_A = N_COINS**N_COINS * A_MULTIPLIER * 100000
 
 
+class CryptoPoolError(RuntimeError):
+    pass
+
+
 class CurveCryptoPool:
     def __init__(
         self,
@@ -355,11 +359,8 @@ class CurveCryptoPool:
             virtual_price = 10**18 * xcp // total_supply
             xcp_profit = old_xcp_profit * virtual_price // old_virtual_price
 
-            t: int = self.future_A_gamma_time
-            if virtual_price < old_virtual_price and t == 0:
-                raise "Loss"
-            if t == 1:
-                self.future_A_gamma_time = 0
+            if virtual_price < old_virtual_price:
+                raise CryptoPoolError("Loss")
 
         self.xcp_profit = xcp_profit
 
