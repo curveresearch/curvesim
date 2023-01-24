@@ -26,95 +26,6 @@ MIN_A = N_COINS**N_COINS * A_MULTIPLIER // 10
 MAX_A = N_COINS**N_COINS * A_MULTIPLIER * 100000
 
 
-def _get_unix_timestamp():
-    """Get the timestamp in Unix time."""
-    return int(time.time())
-
-
-def _geometric_mean(unsorted_x: List[int], sort: bool) -> int:
-    """
-    (x[0] * x[1] * ...) ** (1/N)
-    """
-    x: List[int] = unsorted_x
-    if sort and x[0] < x[1]:
-        x = [unsorted_x[1], unsorted_x[0]]
-    D: int = x[0]
-    diff: int = 0
-    for _ in range(255):
-        D_prev: int = D
-        # tmp: uint256 = 10**18
-        # for _x in x:
-        #     tmp = tmp * _x / D
-        # D = D * ((N_COINS - 1) * 10**18 + tmp) / (N_COINS * 10**18)
-        # line below makes it for 2 coins
-        D = (D + x[0] * x[1] // D) // N_COINS
-        if D > D_prev:
-            diff = D - D_prev
-        else:
-            diff = D_prev - D
-        if diff <= 1 or diff * 10**18 < D:
-            return D
-    raise CalculationError("Did not converge")
-
-
-def _halfpow(power: int) -> int:
-    """
-    1e18 * 0.5 ** (power/1e18)
-
-    Inspired by: https://github.com/balancer-labs/balancer-core/blob/master/contracts/BNum.sol#L128
-    """
-    intpow: int = power // 10**18
-    otherpow: int = power - intpow * 10**18
-    if intpow > 59:
-        return 0
-    result: int = 10**18 // (2**intpow)
-    if otherpow == 0:
-        return result
-
-    term: int = 10**18
-    x: int = 5 * 10**17
-    S: int = 10**18
-    neg: bool = False
-
-    for i in range(1, 256):
-        K: int = i * 10**18
-        c: int = K - 10**18
-        if otherpow > c:
-            c = otherpow - c
-            neg = not neg
-        else:
-            c -= otherpow
-        term = term * (c * x // 10**18) // K
-        if neg:
-            S -= term
-        else:
-            S += term
-        if term < EXP_PRECISION:
-            return result * S // 10**18
-
-    raise CalculationError("Did not converge")
-
-
-def _sqrt_int(x: int) -> int:
-    """
-    Originating from: https://github.com/vyperlang/vyper/issues/1266
-    """
-
-    if x == 0:
-        return 0
-
-    z: int = (x + 10**18) // 2
-    y: int = x
-
-    for i in range(256):
-        if z == y:
-            return y
-        y = z
-        z = (x * 10**18 // z + z) // 2
-
-    raise CalculationError("Did not converge")
-
-
 class CurveCryptoPool:
     def __init__(
         self,
@@ -397,7 +308,7 @@ class CurveCryptoPool:
         if last_prices_timestamp < block_timestamp:
             # MA update required
             ma_half_time: int = self.ma_half_time
-            alpha: int = self.halfpow(
+            alpha: int = _halfpow(
                 (block_timestamp - last_prices_timestamp) * 10**18 / ma_half_time
             )
             price_oracle = (
@@ -522,3 +433,92 @@ class CurveCryptoPool:
         if needs_adjustment:
             self.not_adjusted = False
             self._claim_admin_fees()
+
+
+def _get_unix_timestamp():
+    """Get the timestamp in Unix time."""
+    return int(time.time())
+
+
+def _geometric_mean(unsorted_x: List[int], sort: bool) -> int:
+    """
+    (x[0] * x[1] * ...) ** (1/N)
+    """
+    x: List[int] = unsorted_x
+    if sort and x[0] < x[1]:
+        x = [unsorted_x[1], unsorted_x[0]]
+    D: int = x[0]
+    diff: int = 0
+    for _ in range(255):
+        D_prev: int = D
+        # tmp: uint256 = 10**18
+        # for _x in x:
+        #     tmp = tmp * _x / D
+        # D = D * ((N_COINS - 1) * 10**18 + tmp) / (N_COINS * 10**18)
+        # line below makes it for 2 coins
+        D = (D + x[0] * x[1] // D) // N_COINS
+        if D > D_prev:
+            diff = D - D_prev
+        else:
+            diff = D_prev - D
+        if diff <= 1 or diff * 10**18 < D:
+            return D
+    raise CalculationError("Did not converge")
+
+
+def _halfpow(power: int) -> int:
+    """
+    1e18 * 0.5 ** (power/1e18)
+
+    Inspired by: https://github.com/balancer-labs/balancer-core/blob/master/contracts/BNum.sol#L128
+    """
+    intpow: int = power // 10**18
+    otherpow: int = power - intpow * 10**18
+    if intpow > 59:
+        return 0
+    result: int = 10**18 // (2**intpow)
+    if otherpow == 0:
+        return result
+
+    term: int = 10**18
+    x: int = 5 * 10**17
+    S: int = 10**18
+    neg: bool = False
+
+    for i in range(1, 256):
+        K: int = i * 10**18
+        c: int = K - 10**18
+        if otherpow > c:
+            c = otherpow - c
+            neg = not neg
+        else:
+            c -= otherpow
+        term = term * (c * x // 10**18) // K
+        if neg:
+            S -= term
+        else:
+            S += term
+        if term < EXP_PRECISION:
+            return result * S // 10**18
+
+    raise CalculationError("Did not converge")
+
+
+def _sqrt_int(x: int) -> int:
+    """
+    Originating from: https://github.com/vyperlang/vyper/issues/1266
+    """
+
+    if x == 0:
+        return 0
+
+    z: int = (x + 10**18) // 2
+    y: int = x
+
+    for i in range(256):
+        if z == y:
+            return y
+        y = z
+        z = (x * 10**18 // z + z) // 2
+
+    raise CalculationError("Did not converge")
