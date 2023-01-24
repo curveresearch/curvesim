@@ -94,9 +94,8 @@ class CurveCryptoPool:
         self._block_timestamp = _get_unix_timestamp()
         self.last_prices_timestamp = self._block_timestamp
 
-        self.xcp_profit_a = 10**18
-
-        self.tokens = tokens
+        self.xcp_profit = 10**18
+        self.xcp_profit_a = 10**18  # Full profit at last claim of admin fees
 
         self.n = n
         self.precisions = precisions
@@ -107,12 +106,19 @@ class CurveCryptoPool:
         if isinstance(D, list):
             self.balances = D
         else:
-            self.balances = [D // n // p for p in precisions]
+            self.balances = [
+                D // n // precisions[0],
+                D * PRECISION // (n * self.price_scale) // precisions[1],
+            ]
 
-        self.xcp_profit = 0
-        self.xcp_profit_a = 0  # Full profit at last claim of admin fees
+        xp = self._xp()
+        self.D = self._newton_D(A, gamma, xp)
+
+        xcp = self._get_xcp(self.D)
+        self.tokens = tokens or xcp
+
         # Cached (fast to read) virtual price also used internally
-        self.virtual_price = 0
+        self.virtual_price = xcp // tokens
         self.not_adjusted = False
 
     def _xp(self) -> List[int]:
