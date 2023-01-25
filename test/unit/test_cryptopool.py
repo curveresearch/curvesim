@@ -119,10 +119,7 @@ def test_xp(vyper_cryptopool, x0, x1):
 def test_geometric_mean(vyper_cryptopool, x0, x1, sort_flag):
     """Test geometric_mean calculation against vyper implementation."""
 
-    _balances = [x0, x1]
-    precisions = vyper_cryptopool.eval("self._get_precisions()")
-    xp = [x // p for x, p in zip(_balances, precisions)]
-
+    xp = [x0, x1]
     expected_result = vyper_cryptopool.eval(f"self.geometric_mean({xp}, {sort_flag})")
     result = _geometric_mean(xp, sort_flag)
 
@@ -185,14 +182,9 @@ def test_get_xcp(vyper_cryptopool, D):
 def test_newton_D(vyper_cryptopool, A, gamma, x0, x1):
     """Test D calculation against vyper implementation."""
 
-    _balances = [x0, x1]
-    precisions = vyper_cryptopool.eval("self._get_precisions()")
-    balances = [x // p for x, p in zip(_balances, precisions)]
-
-    vyper_cryptopool.eval(f"self.balances={balances}")
-    xp = vyper_cryptopool.eval("self.xp()")
-    xp = list(xp)
+    xp = [x0, x1]
     assume(0.02 < xp[0] / xp[1] < 50)
+
     expected_D = vyper_cryptopool.eval(f"self.newton_D({A}, {gamma}, {xp})")
 
     # pylint: disable=protected-access
@@ -217,13 +209,7 @@ def test_newton_D(vyper_cryptopool, A, gamma, x0, x1):
 def test_newton_y(vyper_cryptopool, A, gamma, x0, x1, i, delta_perc):
     """Test get_y calculation against vyper implementation."""
 
-    _balances = [x0, x1]
-    precisions = vyper_cryptopool.eval("self._get_precisions()")
-    balances = [x // p for x, p in zip(_balances, precisions)]
-
-    vyper_cryptopool.eval(f"self.balances={balances}")
-    xp = vyper_cryptopool.eval("self.xp()")
-    xp = list(xp)
+    xp = [x0, x1]
     assume(0.02 < xp[0] / xp[1] < 50)
 
     # vary D by delta_perc %
@@ -233,8 +219,8 @@ def test_newton_y(vyper_cryptopool, A, gamma, x0, x1, i, delta_perc):
         f"self.newton_y({A}, {gamma}, {xp}, {D_changed}, {i})"
     )
 
-    pool = initialize_pool(vyper_cryptopool)
-    y = pool._newton_y(A, gamma, xp, D_changed, i)  # pylint: disable=protected-access
+    # pylint: disable=protected-access
+    y = CurveCryptoPool._newton_y(A, gamma, xp, D_changed, i)
 
     assert y == expected_y
 
@@ -246,7 +232,7 @@ def test_newton_y(vyper_cryptopool, A, gamma, x0, x1, i, delta_perc):
         f"self.newton_y({A}, {gamma}, {xp_changed}, {D}, {i})"
     )
 
-    y = pool._newton_y(A, gamma, xp_changed, D, i)  # pylint: disable=protected-access
+    y = CurveCryptoPool._newton_y(A, gamma, xp_changed, D, i)
 
     assert y == expected_y
 
