@@ -86,15 +86,13 @@ amplification_coefficient = st.integers(min_value=MIN_A, max_value=MAX_A)
 gamma_coefficient = st.integers(min_value=MIN_GAMMA, max_value=MAX_GAMMA)
 
 
-@patch("curvesim.pool.cryptoswap.CurveCryptoPool._newton_D")
-@patch("curvesim.pool.cryptoswap.CurveCryptoPool._get_xcp")
 @given(positive_balance, positive_balance)
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
     max_examples=5,
     deadline=None,
 )
-def test_xp(_newton_D_mock, _get_xcp_mock, vyper_cryptopool, x0, x1):
+def test_xp(vyper_cryptopool, x0, x1):
     """Test xp calculation against vyper implementation."""
 
     _balances = [x0, x1]
