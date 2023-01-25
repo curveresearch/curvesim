@@ -111,14 +111,10 @@ class CurveCryptoPool:
                 D * PRECISION // (n * self.price_scale) // precisions[1],
             ]
 
-        xp = self._xp()
-        self.D = self._newton_D(A, gamma, xp)
-
-        xcp = self._get_xcp(self.D)
-        self.tokens = tokens or xcp
+        self.tokens = tokens
 
         # Cached (fast to read) virtual price also used internally
-        self.virtual_price = xcp // tokens
+        self.virtual_price = 10**18
         self.not_adjusted = False
 
     def _xp(self) -> List[int]:
