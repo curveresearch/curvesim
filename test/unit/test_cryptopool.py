@@ -182,8 +182,7 @@ def test_newton_D(vyper_cryptopool, A, gamma, x0, x1):
     expected_D = vyper_cryptopool.eval(f"self.newton_D({A}, {gamma}, {xp})")
 
     # pylint: disable=protected-access
-    pool = initialize_pool(vyper_cryptopool)
-    D = pool._newton_D(A, gamma, xp)
+    D = CurveCryptoPool._newton_D(A, gamma, xp)
 
     assert D == expected_D
 
