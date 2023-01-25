@@ -1,4 +1,6 @@
 """Unit tests for CurveCryptoPool"""
+from unittest.mock import patch
+
 from hypothesis import HealthCheck, assume, given, settings
 from hypothesis import strategies as st
 
@@ -8,6 +10,7 @@ from curvesim.pool.cryptoswap.pool import (
     MAX_GAMMA,
     MIN_A,
     MIN_GAMMA,
+    PRECISION,
     _geometric_mean,
     _halfpow,
     _sqrt_int,
@@ -67,31 +70,44 @@ def pack_A_gamma(A, gamma):
     return A_gamma
 
 
+def get_real_balances(virtual_balances, precisions, price_scale):
+    """
+    Convert from units of D to native token units using the
+    given price scale.
+    """
+    balances = [x // p for x, p in zip(virtual_balances, precisions)]
+    balances[1] = balances[1] * PRECISION // price_scale
+    return balances
+
+
 D_UNIT = 10**18
 positive_balance = st.integers(min_value=10**4 * D_UNIT, max_value=50**10 * D_UNIT)
 amplification_coefficient = st.integers(min_value=MIN_A, max_value=MAX_A)
 gamma_coefficient = st.integers(min_value=MIN_GAMMA, max_value=MAX_GAMMA)
 
 
+@patch("curvesim.pool.cryptoswap.CurveCryptoPool._newton_D")
+@patch("curvesim.pool.cryptoswap.CurveCryptoPool._get_xcp")
 @given(positive_balance, positive_balance)
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
     max_examples=5,
     deadline=None,
 )
-def test_xp(vyper_cryptopool, x0, x1):
+def test_xp(_newton_D_mock, _get_xcp_mock, vyper_cryptopool, x0, x1):
     """Test xp calculation against vyper implementation."""
 
     _balances = [x0, x1]
     precisions = vyper_cryptopool.eval("self._get_precisions()")
-    balances = [x // p for x, p in zip(_balances, precisions)]
+    price_scale = vyper_cryptopool.price_scale()
+    balances = get_real_balances(_balances, precisions, price_scale)
 
     vyper_cryptopool.eval(f"self.balances={balances}")
     expected_xp = vyper_cryptopool.eval("self.xp()")
     expected_xp = list(expected_xp)
 
     pool = initialize_pool(vyper_cryptopool)
-    xp = pool._xp()
+    xp = pool._xp()  # pylint: disable=protected-access
 
     assert xp == expected_xp
 
