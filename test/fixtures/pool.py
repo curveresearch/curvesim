@@ -94,14 +94,15 @@ def _vyper_cryptopool():
     using default volatile pair settings
     """
     cryptopool_filepath = os.path.join(_curve_dir, "cryptopool.vy")
-
-    mock_filepath = os.path.join(_base_dir, "lp_token_mock.vy")
-    lp_total_supply = 16058582265844398171435049
-    lp_token = boa.load(mock_filepath, lp_total_supply)
-
     coins = [FAKE_ADDRESS] * 2
 
     # settings based on STG/USDC pool
+    # https://etherscan.io/address/0x3211c6cbef1429da3d0d58494938299c92ad5860
+
+    lp_total_supply = 16060447504694332256465310
+    mock_filepath = os.path.join(_base_dir, "lp_token_mock.vy")
+    lp_token = boa.load(mock_filepath, lp_total_supply)
+
     A = 400000
     gamma = 72500000000000
     # unpacked_precisions = [10**0, 10**12]
@@ -114,7 +115,7 @@ def _vyper_cryptopool():
     adjustment_step = 146000000000000
     admin_fee = 5000000000
     ma_half_time = 600
-    initial_price = 2238958867040413141
+    initial_price = 1550997347493624157
 
     cryptopool = boa.load(
         cryptopool_filepath,
@@ -132,6 +133,13 @@ def _vyper_cryptopool():
         coins,
         precisions,
     )
+
+    balances = [20477317313816545807568241, 13270936465339]
+    cryptopool.eval(f"self.balances={balances}")
+    D = 41060496962103963853877954
+    virtual_price = 1026434015737186294
+    cryptopool.eval(f"self.D={D}")
+    cryptopool.eval(f"self.virtual_price={virtual_price}")
 
     return cryptopool
 
