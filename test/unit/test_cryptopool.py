@@ -251,8 +251,15 @@ def test_newton_y(vyper_cryptopool, A, gamma, x0, x1, i, delta_perc):
     max_examples=5,
     deadline=None,
 )
-def test_tweak_price(vyper_cryptopool, A, gamma, x0, x1, price):
+def test_tweak_price(vyper_cryptopool, cryptopool_lp_token, A, gamma, x0, x1, price):
     _balances = [x0, x1]
+    assume(0.02 < x0 / x1 < 50)
+
+    lp_total_supply = vyper_cryptopool.totalSupply()
+    # assume(_geometric_mean(_balances, sort=True) > lp_total_supply)
+
+    print("started")
+
     precisions = vyper_cryptopool.eval("self._get_precisions()")
     price_scale = vyper_cryptopool.price_scale()
     balances = get_real_balances(_balances, precisions, price_scale)
@@ -260,21 +267,22 @@ def test_tweak_price(vyper_cryptopool, A, gamma, x0, x1, price):
     vyper_cryptopool.eval(f"self.balances={balances}")
     xp = vyper_cryptopool.eval("self.xp()")
     xp = list(xp)
-    assume(0.02 < xp[0] / xp[1] < 50)
+    # assume(0.02 < xp[0] / xp[1] < 50)
 
     A_gamma = [A, gamma]
 
     D = vyper_cryptopool.eval(f"self.newton_D({A}, {gamma}, {xp})")
     vyper_cryptopool.eval(f"self.D={D}")
-    lp_total_supply = vyper_cryptopool.totalSupply()
-    xcp = vyper_cryptopool.eval(f"self.get_xcp({D})")
-    virtual_price = 10**18 * xcp // lp_total_supply
-    assume(virtual_price > 10**18)
-    print("started")
-    vyper_cryptopool.eval(f"self.virtual_price={virtual_price}")
+
+    print("eval-ed D")
+
+    totalSupply = vyper_cryptopool.eval(f"self.get_xcp({D})")
+    cryptopool_lp_token.eval(f"self.totalSupply={totalSupply}")
+    vyper_cryptopool.eval("self.virtual_price=10**18")
 
     pool = initialize_pool(vyper_cryptopool)
 
+    print("start initial asserts")
     assert pool.virtual_price == vyper_cryptopool.virtual_price()
     assert pool.price_scale == vyper_cryptopool.price_scale()
     assert pool.D == vyper_cryptopool.D()
