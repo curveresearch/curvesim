@@ -37,6 +37,8 @@ def initialize_pool(vyper_cryptopool):
     balances = [vyper_cryptopool.balances(i) for i in range(n_coins)]
     D = vyper_cryptopool.D()
     lp_total_supply = vyper_cryptopool.totalSupply()
+    xcp_profit = vyper_cryptopool.xcp_profit()
+    xcp_profit_a = vyper_cryptopool.xcp_profit_a()
 
     pool = CurveCryptoPool(
         A=A,
@@ -54,17 +56,17 @@ def initialize_pool(vyper_cryptopool):
         balances=balances,
         D=D,
         tokens=lp_total_supply,
+        xcp_profit=xcp_profit,
+        xcp_profit_a=xcp_profit_a,
     )
-
-    xcp_profit = vyper_cryptopool.xcp_profit()
-    xcp_profit_a = vyper_cryptopool.xcp_profit_a()
-    pool.xcp_profit = xcp_profit
-    pool.xcp_profit_a = xcp_profit_a
 
     assert pool.A == vyper_cryptopool.A()
     assert pool.gamma == vyper_cryptopool.gamma()
     assert pool.balances == balances
     assert pool.virtual_price == vyper_cryptopool.virtual_price()
+    assert pool.D == vyper_cryptopool.D()
+    assert pool.xcp_profit == xcp_profit
+    assert pool.xcp_profit_a == xcp_profit_a
 
     return pool
 

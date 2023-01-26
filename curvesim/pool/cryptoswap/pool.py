@@ -48,6 +48,8 @@ class CurveCryptoPool:
         balances=None,
         D=None,
         tokens=None,
+        xcp_profit=10**18,
+        xcp_profit_a=10**18,
     ):
         """
         Parameters
@@ -99,8 +101,8 @@ class CurveCryptoPool:
         self._block_timestamp = _get_unix_timestamp()
         self.last_prices_timestamp = self._block_timestamp
 
-        self.xcp_profit = 10**18
-        self.xcp_profit_a = 10**18  # Full profit at last claim of admin fees
+        self.xcp_profit = xcp_profit
+        self.xcp_profit_a = xcp_profit_a  # Full profit at last claim of admin fees
         self.not_adjusted = False
 
         self.n = n
