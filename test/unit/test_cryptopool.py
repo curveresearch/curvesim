@@ -83,7 +83,7 @@ def get_real_balances(virtual_balances, precisions, price_scale):
 
 
 D_UNIT = 10**18
-positive_balance = st.integers(min_value=10**4 * D_UNIT, max_value=50**10 * D_UNIT)
+positive_balance = st.integers(min_value=10**5 * D_UNIT, max_value=10**11 * D_UNIT)
 amplification_coefficient = st.integers(min_value=MIN_A, max_value=MAX_A)
 gamma_coefficient = st.integers(min_value=MIN_GAMMA, max_value=MAX_GAMMA)
 

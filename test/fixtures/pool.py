@@ -88,7 +88,15 @@ def _vyper_metapool(_vyper_3pool):
 
 
 @pytest.fixture(scope="session")
-def _vyper_cryptopool():
+def _cryptopool_lp_token():
+    lp_total_supply = 16060447504694332256465310
+    mock_filepath = os.path.join(_base_dir, "lp_token_mock.vy")
+    lp_token = boa.load(mock_filepath, lp_total_supply)
+    return lp_token
+
+
+@pytest.fixture(scope="session")
+def _vyper_cryptopool(_cryptopool_lp_token):
     """
     Initialize vyper fixture for crypto pool
     using default volatile pair settings
@@ -99,9 +107,9 @@ def _vyper_cryptopool():
     # settings based on STG/USDC pool
     # https://etherscan.io/address/0x3211c6cbef1429da3d0d58494938299c92ad5860
 
-    lp_total_supply = 16060447504694332256465310
-    mock_filepath = os.path.join(_base_dir, "lp_token_mock.vy")
-    lp_token = boa.load(mock_filepath, lp_total_supply)
+    # lp_total_supply = 16060447504694332256465310
+    # mock_filepath = os.path.join(_base_dir, "lp_token_mock.vy")
+    # lp_token = boa.load(mock_filepath, lp_total_supply)
 
     A = 400000
     gamma = 72500000000000
@@ -129,7 +137,7 @@ def _vyper_cryptopool():
         admin_fee,
         ma_half_time,
         initial_price,
-        lp_token,
+        _cryptopool_lp_token,
         coins,
         precisions,
     )
@@ -166,6 +174,16 @@ def vyper_metapool(_vyper_metapool):
     """
     with boa.env.anchor():
         yield _vyper_metapool
+
+
+@pytest.fixture(scope="function")
+def cryptopool_lp_token(_cryptopool_lp_token):
+    """
+    Function-scope fixture using titanoboa's snapshotting
+    feature to avoid expensive loading.
+    """
+    with boa.env.anchor():
+        yield _cryptopool_lp_token
 
 
 @pytest.fixture(scope="function")
