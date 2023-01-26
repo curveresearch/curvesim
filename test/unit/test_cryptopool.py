@@ -292,10 +292,18 @@ def test_tweak_price(vyper_cryptopool, cryptopool_lp_token, A, gamma, x0, x1, pr
     assert pool.price_scale == vyper_cryptopool.price_scale()
     assert pool.D == vyper_cryptopool.D()
 
-    D = pool.D + 10000 * 10**18
-    pool._tweak_price(A, gamma, xp, price, D)  # pylint: disable=protected-access
-    vyper_cryptopool.eval(f"self.tweak_price({A_gamma}, {xp}, {price}, {D})")
+    old_profit = pool.xcp_profit
+    old_scale = pool.price_scale
+
+    # D = pool.D + 10000 * 10**18
+    xp[0] += 3000000 * 10**18
+    xp[1] += 1000000 * 10**18
+    pool._tweak_price(A, gamma, xp, price, 0)  # pylint: disable=protected-access
+    vyper_cryptopool.eval(f"self.tweak_price({A_gamma}, {xp}, {price}, 0)")
 
     assert pool.virtual_price == vyper_cryptopool.virtual_price()
     assert pool.price_scale == vyper_cryptopool.price_scale()
     assert pool.D == vyper_cryptopool.D()
+
+    assert pool.xcp_profit > old_profit
+    assert pool.price_scale != old_scale
