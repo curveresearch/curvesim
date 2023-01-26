@@ -56,8 +56,15 @@ def initialize_pool(vyper_cryptopool):
         tokens=lp_total_supply,
     )
 
+    xcp_profit = vyper_cryptopool.xcp_profit()
+    xcp_profit_a = vyper_cryptopool.xcp_profit_a()
+    pool.xcp_profit = xcp_profit
+    pool.xcp_profit_a = xcp_profit_a
+
     assert pool.A == vyper_cryptopool.A()
     assert pool.gamma == vyper_cryptopool.gamma()
+    assert pool.balances == balances
+    assert pool.virtual_price == vyper_cryptopool.virtual_price()
 
     return pool
 
@@ -255,11 +262,6 @@ def test_tweak_price(vyper_cryptopool, cryptopool_lp_token, A, gamma, x0, x1, pr
     _balances = [x0, x1]
     assume(0.02 < x0 / x1 < 50)
 
-    lp_total_supply = vyper_cryptopool.totalSupply()
-    # assume(_geometric_mean(_balances, sort=True) > lp_total_supply)
-
-    print("started")
-
     precisions = vyper_cryptopool.eval("self._get_precisions()")
     price_scale = vyper_cryptopool.price_scale()
     balances = get_real_balances(_balances, precisions, price_scale)
@@ -267,40 +269,31 @@ def test_tweak_price(vyper_cryptopool, cryptopool_lp_token, A, gamma, x0, x1, pr
     vyper_cryptopool.eval(f"self.balances={balances}")
     xp = vyper_cryptopool.eval("self.xp()")
     xp = list(xp)
-    # assume(0.02 < xp[0] / xp[1] < 50)
 
     A_gamma = [A, gamma]
 
+    # need to update cached `D` and `virtual_price`
+    # (this requires adjusting LP token supply for consistency)
     D = vyper_cryptopool.eval(f"self.newton_D({A}, {gamma}, {xp})")
     vyper_cryptopool.eval(f"self.D={D}")
 
-    print("eval-ed D")
-
     totalSupply = vyper_cryptopool.eval(f"self.get_xcp({D})")
     cryptopool_lp_token.eval(f"self.totalSupply={totalSupply}")
+    # virtual price can't be below 10**18
     vyper_cryptopool.eval("self.virtual_price=10**18")
 
     pool = initialize_pool(vyper_cryptopool)
 
-    print("start initial asserts")
-    assert pool.virtual_price == vyper_cryptopool.virtual_price()
-    assert pool.price_scale == vyper_cryptopool.price_scale()
-    assert pool.D == vyper_cryptopool.D()
-    print("passed initial asserts")
-
     pool._tweak_price(A, gamma, xp, price, 0)  # pylint: disable=protected-access
     vyper_cryptopool.eval(f"self.tweak_price({A_gamma}, {xp}, {price}, 0)")
-    print("tweaked 1")
     assert pool.virtual_price == vyper_cryptopool.virtual_price()
     assert pool.price_scale == vyper_cryptopool.price_scale()
     assert pool.D == vyper_cryptopool.D()
 
     D = pool.D + 10000 * 10**18
-    vyper_cryptopool.eval(f"self.tweak_price({A_gamma}, {xp}, {price}, {D})")
     pool._tweak_price(A, gamma, xp, price, D)  # pylint: disable=protected-access
-    print("tweaked 2")
+    vyper_cryptopool.eval(f"self.tweak_price({A_gamma}, {xp}, {price}, {D})")
 
     assert pool.virtual_price == vyper_cryptopool.virtual_price()
     assert pool.price_scale == vyper_cryptopool.price_scale()
     assert pool.D == vyper_cryptopool.D()
-    print("done")
