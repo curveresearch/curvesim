@@ -25,9 +25,7 @@ def initialize_pool(vyper_cryptopool):
     A = vyper_cryptopool.A()
     gamma = vyper_cryptopool.gamma()
     n_coins = vyper_cryptopool.N_COINS()
-    balances = [vyper_cryptopool.balances(i) for i in range(n_coins)]
     precisions = vyper_cryptopool.eval("self._get_precisions()")
-    lp_total_supply = vyper_cryptopool.totalSupply()
     mid_fee = vyper_cryptopool.mid_fee()
     out_fee = vyper_cryptopool.out_fee()
     allowed_extra_profit = vyper_cryptopool.allowed_extra_profit()
@@ -36,14 +34,15 @@ def initialize_pool(vyper_cryptopool):
     admin_fee = vyper_cryptopool.admin_fee()
     ma_half_time = vyper_cryptopool.ma_half_time()
     price_scale = vyper_cryptopool.price_scale()
+    balances = [vyper_cryptopool.balances(i) for i in range(n_coins)]
+    D = vyper_cryptopool.D()
+    lp_total_supply = vyper_cryptopool.totalSupply()
 
     pool = CurveCryptoPool(
         A=A,
         gamma=gamma,
-        D=balances,
         n=n_coins,
         precisions=precisions,
-        tokens=lp_total_supply,
         mid_fee=mid_fee,
         out_fee=out_fee,
         allowed_extra_profit=allowed_extra_profit,
@@ -52,6 +51,9 @@ def initialize_pool(vyper_cryptopool):
         admin_fee=admin_fee,
         ma_half_time=ma_half_time,
         initial_price=price_scale,
+        balances=balances,
+        D=D,
+        tokens=lp_total_supply,
     )
 
     assert pool.A == vyper_cryptopool.A()
