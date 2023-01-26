@@ -306,4 +306,21 @@ def test_tweak_price(vyper_cryptopool, cryptopool_lp_token, A, gamma, x0, x1, pr
     assert pool.D == vyper_cryptopool.D()
 
     assert pool.xcp_profit > old_profit
-    assert pool.price_scale != old_scale
+    # no price adjustment since price oracle is same as price scale,
+    # so `norm` is zero
+    assert pool._price_oracle == pool.price_scale
+    assert pool.price_scale == old_scale
+
+    p_oracle = old_scale * 95 // 100
+    pool._price_oracle = p_oracle
+    vyper_cryptopool.eval(f"self._price_oracle={p_oracle}")
+
+    pool._tweak_price(A, gamma, xp, price, 0)  # pylint: disable=protected-access
+    vyper_cryptopool.eval(f"self.tweak_price({A_gamma}, {xp}, {price}, 0)")
+
+    assert pool.virtual_price == vyper_cryptopool.virtual_price()
+    assert pool.price_scale == vyper_cryptopool.price_scale()
+    assert pool.D == vyper_cryptopool.D()
+
+    assert pool._price_oracle < pool.price_scale
+    assert pool.price_scale < old_scale

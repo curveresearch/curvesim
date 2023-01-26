@@ -422,9 +422,7 @@ class CurveCryptoPool:
                 D: int = self._newton_D(A, gamma, xp)
                 xp = [D // N_COINS, D * PRECISION // (N_COINS * p_new)]
                 # We reuse old_virtual_price here but it's not old anymore
-                old_virtual_price = (
-                    10**18 * self.geometric_mean(xp, True) // total_supply
-                )
+                old_virtual_price = 10**18 * _geometric_mean(xp, True) // total_supply
 
                 # Proceed if we've got enough profit
                 # if (old_virtual_price > 10**18) and (2 * (old_virtual_price - 10**18) > xcp_profit - 10**18):
