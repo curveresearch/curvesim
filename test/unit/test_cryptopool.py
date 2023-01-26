@@ -254,7 +254,8 @@ def test_newton_y(vyper_cryptopool, A, gamma, x0, x1, i, delta_perc):
 def test_tweak_price(vyper_cryptopool, A, gamma, x0, x1, price):
     _balances = [x0, x1]
     precisions = vyper_cryptopool.eval("self._get_precisions()")
-    balances = [x // p for x, p in zip(_balances, precisions)]
+    price_scale = vyper_cryptopool.price_scale()
+    balances = get_real_balances(_balances, precisions, price_scale)
 
     vyper_cryptopool.eval(f"self.balances={balances}")
     xp = vyper_cryptopool.eval("self.xp()")
@@ -262,9 +263,36 @@ def test_tweak_price(vyper_cryptopool, A, gamma, x0, x1, price):
     assume(0.02 < xp[0] / xp[1] < 50)
 
     A_gamma = [A, gamma]
-    vyper_cryptopool.eval(f"self.tweak_price({A_gamma}, {xp}, {price}, 0)")
+
+    D = vyper_cryptopool.eval(f"self.newton_D({A}, {gamma}, {xp})")
+    vyper_cryptopool.eval(f"self.D={D}")
+    lp_total_supply = vyper_cryptopool.totalSupply()
+    xcp = vyper_cryptopool.eval(f"self.get_xcp({D})")
+    virtual_price = 10**18 * xcp // lp_total_supply
+    assume(virtual_price > 10**18)
+    print("started")
+    vyper_cryptopool.eval(f"self.virtual_price={virtual_price}")
 
     pool = initialize_pool(vyper_cryptopool)
-    pool._tweak_price(A, gamma, xp, price, 0)
 
     assert pool.virtual_price == vyper_cryptopool.virtual_price()
+    assert pool.price_scale == vyper_cryptopool.price_scale()
+    assert pool.D == vyper_cryptopool.D()
+    print("passed initial asserts")
+
+    pool._tweak_price(A, gamma, xp, price, 0)  # pylint: disable=protected-access
+    vyper_cryptopool.eval(f"self.tweak_price({A_gamma}, {xp}, {price}, 0)")
+    print("tweaked 1")
+    assert pool.virtual_price == vyper_cryptopool.virtual_price()
+    assert pool.price_scale == vyper_cryptopool.price_scale()
+    assert pool.D == vyper_cryptopool.D()
+
+    D = pool.D + 10000 * 10**18
+    vyper_cryptopool.eval(f"self.tweak_price({A_gamma}, {xp}, {price}, {D})")
+    pool._tweak_price(A, gamma, xp, price, D)  # pylint: disable=protected-access
+    print("tweaked 2")
+
+    assert pool.virtual_price == vyper_cryptopool.virtual_price()
+    assert pool.price_scale == vyper_cryptopool.price_scale()
+    assert pool.D == vyper_cryptopool.D()
+    print("done")
