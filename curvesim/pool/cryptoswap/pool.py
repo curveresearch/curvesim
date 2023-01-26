@@ -35,10 +35,8 @@ class CurveCryptoPool:
         self,
         A: int,
         gamma: int,
-        D,
         n: int,
         precisions: List[int],
-        tokens: int,
         mid_fee: int,
         out_fee: int,
         allowed_extra_profit: int,
@@ -47,6 +45,9 @@ class CurveCryptoPool:
         admin_fee: int,
         ma_half_time: int,
         initial_price: int,
+        balances=None,
+        D=None,
+        tokens=None,
     ):
         """
         Parameters
@@ -54,16 +55,12 @@ class CurveCryptoPool:
         A : int
             Amplification coefficient; this is :math:`A n^{n-1}` in the whitepaper.
         gamma: int
-        D : int or list of int
-            virtual total balance or coin balances in native token units
         n: int
             number of coins
         precisions: list of int
             precision adjustments to convert native token units to 18 decimals;
             this assumes tokens have at most 18 decimals
             i.e. balance in native units * precision = balance in D units
-        tokens: int
-            LP token supply
         mid_fee: int
             fee with 10**10 precision
         out_fee: int
@@ -75,6 +72,14 @@ class CurveCryptoPool:
             percentage of `fee` with 10**10 precision
         ma_half_time: int
         initial_price: int
+        balances: list of int, optional
+            coin balances in native token units;
+            either `balances` or `D` is required
+        D : int, optional
+            Stableswap invariant for given balances, precisions, A, and gamma;
+            either `balances` or `D` is required
+        tokens: int, optional
+            LP token supply
         """
         self.A = A
         self.gamma = gamma
@@ -96,6 +101,7 @@ class CurveCryptoPool:
 
         self.xcp_profit = 10**18
         self.xcp_profit_a = 10**18  # Full profit at last claim of admin fees
+        self.not_adjusted = False
 
         self.n = n
         self.precisions = precisions
@@ -103,19 +109,31 @@ class CurveCryptoPool:
         if len(precisions) != n:
             raise ValueError("`len(precisions)` must equal `n`")
 
-        if isinstance(D, list):
-            self.balances = D
+        if balances is None and D is None:
+            raise ValueError("Must provide at least one of `balances` or `D`.")
+
+        if balances:
+            self.balances = balances
+
+        if D is not None:
+            self.D = D
+            if not balances:
+                self.balances = [
+                    D // n // precisions[0],
+                    D * PRECISION // (n * self.price_scale) // precisions[1],
+                ]
         else:
-            self.balances = [
-                D // n // precisions[0],
-                D * PRECISION // (n * self.price_scale) // precisions[1],
-            ]
+            xp = self._xp()
+            D = self._newton_D(A, gamma, xp)
+            self.D = D
 
-        self.tokens = tokens
+        xcp = self._get_xcp(D)
+        if tokens is not None:
+            self.tokens = tokens
+        else:
+            self.tokens = xcp
 
-        # Cached (fast to read) virtual price also used internally
-        self.virtual_price = 10**18
-        self.not_adjusted = False
+        self.virtual_price = 10**18 * xcp // tokens
 
     def _xp(self) -> List[int]:
         precisions = self.precisions
