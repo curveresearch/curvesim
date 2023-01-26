@@ -140,6 +140,10 @@ def _vyper_cryptopool():
     virtual_price = 1026434015737186294
     cryptopool.eval(f"self.D={D}")
     cryptopool.eval(f"self.virtual_price={virtual_price}")
+    xcp_profit = 1052829794354693246
+    xcp_profit_a = 1052785575319598710
+    cryptopool.eval(f"self.xcp_profit={xcp_profit}")
+    cryptopool.eval(f"self.xcp_profit_a={xcp_profit_a}")
 
     return cryptopool
 
