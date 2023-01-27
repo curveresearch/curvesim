@@ -353,7 +353,7 @@ class CurveCryptoPool:
 
         else:
             # calculate real prices
-            __xp: List[int] = _xp
+            __xp: List[int] = _xp.copy()
             dx_price: int = __xp[0] // 10**6
             __xp[0] += dx_price
             last_prices = (
