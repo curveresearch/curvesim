@@ -320,8 +320,12 @@ class CurveCryptoPool:
 
         raise CalculationError("Did not converge")
 
-    def _increment_timestamp(self):
-        self._block_timestamp += 12
+    def _increment_timestamp(self, blocks=1, timestamp=None):
+        if timestamp:
+            self._block_timestamp = timestamp
+            return
+
+        self._block_timestamp += 12 * blocks
 
     def _tweak_price(self, A: int, gamma: int, _xp: List[int], p_i: int, new_D: int):
         price_oracle: int = self._price_oracle
