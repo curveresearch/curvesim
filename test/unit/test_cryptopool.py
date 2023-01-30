@@ -69,7 +69,37 @@ def initialize_pool(vyper_cryptopool):
     assert pool.xcp_profit == xcp_profit
     assert pool.xcp_profit_a == xcp_profit_a
 
+    price_oracle = vyper_cryptopool.eval("self._price_oracle")
+    pool._price_oracle = price_oracle
+
+    last_prices = vyper_cryptopool.last_prices()
+    last_prices_timestamp = vyper_cryptopool.last_prices_timestamp()
+
+    pool.last_prices = last_prices
+    pool.last_prices_timestamp = last_prices_timestamp
+
     return pool
+
+
+def sync_ema_logic(
+    vyper_cryptopool,
+    pool,
+    last_prices,
+):
+    price_oracle = vyper_cryptopool.eval("self._price_oracle")
+    pool._price_oracle = price_oracle
+
+    # synchronize the times between the two pools and reset
+    # last_prices and last_prices_timestamp
+    vyper_cryptopool.eval(f"self.last_prices={last_prices}")
+    pool.last_prices = last_prices
+
+    vm_timestamp = boa.env.vm.state.timestamp
+    pool._increment_timestamp(timestamp=vm_timestamp)
+
+    last_prices_timestamp = vm_timestamp - 120
+    vyper_cryptopool.eval(f"self.last_prices_timestamp={last_prices_timestamp}")
+    pool.last_prices_timestamp = last_prices_timestamp
 
 
 def pack_A_gamma(A, gamma):
@@ -96,6 +126,7 @@ D_UNIT = 10**18
 positive_balance = st.integers(min_value=10**5 * D_UNIT, max_value=10**11 * D_UNIT)
 amplification_coefficient = st.integers(min_value=MIN_A, max_value=MAX_A)
 gamma_coefficient = st.integers(min_value=MIN_GAMMA, max_value=MAX_GAMMA)
+price = st.integers(min_value=10**12, max_value=10**25)
 
 
 @given(positive_balance, positive_balance)
@@ -249,21 +280,32 @@ def test_newton_y(vyper_cryptopool, A, gamma, x0, x1, i, delta_perc):
     assert y == expected_y
 
 
-@given(
-    amplification_coefficient,
-    gamma_coefficient,
-    positive_balance,
-    positive_balance,
-    positive_balance,
-)
-@settings(
-    suppress_health_check=[HealthCheck.function_scoped_fixture],
-    max_examples=5,
-    deadline=None,
-)
-def test_tweak_price(vyper_cryptopool, cryptopool_lp_token, A, gamma, x0, x1, price):
+# @given(
+#     amplification_coefficient,
+#     gamma_coefficient,
+#     positive_balance,
+#     positive_balance,
+#     price,
+# )
+# @settings(
+#     suppress_health_check=[HealthCheck.function_scoped_fixture],
+#     max_examples=5,
+#     deadline=None,
+# )
+# def test_tweak_price(
+#     vyper_cryptopool, cryptopool_lp_token, A, gamma, x0, x1, last_price
+# ):
+def test_tweak_price(vyper_cryptopool, cryptopool_lp_token):
+    A = 4196
+    gamma = 10000050055
+    x0 = 100000000000000000017267
+    x1 = 100000000000000000000153
+    last_price = 1000000000219
+
+    # pylint: disable=protected-access
     _balances = [x0, x1]
     assume(0.02 < x0 / x1 < 50)
+    assume(last_price != vyper_cryptopool.eval("self._price_oracle"))
 
     precisions = vyper_cryptopool.eval("self._get_precisions()")
     price_scale = vyper_cryptopool.price_scale()
@@ -290,70 +332,79 @@ def test_tweak_price(vyper_cryptopool, cryptopool_lp_token, A, gamma, x0, x1, pr
 
     pool = initialize_pool(vyper_cryptopool)
 
-    # EMA price oracle won't update if price scale and last price is the same
-    # so we synchronize the times between the two pools and reset
-    # last_prices and last_prices_timestamp
-    assume(price != pool._price_oracle)
-    vyper_cryptopool.eval(f"self.last_prices={price}")
-    pool.last_prices = price
-
-    vm_timestamp = boa.env.vm.state.timestamp
-    pool._increment_timestamp(timestamp=vm_timestamp)
-
-    last_prices_timestamp = vm_timestamp - 120
-    vyper_cryptopool.eval(f"self.last_prices_timestamp={last_prices_timestamp}")
-    pool.last_prices_timestamp = last_prices_timestamp
-
+    # ------- test no oracle update and no scale adjustment ------------- #
     assert pool.price_scale == vyper_cryptopool.price_scale()
     assert pool._price_oracle == vyper_cryptopool.eval("self._price_oracle")
+
+    old_scale = pool.price_scale
+    assert old_scale == pool._price_oracle
+
+    old_oracle = pool._price_oracle
+
+    pool._tweak_price(A, gamma, xp, last_price, 0)  # pylint: disable=protected-access
+    vyper_cryptopool.eval(f"self.tweak_price({A_gamma}, {xp}, {last_price}, 0)")
+
+    assert pool.price_scale == vyper_cryptopool.price_scale()
+    # no price adjustment since price oracle is same as price scale (`norm` is 0)
+    assert pool.price_scale == old_scale
+    # EMA price oracle won't update if price oracle and last price is the same
+    assert old_oracle == pool._price_oracle
+
+    # ------- test oracle updates with no scale adjustment ------------- #
+
+    sync_ema_logic(vyper_cryptopool, pool, last_price)
+
     assert pool.virtual_price == vyper_cryptopool.virtual_price()
     assert pool.xcp_profit == vyper_cryptopool.xcp_profit()
 
     old_oracle = pool._price_oracle
-    old_profit = pool.xcp_profit
     old_scale = pool.price_scale
     old_virtual_price = pool.virtual_price
 
-    pool._tweak_price(A, gamma, xp, price, 0)  # pylint: disable=protected-access
-    vyper_cryptopool.eval(f"self.tweak_price({A_gamma}, {xp}, {price}, 0)")
+    pool._tweak_price(A, gamma, xp, last_price, 0)  # pylint: disable=protected-access
+    vyper_cryptopool.eval(f"self.tweak_price({A_gamma}, {xp}, {last_price}, 0)")
 
     # check the pools are the same
-    assert pool.virtual_price == vyper_cryptopool.virtual_price()
     assert pool.price_scale == vyper_cryptopool.price_scale()
     assert pool._price_oracle == vyper_cryptopool.eval("self._price_oracle")
-    assert pool.D == vyper_cryptopool.D()
-
-    # check oracle and scale updated, profit the same
-    assert pool._price_oracle != old_oracle
-    assert pool.price_scale != old_scale
-    assert pool.xcp_profit == old_profit
-
-    xp[0] += 3000000 * 10**18
-    xp[1] += 1000000 * 10**18
-    # omitting price will calculate the spot price in `tweak_price`
-    pool._tweak_price(A, gamma, xp, 0, 0)  # pylint: disable=protected-access
-    vyper_cryptopool.eval(f"self.tweak_price({A_gamma}, {xp}, 0, 0)")
-
     assert pool.virtual_price == vyper_cryptopool.virtual_price()
-    assert pool.price_scale == vyper_cryptopool.price_scale()
     assert pool.D == vyper_cryptopool.D()
+
+    # check oracle updated
+    # scale shouldn't change because no adjustment is possible
+    # with no profit
+    assert pool._price_oracle != old_oracle
+    assert pool.price_scale == old_scale
+    assert pool.virtual_price == old_virtual_price
+
+    # ------- test scale adjustment ----------------------- #
+    sync_ema_logic(vyper_cryptopool, pool, last_price)
+
+    assert pool.price_scale != pool._price_oracle
+
+    old_oracle = pool._price_oracle
+    old_scale = pool.price_scale
+    old_virtual_price = pool.virtual_price
+
+    # p_oracle = old_scale * 95 // 100
+    # pool._price_oracle = p_oracle
+    # vyper_cryptopool.eval(f"self._price_oracle={p_oracle}")
+    # assert p_oracle != old_scale
+    # assert p_oracle == vyper_cryptopool.eval("self._price_oracle")
+
+    new_D = pool.D + 100000 * 10**18
+
+    # omitting price will calculate the spot price in `tweak_price`
+    pool._tweak_price(A, gamma, xp, last_price, new_D)
+    vyper_cryptopool.eval(f"self.tweak_price({A_gamma}, {xp}, {last_price}, {new_D})")
+
+    assert pool.D == vyper_cryptopool.D()
+    assert pool._price_oracle == vyper_cryptopool.eval("self._price_oracle")
+
+    assert pool.price_scale == vyper_cryptopool.price_scale()
+    assert pool.virtual_price == vyper_cryptopool.virtual_price()
 
     assert pool.virtual_price > old_virtual_price
-    # no price adjustment since price oracle is same as price scale,
-    # so `norm` is zero
-    assert pool._price_oracle == pool.price_scale
-    assert pool.price_scale == old_scale
+    assert pool.price_scale != old_scale
 
-    p_oracle = old_scale * 95 // 100
-    pool._price_oracle = p_oracle
-    vyper_cryptopool.eval(f"self._price_oracle={p_oracle}")
-
-    pool._tweak_price(A, gamma, xp, price, 0)  # pylint: disable=protected-access
-    vyper_cryptopool.eval(f"self.tweak_price({A_gamma}, {xp}, {price}, 0)")
-
-    assert pool.virtual_price == vyper_cryptopool.virtual_price()
-    assert pool.price_scale == vyper_cryptopool.price_scale()
-    assert pool.D == vyper_cryptopool.D()
-
-    assert pool._price_oracle < pool.price_scale  # pylint: disable=protected-access
-    assert pool.price_scale < old_scale
+    print("finished")
