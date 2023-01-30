@@ -459,6 +459,30 @@ class CurveCryptoPool:
             self.not_adjusted = False
             self._claim_admin_fees()
 
+    def _claim_admin_fees(self):
+        # no gulping logic (and re-calculating of D) needed
+        # for the python code
+        xcp_profit: int = self.xcp_profit
+        xcp_profit_a: int = self.xcp_profit_a
+
+        vprice: int = self.virtual_price
+
+        if xcp_profit > xcp_profit_a:
+            fees: int = (xcp_profit - xcp_profit_a) * self.admin_fee // (2 * 10**10)
+            if fees > 0:
+                frac: int = vprice * 10**18 // (vprice - fees) - 10**18
+                d_supply = self.tokens * frac // 10**18
+                self.tokens += d_supply
+                xcp_profit -= fees * 2
+                self.xcp_profit = xcp_profit
+
+        D = self.D
+        totalSupply = self.tokens
+        self.virtual_price = 10**18 * self._get_xcp(D) // totalSupply
+
+        if xcp_profit > xcp_profit_a:
+            self.xcp_profit_a = xcp_profit
+
 
 def _get_unix_timestamp():
     """Get the timestamp in Unix time."""

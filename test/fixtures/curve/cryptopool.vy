@@ -531,14 +531,18 @@ def _claim_admin_fees():
         if coin == WETH20:
             self.balances[i] = self.balance
         else:
-            self.balances[i] = ERC20(coin).balanceOf(self)
+            # sim: comment-out the interaction with coins.
+            # self.balances[i] = ERC20(coin).balanceOf(self)
+            pass
 
     vprice: uint256 = self.virtual_price
 
     if xcp_profit > xcp_profit_a:
         fees: uint256 = (xcp_profit - xcp_profit_a) * self.admin_fee / (2 * 10**10)
         if fees > 0:
-            receiver: address = Factory(self.factory).fee_receiver()
+            # sim: comment-out interaction with factory
+            # receiver: address = Factory(self.factory).fee_receiver()
+            receiver: address = 0xCAfEcAfeCAfECaFeCaFecaFecaFECafECafeCaFe
             if receiver != ZERO_ADDRESS:
                 frac: uint256 = vprice * 10**18 / (vprice - fees) - 10**18
                 claimed: uint256 = CurveToken(self.token).mint_relative(receiver, frac)
