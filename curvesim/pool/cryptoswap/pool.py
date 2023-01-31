@@ -533,6 +533,93 @@ class CurveCryptoPool:
         )
         return (self.mid_fee * f + self.out_fee * (10**18 - f)) // 10**18
 
+    def _exchange(
+        self,
+        i: int,
+        j: int,
+        dx: int,
+        min_dy: int,
+        use_eth: bool,
+    ) -> int:
+        assert i != j  # dev: coin index out of range
+        assert i < N_COINS  # dev: coin index out of range
+        assert j < N_COINS  # dev: coin index out of range
+        assert dx > 0  # dev: do not exchange 0 coins
+
+        A = self.A
+        gamma = self.gamma
+        xp: List[int] = self.balances
+        p: int = 0
+        dy: int = 0
+
+        y: int = xp[j]
+        x0: int = xp[i]
+        xp[i] = x0 + dx
+        self.balances[i] = xp[i]
+
+        price_scale: int = self.price_scale
+        precisions: List[int] = self.precisions
+
+        xp = [xp[0] * precisions[0], xp[1] * price_scale * precisions[1] / PRECISION]
+
+        prec_i: int = precisions[0]
+        prec_j: int = precisions[1]
+        if i == 1:
+            prec_i = precisions[1]
+            prec_j = precisions[0]
+
+        dy = xp[j] - self._newton_y(A, gamma, xp, self.D, j)
+        # Not defining new "y" here to have less variables / make subsequent calls cheaper
+        xp[j] -= dy
+        dy -= 1
+
+        if j > 0:
+            dy = dy * PRECISION / price_scale
+        dy /= prec_j
+
+        dy -= self._fee(xp) * dy / 10**10
+        assert dy >= min_dy, "Slippage"
+        y -= dy
+
+        self.balances[j] = y
+
+        y *= prec_j
+        if j > 0:
+            y = y * price_scale / PRECISION
+        xp[j] = y
+
+        # Calculate price
+        if dx > 10**5 and dy > 10**5:
+            _dx: int = dx * prec_i
+            _dy: int = dy * prec_j
+            if i == 0:
+                p = _dx * 10**18 / _dy
+            else:  # j == 0
+                p = _dy * 10**18 / _dx
+
+        self._tweak_price(A, gamma, xp, p, 0)
+
+        return dy
+
+    def exchange(
+        self,
+        i: int,
+        j: int,
+        dx: int,
+        min_dy: int,
+        use_eth: bool = False,
+    ) -> int:
+        """
+        Exchange using WETH by default
+        """
+        return self._exchange(
+            i,
+            j,
+            dx,
+            min_dy,
+            use_eth,
+        )
+
 
 def _get_unix_timestamp():
     """Get the timestamp in Unix time."""
