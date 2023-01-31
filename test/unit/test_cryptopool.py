@@ -316,6 +316,9 @@ def test_tweak_price(vyper_cryptopool, cryptopool_lp_token):
     xp = list(xp)
 
     A_gamma = [A, gamma]
+    # need to set A_gamma since this is read when claiming admin fees
+    packed_A_gamma = pack_A_gamma(A, gamma)
+    vyper_cryptopool.eval(f"self.future_A_gamma={packed_A_gamma}")
 
     # need to update cached `D` and `virtual_price`
     # (this requires adjusting LP token supply for consistency)

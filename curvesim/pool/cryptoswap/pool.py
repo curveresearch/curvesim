@@ -476,8 +476,12 @@ class CurveCryptoPool:
                 xcp_profit -= fees * 2
                 self.xcp_profit = xcp_profit
 
-        D = self.D
+        A = self.A
+        gamma = self.gamma
         totalSupply = self.tokens
+
+        D: int = self._newton_D(A, gamma, self._xp())
+        self.D = D
         self.virtual_price = 10**18 * self._get_xcp(D) // totalSupply
 
         if xcp_profit > xcp_profit_a:
