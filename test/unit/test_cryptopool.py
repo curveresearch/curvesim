@@ -1,8 +1,6 @@
 """Unit tests for CurveCryptoPool"""
-from unittest.mock import patch
-
 import boa
-from hypothesis import HealthCheck, assume, given, note, settings
+from hypothesis import HealthCheck, assume, given, settings
 from hypothesis import strategies as st
 
 from curvesim.pool import CurveCryptoPool
