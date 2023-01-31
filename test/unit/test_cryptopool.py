@@ -280,31 +280,31 @@ def test_newton_y(vyper_cryptopool, A, gamma, x0, x1, i, delta_perc):
     assert y == expected_y
 
 
-# @given(
-#     amplification_coefficient,
-#     gamma_coefficient,
-#     positive_balance,
-#     positive_balance,
-#     price,
-# )
-# @settings(
-#     suppress_health_check=[HealthCheck.function_scoped_fixture],
-#     max_examples=5,
-#     deadline=None,
-# )
-# def test_tweak_price(
-#     vyper_cryptopool, cryptopool_lp_token, A, gamma, x0, x1, last_price
-# ):
-def test_tweak_price(vyper_cryptopool, cryptopool_lp_token):
-    A = 4196
-    gamma = 10000050055
-    x0 = 100000000000000000017267
-    x1 = 100000000000000000000153
-    last_price = 1000000000219
+@given(
+    amplification_coefficient,
+    gamma_coefficient,
+    st.integers(min_value=10**6 * D_UNIT, max_value=10**9 * D_UNIT),
+    st.integers(min_value=10, max_value=1000),
+    price,
+)
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=5,
+    deadline=None,
+)
+def test_tweak_price(
+    vyper_cryptopool, cryptopool_lp_token, A, gamma, x0, x_perc, last_price
+):
+    # def test_tweak_price(vyper_cryptopool, cryptopool_lp_token):
+    #     A = 4196
+    #     gamma = 10000050055
+    #     x0 = 100000000000000000017267
+    #     x1 = 100000000000000000000153
+    #     last_price = 1000000000219
 
     # pylint: disable=protected-access
+    x1 = x0 * x_perc // 100
     _balances = [x0, x1]
-    assume(0.02 < x0 / x1 < 50)
     assume(last_price != vyper_cryptopool.eval("self._price_oracle"))
 
     precisions = vyper_cryptopool.eval("self._get_precisions()")
@@ -409,7 +409,7 @@ def test_tweak_price(vyper_cryptopool, cryptopool_lp_token):
     old_virtual_price = pool.virtual_price
 
     xp[0] = xp[0] * 101 // 100
-    xp[1] = xp[1] * 101 // 100
+    assume(0.02 < xp[0] / xp[1] < 50)  # check newton_D won't blow up
 
     # omitting price will calculate the spot price in `tweak_price`
     pool._tweak_price(A, gamma, xp, 0, 0)
