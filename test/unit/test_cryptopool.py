@@ -2,7 +2,7 @@
 from unittest.mock import patch
 
 import boa
-from hypothesis import HealthCheck, assume, given, settings
+from hypothesis import HealthCheck, assume, given, note, settings
 from hypothesis import strategies as st
 
 from curvesim.pool import CurveCryptoPool
@@ -285,15 +285,15 @@ def test_newton_y(vyper_cryptopool, A, gamma, x0, x1, i, delta_perc):
     gamma_coefficient,
     st.integers(min_value=10**6 * D_UNIT, max_value=10**9 * D_UNIT),
     st.integers(min_value=10, max_value=1000),
-    price,
+    st.integers(min_value=50, max_value=200).filter(lambda x: x < 90 or x > 110),
 )
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
-    max_examples=5,
+    max_examples=50,
     deadline=None,
 )
 def test_tweak_price(
-    vyper_cryptopool, cryptopool_lp_token, A, gamma, x0, x_perc, last_price
+    vyper_cryptopool, cryptopool_lp_token, A, gamma, x0, x_perc, price_perc
 ):
     # def test_tweak_price(vyper_cryptopool, cryptopool_lp_token):
     #     A = 4196
@@ -305,7 +305,8 @@ def test_tweak_price(
     # pylint: disable=protected-access
     x1 = x0 * x_perc // 100
     _balances = [x0, x1]
-    assume(last_price != vyper_cryptopool.eval("self._price_oracle"))
+    price_oracle = vyper_cryptopool.eval("self._price_oracle")
+    last_price = price_oracle * price_perc // 100
 
     precisions = vyper_cryptopool.eval("self._get_precisions()")
     price_scale = vyper_cryptopool.price_scale()
@@ -317,8 +318,8 @@ def test_tweak_price(
 
     A_gamma = [A, gamma]
     # need to set A_gamma since this is read when claiming admin fees
-    packed_A_gamma = pack_A_gamma(A, gamma)
-    vyper_cryptopool.eval(f"self.future_A_gamma={packed_A_gamma}")
+    A_gamma_packed = pack_A_gamma(A, gamma)
+    vyper_cryptopool.eval(f"self.future_A_gamma={A_gamma_packed}")
 
     # need to update cached `D` and `virtual_price`
     # (this requires adjusting LP token supply for consistency)
@@ -389,7 +390,7 @@ def test_tweak_price(
     old_scale = pool.price_scale
     old_virtual_price = pool.virtual_price
 
-    xp[0] = xp[0] + pool.allowed_extra_profit // 1000
+    xp[0] = xp[0] + pool.allowed_extra_profit // 10
 
     # omitting price will calculate the spot price in `tweak_price`
     pool._tweak_price(A, gamma, xp, 0, 0)
@@ -409,7 +410,6 @@ def test_tweak_price(
     old_virtual_price = pool.virtual_price
 
     xp[0] = xp[0] * 101 // 100
-    assume(0.02 < xp[0] / xp[1] < 50)  # check newton_D won't blow up
 
     # omitting price will calculate the spot price in `tweak_price`
     pool._tweak_price(A, gamma, xp, 0, 0)
@@ -425,5 +425,3 @@ def test_tweak_price(
     # profit increased enough to adjust the price scale
     assert pool.virtual_price > old_virtual_price
     assert pool.price_scale != old_scale
-
-    print("finished")
