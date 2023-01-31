@@ -62,8 +62,8 @@ def initialize_pool(vyper_cryptopool):
     assert pool.A == vyper_cryptopool.A()
     assert pool.gamma == vyper_cryptopool.gamma()
     assert pool.balances == balances
-    assert pool.virtual_price == vyper_cryptopool.virtual_price()
     assert pool.D == vyper_cryptopool.D()
+    assert pool.virtual_price == vyper_cryptopool.virtual_price()
     assert pool.xcp_profit == xcp_profit
     assert pool.xcp_profit_a == xcp_profit_a
 
@@ -118,6 +118,25 @@ def get_real_balances(virtual_balances, precisions, price_scale):
     balances = [x // p for x, p in zip(virtual_balances, precisions)]
     balances[1] = balances[1] * PRECISION // price_scale
     return balances
+
+
+def update_cached_values(vyper_cryptopool):
+    """
+    Useful test helper after we manipulate the pool state.
+
+    Calculates `D` and `virtual_price` from pool state and caches
+    them in the appropriate storage.
+    """
+    A = vyper_cryptopool.A()
+    gamma = vyper_cryptopool.gamma()
+    xp = vyper_cryptopool.eval("self.xp()")
+    xp = list(xp)  # boa doesn't like its own tuple wrapper
+    D = vyper_cryptopool.eval(f"self.newton_D({A}, {gamma}, {xp})")
+    vyper_cryptopool.eval(f"self.D={D}")
+    total_supply = vyper_cryptopool.totalSupply()
+    vyper_cryptopool.eval(
+        f"self.virtual_price=10**18 * self.get_xcp({D})/{total_supply}"
+    )
 
 
 D_UNIT = 10**18
@@ -423,3 +442,37 @@ def test_tweak_price(
     # profit increased enough to adjust the price scale
     assert pool.virtual_price > old_virtual_price
     assert pool.price_scale != old_scale
+
+
+@given(
+    positive_balance,
+    positive_balance,
+    st.integers(min_value=1, max_value=10**4),
+    st.integers(min_value=0, max_value=1),
+)
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=5,
+    deadline=None,
+)
+def test_get_dy(vyper_cryptopool, x0, x1, dx_perc, i):
+    """Test get_dy calculation against vyper implementation."""
+    assume(0.02 < x0 / x1 < 50)
+
+    j = 1 - i
+    xp = [x0, x1]
+
+    precisions = vyper_cryptopool.eval("self._get_precisions()")
+    price_scale = vyper_cryptopool.price_scale()
+    balances = get_real_balances(xp, precisions, price_scale)
+
+    vyper_cryptopool.eval(f"self.balances={balances}")
+    update_cached_values(vyper_cryptopool)
+    pool = initialize_pool(vyper_cryptopool)
+
+    dx = balances[i] * dx_perc // 10**5
+
+    expected_dy = vyper_cryptopool.get_dy(i, j, dx)
+    dy = pool.get_dy(i, j, dx)
+
+    assert dy == expected_dy

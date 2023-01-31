@@ -487,6 +487,52 @@ class CurveCryptoPool:
         if xcp_profit > xcp_profit_a:
             self.xcp_profit_a = xcp_profit
 
+    def get_dy(self, i: int, j: int, dx: int) -> int:
+        assert i != j  # dev: same input and output coin
+        assert i < N_COINS  # dev: coin index out of range
+        assert j < N_COINS  # dev: coin index out of range
+
+        xp: List[int] = self.balances
+        xp[i] += dx
+        precisions: List[int] = self.precisions
+        price_scale: int = self.price_scale * precisions[1]
+        xp = [xp[0] * precisions[0], xp[1] * price_scale // PRECISION]
+
+        A = self.A
+        gamma = self.gamma
+        D: int = self.D
+
+        y: int = self._newton_y(A, gamma, xp, D, j)
+        dy: int = xp[j] - y - 1
+        xp[j] = y
+        if j > 0:
+            dy = dy * PRECISION // price_scale
+        else:
+            dy = dy // precisions[0]
+        dy -= self._fee(xp) * dy // 10**10
+
+        return dy
+
+    def _fee(self, xp: List[int]) -> int:
+        """
+        f = fee_gamma / (fee_gamma + (1 - K))
+        where
+        K = prod(x) / (sum(x) / N)**N
+        (all normalized to 1e18)
+        """
+        fee_gamma: int = self.fee_gamma
+        f: int = xp[0] + xp[1]  # sum
+        f = (
+            fee_gamma
+            * 10**18
+            // (
+                fee_gamma
+                + 10**18
+                - (10**18 * N_COINS**N_COINS) * xp[0] // f * xp[1] // f
+            )
+        )
+        return (self.mid_fee * f + self.out_fee * (10**18 - f)) // 10**18
+
 
 def _get_unix_timestamp():
     """Get the timestamp in Unix time."""
