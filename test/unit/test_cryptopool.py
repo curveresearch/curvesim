@@ -386,25 +386,21 @@ def test_tweak_price(vyper_cryptopool, cryptopool_lp_token):
     old_scale = pool.price_scale
     old_virtual_price = pool.virtual_price
 
-    # p_oracle = old_scale * 95 // 100
-    # pool._price_oracle = p_oracle
-    # vyper_cryptopool.eval(f"self._price_oracle={p_oracle}")
-    # assert p_oracle != old_scale
-    # assert p_oracle == vyper_cryptopool.eval("self._price_oracle")
-
-    new_D = pool.D + 100000 * 10**18
+    new_D = pool.D * 105 // 100
 
     # omitting price will calculate the spot price in `tweak_price`
     pool._tweak_price(A, gamma, xp, last_price, new_D)
     vyper_cryptopool.eval(f"self.tweak_price({A_gamma}, {xp}, {last_price}, {new_D})")
 
-    assert pool.D == vyper_cryptopool.D()
+    assert pool.price_scale == vyper_cryptopool.price_scale()
     assert pool._price_oracle == vyper_cryptopool.eval("self._price_oracle")
 
-    assert pool.price_scale == vyper_cryptopool.price_scale()
+    assert pool.D == vyper_cryptopool.D()
     assert pool.virtual_price == vyper_cryptopool.virtual_price()
+    assert pool.xcp_profit == vyper_cryptopool.xcp_profit()
 
+    # profit increased but not enough to adjust the price scale
     assert pool.virtual_price > old_virtual_price
-    assert pool.price_scale != old_scale
+    assert pool.price_scale == old_scale
 
     print("finished")
