@@ -608,7 +608,7 @@ class CurveCryptoPool:
         min_dy: int = 0,
     ) -> int:
         """
-        Exchange using WETH by default
+        In the vyper contract, this allows exchanging using WETH or ETH.
         """
         return self._exchange(
             i,
@@ -616,6 +616,19 @@ class CurveCryptoPool:
             dx,
             min_dy,
         )
+
+    def exchange_underlying(
+        self,
+        i: int,
+        j: int,
+        dx: int,
+        min_dy: int = 0,
+    ) -> int:
+        """
+        In the vyper contract, this exchanges using ETH instead of WETH.
+        In Curvesim, this is the same as `exchange`.
+        """
+        return self.exchange(i, j, dx, min_dy)
 
 
 def _get_unix_timestamp():
