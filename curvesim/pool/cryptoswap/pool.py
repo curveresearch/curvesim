@@ -608,7 +608,7 @@ class CurveCryptoPool:
         min_dy: int = 0,
     ) -> int:
         """
-        In the vyper contract, this allows exchanging using WETH or ETH.
+        In the vyper contract, there is an option to exchange using WETH or ETH.
         """
         return self._exchange(
             i,
@@ -629,6 +629,110 @@ class CurveCryptoPool:
         In Curvesim, this is the same as `exchange`.
         """
         return self.exchange(i, j, dx, min_dy)
+
+    def add_liquidity(
+        self,
+        amounts: List[int],
+        min_mint_amount: int,
+    ) -> int:
+        assert amounts[0] > 0 or amounts[1] > 0  # dev: no coins to add
+
+        A = self.A
+        gamma = self.gamma
+
+        xp: List[int] = self.balances
+        amountsp: List[int] = []
+        xx: List[int] = []
+        d_token: int = 0
+        d_token_fee: int = 0
+        old_D: int = 0
+
+        xp_old: List[int] = xp
+
+        for i in range(N_COINS):
+            bal: int = xp[i] + amounts[i]
+            xp[i] = bal
+            self.balances[i] = bal
+        xx = xp
+
+        precisions: List[int] = self.precisions
+
+        price_scale: int = self.price_scale * precisions[1]
+        xp = [xp[0] * precisions[0], xp[1] * price_scale // PRECISION]
+        xp_old = [xp_old[0] * precisions[0], xp_old[1] * price_scale // PRECISION]
+
+        for i in range(N_COINS):
+            if amounts[i] > 0:
+                amountsp[i] = xp[i] - xp_old[i]
+
+        old_D = self.D
+        D: int = self._newton_D(A, gamma, xp)
+
+        token_supply: int = self.tokens
+        if old_D > 0:
+            d_token = token_supply * D // old_D - token_supply
+        else:
+            d_token = self._get_xcp(D)  # making initial virtual price equal to 1
+        assert d_token > 0  # dev: nothing minted
+
+        if old_D > 0:
+            d_token_fee = self._calc_token_fee(amountsp, xp) * d_token // 10**10 + 1
+            d_token -= d_token_fee
+            token_supply += d_token
+
+            # Calculate price
+            # p_i * (dx_i - dtoken / token_supply * xx_i) = sum{k!=i}(p_k * (dtoken / token_supply * xx_k - dx_k))
+            # Simplified for 2 coins
+            p: int = 0
+            if d_token > 10**5:
+                if amounts[0] == 0 or amounts[1] == 0:
+                    S: int = 0
+                    precision: int = 0
+                    ix: int = 0
+                    if amounts[0] == 0:
+                        S = xx[0] * precisions[0]
+                        precision = precisions[1]
+                        ix = 1
+                    else:
+                        S = xx[1] * precisions[1]
+                        precision = precisions[0]
+                    S = S * d_token // token_supply
+                    p = (
+                        S
+                        * PRECISION
+                        // (
+                            amounts[ix] * precision
+                            - d_token * xx[ix] * precision // token_supply
+                        )
+                    )
+                    if ix == 0:
+                        p = (10**18) ** 2 // p
+
+            self._tweak_price(A, gamma, xp, p, D)
+
+        else:
+            self.D = D
+            self.virtual_price = 10**18
+            self.xcp_profit = 10**18
+
+        assert d_token >= min_mint_amount, "Slippage"
+
+        return d_token
+
+    def _calc_token_fee(self, amounts: List[int], xp: List[int]) -> int:
+        # fee = sum(amounts_i - avg(amounts)) * fee' / sum(amounts)
+        fee: int = self._fee(xp) * N_COINS // (4 * (N_COINS - 1))
+        S: int = 0
+        for _x in amounts:
+            S += _x
+        avg: int = S // N_COINS
+        Sdiff: int = 0
+        for _x in amounts:
+            if _x > avg:
+                Sdiff += _x - avg
+            else:
+                Sdiff += avg - _x
+        return fee * Sdiff // S + NOISE_FEE
 
 
 def _get_unix_timestamp():
