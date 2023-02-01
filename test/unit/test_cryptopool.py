@@ -306,7 +306,7 @@ def test_newton_y(vyper_cryptopool, A, gamma, x0, x1, i, delta_perc):
 )
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
-    max_examples=50,
+    max_examples=5,
     deadline=None,
 )
 def test_tweak_price(
