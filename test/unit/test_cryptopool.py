@@ -476,3 +476,32 @@ def test_get_dy(vyper_cryptopool, x0, x1, dx_perc, i):
     dy = pool.get_dy(i, j, dx)
 
     assert dy == expected_dy
+
+
+@given(
+    st.integers(min_value=1, max_value=300),
+    st.integers(min_value=0, max_value=1),
+)
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=5,
+    deadline=None,
+)
+def test_exchange(vyper_cryptopool, dx_perc, i):
+    """Test `exchange` against vyper implementation."""
+    j = 1 - i
+
+    pool = initialize_pool(vyper_cryptopool)
+
+    old_vyper_balances = [vyper_cryptopool.balances(i) for i in range(2)]
+    assert pool.balances == old_vyper_balances
+
+    dx = old_vyper_balances[i] * dx_perc // 100
+
+    expected_dy = vyper_cryptopool.exchange(i, j, dx, 0)
+    dy = pool.exchange(i, j, dx)
+
+    assert dy == expected_dy
+
+    expected_balances = [vyper_cryptopool.balances(i) for i in range(2)]
+    assert pool.balances == expected_balances
