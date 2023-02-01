@@ -547,7 +547,7 @@ class CurveCryptoPool:
 
         A = self.A
         gamma = self.gamma
-        xp: List[int] = self.balances
+        xp: List[int] = self.balances.copy()
         p: int = 0
         dy: int = 0
 
