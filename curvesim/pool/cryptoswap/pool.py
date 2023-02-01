@@ -539,7 +539,6 @@ class CurveCryptoPool:
         j: int,
         dx: int,
         min_dy: int,
-        use_eth: bool,
     ) -> int:
         assert i != j  # dev: coin index out of range
         assert i < N_COINS  # dev: coin index out of range
@@ -607,7 +606,6 @@ class CurveCryptoPool:
         j: int,
         dx: int,
         min_dy: int = 0,
-        use_eth: bool = False,
     ) -> int:
         """
         Exchange using WETH by default
@@ -617,7 +615,6 @@ class CurveCryptoPool:
             j,
             dx,
             min_dy,
-            use_eth,
         )
 
 
