@@ -560,7 +560,7 @@ class CurveCryptoPool:
         price_scale: int = self.price_scale
         precisions: List[int] = self.precisions
 
-        xp = [xp[0] * precisions[0], xp[1] * price_scale * precisions[1] / PRECISION]
+        xp = [xp[0] * precisions[0], xp[1] * price_scale * precisions[1] // PRECISION]
 
         prec_i: int = precisions[0]
         prec_j: int = precisions[1]
@@ -574,10 +574,10 @@ class CurveCryptoPool:
         dy -= 1
 
         if j > 0:
-            dy = dy * PRECISION / price_scale
-        dy /= prec_j
+            dy = dy * PRECISION // price_scale
+        dy = dy // prec_j
 
-        dy -= self._fee(xp) * dy / 10**10
+        dy -= self._fee(xp) * dy // 10**10
         assert dy >= min_dy, "Slippage"
         y -= dy
 
@@ -585,7 +585,7 @@ class CurveCryptoPool:
 
         y *= prec_j
         if j > 0:
-            y = y * price_scale / PRECISION
+            y = y * price_scale // PRECISION
         xp[j] = y
 
         # Calculate price
@@ -593,9 +593,9 @@ class CurveCryptoPool:
             _dx: int = dx * prec_i
             _dy: int = dy * prec_j
             if i == 0:
-                p = _dx * 10**18 / _dy
+                p = _dx * 10**18 // _dy
             else:  # j == 0
-                p = _dy * 10**18 / _dx
+                p = _dy * 10**18 // _dx
 
         self._tweak_price(A, gamma, xp, p, 0)
 
@@ -606,7 +606,7 @@ class CurveCryptoPool:
         i: int,
         j: int,
         dx: int,
-        min_dy: int,
+        min_dy: int = 0,
         use_eth: bool = False,
     ) -> int:
         """
