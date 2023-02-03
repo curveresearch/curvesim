@@ -679,6 +679,7 @@ class CurveCryptoPool:
             d_token_fee = self._calc_token_fee(amountsp, xp) * d_token // 10**10 + 1
             d_token -= d_token_fee
             token_supply += d_token
+            self.tokens += d_token
 
             # Calculate price
             # p_i * (dx_i - dtoken / token_supply * xx_i) = sum{k!=i}(p_k * (dtoken / token_supply * xx_k - dx_k))
@@ -714,6 +715,7 @@ class CurveCryptoPool:
             self.D = D
             self.virtual_price = 10**18
             self.xcp_profit = 10**18
+            self.tokens += d_token
 
         assert d_token >= min_mint_amount, "Slippage"
 

@@ -526,15 +526,17 @@ def test_add_liquidity(vyper_cryptopool, x0, x1):
     old_vyper_balances = [vyper_cryptopool.balances(i) for i in range(len(xp))]
     assert pool.balances == old_vyper_balances
 
-    lp_total_supply = vyper_cryptopool.totalSupply()
-    vyper_cryptopool.add_liquidity(amounts, 0)
-    expected_lp_amount = vyper_cryptopool.totalSupply() - lp_total_supply
+    expected_lp_amount = vyper_cryptopool.add_liquidity(amounts, 0)
+    expected_balances = [vyper_cryptopool.balances(i) for i in range(len(xp))]
+    expected_lp_supply = vyper_cryptopool.totalSupply()
+    expected_D = vyper_cryptopool.D()
 
     lp_amount = pool.add_liquidity(amounts)
-    assert lp_amount == expected_lp_amount
 
-    expected_balances = [vyper_cryptopool.balances(i) for i in range(len(xp))]
+    assert lp_amount == expected_lp_amount
     assert pool.balances == expected_balances
+    assert pool.tokens == expected_lp_supply
+    assert pool.D == expected_D
 
 
 @given(positive_balance)
