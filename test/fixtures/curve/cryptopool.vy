@@ -1070,19 +1070,21 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS],
         assert d_balance >= min_amounts[i]
         self.balances[i] = balances[i] - d_balance
         balances[i] = d_balance  # now it's the amounts going out
-        coin: address = self.coins[i]
-        if use_eth and coin == WETH20:
-            raw_call(receiver, b"", value=d_balance)
-        else:
-            if coin == WETH20:
-                WETH(WETH20).deposit(value=d_balance)
-            response: Bytes[32] = raw_call(
-                coin,
-                _abi_encode(receiver, d_balance, method_id=method_id("transfer(address,uint256)")),
-                max_outsize=32,
-            )
-            if len(response) != 0:
-                assert convert(response, bool)
+        # sim: comment-out unneeded transfer logic
+        # -----------------------------------------
+        # coin: address = self.coins[i]
+        # if use_eth and coin == WETH20:
+        #     raw_call(receiver, b"", value=d_balance)
+        # else:
+        #     if coin == WETH20:
+        #         WETH(WETH20).deposit(value=d_balance)
+        #     response: Bytes[32] = raw_call(
+        #         coin,
+        #         _abi_encode(receiver, d_balance, method_id=method_id("transfer(address,uint256)")),
+        #         max_outsize=32,
+        #     )
+        #     if len(response) != 0:
+        #         assert convert(response, bool)
 
     D: uint256 = self.D
     self.D = D - D * amount / total_supply

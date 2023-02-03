@@ -734,6 +734,29 @@ class CurveCryptoPool:
                 Sdiff += avg - _x
         return fee * Sdiff // S + NOISE_FEE
 
+    def remove_liquidity(
+        self,
+        _amount: int,
+        min_amounts=None,
+    ):
+        """
+        This withdrawal method is very safe, does no complex math
+        """
+        min_amounts = min_amounts or [0, 0]
+
+        total_supply: int = self.tokens
+        self.tokens -= _amount
+        balances: List[int] = self.balances
+        amount: int = _amount - 1  # Make rounding errors favoring other LPs a tiny bit
+
+        for i in range(N_COINS):
+            d_balance: int = balances[i] * amount // total_supply
+            assert d_balance >= min_amounts[i]
+            self.balances[i] = balances[i] - d_balance
+
+        D: int = self.D
+        self.D = D - D * amount // total_supply
+
 
 def _get_unix_timestamp():
     """Get the timestamp in Unix time."""
