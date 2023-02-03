@@ -633,27 +633,27 @@ class CurveCryptoPool:
     def add_liquidity(
         self,
         amounts: List[int],
-        min_mint_amount: int,
+        min_mint_amount: int = 0,
     ) -> int:
         assert amounts[0] > 0 or amounts[1] > 0  # dev: no coins to add
 
         A = self.A
         gamma = self.gamma
 
-        xp: List[int] = self.balances
-        amountsp: List[int] = []
-        xx: List[int] = []
+        xp: List[int] = self.balances.copy()
+        amountsp: List[int] = [0] * N_COINS
+        xx: List[int] = [0] * N_COINS
         d_token: int = 0
         d_token_fee: int = 0
         old_D: int = 0
 
-        xp_old: List[int] = xp
+        xp_old: List[int] = xp.copy()
 
         for i in range(N_COINS):
             bal: int = xp[i] + amounts[i]
             xp[i] = bal
             self.balances[i] = bal
-        xx = xp
+        xx = xp.copy()
 
         precisions: List[int] = self.precisions
 

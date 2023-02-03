@@ -969,25 +969,27 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256,
         assert msg.value == 0  # dev: nonzero eth amount
 
     for i in range(N_COINS):
-        coin: address = self.coins[i]
-        if use_eth and coin == WETH20:
-            assert msg.value == amounts[i]  # dev: incorrect eth amount
+        # sim: comment-out unneeded transfer logic
+        # coin: address = self.coins[i]
+        # if use_eth and coin == WETH20:
+        #     assert msg.value == amounts[i]  # dev: incorrect eth amount
         if amounts[i] > 0:
-            if (not use_eth) or (coin != WETH20):
-                response: Bytes[32] = raw_call(
-                    coin,
-                    _abi_encode(
-                        msg.sender,
-                        self,
-                        amounts[i],
-                        method_id=method_id("transferFrom(address,address,uint256)"),
-                    ),
-                    max_outsize=32,
-                )
-                if len(response) != 0:
-                    assert convert(response, bool)  # dev: failed transfer
-                if coin == WETH20:
-                    WETH(WETH20).withdraw(amounts[i])
+            # sim: comment-out unneeded transfer logic
+            # if (not use_eth) or (coin != WETH20):
+            #     response: Bytes[32] = raw_call(
+            #         coin,
+            #         _abi_encode(
+            #             msg.sender,
+            #             self,
+            #             amounts[i],
+            #             method_id=method_id("transferFrom(address,address,uint256)"),
+            #         ),
+            #         max_outsize=32,
+            #     )
+            #     if len(response) != 0:
+            #         assert convert(response, bool)  # dev: failed transfer
+            #     if coin == WETH20:
+            #         WETH(WETH20).withdraw(amounts[i])
             amountsp[i] = xp[i] - xp_old[i]
 
     t: uint256 = self.future_A_gamma_time

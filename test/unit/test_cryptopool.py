@@ -505,3 +505,33 @@ def test_exchange(vyper_cryptopool, dx_perc, i):
 
     expected_balances = [vyper_cryptopool.balances(i) for i in range(2)]
     assert pool.balances == expected_balances
+
+
+@given(positive_balance, positive_balance)
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=5,
+    deadline=None,
+)
+def test_add_liquidity(vyper_cryptopool, x0, x1):
+    """Test `add_liquidity` against vyper implementation."""
+    xp = [x0, x1]
+
+    precisions = vyper_cryptopool.eval("self._get_precisions()")
+    price_scale = vyper_cryptopool.price_scale()
+    amounts = get_real_balances(xp, precisions, price_scale)
+
+    pool = initialize_pool(vyper_cryptopool)
+
+    old_vyper_balances = [vyper_cryptopool.balances(i) for i in range(len(xp))]
+    assert pool.balances == old_vyper_balances
+
+    lp_total_supply = vyper_cryptopool.totalSupply()
+    vyper_cryptopool.add_liquidity(amounts, 0)
+    expected_lp_amount = vyper_cryptopool.totalSupply() - lp_total_supply
+
+    lp_amount = pool.add_liquidity(amounts)
+    assert lp_amount == expected_lp_amount
+
+    expected_balances = [vyper_cryptopool.balances(i) for i in range(len(xp))]
+    assert pool.balances == expected_balances
