@@ -759,6 +759,86 @@ class CurveCryptoPool:
         D: int = self.D
         self.D = D - D * amount // total_supply
 
+    def remove_liquidity_one_coin(
+        self, token_amount: int, i: int, min_amount: int
+    ) -> int:
+        A = self.A
+        gamma = self.gamma
+
+        dy: int = 0
+        D: int = 0
+        p: int = 0
+        xp = [0] * N_COINS
+        dy, p, D, xp = self._calc_withdraw_one_coin(
+            A, gamma, token_amount, i, False, True
+        )
+        assert dy >= min_amount, "Slippage"
+
+        self.balances[i] -= dy
+        self.tokens -= token_amount
+
+        self._tweak_price(A, gamma, xp, p, D)
+
+        return dy
+
+    def _calc_withdraw_one_coin(
+        self,
+        A: int,
+        gamma: int,
+        token_amount: int,
+        i: int,
+        update_D: bool,
+        calc_price: bool,
+    ) -> (int, int, int, List[int]):
+        token_supply: int = self.tokens
+        assert token_amount <= token_supply  # dev: token amount more than supply
+        assert i < N_COINS  # dev: coin out of range
+
+        xx: List[int] = self.balances.copy()
+        D0: int = 0
+        precisions: List[int] = self.precisions
+
+        price_scale_i: int = self.price_scale * precisions[1]
+        xp: List[int] = [
+            xx[0] * precisions[0],
+            xx[1] * price_scale_i // PRECISION,
+        ]
+        if i == 0:
+            price_scale_i = PRECISION * precisions[0]
+
+        if update_D:
+            D0 = self._newton_D(A, gamma, xp)
+        else:
+            D0 = self.D
+
+        D: int = D0
+
+        # Charge the fee on D, not on y, e.g. reducing invariant LESS than charging the user
+        fee: int = self._fee(xp)
+        dD: int = token_amount * D // token_supply
+        D -= dD - (fee * dD // (2 * 10**10) + 1)
+        y: int = self._newton_y(A, gamma, xp, D, i)
+        dy: int = (xp[i] - y) * PRECISION // price_scale_i
+        xp[i] = y
+
+        # Price calc
+        p: int = 0
+        if calc_price and dy > 10**5 and token_amount > 10**5:
+            # p_i = dD / D0 * sum'(p_k * x_k) / (dy - dD / D0 * y0)
+            S: int = 0
+            precision: int = precisions[0]
+            if i == 1:
+                S = xx[0] * precisions[0]
+                precision = precisions[1]
+            else:
+                S = xx[1] * precisions[1]
+            S = S * dD // D0
+            p = S * PRECISION // (dy * precision - dD * xx[i] * precision // D0)
+            if i == 0:
+                p = (10**18) ** 2 // p
+
+        return dy, p, D, xp
+
 
 def _get_unix_timestamp():
     """Get the timestamp in Unix time."""
