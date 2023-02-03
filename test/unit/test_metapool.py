@@ -180,19 +180,17 @@ def test_add_liquidity(vyper_metapool, vyper_3pool, x0, x1):
     amounts = convert_to_real_balances(rates, _balances)
 
     old_vyper_balances = [vyper_metapool.balances(i) for i in range(len(_balances))]
-    balances = python_metapool.balances
-    assert balances == old_vyper_balances
+    assert python_metapool.balances == old_vyper_balances
 
-    lp_total_supply = vyper_metapool.totalSupply()
-    vyper_metapool.add_liquidity(amounts, 0)
-    expected_lp_amount = vyper_metapool.totalSupply() - lp_total_supply
+    expected_lp_amount = vyper_metapool.add_liquidity(amounts, 0)
+    expected_balances = [vyper_metapool.balances(i) for i in range(len(_balances))]
+    expected_lp_supply = vyper_metapool.totalSupply()
 
     lp_amount = python_metapool.add_liquidity(amounts)
-    assert lp_amount == expected_lp_amount
 
-    expected_balances = [vyper_metapool.balances(i) for i in range(len(_balances))]
-    new_balances = python_metapool.balances
-    assert new_balances == expected_balances
+    assert lp_amount == expected_lp_amount
+    assert python_metapool.tokens == expected_lp_supply
+    assert python_metapool.balances == expected_balances
 
 
 @given(
