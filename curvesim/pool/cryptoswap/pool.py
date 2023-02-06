@@ -445,40 +445,29 @@ class CurveCryptoPool(Pool):
             needs_adjustment = True
             self.not_adjusted = True
 
-        if needs_adjustment:
-            if norm > adjustment_step and old_virtual_price > 0:
-                p_new = (
-                    price_scale * (norm - adjustment_step)
-                    + adjustment_step * price_oracle
-                ) // norm
+        if needs_adjustment and norm > adjustment_step and old_virtual_price > 0:
+            p_new = (
+                price_scale * (norm - adjustment_step) + adjustment_step * price_oracle
+            ) // norm
 
-                # Calculate balances*prices
-                xp = [_xp[0], _xp[1] * p_new // price_scale]
+            # Calculate balances*prices
+            xp = [_xp[0], _xp[1] * p_new // price_scale]
 
-                # Calculate "extended constant product" invariant xCP and virtual price
-                D: int = self._newton_D(A, gamma, xp)
-                xp = [D // N_COINS, D * PRECISION // (N_COINS * p_new)]
-                # We reuse old_virtual_price here but it's not old anymore
-                old_virtual_price = 10**18 * _geometric_mean(xp, True) // total_supply
+            # Calculate "extended constant product" invariant xCP and virtual price
+            D: int = self._newton_D(A, gamma, xp)
+            xp = [D // N_COINS, D * PRECISION // (N_COINS * p_new)]
+            # We reuse old_virtual_price here but it's not old anymore
+            old_virtual_price = 10**18 * _geometric_mean(xp, True) // total_supply
 
-                # Proceed if we've got enough profit:
-                # if (old_virtual_price > 10**18) and
-                # (2 * (old_virtual_price - 10**18) > xcp_profit - 10**18):
-                if (old_virtual_price > 10**18) and (
-                    2 * old_virtual_price - 10**18 > xcp_profit
-                ):
-                    self.price_scale = p_new
-                    self.D = D
-                    self.virtual_price = old_virtual_price
-
-                    return
-
-                self.not_adjusted = False
-
-                # Can instead do another flag variable if we want to save bytespace
-                self.D = D_unadjusted
-                self.virtual_price = virtual_price
-                self._claim_admin_fees()
+            # Proceed if we've got enough profit:
+            # if (old_virtual_price > 10**18) and
+            # (2 * (old_virtual_price - 10**18) > xcp_profit - 10**18):
+            if (old_virtual_price > 10**18) and (
+                2 * old_virtual_price - 10**18 > xcp_profit
+            ):
+                self.price_scale = p_new
+                self.D = D
+                self.virtual_price = old_virtual_price
 
                 return
 
