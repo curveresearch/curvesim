@@ -345,9 +345,7 @@ class CurveCryptoPool(Pool):
                 diff = y_prev - y
             if diff < max(convergence_limit, y // 10**14):
                 frac: int = y * 10**18 // D
-                assert (frac > 10**16 - 1) and (
-                    frac < 10**20 + 1
-                )  # dev: unsafe value for y
+                assert 10**16 <= frac <= 10**20  # dev: unsafe value for y
                 return y
 
         raise CalculationError("Did not converge")
