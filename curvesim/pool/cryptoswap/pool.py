@@ -839,6 +839,11 @@ class CurveCryptoPool:
 
         return dy, p, D, xp
 
+    def calc_withdraw_one_coin(self, token_amount: int, i: int) -> int:
+        return self._calc_withdraw_one_coin(
+            self.A, self.gamma, token_amount, i, True, False
+        )[0]
+
 
 def _get_unix_timestamp():
     """Get the timestamp in Unix time."""

@@ -598,3 +598,28 @@ def test_remove_liquidity_one_coin(vyper_cryptopool, amount, i):
 
     assert coin_balance == expected_coin_balance
     assert lp_supply == expected_lp_supply
+
+
+@given(positive_balance, st.integers(min_value=0, max_value=1))
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=25,
+    deadline=None,
+)
+def test_calc_withdraw_one_coin(vyper_cryptopool, amount, i):
+    """Test `remove_liquidity_one_coin` against vyper implementation."""
+    assume(amount < vyper_cryptopool.totalSupply())
+
+    pool = initialize_pool(vyper_cryptopool)
+
+    old_vyper_balances = [vyper_cryptopool.balances(i) for i in range(2)]
+    balances = pool.balances
+    assert balances == old_vyper_balances
+
+    old_vyper_supply = vyper_cryptopool.totalSupply()
+    lp_supply = pool.tokens
+    assert lp_supply == old_vyper_supply
+
+    expected_dy = vyper_cryptopool.calc_withdraw_one_coin(amount, i)
+    dy = pool.calc_withdraw_one_coin(amount, i)
+    assert dy == expected_dy
