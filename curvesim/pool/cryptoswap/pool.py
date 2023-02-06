@@ -398,8 +398,9 @@ class CurveCryptoPool:
         adjustment_step: int = max(self.adjustment_step, norm // 5)
 
         needs_adjustment: bool = self.not_adjusted
-        # if not needs_adjustment and (virtual_price-10**18 > (xcp_profit-10**18)/2 + self.allowed_extra_profit):
-        # (re-arrange for gas efficiency)
+        # if not needs_adjustment and
+        # (virtual_price-10**18 > (xcp_profit-10**18)/2 + self.allowed_extra_profit):
+        # (re-arranged for gas efficiency)
         if (
             not needs_adjustment
             and (
@@ -428,8 +429,9 @@ class CurveCryptoPool:
                 # We reuse old_virtual_price here but it's not old anymore
                 old_virtual_price = 10**18 * _geometric_mean(xp, True) // total_supply
 
-                # Proceed if we've got enough profit
-                # if (old_virtual_price > 10**18) and (2 * (old_virtual_price - 10**18) > xcp_profit - 10**18):
+                # Proceed if we've got enough profit:
+                # if (old_virtual_price > 10**18) and
+                # (2 * (old_virtual_price - 10**18) > xcp_profit - 10**18):
                 if (old_virtual_price > 10**18) and (
                     2 * old_virtual_price - 10**18 > xcp_profit
                 ):
@@ -681,9 +683,10 @@ class CurveCryptoPool:
             token_supply += d_token
             self.tokens += d_token
 
-            # Calculate price
-            # p_i * (dx_i - dtoken / token_supply * xx_i) = sum{k!=i}(p_k * (dtoken / token_supply * xx_k - dx_k))
-            # Simplified for 2 coins
+            # Calculate price:
+            # p_i * (dx_i - dtoken / token_supply * xx_i)
+            # = sum{k!=i}(p_k * (dtoken / token_supply * xx_k - dx_k))
+            # (simplified for 2 coins)
             p: int = 0
             if d_token > 10**5:
                 if amounts[0] == 0 or amounts[1] == 0:
