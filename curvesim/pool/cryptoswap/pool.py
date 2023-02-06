@@ -128,6 +128,8 @@ class CurveCryptoPool(Pool):
         self.xcp_profit_a = xcp_profit_a  # Full profit at last claim of admin fees
         self.not_adjusted = False
 
+        if n != 2:
+            raise CryptoPoolError("Only 2-coin crypto pools are currently supported.")
         self.n = n
         self.precisions = precisions
 
