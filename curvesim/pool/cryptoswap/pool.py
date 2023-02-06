@@ -870,6 +870,9 @@ class CurveCryptoPool:
     def price_oracle(self) -> int:
         return self.internal_price_oracle()
 
+    def get_virtual_price(self) -> int:
+        return 10**18 * self._get_xcp(self.D) // self.tokens
+
 
 def _get_unix_timestamp():
     """Get the timestamp in Unix time."""

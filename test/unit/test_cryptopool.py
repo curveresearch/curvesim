@@ -64,9 +64,11 @@ def initialize_pool(vyper_cryptopool):
     assert pool.balances == balances
     assert pool.D == vyper_cryptopool.D()
     assert pool.tokens == lp_total_supply
-    assert pool.virtual_price == vyper_cryptopool.virtual_price()
     assert pool.xcp_profit == xcp_profit
     assert pool.xcp_profit_a == xcp_profit_a
+
+    virtual_price = vyper_cryptopool.virtual_price()
+    pool.virtual_price = virtual_price
 
     price_oracle = vyper_cryptopool.eval("self._price_oracle")
     # pylint: disable-next=protected-access
@@ -626,3 +628,22 @@ def test_price_oracle(vyper_cryptopool, price_oracle, last_price, time_delta):
 
     assert pool.price_oracle() == vyper_cryptopool.price_oracle()
     assert pool.lp_price() == vyper_cryptopool.lp_price()
+
+
+@given(positive_balance, positive_balance, price)
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=5,
+    deadline=None,
+)
+def test_get_virtual_price(
+    vyper_cryptopool, cryptopool_lp_token, D, tokens, price_scale
+):
+    vyper_cryptopool.eval(f"self.D={D}")
+    cryptopool_lp_token.eval(f"self.totalSupply={tokens}")
+    vyper_cryptopool.eval(f"self.price_scale={price_scale}")
+    pool = initialize_pool(vyper_cryptopool)
+
+    expected_virtual_price = vyper_cryptopool.get_virtual_price()
+    virtual_price = pool.get_virtual_price()
+    assert virtual_price == expected_virtual_price
