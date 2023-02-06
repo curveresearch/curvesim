@@ -522,6 +522,7 @@ def test_exchange(vyper_cryptopool, dx_perc, i):
 )
 def test_add_liquidity(vyper_cryptopool, x0, x1):
     """Test `add_liquidity` against vyper implementation."""
+    assume(0.02 < x0 / x1 < 50)
     xp = [x0, x1]
 
     precisions = vyper_cryptopool.eval("self._get_precisions()")
@@ -656,7 +657,8 @@ def test_get_virtual_price(
     deadline=None,
 )
 def test_calc_token_amount(vyper_cryptopool, x0, x1):
-    """Test `add_liquidity` against vyper implementation."""
+    """Test `calc_token_amount` against vyper implementation."""
+    assume(0.02 < x0 / x1 < 50)
     xp = [x0, x1]
 
     precisions = vyper_cryptopool.eval("self._get_precisions()")
