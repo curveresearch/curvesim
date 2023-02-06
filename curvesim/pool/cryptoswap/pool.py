@@ -31,6 +31,32 @@ class CryptoPoolError(RuntimeError):
 
 
 class CurveCryptoPool:
+    __slots__ = (
+        "A",
+        "gamma",
+        "n",
+        "precisions",
+        "mid_fee",
+        "out_fee",
+        "allowed_extra_profit",
+        "fee_gamma",
+        "adjustment_step",
+        "admin_fee",
+        "ma_half_time",
+        "price_scale",
+        "_price_oracle",
+        "last_prices",
+        "last_prices_timestamp",
+        "_block_timestamp",
+        "balances",
+        "D",
+        "virtual_price",
+        "tokens",
+        "xcp_profit",
+        "xcp_profit_a",
+        "not_adjusted",
+    )
+
     def __init__(
         self,
         A: int,
