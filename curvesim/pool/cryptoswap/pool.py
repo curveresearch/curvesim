@@ -1,3 +1,6 @@
+"""
+Mainly a module to house the `CryptoPool`, a cryptoswap implementation in Python.
+"""
 import time
 from typing import List
 
@@ -27,7 +30,10 @@ MIN_A = N_COINS**N_COINS * A_MULTIPLIER // 10
 MAX_A = N_COINS**N_COINS * A_MULTIPLIER * 100000
 
 
+# pylint: disable-next=too-many-instance-attributes
 class CurveCryptoPool(Pool):
+    """Cryptoswap implementation in Python."""
+
     __slots__ = (
         "A",
         "gamma",
@@ -54,6 +60,7 @@ class CurveCryptoPool(Pool):
         "not_adjusted",
     )
 
+    # pylint: disable-next=too-many-locals,too-many-arguments
     def __init__(
         self,
         A: int,
@@ -176,6 +183,7 @@ class CurveCryptoPool(Pool):
         ]
         return _geometric_mean(x, True)
 
+    # pylint: disable=too-many-locals,too-many-branches
     @staticmethod
     def _newton_D(ANN: int, gamma: int, x_unsorted: List[int]) -> List[int]:
         """
@@ -268,11 +276,9 @@ class CurveCryptoPool(Pool):
         ANN = A * N**N
         """
         # Safety checks
-        assert ANN > MIN_A - 1 and ANN < MAX_A + 1  # dev: unsafe values A
-        assert (
-            gamma > MIN_GAMMA - 1 and gamma < MAX_GAMMA + 1
-        )  # dev: unsafe values gamma
-        assert D > 10**17 - 1 and D < 10**15 * 10**18 + 1  # dev: unsafe values D
+        assert MIN_A <= ANN <= MAX_A  # dev: unsafe values A
+        assert MIN_GAMMA <= gamma <= MAX_GAMMA  # dev: unsafe values gamma
+        assert 10**17 <= D <= 10**15 * 10**18  # dev: unsafe values D
 
         x_j: int = x[1 - i]
         y: int = D**2 // (x_j * N_COINS**2)
@@ -280,8 +286,8 @@ class CurveCryptoPool(Pool):
         # S_i = x_j
 
         # frac = x_j * 1e18 / D => frac = K0_i / N_COINS
-        assert (K0_i > 10**16 * N_COINS - 1) and (
-            K0_i < 10**20 * N_COINS + 1
+        assert (
+            10**16 * N_COINS <= K0_i <= 10**20 * N_COINS
         )  # dev: unsafe values x[i]
 
         # x_sorted: uint256[N_COINS] = x
@@ -291,7 +297,7 @@ class CurveCryptoPool(Pool):
 
         convergence_limit: int = max(max(x_j // 10**14, D // 10**14), 100)
 
-        for j in range(255):
+        for _ in range(255):
             y_prev: int = y
 
             K0: int = K0_i * y * N_COINS // D
@@ -316,12 +322,13 @@ class CurveCryptoPool(Pool):
             if yfprime < _dyfprime:
                 y = y_prev // 2
                 continue
-            else:
-                yfprime -= _dyfprime
+
+            yfprime -= _dyfprime
             fprime: int = yfprime // y
 
             # y -= f / f_prime;  y = (y * fprime - f) / fprime
-            # y = (yfprime + 10**18 * D - 10**18 * S) // fprime + mul1 // fprime * (10**18 - K0) // K0
+            # y = (yfprime + 10**18 * D - 10**18 * S)
+            #   / fprime + mul1 / fprime * (10**18 - K0) / K0
             y_minus: int = mul1 // fprime
             y_plus: int = (yfprime + 10**18 * D) // fprime + y_minus * 10**18 // K0
             y_minus += 10**18 * S // fprime
@@ -466,15 +473,14 @@ class CurveCryptoPool(Pool):
 
                     return
 
-                else:
-                    self.not_adjusted = False
+                self.not_adjusted = False
 
-                    # Can instead do another flag variable if we want to save bytespace
-                    self.D = D_unadjusted
-                    self.virtual_price = virtual_price
-                    self._claim_admin_fees()
+                # Can instead do another flag variable if we want to save bytespace
+                self.D = D_unadjusted
+                self.virtual_price = virtual_price
+                self._claim_admin_fees()
 
-                    return
+                return
 
         # If we are here, the price_scale adjustment did not happen
         # Still need to update the profit counter and D
@@ -595,7 +601,6 @@ class CurveCryptoPool(Pool):
             prec_j = precisions[0]
 
         dy = xp[j] - self._newton_y(A, gamma, xp, self.D, j)
-        # Not defining new "y" here to have less variables / make subsequent calls cheaper
         xp[j] -= dy
         dy -= 1
 
@@ -841,7 +846,7 @@ class CurveCryptoPool(Pool):
 
         D: int = D0
 
-        # Charge the fee on D, not on y, e.g. reducing invariant LESS than charging the user
+        # Charge fee on D, not on y, e.g. reducing invariant LESS than charging user
         fee: int = self._fee(xp)
         dD: int = token_amount * D // token_supply
         D -= dD - (fee * dD // (2 * 10**10) + 1)
@@ -956,7 +961,8 @@ def _halfpow(power: int) -> int:
     """
     1e18 * 0.5 ** (power/1e18)
 
-    Inspired by: https://github.com/balancer-labs/balancer-core/blob/master/contracts/BNum.sol#L128
+    Inspired by:
+    https://github.com/balancer-labs/balancer-core/blob/master/contracts/BNum.sol#L128
     """
     intpow: int = power // 10**18
     otherpow: int = power - intpow * 10**18
@@ -1001,7 +1007,7 @@ def _sqrt_int(x: int) -> int:
     z: int = (x + 10**18) // 2
     y: int = x
 
-    for i in range(256):
+    for _ in range(256):
         if z == y:
             return y
         y = z
