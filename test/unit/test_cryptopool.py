@@ -69,6 +69,7 @@ def initialize_pool(vyper_cryptopool):
     assert pool.xcp_profit_a == xcp_profit_a
 
     price_oracle = vyper_cryptopool.eval("self._price_oracle")
+    # pylint: disable-next=protected-access
     pool._price_oracle = price_oracle
 
     last_prices = vyper_cryptopool.last_prices()
@@ -85,6 +86,13 @@ def sync_ema_logic(
     pool,
     last_prices,
 ):
+    """
+    Test helper to synchronize state variables needed for EMA update.
+
+    This is needed because the local evm block timestamp will drift
+    from the python pool's internal timestamp.
+    """
+    # pylint: disable=protected-access
     price_oracle = vyper_cryptopool.eval("self._price_oracle")
     pool._price_oracle = price_oracle
 
@@ -588,7 +596,7 @@ def test_remove_liquidity_one_coin(vyper_cryptopool, amount, i):
     deadline=None,
 )
 def test_calc_withdraw_one_coin(vyper_cryptopool, amount, i):
-    """Test `remove_liquidity_one_coin` against vyper implementation."""
+    """Test `calc_withdraw_one_coin` against vyper implementation."""
     assume(amount < vyper_cryptopool.totalSupply())
 
     pool = initialize_pool(vyper_cryptopool)
@@ -596,3 +604,25 @@ def test_calc_withdraw_one_coin(vyper_cryptopool, amount, i):
     expected_dy = vyper_cryptopool.calc_withdraw_one_coin(amount, i)
     dy = pool.calc_withdraw_one_coin(amount, i)
     assert dy == expected_dy
+
+
+@given(price, price, st.integers(min_value=0, max_value=1000))
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=5,
+    deadline=None,
+)
+def test_price_oracle(vyper_cryptopool, price_oracle, last_price, time_delta):
+    """Test `price_oracle` and `lp_price` against vyper implementation."""
+    vyper_cryptopool.eval(f"self._price_oracle={price_oracle}")
+    vyper_cryptopool.eval(f"self.last_prices={last_price}")
+    vm_timestamp = boa.env.vm.state.timestamp
+    last_prices_timestamp = vm_timestamp - time_delta
+    vyper_cryptopool.eval(f"self.last_prices_timestamp={last_prices_timestamp}")
+
+    pool = initialize_pool(vyper_cryptopool)
+    # pylint: disable-next=protected-access
+    pool._increment_timestamp(timestamp=vm_timestamp)
+
+    assert pool.price_oracle() == vyper_cryptopool.price_oracle()
+    assert pool.lp_price() == vyper_cryptopool.lp_price()

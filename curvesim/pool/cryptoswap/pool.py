@@ -844,6 +844,32 @@ class CurveCryptoPool:
             self.A, self.gamma, token_amount, i, True, False
         )[0]
 
+    def lp_price(self) -> int:
+        """
+        Approximate LP token price
+        """
+        return (
+            2 * self.virtual_price * _sqrt_int(self.internal_price_oracle()) // 10**18
+        )
+
+    def internal_price_oracle(self) -> int:
+        price_oracle: int = self._price_oracle
+        last_prices_timestamp: int = self.last_prices_timestamp
+
+        block_timestamp: int = self._block_timestamp
+        if last_prices_timestamp < block_timestamp:
+            ma_half_time: int = self.ma_half_time
+            last_prices: int = self.last_prices
+            alpha: int = _halfpow(
+                (block_timestamp - last_prices_timestamp) * 10**18 // ma_half_time
+            )
+            return (last_prices * (10**18 - alpha) + price_oracle * alpha) // 10**18
+
+        return price_oracle
+
+    def price_oracle(self) -> int:
+        return self.internal_price_oracle()
+
 
 def _get_unix_timestamp():
     """Get the timestamp in Unix time."""
