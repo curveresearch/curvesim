@@ -873,6 +873,25 @@ class CurveCryptoPool:
     def get_virtual_price(self) -> int:
         return 10**18 * self._get_xcp(self.D) // self.tokens
 
+    def calc_token_amount(self, amounts: List[int]) -> int:
+        token_supply: int = self.tokens
+        precisions: List[int] = self.precisions
+        price_scale: int = self.price_scale * precisions[1]
+        A = self.A
+        gamma = self.gamma
+        xp: List[int] = self._xp()
+        amountsp: List[int] = [
+            amounts[0] * precisions[0],
+            amounts[1] * price_scale // PRECISION,
+        ]
+        D0: int = self.D
+        xp[0] += amountsp[0]
+        xp[1] += amountsp[1]
+        D: int = self._newton_D(A, gamma, xp)
+        d_token: int = token_supply * D // D0 - token_supply
+        d_token -= self._calc_token_fee(amountsp, xp) * d_token // 10**10 + 1
+        return d_token
+
 
 def _get_unix_timestamp():
     """Get the timestamp in Unix time."""
