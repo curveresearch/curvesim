@@ -1,7 +1,7 @@
 import time
 from typing import List
 
-from curvesim.exceptions import CalculationError, CurvesimValueError
+from curvesim.exceptions import CalculationError, CryptoPoolError, CurvesimValueError
 from curvesim.pool.base import Pool
 
 ADMIN_ACTIONS_DELAY = 3 * 86400
@@ -25,10 +25,6 @@ A_MULTIPLIER = 10000
 
 MIN_A = N_COINS**N_COINS * A_MULTIPLIER // 10
 MAX_A = N_COINS**N_COINS * A_MULTIPLIER * 100000
-
-
-class CryptoPoolError(RuntimeError):
-    pass
 
 
 class CurveCryptoPool(Pool):

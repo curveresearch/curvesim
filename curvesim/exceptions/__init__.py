@@ -24,3 +24,7 @@ class SnapshotError(CurvesimException):
 
 class CalculationError(CurvesimException):
     """Error during a mathematical calculation."""
+
+
+class CryptoPoolError(RuntimeError):
+    """Runtime error from a CryptoSwap pool."""
