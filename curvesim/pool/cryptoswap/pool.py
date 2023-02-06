@@ -7,18 +7,10 @@ from typing import List
 from curvesim.exceptions import CalculationError, CryptoPoolError, CurvesimValueError
 from curvesim.pool.base import Pool
 
-ADMIN_ACTIONS_DELAY = 3 * 86400
-MIN_RAMP_TIME = 86400
-
-MAX_ADMIN_FEE = 10 * 10**9
-MIN_FEE = 5 * 10**5  # 0.5 bps
-MAX_FEE = 10 * 10**9
-MAX_A_CHANGE = 10
 NOISE_FEE = 10**5  # 0.1 bps
 
 MIN_GAMMA = 10**10
 MAX_GAMMA = 2 * 10**16
-
 
 EXP_PRECISION = 10**10
 
