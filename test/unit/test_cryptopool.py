@@ -63,6 +63,7 @@ def initialize_pool(vyper_cryptopool):
     assert pool.gamma == vyper_cryptopool.gamma()
     assert pool.balances == balances
     assert pool.D == vyper_cryptopool.D()
+    assert pool.tokens == lp_total_supply
     assert pool.virtual_price == vyper_cryptopool.virtual_price()
     assert pool.xcp_profit == xcp_profit
     assert pool.xcp_profit_a == xcp_profit_a
@@ -492,11 +493,7 @@ def test_exchange(vyper_cryptopool, dx_perc, i):
     j = 1 - i
 
     pool = initialize_pool(vyper_cryptopool)
-
-    old_vyper_balances = [vyper_cryptopool.balances(i) for i in range(2)]
-    assert pool.balances == old_vyper_balances
-
-    dx = old_vyper_balances[i] * dx_perc // 100
+    dx = pool.balances[i] * dx_perc // 100
 
     expected_dy = vyper_cryptopool.exchange(i, j, dx, 0)
     dy = pool.exchange(i, j, dx)
@@ -523,9 +520,6 @@ def test_add_liquidity(vyper_cryptopool, x0, x1):
 
     pool = initialize_pool(vyper_cryptopool)
 
-    old_vyper_balances = [vyper_cryptopool.balances(i) for i in range(len(xp))]
-    assert pool.balances == old_vyper_balances
-
     expected_lp_amount = vyper_cryptopool.add_liquidity(amounts, 0)
     expected_balances = [vyper_cryptopool.balances(i) for i in range(len(xp))]
     expected_lp_supply = vyper_cryptopool.totalSupply()
@@ -551,11 +545,6 @@ def test_remove_liquidity(vyper_cryptopool, amount):
 
     pool = initialize_pool(vyper_cryptopool)
 
-    old_balances = [vyper_cryptopool.balances(i) for i in range(2)]
-    assert pool.balances == old_balances
-    assert pool.tokens == vyper_cryptopool.totalSupply()
-    assert pool.D == vyper_cryptopool.D()
-
     vyper_cryptopool.remove_liquidity(amount, [0, 0])
     expected_balances = [vyper_cryptopool.balances(i) for i in range(2)]
     expected_lp_supply = vyper_cryptopool.totalSupply()
@@ -580,14 +569,6 @@ def test_remove_liquidity_one_coin(vyper_cryptopool, amount, i):
 
     pool = initialize_pool(vyper_cryptopool)
 
-    old_vyper_balances = [vyper_cryptopool.balances(i) for i in range(2)]
-    balances = pool.balances
-    assert balances == old_vyper_balances
-
-    old_vyper_supply = vyper_cryptopool.totalSupply()
-    lp_supply = pool.tokens
-    assert lp_supply == old_vyper_supply
-
     vyper_cryptopool.remove_liquidity_one_coin(amount, i, 0)
     expected_coin_balance = vyper_cryptopool.balances(i)
     expected_lp_supply = vyper_cryptopool.totalSupply()
@@ -611,14 +592,6 @@ def test_calc_withdraw_one_coin(vyper_cryptopool, amount, i):
     assume(amount < vyper_cryptopool.totalSupply())
 
     pool = initialize_pool(vyper_cryptopool)
-
-    old_vyper_balances = [vyper_cryptopool.balances(i) for i in range(2)]
-    balances = pool.balances
-    assert balances == old_vyper_balances
-
-    old_vyper_supply = vyper_cryptopool.totalSupply()
-    lp_supply = pool.tokens
-    assert lp_supply == old_vyper_supply
 
     expected_dy = vyper_cryptopool.calc_withdraw_one_coin(amount, i)
     dy = pool.calc_withdraw_one_coin(amount, i)
