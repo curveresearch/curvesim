@@ -5,15 +5,18 @@ from hypothesis import strategies as st
 
 from curvesim.pool import CurveCryptoPool
 from curvesim.pool.cryptoswap.pool import (
-    MAX_A,
+    A_MULTIPLIER,
     MAX_GAMMA,
-    MIN_A,
     MIN_GAMMA,
     PRECISION,
     _geometric_mean,
     _halfpow,
     _sqrt_int,
 )
+
+N_COINS = 2
+MIN_A = N_COINS**N_COINS * A_MULTIPLIER // 10
+MAX_A = N_COINS**N_COINS * A_MULTIPLIER * 100000
 
 
 def initialize_pool(vyper_cryptopool):

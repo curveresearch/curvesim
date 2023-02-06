@@ -22,12 +22,8 @@ MAX_GAMMA = 2 * 10**16
 
 EXP_PRECISION = 10**10
 
-N_COINS = 2
 PRECISION = 10**18  # The precision to convert to
 A_MULTIPLIER = 10000
-
-MIN_A = N_COINS**N_COINS * A_MULTIPLIER // 10
-MAX_A = N_COINS**N_COINS * A_MULTIPLIER * 100000
 
 
 # pylint: disable-next=too-many-instance-attributes
@@ -177,9 +173,10 @@ class CurveCryptoPool(Pool):
         ]
 
     def _get_xcp(self, D: int) -> int:
+        n_coins: int = self.n
         x: List[int] = [
-            D // N_COINS,
-            D * PRECISION // (self.price_scale * N_COINS),
+            D // n_coins,
+            D * PRECISION // (self.price_scale * n_coins),
         ]
         return _geometric_mean(x, True)
 
@@ -193,8 +190,12 @@ class CurveCryptoPool(Pool):
 
         Currently uses 60k gas
         """
+        n_coins: int = len(x_unsorted)
+
         # Safety checks
-        if ANN > MAX_A or ANN < MIN_A:
+        min_A = n_coins**n_coins * A_MULTIPLIER // 10
+        max_A = n_coins**n_coins * A_MULTIPLIER * 100000
+        if ANN > max_A or ANN < min_A:
             raise CurvesimValueError("Unsafe value for A")
         if gamma > MAX_GAMMA or gamma < MIN_GAMMA:
             raise CurvesimValueError("Unsafe value for gamma")
@@ -209,7 +210,7 @@ class CurveCryptoPool(Pool):
         )  # dev: unsafe values x[0]
         assert x[1] * 10**18 // x[0] > 10**14 - 1  # dev: unsafe values x[i] (input)
 
-        D: int = N_COINS * _geometric_mean(x, False)
+        D: int = n_coins * _geometric_mean(x, False)
         S: int = x[0] + x[1]
 
         for _ in range(255):
@@ -217,9 +218,9 @@ class CurveCryptoPool(Pool):
 
             # K0: int = 10**18
             # for _x in x:
-            #     K0 = K0 * _x * N_COINS / D
+            #     K0 = K0 * _x * n_coins / D
             # collapsed for 2 coins
-            K0: int = (10**18 * N_COINS**2) * x[0] // D * x[1] // D
+            K0: int = (10**18 * n_coins**2) * x[0] // D * x[1] // D
 
             _g1k0: int = gamma + 10**18
             if _g1k0 > K0:
@@ -233,10 +234,10 @@ class CurveCryptoPool(Pool):
             )
 
             # 2*N*K0 / _g1k0
-            mul2: int = (2 * 10**18) * N_COINS * K0 // _g1k0
+            mul2: int = (2 * 10**18) * n_coins * K0 // _g1k0
 
             neg_fprime: int = (
-                (S + S * mul2 // 10**18) + mul1 * N_COINS // K0 - mul2 * D // 10**18
+                (S + S * mul2 // 10**18) + mul1 * n_coins // K0 - mul2 * D // 10**18
             )
 
             # D -= f / fprime
@@ -272,22 +273,29 @@ class CurveCryptoPool(Pool):
     @staticmethod
     def _newton_y(ANN: int, gamma: int, x: List[int], D: int, i: int) -> int:
         """
-        Calculating x[i] given other balances x[0..N_COINS-1] and invariant D
+        Calculating x[i] given other balances x[0..n_coins-1] and invariant D
         ANN = A * N**N
         """
+        n_coins: int = len(x)
+
         # Safety checks
-        assert MIN_A <= ANN <= MAX_A  # dev: unsafe values A
-        assert MIN_GAMMA <= gamma <= MAX_GAMMA  # dev: unsafe values gamma
-        assert 10**17 <= D <= 10**15 * 10**18  # dev: unsafe values D
+        min_A = n_coins**n_coins * A_MULTIPLIER // 10
+        max_A = n_coins**n_coins * A_MULTIPLIER * 100000
+        if ANN > max_A or ANN < min_A:
+            raise CurvesimValueError("Unsafe value for A")
+        if gamma > MAX_GAMMA or gamma < MIN_GAMMA:
+            raise CurvesimValueError("Unsafe value for gamma")
+        if D > 10**15 * 10**18 or D < 10**17:
+            raise CurvesimValueError("Unsafe value for D")
 
         x_j: int = x[1 - i]
-        y: int = D**2 // (x_j * N_COINS**2)
-        K0_i: int = (10**18 * N_COINS) * x_j // D
+        y: int = D**2 // (x_j * n_coins**2)
+        K0_i: int = (10**18 * n_coins) * x_j // D
         # S_i = x_j
 
         # frac = x_j * 1e18 / D => frac = K0_i / N_COINS
         assert (
-            10**16 * N_COINS <= K0_i <= 10**20 * N_COINS
+            10**16 * n_coins <= K0_i <= 10**20 * n_coins
         )  # dev: unsafe values x[i]
 
         # x_sorted: uint256[N_COINS] = x
@@ -300,7 +308,7 @@ class CurveCryptoPool(Pool):
         for _ in range(255):
             y_prev: int = y
 
-            K0: int = K0_i * y * N_COINS // D
+            K0: int = K0_i * y * n_coins // D
             S: int = x_j + y
 
             _g1k0: int = gamma + 10**18
@@ -364,6 +372,7 @@ class CurveCryptoPool(Pool):
         last_prices_timestamp: int = self.last_prices_timestamp
         block_timestamp: int = self._block_timestamp
         p_new: int = 0
+        n_coins: int = self.n
 
         if last_prices_timestamp < block_timestamp:
             # MA update required
@@ -404,8 +413,8 @@ class CurveCryptoPool(Pool):
 
         # Update profit numbers without price adjustment first
         xp: List[int] = [
-            D_unadjusted // N_COINS,
-            D_unadjusted * PRECISION // (N_COINS * price_scale),
+            D_unadjusted // n_coins,
+            D_unadjusted * PRECISION // (n_coins * price_scale),
         ]
         xcp_profit: int = 10**18
         virtual_price: int = 10**18
@@ -453,7 +462,7 @@ class CurveCryptoPool(Pool):
 
             # Calculate "extended constant product" invariant xCP and virtual price
             D: int = self._newton_D(A, gamma, xp)
-            xp = [D // N_COINS, D * PRECISION // (N_COINS * p_new)]
+            xp = [D // n_coins, D * PRECISION // (n_coins * p_new)]
             # We reuse old_virtual_price here but it's not old anymore
             old_virtual_price = 10**18 * _geometric_mean(xp, True) // total_supply
 
@@ -509,8 +518,8 @@ class CurveCryptoPool(Pool):
 
     def get_dy(self, i: int, j: int, dx: int) -> int:
         assert i != j  # dev: same input and output coin
-        assert i < N_COINS  # dev: coin index out of range
-        assert j < N_COINS  # dev: coin index out of range
+        assert i < self.n  # dev: coin index out of range
+        assert j < self.n  # dev: coin index out of range
 
         xp: List[int] = self.balances
         xp[i] += dx
@@ -540,6 +549,7 @@ class CurveCryptoPool(Pool):
         K = prod(x) / (sum(x) / N)**N
         (all normalized to 1e18)
         """
+        n_coins: int = self.n
         fee_gamma: int = self.fee_gamma
         f: int = xp[0] + xp[1]  # sum
         f = (
@@ -548,7 +558,7 @@ class CurveCryptoPool(Pool):
             // (
                 fee_gamma
                 + 10**18
-                - (10**18 * N_COINS**N_COINS) * xp[0] // f * xp[1] // f
+                - (10**18 * n_coins**n_coins) * xp[0] // f * xp[1] // f
             )
         )
         return (self.mid_fee * f + self.out_fee * (10**18 - f)) // 10**18
@@ -561,8 +571,8 @@ class CurveCryptoPool(Pool):
         min_dy: int,
     ) -> int:
         assert i != j  # dev: coin index out of range
-        assert i < N_COINS  # dev: coin index out of range
-        assert j < N_COINS  # dev: coin index out of range
+        assert i < self.n  # dev: coin index out of range
+        assert j < self.n  # dev: coin index out of range
         assert dx > 0  # dev: do not exchange 0 coins
 
         A = self.A
@@ -658,17 +668,18 @@ class CurveCryptoPool(Pool):
 
         A = self.A
         gamma = self.gamma
+        n_coins: int = self.n
 
         xp: List[int] = self.balances.copy()
-        amountsp: List[int] = [0] * N_COINS
-        xx: List[int] = [0] * N_COINS
+        amountsp: List[int] = [0] * n_coins
+        xx: List[int] = [0] * n_coins
         d_token: int = 0
         d_token_fee: int = 0
         old_D: int = 0
 
         xp_old: List[int] = xp.copy()
 
-        for i in range(N_COINS):
+        for i in range(n_coins):
             bal: int = xp[i] + amounts[i]
             xp[i] = bal
             self.balances[i] = bal
@@ -680,7 +691,7 @@ class CurveCryptoPool(Pool):
         xp = [xp[0] * precisions[0], xp[1] * price_scale // PRECISION]
         xp_old = [xp_old[0] * precisions[0], xp_old[1] * price_scale // PRECISION]
 
-        for i in range(N_COINS):
+        for i in range(n_coins):
             if amounts[i] > 0:
                 amountsp[i] = xp[i] - xp_old[i]
 
@@ -742,12 +753,13 @@ class CurveCryptoPool(Pool):
         return d_token
 
     def _calc_token_fee(self, amounts: List[int], xp: List[int]) -> int:
+        n_coins: int = self.n
         # fee = sum(amounts_i - avg(amounts)) * fee' / sum(amounts)
-        fee: int = self._fee(xp) * N_COINS // (4 * (N_COINS - 1))
+        fee: int = self._fee(xp) * n_coins // (4 * (n_coins - 1))
         S: int = 0
         for _x in amounts:
             S += _x
-        avg: int = S // N_COINS
+        avg: int = S // n_coins
         Sdiff: int = 0
         for _x in amounts:
             if _x > avg:
@@ -771,7 +783,7 @@ class CurveCryptoPool(Pool):
         balances: List[int] = self.balances
         amount: int = _amount - 1  # Make rounding errors favoring other LPs a tiny bit
 
-        for i in range(N_COINS):
+        for i in range(self.n):
             d_balance: int = balances[i] * amount // total_supply
             assert d_balance >= min_amounts[i]
             self.balances[i] = balances[i] - d_balance
@@ -788,7 +800,7 @@ class CurveCryptoPool(Pool):
         dy: int = 0
         D: int = 0
         p: int = 0
-        xp = [0] * N_COINS
+        xp = [0] * self.n
         dy, p, D, xp = self._calc_withdraw_one_coin(
             A, gamma, token_amount, i, False, True
         )
@@ -812,7 +824,7 @@ class CurveCryptoPool(Pool):
     ) -> (int, int, int, List[int]):
         token_supply: int = self.tokens
         assert token_amount <= token_supply  # dev: token amount more than supply
-        assert i < N_COINS  # dev: coin out of range
+        assert i < self.n  # dev: coin out of range
 
         xx: List[int] = self.balances.copy()
         D0: int = 0
@@ -922,9 +934,11 @@ def _geometric_mean(unsorted_x: List[int], sort: bool) -> int:
     """
     (x[0] * x[1] * ...) ** (1/N)
     """
+    n_coins: int = len(unsorted_x)
     x: List[int] = unsorted_x
     if sort and x[0] < x[1]:
         x = [unsorted_x[1], unsorted_x[0]]
+
     D: int = x[0]
     diff: int = 0
     for _ in range(255):
@@ -934,7 +948,7 @@ def _geometric_mean(unsorted_x: List[int], sort: bool) -> int:
         #     tmp = tmp * _x / D
         # D = D * ((N_COINS - 1) * 10**18 + tmp) / (N_COINS * 10**18)
         # line below makes it for 2 coins
-        D = (D + x[0] * x[1] // D) // N_COINS
+        D = (D + x[0] * x[1] // D) // n_coins
         if D > D_prev:
             diff = D - D_prev
         else:
