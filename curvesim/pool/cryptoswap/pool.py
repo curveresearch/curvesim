@@ -2,6 +2,7 @@ import time
 from typing import List
 
 from curvesim.exceptions import CalculationError, CurvesimValueError
+from curvesim.pool.base import Pool
 
 ADMIN_ACTIONS_DELAY = 3 * 86400
 MIN_RAMP_TIME = 86400
@@ -30,7 +31,7 @@ class CryptoPoolError(RuntimeError):
     pass
 
 
-class CurveCryptoPool:
+class CurveCryptoPool(Pool):
     __slots__ = (
         "A",
         "gamma",
