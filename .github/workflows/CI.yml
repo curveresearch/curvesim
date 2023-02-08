@@ -35,6 +35,13 @@ jobs:
         run: |
           make lint
 
+      - name: Cache coverage score
+        id: cache-coverage-score
+        uses: actions/cache@v3
+        with:
+          key: coverage-score
+          path: coverage-score.txt
+
       - name: Unit tests
         run: |
           coverage run -m pytest
@@ -47,5 +54,6 @@ jobs:
         run: |
           # combine results of the preceding coverage runs
           coverage combine
-          coverage report --fail-under=60
+          coverage report
+          coverage report --format=total | ./check_coverage_score.py
 
