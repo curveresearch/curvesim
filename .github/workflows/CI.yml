@@ -40,7 +40,7 @@ jobs:
         uses: actions/cache@v3
         with:
           key: coverage-score
-          path: coverage-score.txt
+          path: coverage_score.txt
 
       - name: Unit tests
         run: |
