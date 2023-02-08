@@ -8,18 +8,34 @@ from gmpy2 import mpz
 from ..base import Pool
 
 
-class CurveMetaPool(Pool):
+class CurveMetaPool(Pool):  # pylint: disable=too-many-instance-attributes
     """
     Basic stableswap metapool implementation in Python.
     """
 
+    __slots__ = (
+        "A",
+        "n",
+        "max_coin",
+        "fee",
+        "admin_fee",
+        "basepool",
+        "rate_multiplier",
+        "balances",
+        "n_total",
+        "tokens",
+        "fee_mul",
+        "admin_balances",
+    )
+
+    # pylint: disable=too-many-arguments
     def __init__(
         self,
         A,
         D,
         n,
         basepool,
-        p=None,
+        rate_multiplier=10**18,
         tokens=None,
         fee=4 * 10**6,
         fee_mul=None,
@@ -31,13 +47,13 @@ class CurveMetaPool(Pool):
         A : int
             Amplification coefficient; this is :math:`A n^{n-1}` in the whitepaper.
         D : int or list of int
-            coin balances or virtual total balance
+            virtual total balance or coin balances in native token units
         n: int
             number of coins
         basepool: :class:`curvesim.pool.Pool`
             basepool for the metapool
-        p: list of int, optional
-            precision and rate adjustments, defaults to 10**18 each coin
+        rate_multiplier: int, optional
+            precision and rate adjustment, defaults to 10**18
         tokens: int
             LP token supply
         fee: int, optional
@@ -59,41 +75,22 @@ class CurveMetaPool(Pool):
         # If basepool coins have too few decimals, it can wreak havoc
         # on a certain codepath of our `dydx` function, where we use
         # a difference quotient to estimate the derivative.
-        for _p in basepool.p:
+        for _p in basepool.rates:
             if _p > 10**30:
                 raise ValueError(f"{_p} too high: decimals must be >= 6.")
         self.basepool = basepool
 
-        if p:
-            self.p = p
-        else:
-            self.p = [10**18] * n
+        self.rate_multiplier = rate_multiplier
 
         if isinstance(D, list):
-            self.x = D
+            self.balances = D
         else:
-            rates = self.rates()
-            self.x = [D // n * 10**18 // _p for _p in rates]
+            self.balances = [D // n * 10**18 // _p for _p in self.rates]
 
         self.n_total = n + basepool.n - 1
         self.tokens = tokens
         self.fee_mul = fee_mul
-        self.collected_admin_fees = [0] * n
-
-    @property
-    def balances(self):
-        """
-        Alias to adhere closer to vyper interface.
-
-        Returns
-        -------
-        list of int
-            pool coin balances in native token units
-        """
-        return self.x
-
-    def next_timestamp(self, *args, **kwargs):
-        pass
+        self.admin_balances = [0] * n
 
     def D(self, xp=None):
         """
@@ -119,8 +116,8 @@ class CurveMetaPool(Pool):
         """
         A = self.A
         if not xp:
-            rates = self.rates()
-            xp = [x * p // 10**18 for x, p in zip(self.x, rates)]
+            rates = self.rates
+            xp = [x * p // 10**18 for x, p in zip(self.balances, rates)]
         return self.get_D(xp, A)
 
     def get_D(self, xp, A):
@@ -174,8 +171,8 @@ class CurveMetaPool(Pool):
         return D
 
     def _xp(self):
-        rates = self.rates()
-        balances = self.x
+        rates = self.rates
+        balances = self.balances
         return self._xp_mem(rates, balances)
 
     def _xp_mem(self, rates, balances):
@@ -336,8 +333,8 @@ class CurveMetaPool(Pool):
         >>> pool.exchange(0, 1, 150 * 10**6)
         (149939820, 59999)
         """
-        rates = self.rates()
-        xp = self._xp_mem(rates, self.x)
+        rates = self.rates
+        xp = self._xp_mem(rates, self.balances)
         x = xp[i] + dx * rates[i] // 10**18
         y = self.get_y(i, j, x, xp)
         dy = xp[j] - y - 1
@@ -356,9 +353,9 @@ class CurveMetaPool(Pool):
         admin_fee = admin_fee * 10**18 // rate
         assert dy >= 0
 
-        self.x[i] += dx
-        self.x[j] -= dy + admin_fee
-        self.collected_admin_fees[j] += admin_fee
+        self.balances[i] += dx
+        self.balances[j] -= dy + admin_fee
+        self.admin_balances[j] += admin_fee
         return dy, fee
 
     def exchange_underlying(self, i, j, dx):
@@ -384,7 +381,7 @@ class CurveMetaPool(Pool):
         (int, int)
             (amount of coin `j` received, trading fee)
         """
-        rates = self.rates()
+        rates = self.rates
 
         # Use base_i or base_j if they are >= 0
         base_i = i - self.max_coin
@@ -397,7 +394,7 @@ class CurveMetaPool(Pool):
             meta_j = j
 
         if base_i < 0 or base_j < 0:  # if i or j not in basepool
-            xp = [x * p // 10**18 for x, p in zip(self.x, rates)]
+            xp = [x * p // 10**18 for x, p in zip(self.balances, rates)]
 
             if base_i < 0:
                 x = xp[i] + dx * rates[i] // 10**18
@@ -429,10 +426,10 @@ class CurveMetaPool(Pool):
             dy_fee = dy_fee * 10**18 // rates[meta_j]
 
             # Change balances exactly in same way as we change actual ERC20 coin amounts
-            self.x[meta_i] += dx
+            self.balances[meta_i] += dx
             # When rounding errors happen, we undercharge admin fee in favor of LP
-            self.x[meta_j] -= dy + dy_admin_fee
-            self.collected_admin_fees[meta_j] += dy_admin_fee
+            self.balances[meta_j] -= dy + dy_admin_fee
+            self.admin_balances[meta_j] += dy_admin_fee
 
             # Withdraw from the base pool if needed
             if base_j >= 0:
@@ -470,8 +467,8 @@ class CurveMetaPool(Pool):
         This is a "view" function; it doesn't change the state of the pool.
         """
         A = self.A
-        rates = self.rates()
-        xp = self._xp_mem(rates, self.x)
+        rates = self.rates
+        xp = self._xp_mem(rates, self.balances)
         D0 = self.D()
         D1 = D0 - token_amount * D0 // self.tokens
 
@@ -493,11 +490,12 @@ class CurveMetaPool(Pool):
 
         dy = xp[i] - self.get_y_D(A, i, xp_reduced, D1)
         dy = (dy - 1) * 10**18 // rates[i]
+
         if use_fee:
             dy_fee = dy_before_fee - dy
             return dy, dy_fee
-        else:
-            return dy
+
+        return dy
 
     def add_liquidity(self, amounts):
         """
@@ -516,16 +514,14 @@ class CurveMetaPool(Pool):
         mint_amount, fees = self.calc_token_amount(amounts, use_fee=True)
         self.tokens += mint_amount
 
-        balances = self.x
+        balances = self.balances
         afee = self.admin_fee
         admin_fees = [f * afee // 10**10 for f in fees]
         new_balances = [
             bal + amt - fee for bal, amt, fee in zip(balances, amounts, admin_fees)
         ]
-        self.x = new_balances
-        self.collected_admin_fees = [
-            t + a for t, a in zip(self.collected_admin_fees, admin_fees)
-        ]
+        self.balances = new_balances
+        self.admin_balances = [t + a for t, a in zip(self.admin_balances, admin_fees)]
 
         return mint_amount
 
@@ -547,15 +543,15 @@ class CurveMetaPool(Pool):
         """
         dy, dy_fee = self.calc_withdraw_one_coin(token_amount, i, use_fee=True)
         admin_fee = dy_fee * self.admin_fee // 10**10
-        self.x[i] -= dy + admin_fee
-        self.collected_admin_fees[i] += admin_fee
+        self.balances[i] -= dy + admin_fee
+        self.admin_balances[i] += admin_fee
         self.tokens -= token_amount
         return dy, dy_fee
 
+    @property
     def rates(self):
-        rates = self.p[:]
-        rates[self.max_coin] = self.basepool.get_virtual_price()
-        return rates
+        base_virtual_price = self.basepool.get_virtual_price()
+        return [self.rate_multiplier, base_virtual_price]
 
     def calc_token_amount(self, amounts, use_fee=False):
         """
@@ -585,11 +581,11 @@ class CurveMetaPool(Pool):
         This is a "view" function; it doesn't change the state of the pool.
         """
         A = self.A
-        old_balances = self.x
-        rates = self.rates()
+        old_balances = self.balances
+        rates = self.rates
         D0 = self.get_D_mem(rates, old_balances, A)
 
-        new_balances = self.x[:]
+        new_balances = self.balances[:]
         for i in range(self.n):
             new_balances[i] += amounts[i]
         D1 = self.get_D_mem(rates, new_balances, A)
@@ -609,10 +605,11 @@ class CurveMetaPool(Pool):
         D2 = self.get_D_mem(rates, mint_balances, A)
 
         mint_amount = self.tokens * (D2 - D0) // D0
+
         if use_fee:
             return mint_amount, fees
-        else:
-            return mint_amount
+
+        return mint_amount
 
     def get_virtual_price(self):
         """
@@ -724,12 +721,11 @@ class CurveMetaPool(Pool):
             _dydx = self.basepool.dydx(base_i, base_j, use_fee=use_fee)
             return float(_dydx)
 
-        rates = self.p[:]
-        rates[self.max_coin] = self.basepool.get_virtual_price()
-        xp = [mpz(x) * p // 10**18 for x, p in zip(self.x, rates)]
+        rates = self.rates
+        xp = [mpz(x) * p // 10**18 for x, p in zip(self.balances, rates)]
 
         bp = self.basepool
-        base_xp = [mpz(x) * p // 10**18 for x, p in zip(bp.x, bp.p)]
+        base_xp = [mpz(x) * p // 10**18 for x, p in zip(bp.balances, bp.rates)]
         x_prod = prod(base_xp)
         n = bp.n
         A = bp.A
@@ -758,7 +754,7 @@ class CurveMetaPool(Pool):
         else:  # i is from basepool
             dx = 10**12
             base_inputs = [0] * self.basepool.n
-            base_inputs[base_i] = dx * 10**18 // self.basepool.p[base_i]
+            base_inputs[base_i] = dx * 10**18 // self.basepool.rates[base_i]
 
             dw, _ = self.basepool.calc_token_amount(base_inputs, use_fee=True)
             # Convert lp token amount to virtual units

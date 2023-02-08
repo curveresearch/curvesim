@@ -1,3 +1,4 @@
+"""Unit tests for CurvePool"""
 from hypothesis import HealthCheck, assume, given, settings
 from hypothesis import strategies as st
 
@@ -12,7 +13,7 @@ def initialize_pool(vyper_pool):
     A = vyper_pool.A()
     n_coins = vyper_pool.N_COINS()
     balances = [vyper_pool.balances(i) for i in range(n_coins)]
-    p = [vyper_pool.rates(i) for i in range(n_coins)]
+    rates = [vyper_pool.rates(i) for i in range(n_coins)]
     lp_total_supply = vyper_pool.totalSupply()
     fee = vyper_pool.fee()
     admin_fee = vyper_pool.admin_fee()
@@ -20,7 +21,7 @@ def initialize_pool(vyper_pool):
         A,
         D=balances,
         n=n_coins,
-        p=p,
+        rates=rates,
         tokens=lp_total_supply,
         fee=fee,
         admin_fee=admin_fee,
@@ -98,14 +99,14 @@ def test_get_D_balanced():
         295949605740077,
         295949605740077,
     ]
-    p = [10**18, 10**30, 10**30]
+    rates = [10**18, 10**30, 10**30]
     n_coins = 3
     A = 5858
 
-    pool = CurvePool(A, D=balances, n=n_coins, p=p)
+    pool = CurvePool(A, D=balances, n=n_coins, rates=rates)
     D = pool.D()
 
-    virtualized_balances = [b * p // 10**18 for b, p in zip(balances, p)]
+    virtualized_balances = [b * p // 10**18 for b, p in zip(balances, rates)]
     expected_D = sum(virtualized_balances)
 
     assert D == expected_D
@@ -141,7 +142,7 @@ def test_get_y_D(vyper_3pool):
 
     python_3pool = initialize_pool(vyper_3pool)
     A = python_3pool.A
-    virtual_balances = python_3pool._xp()
+    virtual_balances = python_3pool._xp()  # pylint: disable=protected-access
     D = python_3pool.D()
 
     i = 0
@@ -189,7 +190,7 @@ def test_add_liquidity(vyper_3pool, x0, x1, x2):
     amounts = [b * 10**18 // r for b, r in zip(_balances, rates)]
 
     old_vyper_balances = [vyper_3pool.balances(i) for i in range(len(_balances))]
-    balances = python_3pool.x
+    balances = python_3pool.balances
     assert balances == old_vyper_balances
 
     lp_total_supply = vyper_3pool.totalSupply()
@@ -200,7 +201,7 @@ def test_add_liquidity(vyper_3pool, x0, x1, x2):
     assert lp_amount == expected_lp_amount
 
     expected_balances = [vyper_3pool.balances(i) for i in range(len(_balances))]
-    new_balances = python_3pool.x
+    new_balances = python_3pool.balances
     assert new_balances == expected_balances
 
 
@@ -221,7 +222,7 @@ def test_exchange(vyper_3pool, dx, i, j):
     python_3pool = initialize_pool(vyper_3pool)
 
     old_vyper_balances = [vyper_3pool.balances(i) for i in range(3)]
-    balances = python_3pool.x
+    balances = python_3pool.balances
     assert balances == old_vyper_balances
 
     # convert to real units
@@ -233,7 +234,7 @@ def test_exchange(vyper_3pool, dx, i, j):
     assert dy == expected_dy
 
     expected_balances = [vyper_3pool.balances(i) for i in range(3)]
-    new_balances = python_3pool.x
+    new_balances = python_3pool.balances
     assert new_balances == expected_balances
 
 
@@ -267,7 +268,7 @@ def test_remove_liquidity_one_coin(vyper_3pool, amount, i):
     python_3pool = initialize_pool(vyper_3pool)
 
     old_vyper_balances = [vyper_3pool.balances(i) for i in range(3)]
-    balances = python_3pool.x
+    balances = python_3pool.balances
     assert balances == old_vyper_balances
 
     old_vyper_supply = vyper_3pool.totalSupply()
@@ -279,7 +280,7 @@ def test_remove_liquidity_one_coin(vyper_3pool, amount, i):
     expected_lp_supply = vyper_3pool.totalSupply()
 
     python_3pool.remove_liquidity_one_coin(amount, i)
-    coin_balance = python_3pool.x[i]
+    coin_balance = python_3pool.balances[i]
     lp_supply = python_3pool.tokens
 
     assert coin_balance == expected_coin_balance

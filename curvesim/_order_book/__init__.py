@@ -6,19 +6,17 @@ representations of exchange rates between two tokens.
 import matplotlib.pyplot as plt
 from pandas import DataFrame
 
-from ..pool import CurveMetaPool
+from curvesim.pool import CurveMetaPool
 
 
-def order_book(
-    pool_obj, i, j, *, width=0.1, resolution=10**23, use_fee=True, show=True
-):
+def order_book(pool, i, j, *, width=0.1, resolution=10**23, use_fee=True, show=True):
     """
     Computes and optionally plots an orderbook representation of exchange rates
     between two tokens.
 
     Parameters
     ----------
-    pool_obj : CurvePool or CurveMetaPool
+    pool : CurvePool or CurveMetaPool
         A pool object to compute the bonding curve for.
 
     i : int
@@ -51,10 +49,8 @@ def order_book(
         DataFrame of prices and depths for each point on the "ask" side of the orderbook
 
     """
-
-    is_meta = isinstance(pool_obj, CurveMetaPool)
-
-    i, j, functions, pre_trade_state = _orderbook_args(pool_obj, is_meta, i, j)
+    snapshot = pool.get_snapshot()
+    i, j, functions = _orderbook_args(pool, i, j)
     get_price, exchange = functions
 
     # Bids
@@ -72,10 +68,7 @@ def order_book(
         bids.append((price, depth / 10**18))
 
         # Return to initial state
-        pool_obj.x = pre_trade_state["x0"][:]
-        if is_meta:
-            pool_obj.basepool.x = pre_trade_state["x0_base"][:]
-            pool_obj.basepool.tokens = pre_trade_state["t0_base"]
+        pool.revert_to_snapshot(snapshot)
 
     # Asks
     depth = 0
@@ -91,10 +84,7 @@ def order_book(
         asks.append((1 / price, dy / 10**18))
 
         # Return to initial state
-        pool_obj.x = pre_trade_state["x0"][:]
-        if is_meta:
-            pool_obj.basepool.x = pre_trade_state["x0_base"][:]
-            pool_obj.basepool.tokens = pre_trade_state["t0_base"]
+        pool.revert_to_snapshot(snapshot)
 
     # Format DataFrames
     bids = DataFrame(bids, columns=["price", "depth"]).set_index("price")
@@ -110,39 +100,31 @@ def order_book(
     return bids, asks
 
 
-def _orderbook_args(pool_obj, is_meta, i, j):
-    if is_meta:
-
-        # Store initial state
-        pre_trade_state = {
-            "x0": pool_obj.x[:],
-            "x0_base": pool_obj.basepool.x[:],
-            "t0_base": pool_obj.basepool.tokens,
-        }
-
+def _orderbook_args(pool, i, j):
+    if isinstance(pool, CurveMetaPool):
         # Set functions/parameters
-        get_price = pool_obj.dydx
-        exchange = pool_obj.exchange_underlying
+        get_price = pool.dydx
+        exchange = pool.exchange_underlying
 
         # Price function closure if bp_token used
         def get_meta_price(i, j, use_fee):
-            xp = pool_obj._xp()
-            price = pool_obj._dydx(i, j, xp, use_fee=use_fee)
+            # pylint: disable=protected-access
+            xp = pool._xp()
+            price = pool._dydx(i, j, xp, use_fee=use_fee)
             return price
 
         if i == "bp_token":
-            i = pool_obj.max_coin
+            i = pool.max_coin
             get_price = get_meta_price
-            exchange = pool_obj.exchange
+            exchange = pool.exchange
 
         if j == "bp_token":
-            j = pool_obj.max_coin
+            j = pool.max_coin
             get_price = get_meta_price
-            exchange = pool_obj.exchange
+            exchange = pool.exchange
 
     else:
-        pre_trade_state = {"x0": pool_obj.x[:]}
-        get_price = pool_obj.dydx
-        exchange = pool_obj.exchange
+        get_price = pool.dydx
+        exchange = pool.exchange
 
-    return i, j, (get_price, exchange), pre_trade_state
+    return i, j, (get_price, exchange)

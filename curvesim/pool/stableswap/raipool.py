@@ -7,21 +7,19 @@ class CurveRaiPool(CurveMetaPool):
 
     """
 
-    def __init__(self, redemption_prices, *args, p=None, n=None, **kwargs):
+    def __init__(self, redemption_price, *args, **kwargs):
         """
         Parameters
         ----------
-        redemption_prices : pandas.DataFrame
-            timestamped redemption prices
-            (see :meth:`.PoolData.redemption_prices()`)
+        redemption_price : int
+            redemption price for the pool; functionally equivalent to `rate_multiplier`
+            for a factory metapool
         A : int
             Amplification coefficient; this is :math:`A n^{n-1}` in the whitepaper.
         D : int or list of int
             coin balances or virtual total balance
         n: int
             number of coins
-        p: list of int
-            precision and rate adjustments
         tokens : int
             LP token supply
         fee : int, optional
@@ -31,36 +29,18 @@ class CurveRaiPool(CurveMetaPool):
         admin_fee : int, optional
             percentage of `fee` with 10**10 precision (default = 50%)
         """
-        self.redemption_prices = redemption_prices
-
-        p = p or [10**18] * n
-        p[0] = int(redemption_prices.price[0])
-
-        super().__init__(p=p, n=n, *args, **kwargs)
-
-    def next_timestamp(self, timestamp, *args, **kwargs):
-        """
-        Updates the redemption price based on the input timestamp
-
-        Parameters
-        ----------
-        timestamp : datetime.datetime
-            the time to sample from
-
-        """
-
-        r = self.redemption_prices.price.asof(timestamp)
-        self.p[0] = int(r)
+        super().__init__(*args, rate_multiplier=redemption_price, **kwargs)
 
     def dydx(self, i, j, use_fee=False):
         _dydx = super().dydx(i, j, use_fee=use_fee)
 
-        if i >= self.max_coin and j < self.max_coin:
+        if i >= self.max_coin and j == 0:
             base_i = i - self.max_coin
-            _dydx = _dydx * self.basepool.p[base_i] / self.p[j]
+            _dydx = _dydx * self.basepool.rates[base_i] / self.rate_multiplier
 
         return _dydx
 
     def _dydx(self, i, j, xp, use_fee=False):
         dydx = super()._dydx(i, j, xp, use_fee=use_fee)
-        return dydx * self.p[i] / self.p[j]
+        rates = self.rates
+        return dydx * rates[i] / rates[j]

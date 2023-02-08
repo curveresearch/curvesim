@@ -8,17 +8,31 @@ from gmpy2 import mpz
 from ..base import Pool
 
 
-class CurvePool(Pool):
+class CurvePool(Pool):  # pylint: disable=too-many-instance-attributes
     """
     Basic stableswap implementation in Python.
     """
 
-    def __init__(
+    __slots__ = (
+        "A",
+        "n",
+        "fee",
+        "rates",
+        "balances",
+        "tokens",
+        "fee_mul",
+        "admin_fee",
+        "r",
+        "n_total",
+        "admin_balances",
+    )
+
+    def __init__(  # pylint: disable=too-many-arguments
         self,
         A,
         D,
         n,
-        p=None,
+        rates=None,
         tokens=None,
         fee=4 * 10**6,
         fee_mul=None,
@@ -30,10 +44,10 @@ class CurvePool(Pool):
         A : int
             Amplification coefficient; this is :math:`A n^{n-1}` in the whitepaper.
         D : int or list of int
-            coin balances or virtual total balance
+            virtual total balance or pool coin balances in native token units
         n: int
             number of coins
-        p: list of int
+        rates: list of int
             precision and rate adjustments
         tokens: int
             LP token supply
@@ -47,18 +61,18 @@ class CurvePool(Pool):
         # FIXME: set admin_fee default back to 5 * 10**9
         # once sim code is updated.  Right now we use 0
         # to pass the CI tests.
-        p = p or [10**18] * n
+        rates = rates or [10**18] * n
 
         if isinstance(D, list):
-            x = D
+            balances = D
         else:
-            x = [D // n * 10**18 // _p for _p in p]
+            balances = [D // n * 10**18 // _p for _p in rates]
 
         self.A = A
         self.n = n
         self.fee = fee
-        self.p = p
-        self.x = x
+        self.rates = rates
+        self.balances = balances
         self.tokens = tokens or self.D()
         self.fee_mul = fee_mul
         self.admin_fee = admin_fee
@@ -66,23 +80,13 @@ class CurvePool(Pool):
         self.n_total = n
         self.admin_balances = [0] * n
 
-    @property
-    def balances(self):
-        """
-        Alias to adhere closer to vyper interface.
-
-        Returns
-        -------
-        list of int
-            pool coin balances in native token units
-        """
-        return self.x
-
-    def next_timestamp(self, *args, **kwargs):
-        pass
-
     def _xp(self):
-        return [x * p // 10**18 for x, p in zip(self.x, self.p)]
+        rates = self.rates
+        balances = self.balances
+        return self._xp_mem(rates, balances)
+
+    def _xp_mem(self, rates, balances):
+        return [x * p // 10**18 for x, p in zip(balances, rates)]
 
     def D(self, xp=None):
         """
@@ -182,7 +186,7 @@ class CurvePool(Pool):
         ----
         This is a "view" function; it doesn't change the state of the pool.
         """
-        xp = [x * p // 10**18 for x, p in zip(balances, self.p)]
+        xp = [x * p // 10**18 for x, p in zip(balances, self.rates)]
         return self.get_D(xp, A)
 
     def get_y(self, i, j, x, xp):
@@ -320,7 +324,7 @@ class CurvePool(Pool):
         (149939820, 59999)
         """
         xp = self._xp()
-        x = xp[i] + dx * self.p[i] // 10**18
+        x = xp[i] + dx * self.rates[i] // 10**18
         y = self.get_y(i, j, x, xp)
         dy = xp[j] - y - 1
 
@@ -332,14 +336,14 @@ class CurvePool(Pool):
         admin_fee = fee * self.admin_fee // 10**10
 
         # Convert all to real units
-        rate = self.p[j]
+        rate = self.rates[j]
         dy = (dy - fee) * 10**18 // rate
         fee = fee * 10**18 // rate
         admin_fee = admin_fee * 10**18 // rate
         assert dy >= 0
 
-        self.x[i] += dx
-        self.x[j] -= dy + admin_fee
+        self.balances[i] += dx
+        self.balances[j] -= dy + admin_fee
         self.admin_balances[j] += admin_fee
         return dy, fee
 
@@ -374,7 +378,7 @@ class CurvePool(Pool):
         D1 = D0 - token_amount * D0 // self.tokens
 
         new_y = self.get_y_D(A, i, xp, D1)
-        dy_before_fee = (xp[i] - new_y) * 10**18 // self.p[i]
+        dy_before_fee = (xp[i] - new_y) * 10**18 // self.rates[i]
 
         xp_reduced = xp
         if self.fee and use_fee:
@@ -390,12 +394,13 @@ class CurvePool(Pool):
                 xp_reduced[j] -= _fee * dx_expected // 10**10
 
         dy = xp[i] - self.get_y_D(A, i, xp_reduced, D1)
-        dy = (dy - 1) * 10**18 // self.p[i]
+        dy = (dy - 1) * 10**18 // self.rates[i]
+
         if use_fee:
             dy_fee = dy_before_fee - dy
             return dy, dy_fee
-        else:
-            return dy
+
+        return dy
 
     def add_liquidity(self, amounts):
         """
@@ -414,13 +419,13 @@ class CurvePool(Pool):
         mint_amount, fees = self.calc_token_amount(amounts, use_fee=True)
         self.tokens += mint_amount
 
-        balances = self.x
+        balances = self.balances
         afee = self.admin_fee
         admin_fees = [f * afee // 10**10 for f in fees]
         new_balances = [
             bal + amt - fee for bal, amt, fee in zip(balances, amounts, admin_fees)
         ]
-        self.x = new_balances
+        self.balances = new_balances
         self.admin_balances = [t + a for t, a in zip(self.admin_balances, admin_fees)]
 
         return mint_amount
@@ -443,7 +448,7 @@ class CurvePool(Pool):
         """
         dy, dy_fee = self.calc_withdraw_one_coin(token_amount, i, use_fee=True)
         admin_fee = dy_fee * self.admin_fee // 10**10
-        self.x[i] -= dy + admin_fee
+        self.balances[i] -= dy + admin_fee
         self.admin_balances[i] += admin_fee
         self.tokens -= token_amount
         return dy, dy_fee
@@ -476,10 +481,10 @@ class CurvePool(Pool):
         This is a "view" function; it doesn't change the state of the pool.
         """
         A = self.A
-        old_balances = self.x
+        old_balances = self.balances
         D0 = self.get_D_mem(old_balances, A)
 
-        new_balances = self.x[:]
+        new_balances = self.balances[:]
         for i in range(self.n):
             new_balances[i] += amounts[i]
         D1 = self.get_D_mem(new_balances, A)
@@ -499,10 +504,11 @@ class CurvePool(Pool):
         D2 = self.get_D_mem(mint_balances, A)
 
         mint_amount = self.tokens * (D2 - D0) // D0
+
         if use_fee:
             return mint_amount, fees
-        else:
-            return mint_amount
+
+        return mint_amount
 
     def get_virtual_price(self):
         """
@@ -583,6 +589,9 @@ class CurvePool(Pool):
         This is a "view" function; it doesn't change the state of the pool.
         """
         xp = self._xp()
+        return self._dydx(i, j, xp, use_fee)
+
+    def _dydx(self, i, j, xp, use_fee):
         xi = xp[i]
         xj = xp[j]
         n = self.n

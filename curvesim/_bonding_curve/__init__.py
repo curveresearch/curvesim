@@ -7,16 +7,16 @@ from itertools import combinations
 import matplotlib.pyplot as plt
 from numpy import linspace
 
-from ..pool import CurveMetaPool
+from curvesim.pool import CurveMetaPool
 
 
-def bonding_curve(pool_obj, *, truncate=0.0005, resolution=1000, show=True):
+def bonding_curve(pool, *, truncate=0.0005, resolution=1000, show=True):
     """
     Computes and optionally plots a pool's bonding curve and current reserves.
 
     Parameters
     ----------
-    pool_obj : CurvePool or CurveMetaPool
+    pool : CurvePool or CurveMetaPool
         A pool object to compute the bonding curve for.
 
     truncate : float, default=0.0001
@@ -38,21 +38,21 @@ def bonding_curve(pool_obj, *, truncate=0.0005, resolution=1000, show=True):
 
     """
 
-    if isinstance(pool_obj, CurveMetaPool):
+    if isinstance(pool, CurveMetaPool):
         combos = [(0, 1)]
     else:
-        combos = list(combinations(range(pool_obj.n), 2))
+        combos = combinations(range(pool.n), 2)
 
     try:
-        labels = pool_obj.metadata["coins"]["names"]
+        labels = pool.metadata["coins"]["names"]
     except (AttributeError, KeyError):
-        labels = [f"Coin {str(label)}" for label in range(pool_obj.n)]
+        labels = [f"Coin {str(label)}" for label in range(pool.n)]
 
     if show:
         _, axs = plt.subplots(1, len(combos), constrained_layout=True)
 
-    D = pool_obj.D()
-    xp = pool_obj._xp()
+    D = pool.D()
+    xp = pool._xp()  # pylint: disable=protected-access
 
     xs_out = []
     ys_out = []
@@ -60,12 +60,12 @@ def bonding_curve(pool_obj, *, truncate=0.0005, resolution=1000, show=True):
         i, j = combo
 
         xs_n = linspace(
-            int(D * truncate), pool_obj.get_y(j, i, D * truncate, xp), resolution
+            int(D * truncate), pool.get_y(j, i, D * truncate, xp), resolution
         ).round()
 
         ys_n = []
         for x in xs_n:
-            ys_n.append(pool_obj.get_y(i, j, int(x), xp))
+            ys_n.append(pool.get_y(i, j, int(x), xp))
 
         xs_n = [x / 10**18 for x in xs_n]
         ys_n = [y / 10**18 for y in ys_n]

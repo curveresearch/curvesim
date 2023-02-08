@@ -14,8 +14,6 @@ from scipy.optimize import least_squares, root_scalar
 from ..iterators.param_samplers import Grid
 from ..iterators.price_samplers import PriceVolume
 from ..plot import saveplots
-from ..pool.stableswap import StableSwapSimInterface
-from ..pool.stableswap.functions import get_D, get_xp
 from .templates import run_pipeline
 from .utils import compute_volume_multipliers
 
@@ -27,6 +25,7 @@ DEFAULT_PARAMS = {
 TEST_PARAMS = {"A": [100, 1000], "fee": [3000000, 4000000]}
 
 
+# pylint: disable-next=too-many-arguments
 def volume_limited_arbitrage(
     pool_data,
     variable_params=None,
@@ -115,7 +114,7 @@ def volume_limited_arbitrage(
     if ncpu is None:
         ncpu = os.cpu_count() if os.cpu_count() is not None else 1
 
-    pool = pool_data.pool()
+    pool = pool_data.sim_pool()
     coins = pool_data.coins()
 
     param_sampler = Grid(pool, variable_params, fixed_params=fixed_params)
@@ -138,9 +137,7 @@ def volume_limited_arbitrage(
 
     p_keys = sorted(variable_params.keys())
     if p_keys == ["A", "fee"]:
-        symbol = pool.symbol
-        address = pool.address
-        folder_name = _plot_folder_name(symbol, address)
+        folder_name = pool.folder_name
         saveplots(
             folder_name,
             variable_params["A"],
@@ -149,10 +146,6 @@ def volume_limited_arbitrage(
         )
 
     return results
-
-
-def _plot_folder_name(symbol, address):
-    return symbol.lower() + "_" + address[:7].lower()
 
 
 # Strategy
@@ -181,21 +174,19 @@ def strategy(pool, params, price_sampler, vol_mult):
     metrics : tuple of lists
 
     """
-
-    pool_interface = StableSwapSimInterface(pool)
-    trader = Arbitrageur(pool_interface)
+    trader = Arbitrageur(pool)
     metrics = Metrics()
 
-    symbol = pool_interface.pool.metadata["symbol"]
+    symbol = pool.symbol
     print(f"[{symbol}] Simulating with {params}")
 
     for prices, volumes, timestamp in price_sampler:
         limits = volumes * vol_mult
-        pool_interface.next_timestamp(timestamp)
+        pool.prepare_for_trades(timestamp)
         trades, errors, _ = trader.compute_trades(prices, limits)
         _, volume = trader.do_trades(trades)
 
-        metrics.update(trader.pool_interface, errors, volume)
+        metrics.update(trader.pool, errors, volume)
 
     return metrics()
 
@@ -205,17 +196,15 @@ class Arbitrageur:
     Computes, executes, and reports out arbitrage trades.
     """
 
-    def __init__(self, pool_interface):
+    def __init__(self, pool):
         """
         Parameters
         ----------
-        pool_interface :
+        pool :
             Simulation interface to a subclass of :class:`.Pool`.
 
         """
-        self.pool_interface = pool_interface
-        self.pool_precisions = pool_interface.precisions()
-        self.max_coin = pool_interface.max_coin
+        self.pool = pool
 
     def compute_trades(self, prices, volume_limits):
         """
@@ -242,7 +231,7 @@ class Arbitrageur:
             Results object from the numerical optimizer.
 
         """
-        trades, errors, res = opt_arb_multi(self.pool_interface, prices, volume_limits)
+        trades, errors, res = opt_arb_multi(self.pool, prices, volume_limits)
         return trades, errors, res
 
     def do_trades(self, trades):
@@ -266,23 +255,16 @@ class Arbitrageur:
         if len(trades) == 0:
             return [], 0
 
-        p = self.pool_precisions
-        max_coin = self.max_coin
-
-        volume = 0
+        total_volume = 0
         trades_done = []
         for trade in trades:
             i, j, dx = trade
-            dy, _ = self.pool_interface.trade(i, j, dx)
-            trades_done.append(trade + (dy,))
+            dy, _, volume = self.pool.trade(i, j, dx)
+            trades_done.append((i, j, dx, dy))
 
-            if max_coin:
-                if i < max_coin or j < max_coin:
-                    volume += dx * p[i] // 10**18  # in D units
-            else:
-                volume += dx * p[i] // 10**18  # in D units
+            total_volume += volume
 
-        return trades_done, volume
+        return trades_done, total_volume
 
 
 # Metrics
@@ -324,13 +306,13 @@ class Metrics:
 
         return records
 
-    def update(self, pool_interface, errors, trade_volume):
+    def update(self, pool, errors, trade_volume):
         """
         Computes and stores pool metrics for each timestep.
 
         Parameters
         ----------
-        pool_interface :
+        pool :
             Simulation interface to a subclass of :class:`.Pool`.
 
         errors : numpy.ndarray
@@ -342,15 +324,17 @@ class Metrics:
             (returned from :meth:`Arbitrageur.do_trades`).
 
         """
-        pool_state = pool_interface.get_pool_state()
-        p = getattr(pool_state, "rates", pool_state.p)
+        p = pool.rates[:]
+        x = pool.balances[:]
 
-        xp = get_xp(pool_state.x, p)
+        # FIXME: this logic uses stableswap specific functionality
+        # and should be replaced by generic `SimPool` methods
+        xp = pool._xp()
         bal = self.compute_balance(xp)
-        price_depth = self.compute_price_depth(pool_interface)
-        value = get_D(xp, pool_state.A) / 10**18
+        price_depth = self.compute_price_depth(pool)
+        value = pool.D() / 10**18
 
-        self.xs.append(pool_state.x)
+        self.xs.append(x)
         self.ps.append(p)
         self.pool_balance.append(bal)
         self.pool_value.append(value)
@@ -367,15 +351,9 @@ class Metrics:
         return bal
 
     @staticmethod
-    def compute_price_depth(pool_interface):
+    def compute_price_depth(pool):
         """Compute price depth."""
-        combos = pool_interface.base_index_combos
-
-        LD = []
-        for i, j in combos:
-            ld = pool_interface.get_liquidity_density(i, j)
-            LD.append(ld)
-        return LD
+        return pool.get_price_depth()
 
 
 def format_results(results, parameters, timestamps):
@@ -503,13 +481,13 @@ def opt_arb(get_bounds, error_function, i, j, p):
     return trade, error, res
 
 
-def opt_arb_multi(pool_interface, prices, limits):  # noqa: C901
+def opt_arb_multi(pool, prices, limits):  # noqa: C901
     """
     Computes trades to optimally arbitrage the pool, constrained by volume limits.
 
     Parameters
     ----------
-    pool_interface :
+    pool :
         Simulation interface to a subclass of :class:`Pool`.
 
     prices : pandas.Series
@@ -531,15 +509,28 @@ def opt_arb_multi(pool_interface, prices, limits):  # noqa: C901
         Results object from the numerical optimizer.
 
     """
-    get_bounds, error_function, error_function_multi = pool_interface.make_error_fns()
+    (
+        get_bounds,
+        error_function,
+        error_function_multi,
+        index_combos,
+    ) = pool.make_error_fns()
     x0, lo, hi, coins, price_targets = get_trade_args(
-        pool_interface.price,
+        pool.price,
         get_bounds,
         error_function,
         prices,
         limits,
-        pool_interface.index_combos,
+        index_combos,
     )
+
+    # Order trades in terms of expected size
+    order = sorted(range(len(x0)), reverse=True, key=x0.__getitem__)
+    x0 = [x0[i] for i in order]
+    lo = [lo[i] for i in order]
+    hi = [hi[i] for i in order]
+    coins = [coins[i] for i in order]
+    price_targets = [price_targets[i] for i in order]
 
     # Find trades that minimize difference between
     # pool price and external market price
@@ -628,7 +619,7 @@ def get_trade_args(get_pool_price, get_bounds, error_function, prices, limits, c
     coins : list of tuples
         Ordered list of token pairs
 
-    price_targs : list of floats
+    price_targets : list of floats
         Ordered list of price targets for each token pair
 
     """
@@ -636,66 +627,50 @@ def get_trade_args(get_pool_price, get_bounds, error_function, prices, limits, c
     lo = []
     hi = []
     coins = []
-    price_targs = []
+    price_targets = []
 
     for k, pair in enumerate(combos):
         i, j = pair
+        limit = int(limits[k] * 10**18)
         lo.append(0)
-        hi.append(int(limits[k] * 10**18) + 1)
+        hi.append(limit + 1)
 
         if get_pool_price(i, j) - prices[k] > 0:
-            try:
-                trade, _, _ = opt_arb(get_bounds, error_function, i, j, prices[k])
-                x0.append(min(trade[2], int(limits[k] * 10**18)))
-            except ValueError:
-                print(
-                    "Warning: Opt_arb error,",
-                    "Pair:",
-                    (i, j),
-                    "Pool price:",
-                    get_pool_price(i, j),
-                    "Target Price:",
-                    prices[k],
-                    "Diff:",
-                    get_pool_price(i, j) - prices[k],
-                )
-                x0.append(0)
-
-            coins.append((i, j))
-            price_targs.append(prices[k])
-
+            price = prices[k]
+            in_index = i
+            out_index = j
         elif get_pool_price(j, i) - 1 / prices[k] > 0:
-            try:
-                trade, _, _ = opt_arb(get_bounds, error_function, j, i, 1 / prices[k])
-                x0.append(min(trade[2], int(limits[k] * 10**18)))
-            except ValueError:
-                print(
-                    "Warning: Opt_arb error,",
-                    "Pair:",
-                    (j, i),
-                    "Pool price:",
-                    get_pool_price(j, i),
-                    "Target Price:",
-                    1 / prices[k],
-                    "Diff:",
-                    get_pool_price(j, i) - 1 / prices[k],
-                )
-                x0.append(0)
-
-            coins.append((j, i))
-            price_targs.append(1 / prices[k])
-
+            price = 1 / prices[k]
+            in_index = j
+            out_index = i
         else:
             x0.append(0)
             coins.append((i, j))
-            price_targs.append(prices[k])
+            price_targets.append(prices[k])
+            continue
 
-    # Order trades in terms of expected size
-    order = sorted(range(len(x0)), reverse=True, key=x0.__getitem__)
-    x0 = [x0[i] for i in order]
-    lo = [lo[i] for i in order]
-    hi = [hi[i] for i in order]
-    coins = [coins[i] for i in order]
-    price_targs = [price_targs[i] for i in order]
+        try:
+            trade, _, _ = opt_arb(
+                get_bounds, error_function, in_index, out_index, price
+            )
+            size = min(trade[2], limit)
+            x0.append(size)
+        except ValueError:
+            pool_price = get_pool_price(in_index, out_index)
+            print(
+                "Warning: Opt_arb error,",
+                "Pair:",
+                (in_index, out_index),
+                "Pool price:",
+                pool_price,
+                "Target Price:",
+                price,
+                "Diff:",
+                pool_price - price,
+            )
+            x0.append(0)
 
-    return x0, lo, hi, coins, price_targs
+        coins.append((in_index, out_index))
+        price_targets.append(price)
+
+    return x0, lo, hi, coins, price_targets
