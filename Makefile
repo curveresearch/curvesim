@@ -83,7 +83,8 @@ black:
 .PHONY: flake8
 flake8:
 	@echo "$(REVERSE)Running$(RESET) $(BOLD)flake8$(RESET)..."
-	@if ! flake8 --version; then \
+	@flake8 --version
+	@if ! flake8 .; then \
 	    echo "$(BOLD)flake8$(RESET): $(RED)FAILED$(RESET) checks" ;\
 	    exit 1 ;\
 	fi
