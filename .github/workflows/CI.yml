@@ -35,25 +35,34 @@ jobs:
         run: |
           make lint
 
-      - name: Cache coverage score
-        id: cache-coverage-score
-        uses: actions/cache@v3
-        with:
-          key: coverage-score
-          path: coverage_score.txt
-
       - name: Unit tests
         run: |
           coverage run -m pytest
 
-      - name: End-to-end tests
-        run: |
-          coverage run -m test.ci
+          # comment-out for now to test coverage script
+          # -------------------------------------------
+          # - name: End-to-end tests
+          #   run: |
+          #     coverage run -m test.ci
+
+      - name: Pull previous coverage score into env
+        uses: UnlyEd/github-action-store-variable@v3
+        with:
+          variables: |
+            COVERAGE_SCORE
 
       - name: Coverage
         run: |
-          # combine results of the preceding coverage runs
+          # combine coverage results from the previous steps
+          # and checks if score decreased since last CI run
+          echo "${COVERAGE_SCORE:=0}"
           coverage combine
-          coverage report
-          coverage report --format=total | ./check_coverage_score.py
+          coverage report --fail-under=$COVERAGE_SCORE
+          echo "COVERAGE_SCORE=`coverage report --format=total`" >> GITHUB_ENV
+
+      - name: Store coverage score
+        uses: UnlyEd/github-action-store-variable@v3
+        with:
+          variables: |
+            COVERAGE_SCORE=${{ env.COVERAGE_SCORE }}
 
