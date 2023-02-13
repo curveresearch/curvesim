@@ -34,4 +34,4 @@ titanoboa @ git+https://github.com/vyperlang/titanoboa@2a1b1c47ffc5ffe977d6cc775
 py-evm==0.6.0a1
 
 sphinx==5.3.0 
-Pallets-Sphinx-Themes==2.0.2
+Pallets-Sphinx-Themes==2.0.3
