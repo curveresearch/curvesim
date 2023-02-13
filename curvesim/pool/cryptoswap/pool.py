@@ -553,20 +553,20 @@ class CurveCryptoPool(Pool):
     def get_dy(self, i: int, j: int, dx: int) -> int:
         """
         Calculate the amount received from swapping `dx`
-        amount of the `i`-th token for the `j`-th token.
+        amount of the `i`-th coin for the `j`-th coin.
 
         Parameters
         ----------
         i: int
-            Index of 'in' token
+            Index of 'in' coin
         j: int
-            Index of 'out' token
+            Index of 'out' coin
         dx: int
-            Amount of 'in' token
+            Amount of 'in' coin
         Returns
         -------
         int
-            The 'out' token amount
+            The 'out' coin amount
 
         Note
         ----
@@ -692,6 +692,26 @@ class CurveCryptoPool(Pool):
         min_dy: int = 0,
     ) -> int:
         """
+        Swap `dx` amount of the `i`-th coin for the `j`-th coin.
+
+        Parameters
+        ----------
+        i: int
+            'In' coin index
+        j: int
+            'Out' coin index
+        dx: int
+            'In' coin amount
+        min_dy: int, optional
+            Minimum 'out' coin amount required (default = 0)
+
+        Returns
+        -------
+        int
+            Out-coin amount from the swap.
+
+        Note
+        -----
         In the vyper contract, there is an option to exchange using WETH or ETH.
         """
         return self._exchange(
@@ -719,6 +739,21 @@ class CurveCryptoPool(Pool):
         amounts: List[int],
         min_mint_amount: int = 0,
     ) -> int:
+        """
+        Add liquidity into the pool by depositing coins for LP tokens.
+
+        Parameters
+        ----------
+        amounts: List[int]
+            Deposit amounts.  At least one coin amount must be nonzero.
+        min_mint_amount: int
+            Minimum amount of LP tokens required (default = 0)
+
+        Returns
+        -------
+        int
+            Amount of LP tokens minted.
+        """
         assert amounts[0] > 0 or amounts[1] > 0  # dev: no coins to add
 
         A = self.A
@@ -829,7 +864,19 @@ class CurveCryptoPool(Pool):
         min_amounts=None,
     ):
         """
-        This withdrawal method is very safe, does no complex math
+        Remove liquidity (burn LP tokens) to receive back part (or all) of
+        the deposited funds.
+
+        Parameters
+        ----------
+        _amount: int
+            Amount LP tokens to burn.
+        min_amounts: List[int], optional
+            Minimum required amounts for each coin.  Default is 0 each.
+
+        Note
+        ----
+        "This withdrawal method is very safe, does no complex math"
         """
         min_amounts = min_amounts or [0, 0]
 
@@ -849,6 +896,24 @@ class CurveCryptoPool(Pool):
     def remove_liquidity_one_coin(
         self, token_amount: int, i: int, min_amount: int
     ) -> int:
+        """
+        Remove liquidity entirely in one type of coin.
+        Fees will be extracted and there may be significant price impact incurred.
+
+        Parameters
+        ----------
+        token_amount: int
+            Amount of LP tokens to burn.
+        i: int
+            Index of the `out` coin.
+        min_amount: int
+            Minimum amount of the 'out' coin required (default = 0)
+
+        Returns
+        -------
+        int
+            Amount of the `i`-th coin received.
+        """
         A = self.A
         gamma = self.gamma
 
@@ -927,19 +992,38 @@ class CurveCryptoPool(Pool):
         return dy, p, D, xp
 
     def calc_withdraw_one_coin(self, token_amount: int, i: int) -> int:
+        """
+        Calculate the output amount from burning `token amount` of LP tokens
+        and receiving entirely in the `i`-th coin.
+
+        Parameters
+        ----------
+        token_amount: int
+            Amount of LP tokens to burn.
+        i: int
+            Index of the `out` coin.
+
+        Returns
+        -------
+        int
+            Output amount of the `i`-th coin.
+        """
         return self._calc_withdraw_one_coin(
             self.A, self.gamma, token_amount, i, True, False
         )[0]
 
     def lp_price(self) -> int:
         """
-        Approximate LP token price
+        Returns an LP token price approximating behavior as a constant-product AMM.
         """
         return (
             2 * self.virtual_price * _sqrt_int(self.internal_price_oracle()) // 10**18
         )
 
     def internal_price_oracle(self) -> int:
+        """
+        Return the value of the EMA price oracle.
+        """
         price_oracle: int = self._price_oracle
         last_prices_timestamp: int = self.last_prices_timestamp
 
@@ -955,12 +1039,24 @@ class CurveCryptoPool(Pool):
         return price_oracle
 
     def price_oracle(self) -> int:
+        """
+        Return the value of the EMA price oracle.
+
+        Same as `internal_price_oracle`.  Kept for compatability with the
+        vyper interface.
+        """
         return self.internal_price_oracle()
 
     def get_virtual_price(self) -> int:
+        """
+        Return the virtual price of an LP token.
+        """
         return 10**18 * self._get_xcp(self.D) // self.tokens
 
     def calc_token_amount(self, amounts: List[int]) -> int:
+        """
+        Calculate the amount of LP tokens minted by depositing given amounts.
+        """
         token_supply: int = self.tokens
         precisions: List[int] = self.precisions
         price_scale: int = self.price_scale * precisions[1]
