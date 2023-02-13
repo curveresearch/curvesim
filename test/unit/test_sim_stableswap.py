@@ -54,7 +54,7 @@ class FakeSimStableswap(SimStableswapBase):
             # solver requires opposite signs for the value
             # of the error function on the bounds
             lo, hi = get_trade_bounds(i, j)
-            if abs(dx - lo) < 0.000000005:
+            if abs(dx - lo) < 0.000000005:  # pylint: disable=no-else-return
                 price = 2
                 return price - price_target
             elif abs(dx - hi) < 0.000000005:
@@ -120,7 +120,7 @@ def test_compute_trades(sim_stableswap):
     volume_limits = [100000, 125000, 150000]
     trades, _, _ = trader.compute_trades(prices, volume_limits)
     assert len(trades) == 3
-    for i, t in enumerate(trades):
+    for t in trades:
         _, _, size = t
         assert size > 0
 
@@ -147,6 +147,7 @@ def test_do_trades(sim_stableswap):
 
 
 def test_price_depth(sim_stableswap):
+    """Test price depth metric"""
     price_depth = sim_stableswap.get_price_depth()
     assert len(price_depth) == 3
     for d in price_depth:

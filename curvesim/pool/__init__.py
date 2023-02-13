@@ -13,12 +13,13 @@ but in a few cases allow an extra option, such as enabling/disabling fees.
 """
 
 __all__ = [
-    "Pool",
     "get",
     "make",
+    "Pool",
     "CurvePool",
     "CurveMetaPool",
     "CurveRaiPool",
+    "CurveCryptoPool",
     "SimCurvePool",
     "SimCurveMetaPool",
     "SimCurveRaiPool",
@@ -28,6 +29,7 @@ from curvesim.exceptions import CurvesimValueError
 from curvesim.pool_data import get as _get_pool_data
 
 from .base import Pool
+from .cryptoswap import CurveCryptoPool
 from .sim_interface import SimCurveMetaPool, SimCurvePool, SimCurveRaiPool
 from .stableswap import CurveMetaPool, CurvePool, CurveRaiPool
 

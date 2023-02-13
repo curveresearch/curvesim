@@ -87,6 +87,75 @@ def _vyper_metapool(_vyper_3pool):
     return metapool
 
 
+@pytest.fixture(scope="session")
+def _cryptopool_lp_token():
+    lp_total_supply = 16060447504694332256465310
+    mock_filepath = os.path.join(_base_dir, "lp_token_mock.vy")
+    lp_token = boa.load(mock_filepath, lp_total_supply)
+    return lp_token
+
+
+@pytest.fixture(scope="session")
+def _vyper_cryptopool(_cryptopool_lp_token):
+    """
+    Initialize vyper fixture for crypto pool
+    using default volatile pair settings
+    """
+    cryptopool_filepath = os.path.join(_curve_dir, "cryptopool.vy")
+    coins = [FAKE_ADDRESS] * 2
+
+    # settings based on STG/USDC pool
+    # https://etherscan.io/address/0x3211c6cbef1429da3d0d58494938299c92ad5860
+
+    # lp_total_supply = 16060447504694332256465310
+    # mock_filepath = os.path.join(_base_dir, "lp_token_mock.vy")
+    # lp_token = boa.load(mock_filepath, lp_total_supply)
+
+    A = 400000
+    gamma = 72500000000000
+    # unpacked_precisions = [10**0, 10**12]
+    precisions = 12 << 8
+    precisions = precisions | 0  # for explicitness
+    mid_fee = 26000000
+    out_fee = 45000000
+    allowed_extra_profit = 2000000000000
+    fee_gamma = 230000000000000
+    adjustment_step = 146000000000000
+    admin_fee = 5000000000
+    ma_half_time = 600
+    initial_price = 1550997347493624157
+
+    cryptopool = boa.load(
+        cryptopool_filepath,
+        A,
+        gamma,
+        mid_fee,
+        out_fee,
+        allowed_extra_profit,
+        fee_gamma,
+        adjustment_step,
+        admin_fee,
+        ma_half_time,
+        initial_price,
+        _cryptopool_lp_token,
+        coins,
+        precisions,
+    )
+
+    balances = [20477317313816545807568241, 13270936465339]
+    cryptopool.eval(f"self.balances={balances}")
+    D = 41060496962103963853877954
+    virtual_price = 1026434015737186294
+    cryptopool.eval(f"self.D={D}")
+    cryptopool.eval(f"self.virtual_price={virtual_price}")
+    xcp_profit = 1052829794354693246
+    xcp_profit_a = 1052785575319598710
+    cryptopool.eval(f"self.xcp_profit={xcp_profit}")
+    cryptopool.eval(f"self.xcp_profit_a={xcp_profit_a}")
+
+    return cryptopool
+
+
 @pytest.fixture(scope="function")
 def vyper_3pool(_vyper_3pool):
     """
@@ -105,3 +174,23 @@ def vyper_metapool(_vyper_metapool):
     """
     with boa.env.anchor():
         yield _vyper_metapool
+
+
+@pytest.fixture(scope="function")
+def cryptopool_lp_token(_cryptopool_lp_token):
+    """
+    Function-scope fixture using titanoboa's snapshotting
+    feature to avoid expensive loading.
+    """
+    with boa.env.anchor():
+        yield _cryptopool_lp_token
+
+
+@pytest.fixture(scope="function")
+def vyper_cryptopool(_vyper_cryptopool):
+    """
+    Function-scope fixture using titanoboa's snapshotting
+    feature to avoid expensive loading.
+    """
+    with boa.env.anchor():
+        yield _vyper_cryptopool

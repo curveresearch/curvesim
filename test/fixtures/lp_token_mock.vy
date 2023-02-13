@@ -53,3 +53,18 @@ def burnFrom(_to: address, _value: uint256) -> bool:
     """
     self.totalSupply -= _value
     return True
+
+
+@external
+def mint_relative(_to: address, frac: uint256) -> uint256:
+    """
+    @dev Increases supply by factor of (1 + frac/1e18) and mints it for _to
+    @param _to The account that will receive the created tokens.
+    @param frac Fraction to inflate supply in 18 decimals
+    """
+    supply: uint256 = self.totalSupply
+    d_supply: uint256 = supply * frac / 10**18
+    if d_supply > 0:
+        self.totalSupply = supply + d_supply
+
+    return d_supply
