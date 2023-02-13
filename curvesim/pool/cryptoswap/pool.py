@@ -73,33 +73,47 @@ class CurveCryptoPool(Pool):
         Parameters
         ----------
         A : int
-            Amplification coefficient; this is :math:`A n^{n-1}` in the whitepaper.
+            Amplification coefficient; this is :math:`A n^n` in the whitepaper
+            multiplied by 10**4 for greater precision.
         gamma: int
+            Decay factor for A.
         n: int
-            number of coins
+            Number of coins; currently only n = 2 is supported.
         precisions: list of int
-            precision adjustments to convert native token units to 18 decimals;
+            Precision adjustments to convert native token units to 18 decimals;
             this assumes tokens have at most 18 decimals
             i.e. balance in native units * precision = balance in D units
         mid_fee: int
-            fee with 10**10 precision
+            Fee with 10**10 precision, for trades near price scale
         out_fee: int
-            fee with 10**10 precision
+            Fee with 10**10 precision, used to adjust `mid_fee` for trades
+            further away from price_scale
         allowed_extra_profit: int
+            "Buffer" used to determine if the price adjustment algorithm
+            should run.
         fee_gamma: int
+            Factor used to control the transition from `mid_fee` to `out_fee`.
         adjustment_step:
+            Minimum step size to adjust the price scale.
         admin_fee: int
-            percentage of `fee` with 10**10 precision
+            Percentage of `fee` with 10**10 precision.  Fee paid to the DAO.
         ma_half_time: int
+            "Half-life" for exponential moving average of trade prices.
         initial_price: int
+            Initial price scale for the pool.
         balances: list of int, optional
-            coin balances in native token units;
+            Coin balances in native token units;
             either `balances` or `D` is required
         D : int, optional
-            Stableswap invariant for given balances, precisions, A, and gamma;
-            either `balances` or `D` is required
+            Stableswap invariant for given balances, precisions, price_scale,
+            A, and gamma; either `balances` or `D` is required
         tokens: int, optional
-            LP token supply
+            LP token supply (default is calculated from `D`, which is also
+            calculated if needed)
+        xcp_profit: int, optional
+            Counter for accumulated profits, no losses (default = 10**18)
+        xcp_profit_a: int, optional
+            Value of `xcp_profit` when admin fees last claimed (default = 10**18)
         """
         self.A = A
         self.gamma = gamma
@@ -158,6 +172,10 @@ class CurveCryptoPool(Pool):
         self.virtual_price = 10**18 * xcp // tokens
 
     def _xp(self) -> List[int]:
+        """
+        Calculate the balances in units of `D`, converting using `price_scale`
+        so a unit of each token has equal value.
+        """
         precisions = self.precisions
         return [
             self.balances[0] * precisions[0],
@@ -165,6 +183,10 @@ class CurveCryptoPool(Pool):
         ]
 
     def _get_xcp(self, D: int) -> int:
+        """
+        Calculate the constant-product profit, using the balances at
+        equilibrium point.
+        """
         n_coins: int = self.n
         x: List[int] = [
             D // n_coins,
@@ -174,13 +196,16 @@ class CurveCryptoPool(Pool):
 
     # pylint: disable=too-many-locals,too-many-branches
     @staticmethod
-    def _newton_D(ANN: int, gamma: int, x_unsorted: List[int]) -> List[int]:
+    def _newton_D(  # noqa: complexity: 13
+        ANN: int,
+        gamma: int,
+        x_unsorted: List[int],
+    ) -> List[int]:
         """
-        Finding the invariant using Newton method.
-        ANN is higher by the factor A_MULTIPLIER
-        ANN is already A * N**N
+        Finding the `D` invariant using Newton's method.
 
-        Currently uses 60k gas
+        ANN is A * N**N from the whitepaper multiplied by the
+        factor A_MULTIPLIER.
         """
         n_coins: int = len(x_unsorted)
 
@@ -351,13 +376,31 @@ class CurveCryptoPool(Pool):
         raise CalculationError("Did not converge")
 
     def _increment_timestamp(self, blocks=1, timestamp=None):
+        """Update the internal clock used to mimic the block timestamp."""
         if timestamp:
             self._block_timestamp = timestamp
             return
 
         self._block_timestamp += 12 * blocks
 
-    def _tweak_price(self, A: int, gamma: int, _xp: List[int], p_i: int, new_D: int):
+    # pylint: disable=too-many-statements
+    def _tweak_price(  # noqa: complexity: 12
+        self,
+        A: int,
+        gamma: int,
+        _xp: List[int],
+        p_i: int,
+        new_D: int,
+    ):
+        """
+        Applies several kinds of updates:
+            - EMA price update: price_oracle
+            - Profit counters: D, virtual_price, xcp_profit
+            - price adjustment: price_scale
+
+        Also claims admin fees if appropriate (enough profit and price scale
+        and oracle is close enough).
+        """
         price_oracle: int = self._price_oracle
         last_prices: int = self.last_prices
         price_scale: int = self.price_scale
@@ -481,8 +524,7 @@ class CurveCryptoPool(Pool):
             self._claim_admin_fees()
 
     def _claim_admin_fees(self):
-        # no gulping logic (and re-calculating of D) needed
-        # for the python code
+        # no gulping logic needed for the python code
         xcp_profit: int = self.xcp_profit
         xcp_profit_a: int = self.xcp_profit_a
 
@@ -509,6 +551,27 @@ class CurveCryptoPool(Pool):
             self.xcp_profit_a = xcp_profit
 
     def get_dy(self, i: int, j: int, dx: int) -> int:
+        """
+        Calculate the amount received from swapping `dx`
+        amount of the `i`-th token for the `j`-th token.
+
+        Parameters
+        ----------
+        i: int
+            Index of 'in' token
+        j: int
+            Index of 'out' token
+        dx: int
+            Amount of 'in' token
+        Returns
+        -------
+        int
+            The 'out' token amount
+
+        Note
+        ----
+        This is a "view" function; it doesn't change the state of the pool.
+        """
         assert i != j  # dev: same input and output coin
         assert i < self.n  # dev: coin index out of range
         assert j < self.n  # dev: coin index out of range
