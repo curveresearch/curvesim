@@ -58,7 +58,7 @@ jobs:
           echo "${COVERAGE_SCORE:=0}"
           coverage combine
           coverage report --fail-under=$COVERAGE_SCORE
-          echo "COVERAGE_SCORE=`coverage report --format=total`" >> GITHUB_ENV
+          echo "COVERAGE_SCORE=`coverage report --format=total`" >> $GITHUB_ENV
 
       - name: Store coverage score
         uses: UnlyEd/github-action-store-variable@v3
