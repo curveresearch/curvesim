@@ -46,6 +46,8 @@ jobs:
       - name: Download coverage badge
         uses: sergeysova/gist-read-action@v1
         id: covbadge
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           gist_id: 3da3c072e081f4509ebdd09c63e6ede5
           file_name: curvesim_coverage_badge.json
