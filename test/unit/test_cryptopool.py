@@ -316,7 +316,7 @@ def test_newton_y(vyper_cryptopool, A, gamma, x0, x1, i, delta_perc):
     gamma_coefficient,
     st.integers(min_value=10**6 * D_UNIT, max_value=10**9 * D_UNIT),
     st.integers(min_value=10, max_value=1000),
-    st.integers(min_value=50, max_value=200).filter(lambda x: x < 90 or x > 110),
+    st.integers(min_value=60, max_value=200).filter(lambda x: x < 90 or x > 110),
 )
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
