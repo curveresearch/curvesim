@@ -98,3 +98,15 @@ pylint:
 	@echo ""
 	@echo "pylint passed ⚙️"
 
+.PHONY: coverage
+coverage:
+	coverage run -m pytest
+	coverage run -m test.ci
+	coverage combine
+	coverage report
+	# coverage report --format=total
+
+.PHONY: coverage_html
+coverage_html:
+	coverage html
+	python -m http.server --directory htmlcov

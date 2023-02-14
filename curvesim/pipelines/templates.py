@@ -39,6 +39,8 @@ def run_pipeline(param_sampler, price_sampler, strategy, ncpu=4):
 
         with cpu_pool(ncpu) as clust:
             results = zip(*clust.starmap(strategy, args))
+            clust.close()
+            clust.join()  # coverage needs this
 
     else:
         results = []

@@ -1056,6 +1056,16 @@ class CurveCryptoPool(Pool):
     def calc_token_amount(self, amounts: List[int]) -> int:
         """
         Calculate the amount of LP tokens minted by depositing given amounts.
+
+        Parameters
+        ----------
+        amounts: List[int]
+            Deposit amounts.  At least one coin amount must be nonzero.
+
+        Returns
+        -------
+        int
+            Amount of LP tokens minted.
         """
         token_supply: int = self.tokens
         precisions: List[int] = self.precisions
