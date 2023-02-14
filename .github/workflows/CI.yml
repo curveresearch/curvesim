@@ -39,9 +39,9 @@ jobs:
         run: |
           coverage run -m pytest
 
-          # - name: End-to-end tests
-          #   run: |
-          #     coverage run -m test.ci
+      - name: End-to-end tests
+        run: |
+          coverage run -m test.ci
 
       - name: Download coverage badge
         uses: chanhosuh/get-gist-action@master
