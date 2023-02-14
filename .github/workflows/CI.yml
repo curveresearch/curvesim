@@ -61,6 +61,7 @@ jobs:
 
       - name: Upload coverage badge
         uses: schneegans/dynamic-badges-action@v1.6.0
+        if: github.ref == 'refs/heads/main'
         with:
           auth: ${{ secrets.GIST_TOKEN }}  # personal access token with scope "gist"
           gistID: 3da3c072e081f4509ebdd09c63e6ede5  # id of previously created gist
