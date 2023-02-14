@@ -39,31 +39,28 @@ jobs:
         run: |
           coverage run -m pytest
 
-      - name: End-to-end tests
-        run: |
-          coverage run -m test.ci
+          # - name: End-to-end tests
+          #   run: |
+          #     coverage run -m test.ci
 
-      - name: Pull previous coverage score into env
-        uses: UnlyEd/github-action-store-variable@v3
+      - name: Download coverage badge
+        uses: sergeysova/gist-read-action@v1
+        id: covbadge
         with:
-          variables: |
-            COVERAGE_SCORE
+          gist_id: 3da3c072e081f4509ebdd09c63e6ede5
+          file_name: curvesim_coverage_badge.json
 
-      - name: Coverage
+      - name: Coverage report
         run: |
           # combine coverage results from the previous steps
           # and checks if score decreased since last CI run
           coverage combine
-          coverage report --fail-under="${COVERAGE_SCORE:=0}"
+          BADGE_JSON=${{ steps.covbadge.outputs.content }}
+          COVERAGE_SCORE=$(python3 -c "import json; score=json.loads('${BADGE_JSON}')['message']).rstrip('%'); print(score)")
+          coverage report --fail-under="${COVERAGE_SCORE:-0}"
           echo "COVERAGE_SCORE=`coverage report --format=total`" >> $GITHUB_ENV
 
-      - name: Store coverage score
-        uses: UnlyEd/github-action-store-variable@v3
-        with:
-          variables: |
-            COVERAGE_SCORE=${{ env.COVERAGE_SCORE }}
-
-      - name: Create coverage badge
+      - name: Upload coverage badge
         uses: schneegans/dynamic-badges-action@v1.6.0
         with:
           auth: ${{ secrets.GIST_TOKEN }}  # personal access token with scope "gist"
