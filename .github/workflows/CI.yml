@@ -63,3 +63,15 @@ jobs:
           variables: |
             COVERAGE_SCORE=${{ env.COVERAGE_SCORE }}
 
+      - name: Create coverage badge
+        uses: schneegans/dynamic-badges-action@v1.6.0
+        with:
+          auth: ${{ secrets.GIST_TOKEN }}  # personal access token with scope "gist"
+          gistID: 3da3c072e081f4509ebdd09c63e6ede5  # id of previously created gist
+          filename: curvesim_coverage_badge.json
+          label: Coverage
+          message: ${{ env.COVERAGE_SCORE }}%
+          minColorRange: 50
+          maxColorRange: 90
+          valColorRange: ${{ env.COVERAGE_SCORE }}%
+
