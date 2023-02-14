@@ -44,21 +44,18 @@ jobs:
           #     coverage run -m test.ci
 
       - name: Download coverage badge
-        uses: sergeysova/gist-read-action@v1
+        uses: chanhosuh/get-gist-action@master
         id: covbadge
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          gist_id: 3da3c072e081f4509ebdd09c63e6ede5
-          file_name: curvesim_coverage_badge.json
+          gistURL: "https://gist.github.com/chanhosuh/3da3c072e081f4509ebdd09c63e6ede5" 
 
       - name: Coverage report
         run: |
           # combine coverage results from the previous steps
           # and checks if score decreased since last CI run
           coverage combine
-          BADGE_JSON=${{ steps.covbadge.outputs.content }}
-          COVERAGE_SCORE=$(python3 -c "import json; score=json.loads('${BADGE_JSON}')['message']).rstrip('%'); print(score)")
+          BADGE_JSON=`cat ${{ steps.covbadge.outputs.file }}`
+          COVERAGE_SCORE=$(python3 -c "import json; score=json.loads('${BADGE_JSON}')['message'].rstrip('%'); print(score)")
           coverage report --fail-under="${COVERAGE_SCORE:-0}"
           echo "COVERAGE_SCORE=`coverage report --format=total`" >> $GITHUB_ENV
 
