@@ -4,6 +4,8 @@ Mainly a module to house the `CryptoPool`, a cryptoswap implementation in Python
 import time
 from typing import List
 
+from gmpy2 import mpz
+
 from curvesim.exceptions import CalculationError, CryptoPoolError, CurvesimValueError
 from curvesim.pool.base import Pool
 
@@ -230,6 +232,8 @@ class CurveCryptoPool(Pool):
         D: int = n_coins * _geometric_mean(x, False)
         S: int = x[0] + x[1]
 
+        D = mpz(D)
+        S = mpz(S)
         for _ in range(255):
             D_prev: int = D
 
@@ -283,7 +287,7 @@ class CurveCryptoPool(Pool):
                     frac: int = _x * 10**18 // D
                     if frac < 10**16 or frac > 10**20:
                         raise CalculationError("Unsafe value for x[i]")
-                return D
+                return int(D)
 
         raise CalculationError("Did not converge")
 
@@ -315,13 +319,11 @@ class CurveCryptoPool(Pool):
             10**16 * n_coins <= K0_i <= 10**20 * n_coins
         )  # dev: unsafe values x[i]
 
-        # x_sorted: uint256[N_COINS] = x
-        # x_sorted[i] = 0
-        # x_sorted = self.sort(x_sorted)  # From high to low
-        # x[not i] instead of x_sorted since x_soted has only 1 element
-
         convergence_limit: int = max(max(x_j // 10**14, D // 10**14), 100)
 
+        y = mpz(y)
+        K0_i = mpz(K0_i)
+        D = mpz(D)
         for _ in range(255):
             y_prev: int = y
 
@@ -371,7 +373,7 @@ class CurveCryptoPool(Pool):
             if diff < max(convergence_limit, y // 10**14):
                 frac: int = y * 10**18 // D
                 assert 10**16 <= frac <= 10**20  # dev: unsafe value for y
-                return y
+                return int(y)
 
         raise CalculationError("Did not converge")
 
@@ -1100,7 +1102,7 @@ def _geometric_mean(unsorted_x: List[int], sort: bool) -> int:
     if sort and x[0] < x[1]:
         x = [unsorted_x[1], unsorted_x[0]]
 
-    D: int = x[0]
+    D: int = mpz(x[0])
     diff: int = 0
     for _ in range(255):
         D_prev: int = D
@@ -1115,7 +1117,7 @@ def _geometric_mean(unsorted_x: List[int], sort: bool) -> int:
         else:
             diff = D_prev - D
         if diff <= 1 or diff * 10**18 < D:
-            return D
+            return int(D)
     raise CalculationError("Did not converge")
 
 
@@ -1134,7 +1136,7 @@ def _halfpow(power: int) -> int:
     if otherpow == 0:
         return result
 
-    term: int = 10**18
+    term: int = mpz(10**18)
     x: int = 5 * 10**17
     S: int = 10**18
     neg: bool = False
@@ -1153,7 +1155,7 @@ def _halfpow(power: int) -> int:
         else:
             S += term
         if term < EXP_PRECISION:
-            return result * S // 10**18
+            return int(result * S // 10**18)
 
     raise CalculationError("Did not converge")
 
@@ -1162,16 +1164,16 @@ def _sqrt_int(x: int) -> int:
     """
     Originating from: https://github.com/vyperlang/vyper/issues/1266
     """
-
     if x == 0:
         return 0
 
+    x = mpz(x)
     z: int = (x + 10**18) // 2
     y: int = x
 
     for _ in range(256):
         if z == y:
-            return y
+            return int(y)
         y = z
         z = (x * 10**18 // z + z) // 2
 
