@@ -25,12 +25,17 @@ def main():
         "MIM-3LP3CRV-f",
         "0x618788357d0ebd8a37e763adab3bc575d54c2c7d",  # RAI3CRV
     ]
-
-    end_ts = 1656547200
+    end_timestamps = [
+        1638316800,
+        1622505600,
+        1643673600,
+        1643673600,
+        1654041600,
+    ]
 
     # Store the data
     print("Getting pool/price data...")
-    for pool in pool_names:
+    for pool, end_ts in zip(pool_names, end_timestamps):
         pool_data = curvesim.pool_data.get(pool)
 
         # Store pool_data
