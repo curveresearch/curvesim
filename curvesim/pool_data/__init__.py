@@ -47,6 +47,13 @@ def get(address_or_symbol, chain="mainnet"):
 
 
 class PoolMetaData:
+
+    _SIM_POOL_TYPE = {
+        CurvePool: SimCurvePool,
+        CurveMetaPool: SimCurveMetaPool,
+        CurveRaiPool: SimCurveRaiPool,
+    }
+
     def __init__(self, metadata_dict):
         self._dict = metadata_dict
 
@@ -97,13 +104,9 @@ class PoolMetaData:
     @property
     def sim_pool_type(self):
         pool_type = self.pool_type
-        if pool_type == CurvePool:
-            return SimCurvePool
-        elif pool_type == CurveMetaPool:
-            return SimCurveMetaPool
-        elif pool_type == CurveRaiPool:
-            return SimCurveRaiPool
-        else:
+        try:
+            return self._SIM_POOL_TYPE[pool_type]
+        except KeyError:
             raise CurvesimException(f"No sim pool type for this pool type: {pool_type}")
 
     @property
