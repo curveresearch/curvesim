@@ -141,6 +141,7 @@ async def _volume(address, chain, days=60, end=None):
         t_end = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
     else:
         t_end = datetime.fromtimestamp(end, tz=timezone.utc)
+    print("    end date:", t_end)
     t_start = t_end - timedelta(days=days)
 
     q = """
