@@ -100,7 +100,7 @@ class SimCurvePool(SimStableswapBase, CurvePool):
                 errors = []
                 for k, pair in enumerate(coins):
                     i, j = pair
-                    dydx = self.dydx(i, j)
+                    dydx = self.dydxfee(i, j)
                     errors.append(dydx - price_targets[k])
 
             return errors
