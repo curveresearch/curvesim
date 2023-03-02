@@ -43,8 +43,8 @@ class PoolData:
         days : int, default=60
             number of days to pull data for
         """
-        self.volume(days=days, store=True, end=None)
-        self.redemption_prices(days=days, store=True, end=None)
+        self.volume(days=days, store=True, end=end)
+        self.redemption_prices(days=days, store=True, end=end)
 
     def clear_cache(self):
         """
