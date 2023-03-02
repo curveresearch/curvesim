@@ -40,7 +40,7 @@ def main():
             pickle.dump(pool_data, f)
 
         # Store price data
-        coins = pool_data.coins()
+        coins = pool_data.coins
         curvesim.price_data.get(coins, src="nomics", end=end_ts)
 
         # Copy price files to test/data

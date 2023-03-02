@@ -115,7 +115,7 @@ def volume_limited_arbitrage(
         ncpu = os.cpu_count() if os.cpu_count() is not None else 1
 
     pool = pool_data.sim_pool()
-    coins = pool_data.coins()
+    coins = pool_data.coins
 
     param_sampler = Grid(pool, variable_params, fixed_params=fixed_params)
     price_sampler = PriceVolume(coins, days=days, data_dir=data_dir, src=src)
@@ -123,8 +123,8 @@ def volume_limited_arbitrage(
     vol_args = (
         pool_data.volume(days=days),
         price_sampler.total_volumes(),
-        pool_data.n(),
-        pool_data.type(),
+        pool_data.n,
+        pool_data.type,
     )
 
     vol_mult = vol_mult or compute_volume_multipliers(*vol_args, mode=vol_mode)
