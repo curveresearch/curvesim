@@ -19,12 +19,14 @@ def main():
     data_dir = os.path.join("data")
     test_data_dir = os.path.join("test", "data")
     pool_names = [
-        "3CRV",
+        "0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7",
         "0xdebf20617708857ebe4f679508e7b7863a8a8eee",  # aCRV
         "FRAX3CRV-f",
         "MIM-3LP3CRV-f",
         "0x618788357d0ebd8a37e763adab3bc575d54c2c7d",  # RAI3CRV
     ]
+
+    end_ts = 1656547200
 
     # Store the data
     print("Getting pool/price data...")
@@ -32,14 +34,14 @@ def main():
         pool_data = curvesim.pool_data.get(pool)
 
         # Store pool_data
-        pool_data.set_cache()
+        pool_data.set_cache(end=end_ts)
         f_name = os.path.join(test_data_dir, pool + "-pool_data.pickle")
         with open(f_name, "wb") as f:
             pickle.dump(pool_data, f)
 
         # Store price data
         coins = pool_data.coins()
-        curvesim.price_data.get(coins, src="nomics")
+        curvesim.price_data.get(coins, src="nomics", end=end_ts)
 
         # Copy price files to test/data
         coin_combos = combinations(coins, 2)
