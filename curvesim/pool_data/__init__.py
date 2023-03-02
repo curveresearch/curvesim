@@ -7,6 +7,9 @@ __all__ = ["PoolData", "from_address", "from_symbol", "get"]
 
 from numpy import array
 
+from curvesim.exceptions import CurvesimException
+
+from ..network.subgraph import has_redemption_prices
 from ..network.subgraph import redemption_prices_sync as _redemption_prices
 from ..network.subgraph import volume_sync as _volume
 from ..pool.sim_interface import SimCurveMetaPool, SimCurvePool, SimCurveRaiPool
@@ -40,8 +43,104 @@ def get(address_or_symbol, chain="mainnet"):
     params = from_x(address_or_symbol, chain)
 
     pool_data = PoolData(params)
+    print("Pool data params:", params)
 
     return pool_data
+
+
+class PoolMetaData:
+    def __init__(self, metadata_dict):
+        self._dict = metadata_dict
+
+    def init_kwargs(self, balanced=True, balanced_base=True):
+        def bal(kwargs, balanced):
+            reserves = kwargs.pop("reserves")
+            if not balanced:
+                kwargs["D"] = reserves
+            return kwargs
+
+        kwargs = self._dict["init_kwargs"].copy()
+        kwargs = bal(kwargs, balanced)
+
+        if self._dict["basepool"]:
+            bp_kwargs = self._dict["basepool"]["init_kwargs"].copy()
+            bp_kwargs = bal(bp_kwargs, balanced_base)
+            basepool = CurvePool(**bp_kwargs)
+            basepool.metadata = self._dict["basepool"]
+            kwargs["basepool"] = basepool
+
+        return kwargs
+
+    @property
+    def address(self):
+        return self._dict["address"]
+
+    @property
+    def chain(self):
+        return self._dict["chain"]
+
+    @property
+    def has_redemption_prices(self):
+        address = self.address
+        chain = self.chain
+        return has_redemption_prices(address, chain)
+
+    @property
+    def pool_type(self):
+        if self._dict["basepool"]:
+            if self.has_redemption_prices:
+                _pool_type = CurveRaiPool
+            else:
+                _pool_type = CurveMetaPool
+        else:
+            _pool_type = CurvePool
+        return _pool_type
+
+    @property
+    def sim_pool_type(self):
+        pool_type = self.pool_type
+        if pool_type == CurvePool:
+            return SimCurvePool
+        elif pool_type == CurveMetaPool:
+            return SimCurveMetaPool
+        elif pool_type == CurveRaiPool:
+            return SimCurveRaiPool
+        else:
+            raise CurvesimException(f"No sim pool type for this pool type: {pool_type}")
+
+    @property
+    def coins(self):
+        if not self._dict["basepool"]:
+            c = self._dict["coins"]["addresses"]
+        else:
+            c = (
+                self._dict["coins"]["addresses"][:-1]
+                + self._dict["basepool"]["coins"]["addresses"]
+            )
+        return c
+
+    @property
+    def coin_names(self):
+        if not self._dict["basepool"]:
+            c = self._dict["coins"]["names"]
+        else:
+            c = (
+                self._dict["coins"]["names"][:-1]
+                + self._dict["basepool"]["coins"]["names"]
+            )
+        return c
+
+    @property
+    def n(self):
+        if not self._dict["basepool"]:
+            n = self._dict["init_kwargs"]["n"]
+        else:
+            n = [
+                self._dict["init_kwargs"]["n"],
+                self._dict["basepool"]["init_kwargs"]["n"],
+            ]
+
+        return n
 
 
 class PoolData:
@@ -63,14 +162,14 @@ class PoolData:
             Number of days to pull data for if caching.
 
         """
-        self.dict = metadata_dict
+        self.metadata = PoolMetaData(metadata_dict)
         self._volume = None
         self._redemption_prices = None
 
         if cache_data:
             self.set_cache(days=days)
 
-    def set_cache(self, days=60):
+    def set_cache(self, days=60, end=None):
         """
         Fetches and caches historical volume and redemption price data.
 
@@ -79,8 +178,8 @@ class PoolData:
         days : int, default=60
             number of days to pull data for
         """
-        self.volume(days=days, store=True)
-        self.redemption_prices(store=True)
+        self.volume(days=days, store=True, end=None)
+        self.redemption_prices(store=True, end=None)
 
     def clear_cache(self):
         """
@@ -89,7 +188,7 @@ class PoolData:
         self._volume = None
         self._redemption_prices = None
 
-    def pool(self, balanced=True, balanced_base=True):
+    def pool(self, balanced=True, balanced_base=True, sim=False):
         """
         Constructs a pool object based on the stored data.
 
@@ -101,83 +200,36 @@ class PoolData:
         balanced_base : bool, default=True
             If True and pool is metapool, balances the basepool value across assets.
 
+        sim: bool, default=False
+            If True, returns a `SimPool` version of the pool.
+
         Returns
         -------
         Pool
         """
-
-        def bal(kwargs, balanced):
-            reserves = kwargs.pop("reserves")
-            if not balanced:
-                kwargs.update({"D": reserves})
-            return kwargs
-
-        kwargs = bal(self.dict["init_kwargs"].copy(), balanced)
-
-        if self.dict["basepool"]:
-            bp_kwargs = self.dict["basepool"]["init_kwargs"].copy()
-            bp_kwargs = bal(bp_kwargs, balanced_base)
-            kwargs.update({"basepool": CurvePool(**bp_kwargs)})
-
-            r = self.redemption_prices()
-            if r is None:
-                pool = CurveMetaPool(**kwargs)
-            else:
-                pool = CurveRaiPool(r, **kwargs)
-
-            pool.basepool.metadata = self.dict["basepool"]
-
+        metadata = self.metadata
+        kwargs = metadata.init_kwargs(balanced, balanced_base)
+        if sim:
+            pool_type = metadata.sim_pool_type
         else:
-            pool = CurvePool(**kwargs)
+            pool_type = metadata.pool_type
 
-        pool.metadata = self.dict
+        if issubclass(pool_type, CurveRaiPool):
+            r = self.redemption_prices()
+            pool = pool_type(r, **kwargs)
+        else:
+            pool = pool_type(**kwargs)
+
+        pool.metadata = metadata._dict  # pylint: disable=protected-access
 
         return pool
 
     def sim_pool(self, balanced=True, balanced_base=True):
         """
-        Constructs a pool object based on the stored data.
-
-        Parameters
-        ----------
-        balanced : bool, default=True
-            If True, balances the pool value across assets.
-
-        balanced_base : bool, default=True
-            If True and pool is metapool, balances the basepool value across assets.
-
-        Returns
-        -------
-        Pool
+        Effectively the same as the `pool` method but returns
+        an object in the `SimPool` hierarchy.
         """
-
-        def bal(kwargs, balanced):
-            reserves = kwargs.pop("reserves")
-            if not balanced:
-                kwargs.update({"D": reserves})
-            return kwargs
-
-        kwargs = bal(self.dict["init_kwargs"].copy(), balanced)
-
-        if self.dict["basepool"]:
-            bp_kwargs = self.dict["basepool"]["init_kwargs"].copy()
-            bp_kwargs = bal(bp_kwargs, balanced_base)
-            kwargs.update({"basepool": CurvePool(**bp_kwargs)})
-
-            r = self.redemption_prices()
-            if r is None:
-                pool = SimCurveMetaPool(**kwargs)
-            else:
-                pool = SimCurveRaiPool(r, **kwargs)
-
-            pool.basepool.metadata = self.dict["basepool"]
-
-        else:
-            pool = SimCurvePool(**kwargs)
-
-        pool.metadata = self.dict
-
-        return pool
+        return self.pool(balanced, balanced_base, sim=True)
 
     def coins(self):
         """
@@ -195,14 +247,7 @@ class PoolData:
             coin addresses
 
         """
-        if not self.dict["basepool"]:
-            c = self.dict["coins"]["addresses"]
-        else:
-            c = (
-                self.dict["coins"]["addresses"][:-1]
-                + self.dict["basepool"]["coins"]["addresses"]
-            )
-        return c
+        return self.metadata.coins
 
     def coin_names(self):
         """
@@ -220,14 +265,7 @@ class PoolData:
             coin names
 
         """
-        if not self.dict["basepool"]:
-            c = self.dict["coins"]["names"]
-        else:
-            c = (
-                self.dict["coins"]["names"][:-1]
-                + self.dict["basepool"]["coins"]["names"]
-            )
-        return c
+        return self.metadata.coin_names
 
     def volume(self, days=60, store=False, get_cache=True):
         """
@@ -255,8 +293,8 @@ class PoolData:
             return self._volume
 
         print("Fetching historical volume...")
-        addrs = self.dict["address"]
-        chain = self.dict["chain"]
+        addresses = self.metadata.address
+        chain = self.metadata.chain
 
         if self.dict["basepool"]:
             addrs = [addrs, self.dict["basepool"]["address"]]
@@ -286,15 +324,7 @@ class PoolData:
             N_metapool includes the basepool LP token.
 
         """
-        if not self.dict["basepool"]:
-            n = self.dict["init_kwargs"]["n"]
-        else:
-            n = [
-                self.dict["init_kwargs"]["n"],
-                self.dict["basepool"]["init_kwargs"]["n"],
-            ]
-
-        return n
+        return self.metadata.n
 
     def type(self):
         """
@@ -305,9 +335,7 @@ class PoolData:
         str
 
         """
-        if self.dict["basepool"]:
-            return CurveMetaPool
-        return CurvePool
+        return self.metadata.pool_type
 
     def redemption_prices(self, days=60, store=False, get_cache=True):
         """
@@ -336,8 +364,8 @@ class PoolData:
             print("Getting cached redemption prices...")
             return self._redemption_prices
 
-        address = self.dict["address"]
-        chain = self.dict["chain"]
+        address = self.metadata.address
+        chain = self.metadata.chain
 
         r = _redemption_prices(address, chain, days=days)
 
