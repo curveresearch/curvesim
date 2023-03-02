@@ -259,7 +259,12 @@ async def _pool_snapshot(address, chain):
     )
 
     r = await convex(chain, q)
-    r = r["dailyPoolSnapshots"][0]
+    try:
+        r = r["dailyPoolSnapshots"][0]
+    except IndexError:
+        raise SubgraphResultError(
+            f"No daily snapshot for this pool: {address}, {chain}"
+        )
 
     return r
 
