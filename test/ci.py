@@ -15,7 +15,7 @@ import curvesim
 if __name__ == "__main__":  # noqa: C901
     data_dir = os.path.join("test", "data")
     pool_names = [
-        "3CRV",
+        "0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7",
         "0xdebf20617708857ebe4f679508e7b7863a8a8eee",  # aCRV
         "FRAX3CRV-f",
         "MIM-3LP3CRV-f",
