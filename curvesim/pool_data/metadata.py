@@ -16,20 +16,28 @@ class PoolMetaData:
         self._dict = metadata_dict
 
     def init_kwargs(self, balanced=True, balanced_base=True):
-        def bal(kwargs, balanced):
-            reserves = kwargs.pop("reserves")
+        data = self._dict
+
+        def process_to_kwargs(data, balanced):
+            kwargs = {
+                "A": data["params"]["A"],
+                "D": data["reserves"]["D"],
+                "n": len(data["coins"]["names"]),
+                "fee": data["params"]["fee"],
+                "fee_mul": data["params"]["fee_mul"],
+                "tokens": data["reserves"]["tokens"],
+            }
             if not balanced:
-                kwargs["D"] = reserves
+                kwargs["D"] = data["reserves"]["by_coin"]
             return kwargs
 
-        kwargs = self._dict["init_kwargs"].copy()
-        kwargs = bal(kwargs, balanced)
+        kwargs = process_to_kwargs(data, balanced)
 
-        if self._dict["basepool"]:
-            bp_kwargs = self._dict["basepool"]["init_kwargs"].copy()
-            bp_kwargs = bal(bp_kwargs, balanced_base)
+        if data["basepool"]:
+            bp_data = data["basepool"]
+            bp_kwargs = process_to_kwargs(bp_data, balanced_base)
             basepool = CurvePool(**bp_kwargs)
-            basepool.metadata = self._dict["basepool"]
+            basepool.metadata = bp_data
             kwargs["basepool"] = basepool
 
         return kwargs
@@ -91,12 +99,13 @@ class PoolMetaData:
 
     @property
     def n(self):
-        if not self._dict["basepool"]:
-            n = self._dict["init_kwargs"]["n"]
-        else:
+        data = self._dict
+        if data["basepool"]:
             n = [
-                self._dict["init_kwargs"]["n"],
-                self._dict["basepool"]["init_kwargs"]["n"],
+                len(data["coins"]["names"]),
+                len(data["basepool"]["coins"]["names"]),
             ]
+        else:
+            n = len(data["coins"]["names"])
 
         return n

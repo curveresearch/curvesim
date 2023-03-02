@@ -338,19 +338,6 @@ async def pool_snapshot(address, chain):
         "timestamp": int(r["timestamp"]),
     }
 
-    # Kwargs for Pool Init
-    init_kwargs = {
-        "A": data["params"]["A"],
-        "D": D,
-        "reserves": reserves,
-        "n": len(data["coins"]["names"]),
-        "fee": data["params"]["fee"],
-        "fee_mul": data["params"]["fee_mul"],
-        "tokens": data["reserves"]["tokens"],
-    }
-
-    data.update({"init_kwargs": init_kwargs})
-
     return override_subgraph_data(data, "pool_snapshot", (address, chain))
 
 
