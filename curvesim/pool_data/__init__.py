@@ -267,7 +267,7 @@ class PoolData:
         """
         return self.metadata.coin_names
 
-    def volume(self, days=60, store=False, get_cache=True):
+    def volume(self, days=60, store=False, get_cache=True, end=None):
         """
         Fetches the pool's historical volume over the specified number of days.
 
@@ -296,13 +296,14 @@ class PoolData:
         addresses = self.metadata.address
         chain = self.metadata.chain
 
-        if self.dict["basepool"]:
-            addrs = [addrs, self.dict["basepool"]["address"]]
-            vol = _volume(addrs, chain, days=days)
+        if issubclass(self.metadata.pool_type, CurveMetaPool):
+            # pylint: disable-next=protected-access
+            basepool_address = self.metadata._dict["basepool"]["address"]
+            addresses = [addresses, basepool_address]
+            vol = _volume(addresses, chain, days=days, end=end)
             summed_vol = array([sum(v) for v in vol])
-
         else:
-            vol = _volume(addrs, chain, days=days)
+            vol = _volume(addresses, chain, days=days, end=end)
             summed_vol = array(sum(vol))
 
         if store:
@@ -337,7 +338,7 @@ class PoolData:
         """
         return self.metadata.pool_type
 
-    def redemption_prices(self, days=60, store=False, get_cache=True):
+    def redemption_prices(self, days=60, store=False, get_cache=True, end=None):
         """
         Fetches the pool's redemption price over the specified number of days.
 
@@ -367,7 +368,7 @@ class PoolData:
         address = self.metadata.address
         chain = self.metadata.chain
 
-        r = _redemption_prices(address, chain, days=days)
+        r = _redemption_prices(address, chain, days=days, end=end)
 
         if store:
             self._redemption_prices = r

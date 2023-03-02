@@ -1,11 +1,14 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from curvesim.network import coingecko as _coingecko
 from curvesim.network import nomics as _nomics
 
 
-def nomics(coins, days=60, data_dir="data"):
-    t_end = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+def nomics(coins, days=60, data_dir="data", end=None):
+    if end is None:
+        t_end = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    else:
+        t_end = datetime.fromtimestamp(end, tz=timezone.utc)
     t_start = t_end - timedelta(days=days)
 
     print("Fetching Nomics price data...")
