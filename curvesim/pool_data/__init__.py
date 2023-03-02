@@ -41,9 +41,7 @@ def get(address_or_symbol, chain="mainnet"):
         from_x = from_symbol
 
     params = from_x(address_or_symbol, chain)
-
     pool_data = PoolData(params)
-    print("Pool data params:", params)
 
     return pool_data
 
