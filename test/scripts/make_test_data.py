@@ -16,10 +16,9 @@ def main():
     cf subsection "Safe importing of main module" of
     https://docs.python.org/3/library/multiprocessing.html#multiprocessing-programming
     """
-    data_dir = os.path.join("data")
     test_data_dir = os.path.join("test", "data")
     pool_names = [
-        "0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7",
+        "0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7",  # 3CRV
         "0xdebf20617708857ebe4f679508e7b7863a8a8eee",  # aCRV
         "FRAX3CRV-f",
         "MIM-3LP3CRV-f",
@@ -46,24 +45,30 @@ def main():
 
         # Store price data
         coins = pool_data.coins
-        curvesim.price_data.get(coins, src="nomics", end=end_ts)
+        curvesim.price_data.get(coins, src="nomics", data_dir=test_data_dir, end=end_ts)
 
-        # Copy price files to test/data
+        # Rename files from coin IDs to addresses.
+        # Need to do this because the sim pipeline actually uses the addresses.
+        # FIXME: update the nomics file download to use addresses.
         coin_combos = combinations(coins, 2)
         for pair in coin_combos:
             id_pair = coin_ids_from_addresses_sync(pair)
-            f_from = os.path.join(data_dir, f"{id_pair[0]}-{id_pair[1]}.csv")
-            f_to = os.path.join(test_data_dir, f"{pair[0]}-{pair[1]}.csv")
+            f_from = os.path.join(
+                test_data_dir, f"{id_pair[0]}-{id_pair[1]}-{end_ts}.csv"
+            )
+            f_to = os.path.join(test_data_dir, f"{pair[0]}-{pair[1]}-{end_ts}.csv")
             shutil.copyfile(f_from, f_to)
 
     # Run sim from stored data and save results
     print("Getting sim results...")
-    for pool in pool_names:
+    for pool, end_ts in zip(pool_names, end_timestamps):
         f_name = os.path.join(test_data_dir, pool + "-pool_data.pickle")
         with open(f_name, "rb") as f:
             pool_data = pickle.load(f)
 
-        results = pipeline(pool_data, test=True, src="local", data_dir=test_data_dir)
+        results = pipeline(
+            pool_data, test=True, src="local", data_dir=test_data_dir, end=end_ts
+        )
 
         f_name = os.path.join(test_data_dir, pool + "-results.pickle")
         with open(f_name, "wb") as f:
