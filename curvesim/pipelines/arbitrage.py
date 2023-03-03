@@ -38,6 +38,7 @@ def volume_limited_arbitrage(
     vol_mult=None,
     vol_mode=1,
     ncpu=None,
+    end=None,
 ):
     """
     Implements the volume-limited arbitrage pipeline.
@@ -120,7 +121,7 @@ def volume_limited_arbitrage(
     coins = pool_data.coins
 
     param_sampler = Grid(pool, variable_params, fixed_params=fixed_params)
-    price_sampler = PriceVolume(coins, days=days, data_dir=data_dir, src=src)
+    price_sampler = PriceVolume(coins, days=days, data_dir=data_dir, src=src, end=end)
 
     if vol_mult is None:
         vol_mult = compute_volume_multipliers(

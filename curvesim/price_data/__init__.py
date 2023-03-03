@@ -49,6 +49,6 @@ def get(coins, days=60, data_dir="data", src="coingecko", end=None):
         prices, volumes, pzero = nomics(coins, days=days, data_dir=data_dir, end=end)
 
     elif src == "local":
-        prices, volumes, pzero = local(coins, data_dir=data_dir)
+        prices, volumes, pzero = local(coins, data_dir=data_dir, end=end)
 
     return prices, volumes, pzero
