@@ -483,7 +483,6 @@ def local_pool_prices(  # noqa: C901
         prices = prices.resample(resample).first()
         volumes = volumes.resample(resample).sum()
     else:
-        print(prices.index)
         prices.index.freq = pd.infer_freq(prices.index)
         volumes.index.freq = pd.infer_freq(volumes.index)
 
