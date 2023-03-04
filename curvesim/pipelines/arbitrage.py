@@ -124,9 +124,11 @@ def volume_limited_arbitrage(
     price_sampler = PriceVolume(coins, days=days, data_dir=data_dir, src=src, end=end)
 
     if vol_mult is None:
+        volumes = pool_data.volume(days=days, end=end)
+        total_volumes = price_sampler.total_volumes()
         vol_mult = compute_volume_multipliers(
-            pool_data.volume(days=days),
-            price_sampler.total_volumes(),
+            volumes,
+            total_volumes,
             pool_data.n,
             pool_data.type,
             mode=vol_mode,
