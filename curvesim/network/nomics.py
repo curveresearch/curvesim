@@ -476,7 +476,7 @@ def local_pool_prices(  # noqa: C901
 
     if t_end is not None:
         prices = prices.loc[:t_end]
-        volumes = prices.loc[:t_end]
+        volumes = volumes.loc[:t_end]
 
     # Resample times
     if resample is not None:
