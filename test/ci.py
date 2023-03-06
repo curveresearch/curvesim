@@ -15,17 +15,17 @@ import curvesim
 if __name__ == "__main__":  # noqa: C901
     data_dir = os.path.join("test", "data")
     pool_names = [
-        "0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7",  # 3CRV
+        # "0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7",  # 3CRV
         "0xdebf20617708857ebe4f679508e7b7863a8a8eee",  # aCRV
-        "FRAX3CRV-f",
-        "MIM-3LP3CRV-f",
+        # "FRAX3CRV-f",
+        # "MIM-3LP3CRV-f",
         # "0x618788357d0ebd8a37e763adab3bc575d54c2c7d",  # RAI3CRV
     ]
     end_timestamps = [
-        1638316800,
+        # 1638316800,
         1622505600,
-        1643673600,
-        1643673600,
+        # 1643673600,
+        # 1643673600,
         # 1654041600,
     ]
 
