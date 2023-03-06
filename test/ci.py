@@ -70,7 +70,6 @@ if __name__ == "__main__":  # noqa: C901
         res = curvesim.autosim(
             address,
             test=True,
-            ncpu=4,
             src="local",
             data_dir=data_dir,
             pool_data=pool_data,
