@@ -546,8 +546,8 @@ def opt_arb_multi(pool, prices, limits):  # noqa: C901
             x0=x0,
             args=(price_targets, coins),
             bounds=(lo, hi),
-            gtol=10**-12,
-            xtol=10**-12,
+            gtol=10**-14,
+            xtol=10**-14,
         )
 
         # Format trades into tuples, ignore if dx=0
