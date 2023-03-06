@@ -604,13 +604,14 @@ class CurvePool(Pool):  # pylint: disable=too-many-instance-attributes
             xi * (xj * A_pow * x_prod + D_pow)
         )
 
-        if use_fee:
-            if self.fee_mul is None:
-                fee_factor = self.fee / 10**10
-            else:
-                fee_factor = self.dynamic_fee(xi, xj) / 10**10
-        else:
-            fee_factor = 0
+        # if use_fee:
+        #     if self.fee_mul is None:
+        #         fee_factor = self.fee / 10**10
+        #     else:
+        #         fee_factor = self.dynamic_fee(xi, xj) / 10**10
+        # else:
+        #     fee_factor = 0
+        fee_factor = 0
 
         dydx *= 1 - fee_factor
 
