@@ -179,7 +179,6 @@ def strategy(pool, params, price_sampler, vol_mult):
     metrics : tuple of lists
 
     """
-    print("NPY_DISABLE_CPU_FEATURES:", os.environ["NPY_DISABLE_CPU_FEATURES"])
     trader = Arbitrageur(pool)
     metrics = Metrics()
 
