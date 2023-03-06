@@ -26,51 +26,49 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
-          # - name: Format
-          #   run: |
-          #     black --version
-          #     black . --check
+      - name: Format
+        run: |
+          black --version
+          black . --check
 
-          # - name: Lint
-          #   run: |
-          #     make lint
+      - name: Lint
+        run: |
+          make lint
 
-          # - name: Unit tests
-          #   run: |
-          #     coverage run -m pytest
+      - name: Unit tests
+        run: |
+          coverage run -m pytest
 
       - name: End-to-end tests
         run: |
-          # export NPY_DISABLE_CPU_FEATURES="AVX512F,AVX512CD,AVX512_SKX"
-          # coverage run -m test.ci
-          python3 -m test.ci
+          coverage run -m test.ci
 
-          # - name: Download coverage badge
-          #   uses: chanhosuh/get-gist-action@master
-          #   id: covbadge
-          #   with:
-          #     gistURL: "https://gist.github.com/chanhosuh/3da3c072e081f4509ebdd09c63e6ede5" 
+      - name: Download coverage badge
+        uses: chanhosuh/get-gist-action@master
+        id: covbadge
+        with:
+          gistURL: "https://gist.github.com/chanhosuh/3da3c072e081f4509ebdd09c63e6ede5" 
 
-          # - name: Coverage report
-          #   run: |
-          #     # combine coverage results from the previous steps
-          #     # and checks if score decreased since last CI run
-          #     coverage combine
-          #     BADGE_JSON=`cat ${{ steps.covbadge.outputs.file }}`
-          #     COVERAGE_SCORE=$(python3 -c "import json; score=json.loads('${BADGE_JSON}')['message'].rstrip('%'); print(score)")
-          #     coverage report --fail-under="${COVERAGE_SCORE:-0}"
-          #     echo "COVERAGE_SCORE=`coverage report --format=total`" >> $GITHUB_ENV
+      - name: Coverage report
+        run: |
+          # combine coverage results from the previous steps
+          # and checks if score decreased since last CI run
+          coverage combine
+          BADGE_JSON=`cat ${{ steps.covbadge.outputs.file }}`
+          COVERAGE_SCORE=$(python3 -c "import json; score=json.loads('${BADGE_JSON}')['message'].rstrip('%'); print(score)")
+          coverage report --fail-under="${COVERAGE_SCORE:-0}"
+          echo "COVERAGE_SCORE=`coverage report --format=total`" >> $GITHUB_ENV
 
-          # - name: Upload coverage badge
-          #   uses: schneegans/dynamic-badges-action@v1.6.0
-          #   if: github.ref == 'refs/heads/main'
-          #   with:
-          #     auth: ${{ secrets.GIST_TOKEN }}  # personal access token with scope "gist"
-          #     gistID: 3da3c072e081f4509ebdd09c63e6ede5  # id of previously created gist
-          #     filename: curvesim_coverage_badge.json
-          #     label: Coverage
-          #     message: ${{ env.COVERAGE_SCORE }}%
-          #     minColorRange: 50
-          #     maxColorRange: 90
-          #     valColorRange: ${{ env.COVERAGE_SCORE }}%
+      - name: Upload coverage badge
+        uses: schneegans/dynamic-badges-action@v1.6.0
+        if: github.ref == 'refs/heads/main'
+        with:
+          auth: ${{ secrets.GIST_TOKEN }}  # personal access token with scope "gist"
+          gistID: 3da3c072e081f4509ebdd09c63e6ede5  # id of previously created gist
+          filename: curvesim_coverage_badge.json
+          label: Coverage
+          message: ${{ env.COVERAGE_SCORE }}%
+          minColorRange: 50
+          maxColorRange: 90
+          valColorRange: ${{ env.COVERAGE_SCORE }}%
 
