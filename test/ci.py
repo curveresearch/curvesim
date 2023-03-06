@@ -24,7 +24,7 @@ if __name__ == "__main__":  # noqa: C901
         {
             "address": "0xdebf20617708857ebe4f679508e7b7863a8a8eee",
             "end_timestamp": 1622505600,
-            "vol_mult": 1,  # optional, used to avoid numerical discrepancies on CI
+            "vol_mult": 10,  # optional, used to avoid numerical discrepancies on CI
         },
         # frax3CRV"
         # {
