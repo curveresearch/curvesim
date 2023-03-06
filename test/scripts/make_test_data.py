@@ -17,29 +17,46 @@ def main():
     https://docs.python.org/3/library/multiprocessing.html#multiprocessing-programming
     """
     test_data_dir = os.path.join("test", "data")
-    pool_names = [
-        "0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7",  # 3CRV
-        "0xdebf20617708857ebe4f679508e7b7863a8a8eee",  # aCRV
-        "FRAX3CRV-f",
-        "MIM-3LP3CRV-f",
-        "0x618788357d0ebd8a37e763adab3bc575d54c2c7d",  # RAI3CRV
-    ]
-    end_timestamps = [
-        1638316800,
-        1622505600,
-        1643673600,
-        1643673600,
-        1654041600,
+    pools = [
+        # 3CRV
+        {
+            "address": "0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7",
+            "end_timestamp": 1638316800,
+        },
+        # aCRV
+        {
+            "address": "0xdebf20617708857ebe4f679508e7b7863a8a8eee",
+            "end_timestamp": 1622505600,
+            "vol_mult": 25,  # optional, used to avoid numerical discrepancies on CI
+        },
+        # frax3CRV"
+        {
+            "address": "FRAX3CRV-f",
+            "end_timestamp": 1643673600,
+        },
+        # mim3CRV
+        {
+            "address": "MIM-3LP3CRV-f",
+            "end_timestamp": 1643673600,
+        },
+        # rai3CRV
+        {
+            "address": "0x618788357d0ebd8a37e763adab3bc575d54c2c7d",
+            "end_timestamp": 1654041600,
+        },
     ]
 
     # Store the data
     print("Getting pool/price data...")
-    for pool, end_ts in zip(pool_names, end_timestamps):
-        pool_data = curvesim.pool_data.get(pool)
+    for pool in pools:
+        address = pool["address"]
+        end_ts = pool["end_timestamp"]
+
+        pool_data = curvesim.pool_data.get(address)
 
         # Store pool_data
         pool_data.set_cache(end=end_ts)
-        f_name = os.path.join(test_data_dir, pool + "-pool_data.pickle")
+        f_name = os.path.join(test_data_dir, address + "-pool_data.pickle")
         with open(f_name, "wb") as f:
             pickle.dump(pool_data, f)
 
@@ -61,16 +78,25 @@ def main():
 
     # Run sim from stored data and save results
     print("Getting sim results...")
-    for pool, end_ts in zip(pool_names, end_timestamps):
-        f_name = os.path.join(test_data_dir, pool + "-pool_data.pickle")
+    for pool in pools:
+        address = pool["address"]
+        end_ts = pool["end_timestamp"]
+        vol_mult = pool.get("vol_mult", None)
+
+        f_name = os.path.join(test_data_dir, address + "-pool_data.pickle")
         with open(f_name, "rb") as f:
             pool_data = pickle.load(f)
 
         results = pipeline(
-            pool_data, test=True, src="local", data_dir=test_data_dir, end=end_ts
+            pool_data,
+            test=True,
+            src="local",
+            data_dir=test_data_dir,
+            end=end_ts,
+            vol_mult=vol_mult,
         )
 
-        f_name = os.path.join(test_data_dir, pool + "-results.pickle")
+        f_name = os.path.join(test_data_dir, address + "-results.pickle")
         with open(f_name, "wb") as f:
             pickle.dump(results, f)
 
