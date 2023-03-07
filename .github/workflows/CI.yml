@@ -41,6 +41,7 @@ jobs:
 
       - name: End-to-end tests
         run: |
+          export NPY_DISABLE_CPU_FEATURES="AVX512F,AVX512CD,AVX512_SKX"
           coverage run -m test.ci
 
       - name: Download coverage badge
