@@ -83,7 +83,7 @@ class Grid:
         vals = p_dict.values()
 
         grid = []
-        for instance in product(*vals):
+        for instance in sorted(product(*vals)):
             grid.append(dict(zip(keys, instance)))
 
         if basepool:
@@ -93,9 +93,9 @@ class Grid:
             grid = []
 
             for meta_params in meta_grid:
-                for instance in product(*base_vals):
+                for instance in sorted(product(*base_vals)):
                     base_params = dict(zip(base_keys, instance))
-                    meta_params.update({"basepool": base_params})
+                    meta_params["basepool"] = base_params
                     grid.append(meta_params.copy())
 
         return grid
