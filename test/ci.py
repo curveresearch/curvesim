@@ -74,7 +74,6 @@ if __name__ == "__main__":  # noqa: C901
             pool_data=pool_data,
             end=end_ts,
             vol_mult=vol_mult,
-            ncpu=1,
         )
         # with open(os.path.join(data_dir, f"{address}-res-test.pickle"), "rb") as f:
         #     res = pickle.load(f)
