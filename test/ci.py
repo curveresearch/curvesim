@@ -30,9 +30,9 @@ if __name__ == "__main__":  # noqa: C901
         #     "address": "FRAX3CRV-f",
         #     "end_timestamp": 1643673600,
         # },
-        # mim3CRV
+        # ousd3CRV
         {
-            "address": "MIM-3LP3CRV-f",
+            "address": "OUSD3CRV-f",
             "end_timestamp": 1646265600,
         },
         # rai3CRV

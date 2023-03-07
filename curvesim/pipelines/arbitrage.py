@@ -23,8 +23,7 @@ DEFAULT_PARAMS = {
     "fee": list(range(1000000, 5000000, 1000000)),
 }
 
-# TEST_PARAMS = {"A": [100, 1000], "fee": [3000000, 4000000]}
-TEST_PARAMS = {"A": [1000], "fee": [4000000]}
+TEST_PARAMS = {"A": [100, 1000], "fee": [3000000, 4000000]}
 
 
 # pylint: disable-next=too-many-arguments
