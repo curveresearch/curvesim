@@ -36,7 +36,7 @@ def main():
         # mim3CRV
         {
             "address": "MIM-3LP3CRV-f",
-            "end_timestamp": 1643673600,
+            "end_timestamp": 1646265600,
         },
         # rai3CRV
         {

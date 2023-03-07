@@ -16,24 +16,24 @@ if __name__ == "__main__":  # noqa: C901
     data_dir = os.path.join("test", "data")
     pools = [
         # 3CRV
-        {
-            "address": "0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7",
-            "end_timestamp": 1638316800,
-        },
+        # {
+        #     "address": "0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7",
+        #     "end_timestamp": 1638316800,
+        # },
         # aCRV
-        {
-            "address": "0xdebf20617708857ebe4f679508e7b7863a8a8eee",
-            "end_timestamp": 1622505600,
-        },
+        # {
+        #     "address": "0xdebf20617708857ebe4f679508e7b7863a8a8eee",
+        #     "end_timestamp": 1622505600,
+        # },
         # frax3CRV"
-        {
-            "address": "FRAX3CRV-f",
-            "end_timestamp": 1643673600,
-        },
+        # {
+        #     "address": "FRAX3CRV-f",
+        #     "end_timestamp": 1643673600,
+        # },
         # mim3CRV
         {
             "address": "MIM-3LP3CRV-f",
-            "end_timestamp": 1643673600,
+            "end_timestamp": 1646265600,
         },
         # rai3CRV
         # {
