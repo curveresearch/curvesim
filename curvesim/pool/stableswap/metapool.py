@@ -826,10 +826,7 @@ class CurveMetaPool(Pool):  # pylint: disable=too-many-instance-attributes
             if self.fee_mul is None:
                 fee_factor = self.fee / 10**10
             else:
-                dx = 10**12
-                fee_factor = (
-                    self.dynamic_fee(xi + dx // 2, xj - int(dydx * dx) // 2) / 10**10
-                )
+                fee_factor = self.dynamic_fee(xi, xj) / 10**10
         else:
             fee_factor = 0
 

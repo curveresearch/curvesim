@@ -168,7 +168,9 @@ def format_price_data(data, t_start, t_end, exp=1):
     return data
 
 
-def update(coins, quote, t_start, t_end, pairs=False, data_dir="data"):  # noqa: C901
+def update(
+    coins, quote, t_start, t_end, pairs=False, data_dir="data", custom_suffix=""
+):  # noqa: C901
     t_start = t_start.replace(tzinfo=timezone.utc)
     t_start_orig = t_start
     t_end = t_end.replace(tzinfo=timezone.utc)
@@ -193,11 +195,12 @@ def update(coins, quote, t_start, t_end, pairs=False, data_dir="data"):  # noqa:
 
     # Get data for each pair
     for pair in combos:
-        f_name = os.path.join(data_dir, f"{pair[0]}-{pair[1]}.csv")
+        filename = f"{pair[0]}-{pair[1]}{custom_suffix}.csv"
+        filepath = os.path.join(data_dir, filename)
         vwap_args = None
 
         try:
-            curr_file = pd.read_csv(f_name, index_col=0)
+            curr_file = pd.read_csv(filepath, index_col=0)
             curr_file.index = pd.to_datetime(curr_file.index)
 
             if t_start_orig < curr_file.index[-1]:
@@ -221,7 +224,7 @@ def update(coins, quote, t_start, t_end, pairs=False, data_dir="data"):  # noqa:
                 data = pd.concat([curr_file, data])
             data = data[data.index >= t_start_orig]
             os.makedirs(data_dir, exist_ok=True)
-            data.to_csv(f_name)
+            data.to_csv(filepath)
 
 
 def pool_prices(  # noqa: C901
@@ -233,6 +236,7 @@ def pool_prices(  # noqa: C901
     resample=None,
     pairs=None,
     data_dir="data",
+    custom_suffix="",
 ):
     """
     Loads and formats price/volume data from CSVs.
@@ -299,8 +303,9 @@ def pool_prices(  # noqa: C901
     prices = []
     volumes = []
     for (sym_1, sym_2) in symbol_pairs:
-        filename = os.path.join(data_dir, f"{sym_1}-{sym_2}.csv")
-        data_df = pd.read_csv(filename, index_col=0)
+        filename = f"{sym_1}-{sym_2}{custom_suffix}.csv"
+        filepath = os.path.join(data_dir, filename)
+        data_df = pd.read_csv(filepath, index_col=0)
         prices.append(data_df["price"])
         volumes.append(data_df["volume"])
 
@@ -366,6 +371,7 @@ def local_pool_prices(  # noqa: C901
     resample=None,
     pairs=None,
     data_dir="data",
+    custom_suffix="",
 ):
     """
     Loads and formats price/volume data from CSVs.
@@ -424,8 +430,9 @@ def local_pool_prices(  # noqa: C901
     prices = []
     volumes = []
     for (sym_1, sym_2) in symbol_pairs:
-        filename = os.path.join(data_dir, f"{sym_1}-{sym_2}.csv")
-        data_df = pd.read_csv(filename, index_col=0)
+        filename = f"{sym_1}-{sym_2}{custom_suffix}.csv"
+        filepath = os.path.join(data_dir, filename)
+        data_df = pd.read_csv(filepath, index_col=0)
         prices.append(data_df["price"])
         volumes.append(data_df["volume"])
 
@@ -469,7 +476,7 @@ def local_pool_prices(  # noqa: C901
 
     if t_end is not None:
         prices = prices.loc[:t_end]
-        volumes = prices.loc[:t_end]
+        volumes = volumes.loc[:t_end]
 
     # Resample times
     if resample is not None:

@@ -53,11 +53,11 @@ class SimStableswapBase(SimPool, SnapshotMixin):
         Only for top-level liquidity density.  Cannot compare between
         coins in basepool and primary stablecoin in metapool.
         """
-        price_pre = self.price(coin_in, coin_out)
+        price_pre = self.price(coin_in, coin_out, use_fee=False)
         price_post = self._test_trade(coin_in, coin_out, factor)
         LD1 = price_pre / ((price_pre - price_post) * factor)
 
-        price_pre = self.price(coin_out, coin_in)
+        price_pre = self.price(coin_out, coin_in, use_fee=False)
         # pylint: disable-next=arguments-out-of-order
         price_post = self._test_trade(coin_out, coin_in, factor)
         LD2 = price_pre / ((price_pre - price_post) * factor)

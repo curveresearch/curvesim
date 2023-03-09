@@ -11,9 +11,10 @@ from numpy import array, exp, isnan, log
 from pandas import DataFrame, MultiIndex
 from scipy.optimize import least_squares, root_scalar
 
-from ..iterators.param_samplers import Grid
-from ..iterators.price_samplers import PriceVolume
-from ..plot import saveplots
+from curvesim.iterators.param_samplers import Grid
+from curvesim.iterators.price_samplers import PriceVolume
+from curvesim.plot import saveplots
+
 from .templates import run_pipeline
 from .utils import compute_volume_multipliers
 
@@ -37,6 +38,7 @@ def volume_limited_arbitrage(
     vol_mult=None,
     vol_mode=1,
     ncpu=None,
+    end=None,
 ):
     """
     Implements the volume-limited arbitrage pipeline.
@@ -112,22 +114,25 @@ def volume_limited_arbitrage(
         variable_params = TEST_PARAMS
 
     if ncpu is None:
-        ncpu = os.cpu_count() if os.cpu_count() is not None else 1
+        cpu_count = os.cpu_count()
+        ncpu = cpu_count if cpu_count is not None else 1
 
     pool = pool_data.sim_pool()
-    coins = pool_data.coins()
+    coins = pool_data.coins
 
     param_sampler = Grid(pool, variable_params, fixed_params=fixed_params)
-    price_sampler = PriceVolume(coins, days=days, data_dir=data_dir, src=src)
+    price_sampler = PriceVolume(coins, days=days, data_dir=data_dir, src=src, end=end)
 
-    vol_args = (
-        pool_data.volume(days=days),
-        price_sampler.total_volumes(),
-        pool_data.n(),
-        pool_data.type(),
-    )
-
-    vol_mult = vol_mult or compute_volume_multipliers(*vol_args, mode=vol_mode)
+    if vol_mult is None:
+        volumes = pool_data.volume(days=days, end=end)
+        total_volumes = price_sampler.total_volumes()
+        vol_mult = compute_volume_multipliers(
+            volumes,
+            total_volumes,
+            pool_data.n,
+            pool_data.type,
+            mode=vol_mode,
+        )
     strat = partial(strategy, vol_mult=vol_mult)
 
     results = run_pipeline(param_sampler, price_sampler, strat, ncpu=ncpu)

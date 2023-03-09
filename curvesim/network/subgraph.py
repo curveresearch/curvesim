@@ -136,8 +136,12 @@ async def symbol_address(symbol, chain):
     return addr
 
 
-async def _volume(address, chain, days=60):
-    t_end = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+async def _volume(address, chain, days=60, end=None):
+    if end is None:
+        t_end = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    else:
+        t_end = datetime.fromtimestamp(end, tz=timezone.utc)
+    print("    end date:", t_end)
     t_start = t_end - timedelta(days=days)
 
     q = """
@@ -174,7 +178,7 @@ async def _volume(address, chain, days=60):
     return snapshots
 
 
-async def volume(addresses, chain, days=60):
+async def volume(addresses, chain, days=60, end=None):
     """
     Retrieves historical volume for a pool or multiple pools.
 
@@ -196,13 +200,13 @@ async def volume(addresses, chain, days=60):
 
     """
     if isinstance(addresses, str):
-        r = await _volume(addresses, chain, days=days)
+        r = await _volume(addresses, chain, days=days, end=end)
         vol = [float(e["volume"]) for e in r]
 
     else:
         tasks = []
         for addr in addresses:
-            tasks.append(_volume(addr, chain, days=days))
+            tasks.append(_volume(addr, chain, days=days, end=end))
 
         r = await gather(*tasks)
 
@@ -335,19 +339,6 @@ async def pool_snapshot(address, chain):
         "timestamp": int(r["timestamp"]),
     }
 
-    # Kwargs for Pool Init
-    init_kwargs = {
-        "A": data["params"]["A"],
-        "D": D,
-        "reserves": reserves,
-        "n": len(data["coins"]["names"]),
-        "fee": data["params"]["fee"],
-        "fee_mul": data["params"]["fee_mul"],
-        "tokens": data["reserves"]["tokens"],
-    }
-
-    data.update({"init_kwargs": init_kwargs})
-
     return override_subgraph_data(data, "pool_snapshot", (address, chain))
 
 
@@ -361,8 +352,12 @@ pool_snapshot_sync = sync(pool_snapshot)
 RAI_ADDR = ("0x618788357D0EBd8A37e763ADab3bc575D54c2C7d", "mainnet")
 
 
+def has_redemption_prices(address, chain):
+    return (address, chain) == RAI_ADDR
+
+
 async def _redemption_prices(address, chain, t_start, t_end, n):
-    if (address, chain) != RAI_ADDR:
+    if not has_redemption_prices(address, chain):
         return None
 
     t_end = int(t_end.timestamp())
@@ -391,7 +386,9 @@ async def _redemption_prices(address, chain, t_start, t_end, n):
     return data
 
 
-async def redemption_prices(address=RAI_ADDR[0], chain=RAI_ADDR[1], days=60, n=1000):
+async def redemption_prices(
+    address=RAI_ADDR[0], chain=RAI_ADDR[1], days=60, n=1000, end=None
+):
     """
     Async function to pull RAI redemption prices.
     Returns None if input pool is not RAI3CRV.
@@ -419,8 +416,10 @@ async def redemption_prices(address=RAI_ADDR[0], chain=RAI_ADDR[1], days=60, n=1
         A formatted dict of pool state/metadata information.
 
     """
-
-    t_end = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    if end is None:
+        t_end = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    else:
+        t_end = datetime.fromtimestamp(end, tz=timezone.utc)
     t_end = t_end.replace(tzinfo=timezone.utc)
     t_start = t_end - timedelta(days=days)
 
