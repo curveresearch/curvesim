@@ -459,18 +459,16 @@ class CurveCryptoPool(Pool):
         if old_virtual_price > 0:
             xcp: int = _geometric_mean(xp, True)
             virtual_price = 10**18 * xcp // total_supply
-            xcp_profit = old_xcp_profit * virtual_price // old_virtual_price
 
             if virtual_price < old_virtual_price:
                 raise CryptoPoolError("Loss")
 
+            xcp_profit = old_xcp_profit * virtual_price // old_virtual_price
+
         self.xcp_profit = xcp_profit
 
         norm: int = price_oracle * 10**18 // price_scale
-        if norm > 10**18:
-            norm -= 10**18
-        else:
-            norm = 10**18 - norm
+        norm = abs(norm - 10**18)
         adjustment_step: int = max(self.adjustment_step, norm // 5)
 
         needs_adjustment: bool = self.not_adjusted
@@ -500,19 +498,17 @@ class CurveCryptoPool(Pool):
             # Calculate "extended constant product" invariant xCP and virtual price
             D: int = self._newton_D(A, gamma, xp)
             xp = [D // n_coins, D * PRECISION // (n_coins * p_new)]
-            # We reuse old_virtual_price here but it's not old anymore
-            old_virtual_price = 10**18 * _geometric_mean(xp, True) // total_supply
+            new_virtual_price = 10**18 * _geometric_mean(xp, True) // total_supply
 
             # Proceed if we've got enough profit:
-            # if (old_virtual_price > 10**18) and
-            # (2 * (old_virtual_price - 10**18) > xcp_profit - 10**18):
-            if (old_virtual_price > 10**18) and (
-                2 * old_virtual_price - 10**18 > xcp_profit
+            #   new_virtual_price > 10**18
+            #   new_virtual_price - 10**18 > (xcp_profit - 10**18) / 2
+            if (new_virtual_price > 10**18) and (
+                2 * new_virtual_price - 10**18 > xcp_profit
             ):
                 self.price_scale = p_new
                 self.D = D
-                self.virtual_price = old_virtual_price
-
+                self.virtual_price = new_virtual_price
                 return
 
         # If we are here, the price_scale adjustment did not happen
