@@ -1,7 +1,10 @@
 from datetime import datetime, timedelta, timezone
 
+from curvesim.logging import get_logger
 from curvesim.network import coingecko as _coingecko
 from curvesim.network import nomics as _nomics
+
+logger = get_logger(__name__)
 
 
 def nomics(coins, days=60, data_dir="data", end=None):
@@ -13,8 +16,8 @@ def nomics(coins, days=60, data_dir="data", end=None):
         custom_suffix = "-" + str(end)
     t_start = t_end - timedelta(days=days)
 
-    print("Fetching Nomics price data...")
-    print("Timerange: %s to %s" % (str(t_start), str(t_end)))
+    logger.info("Fetching Nomics price data...")
+    logger.info("Timerange: %s to %s" % (str(t_start), str(t_end)))
 
     _nomics.update(
         coins, None, t_start, t_end, data_dir=data_dir, custom_suffix=custom_suffix
@@ -27,7 +30,7 @@ def nomics(coins, days=60, data_dir="data", end=None):
 
 
 def coingecko(coins, days=60):
-    print("Fetching CoinGecko price data...")
+    logger.info("Fetching CoinGecko price data...")
     prices, volumes = _coingecko.pool_prices(coins, "usd", days)
     pzero = 0
 
@@ -35,7 +38,7 @@ def coingecko(coins, days=60):
 
 
 def local(coins, data_dir="data", end=None):
-    print("Using local data...")
+    logger.info("Using local data...")
     if end is not None:
         t_end = datetime.fromtimestamp(end, tz=timezone.utc)
         custom_suffix = "-" + str(end)

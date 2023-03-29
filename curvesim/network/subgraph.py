@@ -8,12 +8,16 @@ from datetime import datetime, timedelta, timezone
 import pandas as pd
 from eth_utils import to_checksum_address
 
+from curvesim.logging import get_logger
+
 from ..exceptions import SubgraphResultError
 from ..overrides import override_subgraph_data
 from .http import HTTP
 from .utils import compute_D, sync
 
 # pylint: disable=redefined-outer-name
+
+logger = get_logger(__name__)
 
 
 async def query(url, q):
@@ -141,7 +145,7 @@ async def _volume(address, chain, days=60, end=None):
         t_end = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
     else:
         t_end = datetime.fromtimestamp(end, tz=timezone.utc)
-    print("    end date:", t_end)
+    logger.info(f"Volume end date: {t_end}")
     t_start = t_end - timedelta(days=days)
 
     q = """
@@ -173,7 +177,7 @@ async def _volume(address, chain, days=60, end=None):
     num_snapshots = len(snapshots)
 
     if num_snapshots < days:
-        print(f"Warning: only {num_snapshots}/{days} days of pool volume returned")
+        logger.warning(f"Only {num_snapshots}/{days} days of pool volume returned.")
 
     return snapshots
 

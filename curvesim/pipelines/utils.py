@@ -3,10 +3,12 @@ from math import factorial
 
 from numpy import append
 
+from curvesim.logging import get_logger
 from curvesim.pool import CurveMetaPool, CurvePool
 
+logger = get_logger(__name__)
 
-# Volume Multipliers
+
 def compute_volume_multipliers(pool_vol, market_vol, n, pool_type, mode=1):
     """
     Computes volume multipliers (vol_mult) used for volume limiting.
@@ -44,9 +46,7 @@ def compute_volume_multipliers(pool_vol, market_vol, n, pool_type, mode=1):
     else:
         raise TypeError(f"Pool type {pool_type} not supported by this pipeline")
 
-    print("Volume Multipliers:")
-    print(vol_mult)
-
+    logger.info(f"Volume Multipliers: {vol_mult}")
     return vol_mult
 
 
@@ -58,7 +58,7 @@ def pool_vol_mult(pool_vol, market_vol, n, mode):
         vol_mult = pool_vol.repeat(n) / n / market_vol
 
     if mode == 3:
-        print("Vol_mode=3 only available for meta-pools. Reverting to vol_mode=1")
+        logger.info("Vol_mode=3 only available for meta-pools. Reverting to vol_mode=1")
         vol_mult = pool_vol / market_vol.sum()
 
     return vol_mult

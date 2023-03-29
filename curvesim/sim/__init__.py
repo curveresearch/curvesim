@@ -6,8 +6,11 @@ are supported.
 The primary use-case is to determine optimal amplitude (A) and
 fee parameters given historical price and volume feeds.
 """
+from curvesim.logging import get_logger
 from curvesim.pipelines.arbitrage import DEFAULT_PARAMS, volume_limited_arbitrage
 from curvesim.pool_data import get as get_pool_data
+
+logger = get_logger(__name__)
 
 
 def autosim(pool=None, chain="mainnet", pool_data=None, **kwargs):

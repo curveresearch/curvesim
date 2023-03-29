@@ -1,11 +1,14 @@
 from numpy import array
 
+from curvesim.logging import get_logger
 from curvesim.network.subgraph import redemption_prices_sync as _redemption_prices
 from curvesim.network.subgraph import volume_sync as _volume
 from curvesim.pool.stableswap.metapool import CurveMetaPool
 from curvesim.pool.stableswap.raipool import CurveRaiPool
 
 from .metadata import PoolMetaData
+
+logger = get_logger(__name__)
 
 
 class PoolData:
@@ -156,10 +159,10 @@ class PoolData:
 
         """
         if get_cache and self._volume is not None:
-            print("Getting cached historical volume...")
+            logger.info("Getting cached historical volume...")
             return self._volume
 
-        print("Fetching historical volume...")
+        logger.info("Fetching historical volume...")
         addresses = self.metadata.address
         chain = self.metadata.chain
 
@@ -231,7 +234,7 @@ class PoolData:
 
         """
         if get_cache and self._redemption_prices is not None:
-            print("Getting cached redemption prices...")
+            logger.info("Getting cached redemption prices...")
             return self._redemption_prices
 
         address = self.metadata.address
