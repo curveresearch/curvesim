@@ -99,8 +99,15 @@ def multiprocessing_logging_queue(logger):
     with mp.Manager() as manager:
         try:
             logging_queue = manager.Queue()
-            listener = QueueListener(logging_queue, *logger.handlers)
+            root_logger = get_logger("")
+            listener = QueueListener(logging_queue, *root_logger.handlers)
             listener.start()
             yield logging_queue
         finally:
             listener.stop()
+
+
+def configure_multiprocess_logging(logging_queue):
+    root_logger = get_logger("")
+    root_logger.handlers.clear()
+    root_logger.addHandler(QueueHandler(logging_queue))

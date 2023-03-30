@@ -4,7 +4,11 @@ Functions and interfaces used in the simulation pipeline framework.
 from abc import ABC, abstractmethod
 from multiprocessing import Pool as cpu_pool
 
-from curvesim.logging import get_logger, multiprocessing_logging_queue
+from curvesim.logging import (
+    configure_multiprocess_logging,
+    get_logger,
+    multiprocessing_logging_queue,
+)
 
 logger = get_logger(__name__)
 
@@ -41,24 +45,32 @@ def run_pipeline(param_sampler, price_sampler, strategy, ncpu=4):
         price_sampler_data = list(price_sampler)
 
         with multiprocessing_logging_queue(logger) as logging_queue:
-            args = [
-                (pool, params, price_sampler_data, logging_queue)
-                for pool, params in param_sampler
+            strategy_args_list = [
+                (pool, params, price_sampler_data) for pool, params in param_sampler
+            ]
+
+            wrapped_args_list = [
+                (strategy, logging_queue, *args) for args in strategy_args_list
             ]
 
             with cpu_pool(ncpu) as clust:
-                results = zip(*clust.starmap(strategy, args))
+                results = zip(*clust.starmap(wrapped_strategy, wrapped_args_list))
                 clust.close()
                 clust.join()  # coverage needs this
 
     else:
         results = []
         for pool, params in param_sampler:
-            metrics = strategy(pool, params, price_sampler.restart(), None)
+            metrics = strategy(pool, params, price_sampler.restart())
             results.append(metrics)
         results = tuple(zip(*results))
 
     return results
+
+
+def wrapped_strategy(strategy, logging_queue, *args):
+    configure_multiprocess_logging(logging_queue)
+    return strategy(*args)
 
 
 class SimPool(ABC):
