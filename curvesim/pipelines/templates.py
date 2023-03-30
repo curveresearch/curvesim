@@ -44,7 +44,7 @@ def run_pipeline(param_sampler, price_sampler, strategy, ncpu=4):
     if ncpu > 1:
         price_sampler_data = list(price_sampler)
 
-        with multiprocessing_logging_queue(logger) as logging_queue:
+        with multiprocessing_logging_queue() as logging_queue:
             strategy_args_list = [
                 (pool, params, price_sampler_data) for pool, params in param_sampler
             ]
@@ -69,6 +69,13 @@ def run_pipeline(param_sampler, price_sampler, strategy, ncpu=4):
 
 
 def wrapped_strategy(strategy, logging_queue, *args):
+    """
+    This wrapper ensures we configure logging to use the
+    multiprocessing enqueueing logic within the new process.
+
+    Must be defined at the top-level of the module so it can
+    be pickled.
+    """
     configure_multiprocess_logging(logging_queue)
     return strategy(*args)
 

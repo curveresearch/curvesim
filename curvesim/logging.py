@@ -95,7 +95,11 @@ logging.config.dictConfig(CUSTOM_LOGGING_CONFIG)
 
 
 @contextmanager
-def multiprocessing_logging_queue(logger):
+def multiprocessing_logging_queue():
+    """
+    Context manager for a logging queue that can be shared
+    across multiple processes.
+    """
     with mp.Manager() as manager:
         try:
             logging_queue = manager.Queue()
@@ -108,6 +112,7 @@ def multiprocessing_logging_queue(logger):
 
 
 def configure_multiprocess_logging(logging_queue):
+    """Configure root logger in process to enqueue logs."""
     root_logger = get_logger("")
     root_logger.handlers.clear()
     root_logger.addHandler(QueueHandler(logging_queue))
