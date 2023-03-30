@@ -10,6 +10,11 @@ import os
 from contextlib import contextmanager
 from logging.handlers import QueueHandler, QueueListener
 
+# -- convenient parameters to adjust for debugging -- #
+DEFAULT_LEVEL = "info"
+USE_LOG_FILE = False
+# --------------------------------------------------- #
+
 LEVELS = {
     "critical": logging.CRITICAL,
     "warning": logging.WARNING,
@@ -18,23 +23,8 @@ LEVELS = {
     "debug": logging.DEBUG,
 }
 
-DEFAULT_LEVEL = "info"
 
-
-def get_logger(logger_name, level=DEFAULT_LEVEL):
-    """
-    Ensures logging config is loaded and allows us
-    to make various customizations.
-    """
-    logger = logging.getLogger(logger_name)
-    if isinstance(level, str):
-        level = LEVELS[level.strip().lower()]
-    logger.setLevel(level)
-
-    return logger
-
-
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.getcwd()
 LOG_DIR = os.path.join(BASE_DIR, "logs")
 os.makedirs(LOG_DIR, exist_ok=True)
 
@@ -45,6 +35,9 @@ LOGGING_FORMAT = "[%(levelname)s][%(asctime)s][%(name)s]: %(message)s"
 MULTIPROCESS_LOGGING_FORMAT = (
     "[%(levelname)s][%(asctime)s][%(name)s]-%(process)d: %(message)s"
 )
+
+
+HANDLERS = ["console", "file"] if USE_LOG_FILE else ["console"]
 
 CUSTOM_LOGGING_CONFIG = {
     "version": 1,
@@ -70,7 +63,7 @@ CUSTOM_LOGGING_CONFIG = {
     },
     "loggers": {
         "": {
-            "handlers": ["console", "file"],
+            "handlers": HANDLERS,
             "level": "DEBUG",
             "propagate": False,
         },
@@ -86,12 +79,25 @@ silenced_loggers = [
 configured_loggers = CUSTOM_LOGGING_CONFIG["loggers"]
 for name in silenced_loggers:
     configured_loggers[name] = {
-        "handlers": ["console", "file"],
+        "handlers": HANDLERS,
         "level": "INFO",
         "propagate": False,
     }
 
 logging.config.dictConfig(CUSTOM_LOGGING_CONFIG)
+
+
+def get_logger(logger_name, level=DEFAULT_LEVEL):
+    """
+    Ensures logging config is loaded and allows us
+    to make various customizations.
+    """
+    logger = logging.getLogger(logger_name)
+    if isinstance(level, str):
+        level = LEVELS[level.strip().lower()]
+    logger.setLevel(level)
+
+    return logger
 
 
 @contextmanager
