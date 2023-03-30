@@ -1,12 +1,10 @@
 """
 Functions and interfaces used in the simulation pipeline framework.
 """
-import multiprocessing
 from abc import ABC, abstractmethod
-from logging.handlers import QueueListener
 from multiprocessing import Pool as cpu_pool
 
-from curvesim.logging import get_logger
+from curvesim.logging import get_logger, multiprocessing_logging_queue
 
 logger = get_logger(__name__)
 
@@ -42,11 +40,7 @@ def run_pipeline(param_sampler, price_sampler, strategy, ncpu=4):
     if ncpu > 1:
         price_sampler_data = list(price_sampler)
 
-        with multiprocessing.Manager() as manager:
-            logging_queue = manager.Queue()
-            listener = QueueListener(logging_queue, *logger.handlers)
-            listener.start()
-
+        with multiprocessing_logging_queue(logger) as logging_queue:
             args = [
                 (pool, params, price_sampler_data, logging_queue)
                 for pool, params in param_sampler
@@ -56,8 +50,6 @@ def run_pipeline(param_sampler, price_sampler, strategy, ncpu=4):
                 results = zip(*clust.starmap(strategy, args))
                 clust.close()
                 clust.join()  # coverage needs this
-
-            listener.stop()
 
     else:
         results = []

@@ -1,13 +1,13 @@
 """ Custom logging config and useful aliases for logging """
 
-__all__ = ["get_logger"]
+__all__ = ["get_logger", "multiprocessing_logging_queue"]
 
 import datetime
 import logging
 import logging.config
 import multiprocessing as mp
 import os
-from functools import partial
+from contextlib import contextmanager
 from logging.handlers import QueueHandler, QueueListener
 
 LEVELS = {
@@ -92,3 +92,15 @@ for name in silenced_loggers:
     }
 
 logging.config.dictConfig(CUSTOM_LOGGING_CONFIG)
+
+
+@contextmanager
+def multiprocessing_logging_queue(logger):
+    with mp.Manager() as manager:
+        try:
+            logging_queue = manager.Queue()
+            listener = QueueListener(logging_queue, *logger.handlers)
+            listener.start()
+            yield logging_queue
+        finally:
+            listener.stop()
