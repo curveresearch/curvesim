@@ -11,7 +11,7 @@ from curvesim.logging import get_logger
 logger = get_logger(__name__)
 
 
-def run_pipeline(param_sampler, price_sampler, strategy, ncpu=4, logging_queue=None):
+def run_pipeline(param_sampler, price_sampler, strategy, ncpu=4):
     """
     Core function for running pipelines.
 
@@ -41,15 +41,16 @@ def run_pipeline(param_sampler, price_sampler, strategy, ncpu=4, logging_queue=N
     """
     if ncpu > 1:
         price_sampler_data = list(price_sampler)
-        args = [
-            (pool, params, price_sampler_data, logging_queue)
-            for pool, params in param_sampler
-        ]
 
         with multiprocessing.Manager() as manager:
             logging_queue = manager.Queue()
             listener = QueueListener(logging_queue, *logger.handlers)
             listener.start()
+
+            args = [
+                (pool, params, price_sampler_data, logging_queue)
+                for pool, params in param_sampler
+            ]
 
             with cpu_pool(ncpu) as clust:
                 results = zip(*clust.starmap(strategy, args))

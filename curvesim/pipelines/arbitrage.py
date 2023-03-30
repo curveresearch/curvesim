@@ -140,12 +140,7 @@ def volume_limited_arbitrage(
         )
     strat = partial(strategy, vol_mult=vol_mult)
 
-    with multiprocessing.Manager() as manager:
-        logging_queue = manager.Queue()
-        results = run_pipeline(
-            param_sampler, price_sampler, strat, ncpu=ncpu, logging_queue=logging_queue
-        )
-
+    results = run_pipeline(param_sampler, price_sampler, strat, ncpu=ncpu)
     results = format_results(
         results, param_sampler.flat_grid(), price_sampler.prices.index
     )
