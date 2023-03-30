@@ -2,9 +2,11 @@
 Implements the volume-limited arbitrage pipeline.
 """
 
+import multiprocessing
 import os
 from datetime import timedelta
 from functools import partial
+from logging.handlers import QueueHandler
 
 from numpy import array, exp, isnan, log
 from pandas import DataFrame, MultiIndex
@@ -138,7 +140,11 @@ def volume_limited_arbitrage(
         )
     strat = partial(strategy, vol_mult=vol_mult)
 
-    results = run_pipeline(param_sampler, price_sampler, strat, ncpu=ncpu)
+    # logging_queue = multiprocessing.Queue()
+    logging_queue = None
+    results = run_pipeline(
+        param_sampler, price_sampler, strat, ncpu=ncpu, logging_queue=logging_queue
+    )
     results = format_results(
         results, param_sampler.flat_grid(), price_sampler.prices.index
     )
@@ -157,7 +163,7 @@ def volume_limited_arbitrage(
 
 
 # Strategy
-def strategy(pool, params, price_sampler, vol_mult):
+def strategy(pool, params, price_sampler, vol_mult, logging_queue):
     """
     Computes and executes volume-limited arbitrage trades at each timestep.
 
@@ -182,6 +188,11 @@ def strategy(pool, params, price_sampler, vol_mult):
     metrics : tuple of lists
 
     """
+    if logging_queue:
+        logger.addHandler(QueueHandler(logging_queue))
+
+    logger.warning(f"Process {os.getpid()} started")
+
     trader = Arbitrageur(pool)
     metrics = Metrics()
 

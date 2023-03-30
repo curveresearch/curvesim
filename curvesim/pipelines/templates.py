@@ -1,11 +1,17 @@
 """
 Functions and interfaces used in the simulation pipeline framework.
 """
+import multiprocessing
 from abc import ABC, abstractmethod
+from logging.handlers import QueueListener
 from multiprocessing import Pool as cpu_pool
 
+from curvesim.logging import get_logger
 
-def run_pipeline(param_sampler, price_sampler, strategy, ncpu=4):
+logger = get_logger(__name__)
+
+
+def run_pipeline(param_sampler, price_sampler, strategy, ncpu=4, logging_queue=None):
     """
     Core function for running pipelines.
 
@@ -35,17 +41,25 @@ def run_pipeline(param_sampler, price_sampler, strategy, ncpu=4):
     """
     if ncpu > 1:
         price_sampler_data = list(price_sampler)
-        args = [(pool, params, price_sampler_data) for pool, params in param_sampler]
+        args = [
+            (pool, params, price_sampler_data, logging_queue)
+            for pool, params in param_sampler
+        ]
 
+        listener = QueueListener(logging_queue, *logger.handlers)
+        listener.start()
         with cpu_pool(ncpu) as clust:
             results = zip(*clust.starmap(strategy, args))
             clust.close()
             clust.join()  # coverage needs this
+        listener.stop()
 
     else:
         results = []
         for pool, params in param_sampler:
-            metrics = strategy(pool, params, price_sampler.restart())
+            metrics = strategy(
+                pool, params, price_sampler.restart(), logging_queue=logging_queue
+            )
             results.append(metrics)
         results = tuple(zip(*results))
 
