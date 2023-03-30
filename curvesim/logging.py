@@ -18,8 +18,12 @@ LEVELS = {
 DEFAULT_LEVEL = "info"
 
 
-def get_logger(name, level=DEFAULT_LEVEL):
-    logger = logging.getLogger(name)
+def get_logger(logger_name, level=DEFAULT_LEVEL):
+    """
+    Ensures logging config is loaded and allows us
+    to make various customizations.
+    """
+    logger = logging.getLogger(logger_name)
     if isinstance(level, str):
         level = LEVELS[level.strip().lower()]
     logger.setLevel(level)
