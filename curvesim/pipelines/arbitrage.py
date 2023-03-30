@@ -140,11 +140,12 @@ def volume_limited_arbitrage(
         )
     strat = partial(strategy, vol_mult=vol_mult)
 
-    # logging_queue = multiprocessing.Queue()
-    logging_queue = None
-    results = run_pipeline(
-        param_sampler, price_sampler, strat, ncpu=ncpu, logging_queue=logging_queue
-    )
+    with multiprocessing.Manager() as manager:
+        logging_queue = manager.Queue()
+        results = run_pipeline(
+            param_sampler, price_sampler, strat, ncpu=ncpu, logging_queue=logging_queue
+        )
+
     results = format_results(
         results, param_sampler.flat_grid(), price_sampler.prices.index
     )
@@ -163,7 +164,7 @@ def volume_limited_arbitrage(
 
 
 # Strategy
-def strategy(pool, params, price_sampler, vol_mult, logging_queue):
+def strategy(pool, params, price_sampler, logging_queue, vol_mult):
     """
     Computes and executes volume-limited arbitrage trades at each timestep.
 

@@ -46,20 +46,22 @@ def run_pipeline(param_sampler, price_sampler, strategy, ncpu=4, logging_queue=N
             for pool, params in param_sampler
         ]
 
-        listener = QueueListener(logging_queue, *logger.handlers)
-        listener.start()
-        with cpu_pool(ncpu) as clust:
-            results = zip(*clust.starmap(strategy, args))
-            clust.close()
-            clust.join()  # coverage needs this
-        listener.stop()
+        with multiprocessing.Manager() as manager:
+            logging_queue = manager.Queue()
+            listener = QueueListener(logging_queue, *logger.handlers)
+            listener.start()
+
+            with cpu_pool(ncpu) as clust:
+                results = zip(*clust.starmap(strategy, args))
+                clust.close()
+                clust.join()  # coverage needs this
+
+            listener.stop()
 
     else:
         results = []
         for pool, params in param_sampler:
-            metrics = strategy(
-                pool, params, price_sampler.restart(), logging_queue=logging_queue
-            )
+            metrics = strategy(pool, params, price_sampler.restart(), None)
             results.append(metrics)
         results = tuple(zip(*results))
 
