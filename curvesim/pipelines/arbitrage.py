@@ -187,8 +187,6 @@ def strategy(pool, params, price_sampler, logging_queue, vol_mult):
     if logging_queue:
         logger.addHandler(QueueHandler(logging_queue))
 
-    logger.warning(f"Process {os.getpid()} started")
-
     trader = Arbitrageur(pool)
     metrics = Metrics()
 

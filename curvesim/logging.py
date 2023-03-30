@@ -5,7 +5,10 @@ __all__ = ["get_logger"]
 import datetime
 import logging
 import logging.config
+import multiprocessing as mp
 import os
+from functools import partial
+from logging.handlers import QueueHandler, QueueListener
 
 LEVELS = {
     "critical": logging.CRITICAL,
@@ -38,15 +41,16 @@ os.makedirs(LOG_DIR, exist_ok=True)
 __dt_string = datetime.datetime.now().strftime("%Y%m%d")
 LOG_FILEPATH = os.path.join(LOG_DIR, __dt_string + ".log")
 
-LOGGING_FORMAT = "[%(levelname)s][%(name)s] %(asctime)s: %(message)s"
+LOGGING_FORMAT = "[%(levelname)s][%(asctime)s][%(name)s]: %(message)s"
+MULTIPROCESS_LOGGING_FORMAT = (
+    "[%(levelname)s][%(asctime)s][%(name)s]-%(process)d: %(message)s"
+)
 
 CUSTOM_LOGGING_CONFIG = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
-        "standard": {
-            "format": LOGGING_FORMAT,
-        },
+        "standard": {"format": MULTIPROCESS_LOGGING_FORMAT, "datefmt": "%H:%M:%S"},
     },
     "handlers": {
         "console": {
