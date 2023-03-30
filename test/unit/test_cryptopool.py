@@ -491,6 +491,9 @@ def test_get_dy(vyper_cryptopool, x0, x1, dx_perc, i):
 
     assert dy == expected_dy
 
+    expected_balances = [vyper_cryptopool.balances(i) for i in range(2)]
+    assert pool.balances == expected_balances
+
 
 @given(
     st.integers(min_value=1, max_value=300),
@@ -611,6 +614,9 @@ def test_calc_withdraw_one_coin(vyper_cryptopool, amount, i):
     dy = pool.calc_withdraw_one_coin(amount, i)
     assert dy == expected_dy
 
+    expected_balances = [vyper_cryptopool.balances(i) for i in range(2)]
+    assert pool.balances == expected_balances
+
 
 @given(price, price, st.integers(min_value=0, max_value=1000))
 @settings(
@@ -673,3 +679,6 @@ def test_calc_token_amount(vyper_cryptopool, x0, x1):
     expected_lp_amount = vyper_cryptopool.calc_token_amount(amounts)
     lp_amount = pool.calc_token_amount(amounts)
     assert lp_amount == expected_lp_amount
+
+    expected_balances = [vyper_cryptopool.balances(i) for i in range(2)]
+    assert pool.balances == expected_balances

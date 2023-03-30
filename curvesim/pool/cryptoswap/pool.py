@@ -576,7 +576,7 @@ class CurveCryptoPool(Pool):
         assert i < self.n  # dev: coin index out of range
         assert j < self.n  # dev: coin index out of range
 
-        xp: List[int] = self.balances
+        xp: List[int] = self.balances.copy()
         xp[i] += dx
         precisions: List[int] = self.precisions
         price_scale: int = self.price_scale * precisions[1]
