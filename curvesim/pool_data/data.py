@@ -77,7 +77,6 @@ class PoolData:
         """
         metadata = self.metadata
         kwargs = metadata.init_kwargs(balanced, balanced_base, normalize)
-        print(kwargs)
         if sim:
             pool_type = metadata.sim_pool_type
         else:
