@@ -240,6 +240,7 @@ async def _pool_snapshot(address, chain):
               basePool
               coins
               coinNames
+              coinDecimals
               poolType
               isV2
             }
@@ -247,6 +248,7 @@ async def _pool_snapshot(address, chain):
             A
             fee
             offPegFeeMultiplier
+            reserves
             normalizedReserves
             virtualPrice
             timestamp
@@ -302,12 +304,15 @@ async def pool_snapshot(address, chain):
         fee_mul = int(r["offPegFeeMultiplier"]) * 10**10
 
     # Coins
+    names = r["coinNames"]
     addrs = [to_checksum_address(c) for c in r["coins"]]
+    decimals = [int(d) for d in r["coinDecimals"]]
 
-    coins = {"names": r["coinNames"], "addresses": addrs}
+    coins = {"names": names, "addresses": addrs, "decimals": decimals}
 
     # Reserves
-    reserves = [int(nr) for nr in r["normalizedReserves"]]
+    normalized_reserves = [int(r) for r in r["normalizedReserves"]]
+    unnormalized_reserves = [int(r) for r in r["reserves"]]
 
     # Basepool
     if r["metapool"]:
@@ -331,7 +336,8 @@ async def pool_snapshot(address, chain):
         "coins": coins,
         "reserves": {
             "D": D,
-            "by_coin": reserves,
+            "by_coin": normalized_reserves,
+            "unnormalized_by_coin": unnormalized_reserves,
             "virtual_price": int(r["virtualPrice"]),
             "tokens": D * 10**18 // int(r["virtualPrice"]),
         },
