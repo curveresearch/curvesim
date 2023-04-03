@@ -139,7 +139,7 @@ metapool_test_metadata = json.loads(METAPOOL_TEST_METADATA_JSON)
 cryptopool_test_metadata = json.loads(CRYPTOPOOL_TEST_METADATA_JSON)
 
 
-def test_pool_data():
+def test_pool():
     metadata = PoolMetaData(pool_test_metadata)
 
     assert metadata.address == "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7"
@@ -179,6 +179,23 @@ def test_pool_data():
         "fee_mul": None,
         "tokens": 425036241454443455995211818,
     }
+    assert metadata.init_kwargs(balanced=False, normalize=False) == {
+        "A": 2000,
+        "D": [
+            171485829393046867353492287,
+            175414686134396,
+            88973989934190,
+        ],
+        "n": 3,
+        "fee": 1000000,
+        "fee_mul": None,
+        "tokens": 425036241454443455995211818,
+        "rates": [
+            1000000000000000000,
+            1000000000000000000000000000000,
+            1000000000000000000000000000000,
+        ],
+    }
 
 
 def test_metapool():
@@ -214,13 +231,26 @@ def test_metapool():
     }
 
     unbalanced_init_kwargs = metadata.init_kwargs(balanced=False)
-    _ = unbalanced_init_kwargs.pop("basepool")
+    del unbalanced_init_kwargs["basepool"]
 
     assert unbalanced_init_kwargs == {
         "A": 1500,
-        "D": [4728546370000000000000000, 5433043628290853888692995],
+        "D": [4580491420000000000000000, 4584663086890532793313572],
         "n": 2,
         "fee": 4000000,
         "fee_mul": None,
-        "tokens": 10149840032998679996759468,
+        "tokens": 9145685457506457679415433,
+    }
+
+    unnormalized_init_kwargs = metadata.init_kwargs(balanced=False, normalize=False)
+    del unnormalized_init_kwargs["basepool"]
+
+    assert unnormalized_init_kwargs == {
+        "A": 1500,
+        "D": [458049142, 4584663086890532793313572],
+        "n": 2,
+        "fee": 4000000,
+        "fee_mul": None,
+        "tokens": 9145685457506457679415433,
+        "rate_multiplier": 10000000000000000000000000000000000,
     }
