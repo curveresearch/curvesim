@@ -156,7 +156,7 @@ async def _volume(address, chain, days=60, end=None):
                 pool: "%s"
                 period: "86400"
                 timestamp_gte: %d
-                timestamp_lte: %d
+                timestamp_lt: %d
               }
           )
           {
