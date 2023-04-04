@@ -1,6 +1,8 @@
 from eth_utils.address import to_checksum_address
 
 from curvesim.exceptions import SubgraphResultError
+from curvesim.network.utils import compute_D
+from curvesim.overrides import override_subgraph_data
 
 
 def pool_snapshot_query(address):
@@ -45,7 +47,7 @@ def pool_snapshot_query(address):
     return q
 
 
-def process_pool_snapshot_result(r):
+def process_pool_snapshot_result(r, address, chain):
     try:
         r = r["dailyPoolSnapshots"][0]
     except IndexError:
@@ -82,12 +84,6 @@ def process_pool_snapshot_result(r):
     # Reserves
     normalized_reserves = [int(r) for r in r["normalizedReserves"]]
     unnormalized_reserves = [int(r) for r in r["reserves"]]
-
-    # Basepool
-    if r["metapool"]:
-        basepool = await self.pool_snapshot(r["basePool"])
-    else:
-        basepool = None
 
     # Output
     data = {

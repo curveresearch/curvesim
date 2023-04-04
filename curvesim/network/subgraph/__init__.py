@@ -9,12 +9,9 @@ import pandas as pd
 
 from curvesim.exceptions import SubgraphResultError
 from curvesim.network.http import AsyncHttpClient
-from curvesim.network.subgraph.pool_snapshot import (
-    pool_snapshot_query,
-    process_pool_snapshot_result,
-)
 from curvesim.network.utils import sync
 
+from .pool_snapshot import pool_snapshot_query, process_pool_snapshot_result
 from .symbol_address import process_symbol_address_result, symbol_address_query
 from .volume import process_volume_result, volume_query
 
@@ -49,6 +46,7 @@ class ConvexSubgraphClient(AsyncHttpClient):
 
     def __init__(self, chain):
         self.url = CONVEX_COMMUNITY_URL % chain
+        self.chain = chain
 
     async def query(self, q):
         r = await self.post(self.url, json={"query": q})
@@ -148,7 +146,17 @@ class ConvexSubgraphClient(AsyncHttpClient):
         """
         q = pool_snapshot_query(address)
         result = await self.query(q)
-        snapshot = process_pool_snapshot_result(result)
+        snapshot = process_pool_snapshot_result(result, address, self.chain)
+
+        if result["metapool"]:
+            basepool_address = result["basePool"]
+            basepool_query = pool_snapshot_query(basepool_address)
+            basepool_result = await self.query(basepool_query)
+            basepool = process_pool_snapshot_result(
+                basepool_result, basepool_address, self.chain
+            )
+            snapshot["basepool"] = basepool
+
         return snapshot
 
     pool_snapshot_sync = sync(pool_snapshot)
