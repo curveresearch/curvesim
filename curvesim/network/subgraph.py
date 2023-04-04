@@ -138,7 +138,9 @@ async def symbol_address(symbol, chain):
 
 async def _volume(address, chain, days=60, end=None):
     if end is None:
-        t_end = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        t_end = datetime.now(timezone.utc).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
     else:
         t_end = datetime.fromtimestamp(end, tz=timezone.utc)
     print("    end date:", t_end)
@@ -428,7 +430,9 @@ async def redemption_prices(
 
     """
     if end is None:
-        t_end = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        t_end = datetime.now(timezone.utc).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
     else:
         t_end = datetime.fromtimestamp(end, tz=timezone.utc)
     t_end = t_end.replace(tzinfo=timezone.utc)
