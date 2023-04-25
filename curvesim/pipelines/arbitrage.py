@@ -3,7 +3,6 @@ Implements the volume-limited arbitrage pipeline.
 """
 
 import os
-import traceback
 from datetime import timedelta
 from functools import partial
 
@@ -13,6 +12,7 @@ from scipy.optimize import least_squares, root_scalar
 
 from curvesim.iterators.param_samplers import Grid
 from curvesim.iterators.price_samplers import PriceVolume
+from curvesim.logging import get_logger
 from curvesim.plot import saveplots
 
 from .templates import run_pipeline
@@ -24,6 +24,9 @@ DEFAULT_PARAMS = {
 }
 
 TEST_PARAMS = {"A": [100, 1000], "fee": [3000000, 4000000]}
+
+
+logger = get_logger(__name__)
 
 
 # pylint: disable-next=too-many-arguments
@@ -183,7 +186,7 @@ def strategy(pool, params, price_sampler, vol_mult):
     metrics = Metrics()
 
     symbol = pool.symbol
-    print(f"[{symbol}] Simulating with {params}")
+    logger.info(f"[{symbol}] Simulating with {params}")
 
     for prices, volumes, timestamp in price_sampler:
         limits = volumes * vol_mult
@@ -418,7 +421,7 @@ def format_results(results, parameters, timestamps):
     try:
         freq = timestamps.freq / timedelta(minutes=1)
     except Exception:
-        print("Warning: assuming 30 minute sampling for annualizing returns")
+        logger.warning("Assuming 30 minute sampling for annualizing returns.")
         freq = 30
     yearmult = 60 / freq * 24 * 365
     ar = DataFrame(exp(log_returns.mean(axis=1) * yearmult) - 1)
@@ -566,20 +569,10 @@ def opt_arb_multi(pool, prices, limits):  # noqa: C901
         errors = res.fun
 
     except Exception:
-        print(traceback.format_exc())
-        print(
-            "Optarbs args:\n",
-            "x0: ",
-            str(x0),
-            "lo: ",
-            str(lo),
-            "hi: ",
-            str(hi),
-            "prices: ",
-            str(price_targets),
-            end="\n" * 2,
+        logger.error(
+            f"Optarbs args: x0: {x0}, lo: {lo}, hi: {hi}, prices: {price_targets}",
+            exc_info=True,
         )
-
         errors = array(error_function_multi([0] * len(x0), price_targets, coins))
         res = []
 
@@ -662,16 +655,9 @@ def get_trade_args(get_pool_price, get_bounds, error_function, prices, limits, c
             x0.append(size)
         except ValueError:
             pool_price = get_pool_price(in_index, out_index)
-            print(
-                "Warning: Opt_arb error,",
-                "Pair:",
-                (in_index, out_index),
-                "Pool price:",
-                pool_price,
-                "Target Price:",
-                price,
-                "Diff:",
-                pool_price - price,
+            logger.error(
+                f"Opt_arb error: Pair: {(in_index, out_index)}, Pool price: {pool_price},"
+                f"Target Price: {price}, Diff: {pool_price - price}"
             )
             x0.append(0)
 

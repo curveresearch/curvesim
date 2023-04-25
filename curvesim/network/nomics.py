@@ -9,6 +9,7 @@ from itertools import combinations
 import pandas as pd
 from numpy import NaN
 
+from curvesim.logging import get_logger
 from curvesim.utils import get_env_var
 
 from .http import HTTP
@@ -18,6 +19,8 @@ URL = "https://api.nomics.com/v1/"
 
 FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 ETH_addr = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
+
+logger = get_logger(__name__)
 
 
 def get_nomics_api_key():
@@ -218,7 +221,7 @@ def update(
 
         # Save if any new data
         if vwap_args is not None:
-            print(f"Downloading {pair[0]}-{pair[1]}")
+            logger.info(f"Downloading {pair[0]}-{pair[1]}")
             data = vwap_agg_sync(*vwap_args)
             if curr_file is not None:
                 data = pd.concat([curr_file, data])
