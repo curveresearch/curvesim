@@ -142,7 +142,9 @@ async def symbol_address(symbol, chain):
 
 async def _volume(address, chain, days=60, end=None):
     if end is None:
-        t_end = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        t_end = datetime.now(timezone.utc).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
     else:
         t_end = datetime.fromtimestamp(end, tz=timezone.utc)
     logger.info(f"Volume end date: {t_end}")
@@ -158,7 +160,7 @@ async def _volume(address, chain, days=60, end=None):
                 pool: "%s"
                 period: "86400"
                 timestamp_gte: %d
-                timestamp_lte: %d
+                timestamp_lt: %d
               }
           )
           {
@@ -244,6 +246,7 @@ async def _pool_snapshot(address, chain):
               basePool
               coins
               coinNames
+              coinDecimals
               poolType
               isV2
             }
@@ -251,6 +254,7 @@ async def _pool_snapshot(address, chain):
             A
             fee
             offPegFeeMultiplier
+            reserves
             normalizedReserves
             virtualPrice
             timestamp
@@ -261,7 +265,12 @@ async def _pool_snapshot(address, chain):
     )
 
     r = await convex(chain, q)
-    r = r["dailyPoolSnapshots"][0]
+    try:
+        r = r["dailyPoolSnapshots"][0]
+    except IndexError:
+        raise SubgraphResultError(
+            f"No daily snapshot for this pool: {address}, {chain}"
+        )
 
     return r
 
@@ -306,12 +315,15 @@ async def pool_snapshot(address, chain):
         fee_mul = int(r["offPegFeeMultiplier"]) * 10**10
 
     # Coins
+    names = r["coinNames"]
     addrs = [to_checksum_address(c) for c in r["coins"]]
+    decimals = [int(d) for d in r["coinDecimals"]]
 
-    coins = {"names": r["coinNames"], "addresses": addrs}
+    coins = {"names": names, "addresses": addrs, "decimals": decimals}
 
     # Reserves
-    reserves = [int(nr) for nr in r["normalizedReserves"]]
+    normalized_reserves = [int(r) for r in r["normalizedReserves"]]
+    unnormalized_reserves = [int(r) for r in r["reserves"]]
 
     # Basepool
     if r["metapool"]:
@@ -335,7 +347,8 @@ async def pool_snapshot(address, chain):
         "coins": coins,
         "reserves": {
             "D": D,
-            "by_coin": reserves,
+            "by_coin": normalized_reserves,
+            "unnormalized_by_coin": unnormalized_reserves,
             "virtual_price": int(r["virtualPrice"]),
             "tokens": D * 10**18 // int(r["virtualPrice"]),
         },
@@ -421,7 +434,9 @@ async def redemption_prices(
 
     """
     if end is None:
-        t_end = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        t_end = datetime.now(timezone.utc).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
     else:
         t_end = datetime.fromtimestamp(end, tz=timezone.utc)
     t_end = t_end.replace(tzinfo=timezone.utc)

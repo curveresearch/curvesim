@@ -133,7 +133,13 @@ def make(
     return pool
 
 
-def get(address_or_symbol, chain="mainnet", balanced=False, balanced_base=False):
+def get(
+    address_or_symbol,
+    chain="mainnet",
+    balanced=False,
+    balanced_base=False,
+    normalize=False,
+):
     """
     Parameters
     ----------
@@ -150,10 +156,13 @@ def get(address_or_symbol, chain="mainnet", balanced=False, balanced_base=False)
         chain/layer2 identifier, e.g. "mainnet", "arbitrum", "optimism"
 
     balanced : bool, default=False
-            If True, balances the pool value across assets.
+        If True, balances the pool value across assets.
 
     balanced_base : bool, default=False
-            If True and pool is metapool, balances the basepool value across assets.
+        If True and pool is metapool, balances the basepool value across assets.
+
+    normalize : bool, default=False
+        If True, normalizes balances to 18 decimals (useful for sim calculations).
 
     Returns
     -------
@@ -164,5 +173,7 @@ def get(address_or_symbol, chain="mainnet", balanced=False, balanced_base=False)
     >>> import curvesim
     >>> pool = curvesim.pool.get("0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7", "mainnet")
     """
-    p = _get_pool_data(address_or_symbol, chain=chain)
-    return p.pool(balanced=balanced, balanced_base=balanced_base)
+    pool_data = _get_pool_data(address_or_symbol, chain=chain)
+    return pool_data.pool(
+        balanced=balanced, balanced_base=balanced_base, normalize=normalize
+    )

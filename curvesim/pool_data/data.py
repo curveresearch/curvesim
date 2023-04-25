@@ -56,7 +56,7 @@ class PoolData:
         self._volume = None
         self._redemption_prices = None
 
-    def pool(self, balanced=True, balanced_base=True, sim=False):
+    def pool(self, balanced=False, balanced_base=False, normalize=False, sim=False):
         """
         Constructs a pool object based on the stored data.
 
@@ -68,6 +68,9 @@ class PoolData:
         balanced_base : bool, default=True
             If True and pool is metapool, balances the basepool value across assets.
 
+        normalize : bool, default=True
+            If True, normalizes balances to 18 decimals (useful for sim calculations).
+
         sim: bool, default=False
             If True, returns a `SimPool` version of the pool.
 
@@ -76,7 +79,7 @@ class PoolData:
         Pool
         """
         metadata = self.metadata
-        kwargs = metadata.init_kwargs(balanced, balanced_base)
+        kwargs = metadata.init_kwargs(balanced, balanced_base, normalize)
         if sim:
             pool_type = metadata.sim_pool_type
         else:
@@ -97,7 +100,7 @@ class PoolData:
         Effectively the same as the `pool` method but returns
         an object in the `SimPool` hierarchy.
         """
-        return self.pool(balanced, balanced_base, sim=True)
+        return self.pool(balanced, balanced_base, normalize=True, sim=True)
 
     @property
     def coins(self):
