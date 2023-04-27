@@ -157,7 +157,7 @@ def test_pool():
 
     assert metadata.n == 3
 
-    assert metadata.has_redemption_prices is False
+    assert metadata.pool_type is CurvePool
 
     assert metadata.init_kwargs() == {
         "A": 2000,
@@ -216,7 +216,7 @@ def test_metapool():
 
     assert metadata.n == [2, 2]
 
-    assert metadata.has_redemption_prices is False
+    assert metadata.pool_type is CurveMetaPool
 
     init_kwargs = metadata.init_kwargs()
     _ = init_kwargs.pop("basepool")
