@@ -140,6 +140,7 @@ def get_pool(
     balanced_base=False,
     normalize=False,
     sim=False,
+    custom_kwargs=None,
 ):
     """
     Constructs a pool object based on the stored data.
@@ -180,15 +181,23 @@ def get_pool(
     >>> pool = curvesim.pool.get("0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7", "mainnet")
 
     """
+    custom_kwargs = custom_kwargs or {}
+
     metadata = get_metadata(address_or_symbol, chain=chain)
-    kwargs = metadata.init_kwargs(balanced, balanced_base, normalize)
+    init_kwargs = metadata.init_kwargs(balanced, balanced_base, normalize)
 
     if sim:
         pool_type = metadata.sim_pool_type
     else:
         pool_type = metadata.pool_type
 
-    pool = pool_type(**kwargs)
+    if issubclass(pool_type, CurveRaiPool):
+        if "redemption_prices" not in custom_kwargs:
+            raise CurvesimValueError("")
+        r = custom_kwargs["redemption_prices"]
+        pool = pool_type(r, **init_kwargs)
+    else:
+        pool = pool_type(**init_kwargs)
 
     pool.metadata = metadata._dict  # pylint: disable=protected-access
 
