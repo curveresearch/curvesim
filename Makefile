@@ -20,8 +20,12 @@ help:
 	@echo "lint                   linting checks through flake8 and pylint"
 	@echo "flake8                 lint using flake8"
 	@echo "pylint                 lint using pylint"
+	@echo "black                  format using black"
 	@echo ""
 	@echo "release                upload new pypi release using twine"
+	@echo ""
+	@echo "coverage               run tests generating coverage data"
+	@echo "coverage_html          spinup HTML view of coverage report"
 	@echo ""
 
 VENV_PATH := $(PWD)/env
@@ -58,6 +62,7 @@ changelog_update:
 	@VERSION=`python -c "from curvesim import __version__; print(__version__)"`; \
 	scriv collect --version=$${VERSION}
 
+# deprecated now that we have the pypi workflow
 .PHONY: release
 release:
 	pip install build twine
@@ -104,7 +109,6 @@ coverage:
 	coverage run -m test.ci
 	coverage combine
 	coverage report
-	# coverage report --format=total
 
 .PHONY: coverage_html
 coverage_html:
