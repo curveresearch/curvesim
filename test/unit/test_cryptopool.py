@@ -75,7 +75,7 @@ def initialize_pool(vyper_cryptopool):
 
     price_oracle = vyper_cryptopool.eval("self._price_oracle")
     # pylint: disable-next=protected-access
-    pool._price_oracle = price_oracle
+    pool.cached_price_oracle = price_oracle
 
     last_prices = vyper_cryptopool.last_prices()
     last_prices_timestamp = vyper_cryptopool.last_prices_timestamp()
@@ -99,7 +99,7 @@ def sync_ema_logic(
     """
     # pylint: disable=protected-access
     price_oracle = vyper_cryptopool.eval("self._price_oracle")
-    pool._price_oracle = price_oracle
+    pool.cached_price_oracle = price_oracle
 
     # synchronize the times between the two pools and reset
     # last_prices and last_prices_timestamp
@@ -369,12 +369,12 @@ def test_tweak_price(
 
     # ------- test no oracle update and no scale adjustment ------------- #
     assert pool.price_scale == vyper_cryptopool.price_scale()
-    assert pool._price_oracle == vyper_cryptopool.eval("self._price_oracle")
+    assert pool.cached_price_oracle == vyper_cryptopool.eval("self._price_oracle")
 
     old_scale = pool.price_scale
-    assert old_scale == pool._price_oracle
+    assert old_scale == pool.cached_price_oracle
 
-    old_oracle = pool._price_oracle
+    old_oracle = pool.cached_price_oracle
 
     pool._tweak_price(A, gamma, xp, last_price, 0)  # pylint: disable=protected-access
     vyper_cryptopool.eval(f"self.tweak_price({A_gamma}, {xp}, {last_price}, 0)")
@@ -383,7 +383,7 @@ def test_tweak_price(
     # no price adjustment since price oracle is same as price scale (`norm` is 0)
     assert pool.price_scale == old_scale
     # EMA price oracle won't update if price oracle and last price is the same
-    assert old_oracle == pool._price_oracle
+    assert old_oracle == pool.cached_price_oracle
 
     # ------- test oracle updates with no scale adjustment ------------- #
 
@@ -392,7 +392,7 @@ def test_tweak_price(
     assert pool.virtual_price == vyper_cryptopool.virtual_price()
     assert pool.xcp_profit == vyper_cryptopool.xcp_profit()
 
-    old_oracle = pool._price_oracle
+    old_oracle = pool.cached_price_oracle
     old_scale = pool.price_scale
     old_virtual_price = pool.virtual_price
 
@@ -401,23 +401,23 @@ def test_tweak_price(
 
     # check the pools are the same
     assert pool.price_scale == vyper_cryptopool.price_scale()
-    assert pool._price_oracle == vyper_cryptopool.eval("self._price_oracle")
+    assert pool.cached_price_oracle == vyper_cryptopool.eval("self._price_oracle")
     assert pool.virtual_price == vyper_cryptopool.virtual_price()
     assert pool.D == vyper_cryptopool.D()
 
     # check oracle updated
     # scale shouldn't change because no adjustment is possible
     # with no profit
-    assert pool._price_oracle != old_oracle
+    assert pool.cached_price_oracle != old_oracle
     assert pool.price_scale == old_scale
     assert pool.virtual_price == old_virtual_price
 
     # ------- test scale adjustment ----------------------- #
     sync_ema_logic(vyper_cryptopool, pool, last_price)
 
-    assert pool.price_scale != pool._price_oracle
+    assert pool.price_scale != pool.cached_price_oracle
 
-    old_oracle = pool._price_oracle
+    old_oracle = pool.cached_price_oracle
     old_scale = pool.price_scale
     old_virtual_price = pool.virtual_price
 
@@ -428,7 +428,7 @@ def test_tweak_price(
     vyper_cryptopool.eval(f"self.tweak_price({A_gamma}, {xp}, 0, 0)")
 
     assert pool.price_scale == vyper_cryptopool.price_scale()
-    assert pool._price_oracle == vyper_cryptopool.eval("self._price_oracle")
+    assert pool.cached_price_oracle == vyper_cryptopool.eval("self._price_oracle")
 
     assert pool.D == vyper_cryptopool.D()
     assert pool.virtual_price == vyper_cryptopool.virtual_price()
@@ -447,7 +447,7 @@ def test_tweak_price(
     vyper_cryptopool.eval(f"self.tweak_price({A_gamma}, {xp}, 0, 0)")
 
     assert pool.price_scale == vyper_cryptopool.price_scale()
-    assert pool._price_oracle == vyper_cryptopool.eval("self._price_oracle")
+    assert pool.cached_price_oracle == vyper_cryptopool.eval("self._price_oracle")
 
     assert pool.D == vyper_cryptopool.D()
     assert pool.virtual_price == vyper_cryptopool.virtual_price()

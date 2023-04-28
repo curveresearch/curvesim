@@ -2,7 +2,7 @@
 Mainly a module to house the `CryptoPool`, a cryptoswap implementation in Python.
 """
 import time
-from typing import List, Tuple
+from typing import Any, List, Tuple
 
 from curvesim.exceptions import CalculationError, CryptoPoolError, CurvesimValueError
 from curvesim.pool.base import Pool
@@ -35,7 +35,7 @@ class CurveCryptoPool(Pool):
         "admin_fee",
         "ma_half_time",
         "price_scale",
-        "_price_oracle",
+        "cached_price_oracle",
         "last_prices",
         "last_prices_timestamp",
         "_block_timestamp",
@@ -126,7 +126,7 @@ class CurveCryptoPool(Pool):
         self.admin_fee = admin_fee
 
         self.price_scale = initial_price
-        self._price_oracle = initial_price
+        self.cached_price_oracle = initial_price
         self.last_prices = initial_price
         self.ma_half_time = ma_half_time
 
@@ -402,7 +402,7 @@ class CurveCryptoPool(Pool):
         and oracle is close enough).
         """
 
-        old_price_oracle: int = self._price_oracle
+        old_price_oracle: int = self.cached_price_oracle
         last_prices: int = self.last_prices
         price_scale: int = self.price_scale
         p_new: int = 0
@@ -415,7 +415,7 @@ class CurveCryptoPool(Pool):
 
         if old_price_oracle != price_oracle:
             # Price oracle has been updated:
-            self._price_oracle = price_oracle
+            self.cached_price_oracle = price_oracle
             self.last_prices_timestamp = block_timestamp
 
         D_unadjusted: int = new_D  # Withdrawal methods know new D already
@@ -1021,7 +1021,7 @@ class CurveCryptoPool(Pool):
         )
 
     @staticmethod
-    def price_oracle_logic(data_obj) -> int:
+    def price_oracle_logic(data_obj: Any[Pool]) -> int:
         """
         Return the value of the EMA price oracle.
 
