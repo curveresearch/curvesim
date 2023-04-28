@@ -27,6 +27,7 @@ __all__ = [
 
 from curvesim.exceptions import CurvesimValueError
 from curvesim.pool_data import get_metadata
+from curvesim.pool_data.metadata import PoolMetaData, PoolMetaDataInterface
 
 from .base import Pool
 from .cryptoswap import CurveCryptoPool
@@ -134,7 +135,7 @@ def make(
 
 
 def get_pool(
-    address_or_symbol,
+    pool_metadata,
     chain="mainnet",
     balanced=False,
     balanced_base=False,
@@ -183,33 +184,55 @@ def get_pool(
     """
     custom_kwargs = custom_kwargs or {}
 
-    metadata = get_metadata(address_or_symbol, chain=chain)
-    init_kwargs = metadata.init_kwargs(balanced, balanced_base, normalize)
+    if isinstance(pool_metadata, str):
+        pool_metadata = get_metadata(pool_metadata, chain=chain)
+    elif isinstance(pool_metadata, dict):
+        pool_metadata = PoolMetaData(pool_metadata)
+    elif isinstance(pool_metadata, PoolMetaDataInterface):
+        pass
+    else:
+        raise CurvesimValueError("")
+
+    init_kwargs = pool_metadata.init_kwargs(balanced, balanced_base, normalize)
 
     if sim:
-        pool_type = metadata.sim_pool_type
+        pool_type = pool_metadata.sim_pool_type
     else:
-        pool_type = metadata.pool_type
+        pool_type = pool_metadata.pool_type
 
     if issubclass(pool_type, CurveRaiPool):
         if "redemption_prices" not in custom_kwargs:
-            raise CurvesimValueError("")
+            raise CurvesimValueError("CurveRaiPool needs 'redemption_prices'.")
         r = custom_kwargs["redemption_prices"]
         pool = pool_type(r, **init_kwargs)
     else:
         pool = pool_type(**init_kwargs)
 
-    pool.metadata = metadata._dict  # pylint: disable=protected-access
+    pool.metadata = pool_metadata._dict  # pylint: disable=protected-access
 
     return pool
 
 
-def get_sim_pool(self, balanced=True, balanced_base=True):
+def get_sim_pool(
+    pool_metadata,
+    chain="mainnet",
+    balanced=True,
+    balanced_base=True,
+    custom_kwargs=None,
+):
     """
     Effectively the same as the `get_pool` function but returns
     an object in the `SimPool` hierarchy.
     """
-    return get_pool(balanced, balanced_base, normalize=True, sim=True)
+    return get_pool(
+        pool_metadata,
+        chain,
+        balanced,
+        balanced_base,
+        normalize=True,
+        sim=True,
+        custom_kwargs=custom_kwargs,
+    )
 
 
 get = get_pool

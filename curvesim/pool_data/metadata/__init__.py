@@ -1,4 +1,4 @@
-__all__ = ["PoolMetaData"]
+__all__ = ["PoolMetaData", "PoolMetaDataInterface"]
 
 
 from curvesim.exceptions import CurvesimException
@@ -6,6 +6,7 @@ from curvesim.network.subgraph import has_redemption_prices
 from curvesim.pool.sim_interface import SimCurveMetaPool, SimCurvePool, SimCurveRaiPool
 from curvesim.pool.stableswap import CurveMetaPool, CurvePool, CurveRaiPool
 
+from .base import PoolMetaDataInterface
 from .stableswap import StableswapMetaData
 
 _SIM_POOL_TYPE = {
