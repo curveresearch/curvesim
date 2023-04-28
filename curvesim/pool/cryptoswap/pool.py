@@ -2,7 +2,7 @@
 Mainly a module to house the `CryptoPool`, a cryptoswap implementation in Python.
 """
 import time
-from typing import List
+from typing import List, Tuple
 
 from curvesim.exceptions import CalculationError, CryptoPoolError, CurvesimValueError
 from curvesim.pool.base import Pool
@@ -401,23 +401,20 @@ class CurveCryptoPool(Pool):
         Also claims admin fees if appropriate (enough profit and price scale
         and oracle is close enough).
         """
-        price_oracle: int = self._price_oracle
+
+        old_price_oracle: int = self._price_oracle
         last_prices: int = self.last_prices
         price_scale: int = self.price_scale
-        last_prices_timestamp: int = self.last_prices_timestamp
-        block_timestamp: int = self._block_timestamp
         p_new: int = 0
+
+        block_timestamp: int = self._block_timestamp
         n_coins: int = self.n
 
-        if last_prices_timestamp < block_timestamp:
-            # MA update required
-            ma_half_time: int = self.ma_half_time
-            alpha: int = _halfpow(
-                (block_timestamp - last_prices_timestamp) * 10**18 // ma_half_time
-            )
-            price_oracle = (
-                last_prices * (10**18 - alpha) + price_oracle * alpha
-            ) // 10**18
+        # Calculate price oracle:
+        price_oracle = self.price_oracle_logic(self)
+
+        if old_price_oracle != price_oracle:
+            # Price oracle has been updated:
             self._price_oracle = price_oracle
             self.last_prices_timestamp = block_timestamp
 
@@ -941,7 +938,7 @@ class CurveCryptoPool(Pool):
         i: int,
         update_D: bool,
         calc_price: bool,
-    ) -> (int, int, int, List[int]):
+    ) -> Tuple[int, int, int, List[int]]:
         token_supply: int = self.tokens
         assert token_amount <= token_supply  # dev: token amount more than supply
         assert i < self.n  # dev: coin out of range
@@ -1017,20 +1014,29 @@ class CurveCryptoPool(Pool):
         Returns an LP token price approximating behavior as a constant-product AMM.
         """
         return (
-            2 * self.virtual_price * _sqrt_int(self.internal_price_oracle()) // 10**18
+            2
+            * self.virtual_price
+            * _sqrt_int(self.price_oracle_logic(self))
+            // 10**18
         )
 
-    def internal_price_oracle(self) -> int:
+    @staticmethod
+    def price_oracle_logic(data_obj) -> int:
         """
         Return the value of the EMA price oracle.
-        """
-        price_oracle: int = self._price_oracle
-        last_prices_timestamp: int = self.last_prices_timestamp
 
-        block_timestamp: int = self._block_timestamp
+        Calculates an exponential moving average using the AMM's state.
+        """
+
+        # inputs from data object to calculate EMA:
+        price_oracle: int = data_obj.price_oracle
+        last_prices_timestamp: int = data_obj.last_prices_timestamp
+        ma_half_time: int = data_obj.ma_half_time
+        block_timestamp: int = data_obj.block_timestamp
+        last_prices: int = data_obj.last_prices
+
+        # internal price oracle logic:
         if last_prices_timestamp < block_timestamp:
-            ma_half_time: int = self.ma_half_time
-            last_prices: int = self.last_prices
             alpha: int = _halfpow(
                 (block_timestamp - last_prices_timestamp) * 10**18 // ma_half_time
             )
@@ -1045,7 +1051,7 @@ class CurveCryptoPool(Pool):
         Same as `internal_price_oracle`.  Kept for compatability with the
         vyper interface.
         """
-        return self.internal_price_oracle()
+        return self.price_oracle_logic(self)
 
     def get_virtual_price(self) -> int:
         """
