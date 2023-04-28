@@ -26,7 +26,7 @@ __all__ = [
 ]
 
 from curvesim.exceptions import CurvesimValueError
-from curvesim.pool_data import get as _get_pool_data
+from curvesim.pool_data import get_metadata
 
 from .base import Pool
 from .cryptoswap import CurveCryptoPool
@@ -133,14 +133,17 @@ def make(
     return pool
 
 
-def get(
+def get_pool(
     address_or_symbol,
     chain="mainnet",
     balanced=False,
     balanced_base=False,
     normalize=False,
+    sim=False,
 ):
     """
+    Constructs a pool object based on the stored data.
+
     Parameters
     ----------
     address_or_symbol: str
@@ -164,6 +167,9 @@ def get(
     normalize : bool, default=False
         If True, normalizes balances to 18 decimals (useful for sim calculations).
 
+    sim: bool, default=False
+        If True, returns a `SimPool` version of the pool.
+
     Returns
     -------
     :class:`Pool`
@@ -172,8 +178,29 @@ def get(
     --------
     >>> import curvesim
     >>> pool = curvesim.pool.get("0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7", "mainnet")
+
     """
-    pool_data = _get_pool_data(address_or_symbol, chain=chain)
-    return pool_data.pool(
-        balanced=balanced, balanced_base=balanced_base, normalize=normalize
-    )
+    metadata = get_metadata(address_or_symbol, chain=chain)
+    kwargs = metadata.init_kwargs(balanced, balanced_base, normalize)
+
+    if sim:
+        pool_type = metadata.sim_pool_type
+    else:
+        pool_type = metadata.pool_type
+
+    pool = pool_type(**kwargs)
+
+    pool.metadata = metadata._dict  # pylint: disable=protected-access
+
+    return pool
+
+
+def get_sim_pool(self, balanced=True, balanced_base=True):
+    """
+    Effectively the same as the `get_pool` function but returns
+    an object in the `SimPool` hierarchy.
+    """
+    return get_pool(balanced, balanced_base, normalize=True, sim=True)
+
+
+get = get_pool
