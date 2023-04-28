@@ -191,7 +191,9 @@ def get_pool(
     elif isinstance(pool_metadata, PoolMetaDataInterface):
         pass
     else:
-        raise CurvesimValueError("")
+        raise CurvesimValueError(
+            "`pool_metadata` must be of type `str`, `dict`, or `PoolMetaDataInterface`."
+        )
 
     init_kwargs = pool_metadata.init_kwargs(balanced, balanced_base, normalize)
 

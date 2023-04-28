@@ -3,15 +3,15 @@ Tools for fetching pool state and metadata.
 Currently supports stableswap pools, meta-pools, and rebasing (RAI) metapools.
 """
 
-__all__ = ["PoolData", "from_address", "from_symbol", "get"]
+__all__ = ["PoolDataCache", "from_address", "from_symbol", "get_data_cache"]
 
 from curvesim.pool_data.metadata import PoolMetaData
 
-from .data import PoolData
+from .cache import PoolDataCache
 from .queries import from_address, from_symbol
 
 
-def get(address_or_symbol, chain="mainnet"):
+def get_data_cache(address_or_symbol, chain="mainnet"):
     """
     Pulls pool state and metadata from daily snapshot.
 
@@ -35,7 +35,7 @@ def get(address_or_symbol, chain="mainnet"):
         from_x = from_symbol
 
     params = from_x(address_or_symbol, chain)
-    pool_data = PoolData(params)
+    pool_data = PoolDataCache(params)
 
     return pool_data
 
