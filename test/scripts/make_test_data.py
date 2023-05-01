@@ -55,11 +55,11 @@ def main(fetch_data=False):
             address = pool["address"]
             end_ts = pool["end_timestamp"]
 
-        pool_data_cache = curvesim.pool_data.get_data_cache(address)
+        pool_data_cache = curvesim.pool_data.get_data_cache(address, end=end_ts)
         pool_metadata = curvesim.pool_data.get_metadata(address)
 
         # Store pool_data
-        pool_data_cache.set_cache(end=end_ts)
+        pool_data_cache.set_cache()
         f_name = os.path.join(test_data_dir, address + "-pool_data_cache.pickle")
         with open(f_name, "wb") as f:
             pickle.dump(pool_data_cache, f)
