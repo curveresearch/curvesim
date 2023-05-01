@@ -17,7 +17,7 @@ class PoolDataCache:
     Container with methods to return pool state, metadata, and pools employing them.
     """
 
-    def __init__(self, metadata_dict, cache_data=False, days=60):
+    def __init__(self, metadata_dict, cache_data=False, days=60, end=None):
         """
         Parameters
         ----------
@@ -39,13 +39,17 @@ class PoolDataCache:
             raise CurvesimValueError(
                 "Metadata must be of type dict or PoolMetaDataInterface."
             )
-        self._volume = None
-        self._redemption_prices = None
+
+        self.days = days
+        self.end = end
+
+        self._cached_volume = None
+        self._cached_redemption_prices = None
 
         if cache_data:
-            self.set_cache(days=days)
+            self.set_cache()
 
-    def set_cache(self, days=60, end=None):
+    def set_cache(self):
         """
         Fetches and caches historical volume and redemption price data.
 
@@ -54,17 +58,18 @@ class PoolDataCache:
         days : int, default=60
             number of days to pull data for
         """
-        self.volume(days=days, store=True, end=end)
-        self.redemption_prices(days=days, store=True, end=end)
+        self._cached_volume = self._get_volume()
+        self._cached_redemption_prices = self._get_redemption_prices()
 
     def clear_cache(self):
         """
         Clears any cached data.
         """
-        self._volume = None
-        self._redemption_prices = None
+        self._cached_volume = None
+        self._cached_redemption_prices = None
 
-    def volume(self, days=60, store=False, get_cache=True, end=None):
+    @property
+    def volume(self):
         """
         Fetches the pool's historical volume over the specified number of days.
 
@@ -85,13 +90,18 @@ class PoolDataCache:
             Total volume summed across the specified number of days.
 
         """
-        if get_cache and self._volume is not None:
+        if self._cached_volume is not None:
             logger.info("Getting cached historical volume...")
-            return self._volume
+            return self._cached_volume
 
+        return self._get_volume()
+
+    def _get_volume(self):
         logger.info("Fetching historical volume...")
         addresses = self.metadata.address
         chain = self.metadata.chain
+        days = self.days
+        end = self.end
 
         if issubclass(self.metadata.pool_type, CurveMetaPool):
             # pylint: disable-next=protected-access
@@ -103,12 +113,10 @@ class PoolDataCache:
             vol = _volume(addresses, chain, days=days, end=end)
             summed_vol = array(sum(vol))
 
-        if store:
-            self._volume = summed_vol
-
         return summed_vol
 
-    def redemption_prices(self, days=60, store=False, get_cache=True, end=None):
+    @property
+    def redemption_prices(self):
         """
         Fetches the pool's redemption price over the specified number of days.
 
@@ -131,16 +139,19 @@ class PoolDataCache:
             Timestamped redemption prices across the specified number of days.
 
         """
-        if get_cache and self._redemption_prices is not None:
+        if self._cached_redemption_prices is not None:
             logger.info("Getting cached redemption prices...")
-            return self._redemption_prices
+            return self._cached_redemption_prices
 
+        return self._get_redemption_prices()
+
+    def _get_redemption_prices(self):
         address = self.metadata.address
         chain = self.metadata.chain
 
-        r = _redemption_prices(address, chain, days=days, end=end)
+        days = self.days
+        end = self.end
 
-        if store:
-            self._redemption_prices = r
+        r = _redemption_prices(address, chain, days=days, end=end)
 
         return r

@@ -14,7 +14,6 @@ from curvesim.logging import get_logger
 from curvesim.metrics import StateLog, init_metrics, make_results
 from curvesim.metrics import metrics as Metrics
 from curvesim.pool import get_sim_pool
-from curvesim.pool.stableswap.raipool import CurveRaiPool
 from curvesim.pool_data.cache import PoolDataCache
 
 from .templates import TradeData, run_pipeline
@@ -118,26 +117,20 @@ def volume_limited_arbitrage(
     metrics = metrics or DEFAULT_METRICS
 
     if pool_data_cache is None:
-        pool_data_cache = PoolDataCache(pool_metadata)
+        pool_data_cache = PoolDataCache(pool_metadata, days=days, end=end)
 
-    custom_kwargs = {}
-    if issubclass(pool_metadata.pool_type, CurveRaiPool):
-        custom_kwargs["redemption_prices"] = pool_data_cache.redemption_prices(
-            days=days, end=end
-        )
-
-    pool = get_sim_pool(pool_metadata, custom_kwargs=custom_kwargs)
+    pool = get_sim_pool(pool_metadata, pool_data_cache=pool_data_cache)
     coins = pool_metadata.coins
 
     param_sampler = Grid(pool, variable_params, fixed_params=fixed_params)
     price_sampler = PriceVolume(coins, days=days, data_dir=data_dir, src=src, end=end)
 
     if vol_mult is None:
-        volumes = pool_data_cache.volume(days=days, end=end)
-        total_volumes = price_sampler.total_volumes()
+        total_pool_volume = pool_data_cache.volume
+        total_market_volume = price_sampler.total_volumes()
         vol_mult = compute_volume_multipliers(
-            volumes,
-            total_volumes,
+            total_pool_volume,
+            total_market_volume,
             pool_metadata.n,
             pool_metadata.pool_type,
             mode=vol_mode,

@@ -11,7 +11,7 @@ from .cache import PoolDataCache
 from .queries import from_address, from_symbol
 
 
-def get_data_cache(address_or_symbol, chain="mainnet"):
+def get_data_cache(address_or_symbol, chain="mainnet", days=60, end=None):
     """
     Pulls pool state and metadata from daily snapshot.
 
@@ -34,8 +34,8 @@ def get_data_cache(address_or_symbol, chain="mainnet"):
     else:
         from_x = from_symbol
 
-    params = from_x(address_or_symbol, chain)
-    pool_data = PoolDataCache(params)
+    metadata_dict = from_x(address_or_symbol, chain)
+    pool_data = PoolDataCache(metadata_dict, days=days, end=end)
 
     return pool_data
 
@@ -63,7 +63,7 @@ def get_metadata(address_or_symbol, chain="mainnet"):
     else:
         from_x = from_symbol
 
-    params = from_x(address_or_symbol, chain)
-    metadata = PoolMetaData(params)
+    metadata_dict = from_x(address_or_symbol, chain)
+    metadata = PoolMetaData(metadata_dict)
 
     return metadata
