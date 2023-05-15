@@ -3,8 +3,10 @@ __all__ = ["PoolMetaData", "PoolMetaDataInterface"]
 
 from curvesim.exceptions import CurvesimException
 from curvesim.network.subgraph import has_redemption_prices
+from curvesim.pool.cryptoswap import CurveCryptoPool
 from curvesim.pool.sim_interface import SimCurveMetaPool, SimCurvePool, SimCurveRaiPool
 from curvesim.pool.stableswap import CurveMetaPool, CurvePool, CurveRaiPool
+from curvesim.pool_data.metadata.cryptoswap import CryptoswapMetaData
 
 from .base import PoolMetaDataInterface
 from .stableswap import StableswapMetaData
@@ -13,12 +15,15 @@ _SIM_POOL_TYPE = {
     CurvePool: SimCurvePool,
     CurveMetaPool: SimCurveMetaPool,
     CurveRaiPool: SimCurveRaiPool,
+    # TODO: create sim pool for crypto pools
+    CurveCryptoPool: None,
 }
 
 _METADATA_TYPE = {
     CurvePool: StableswapMetaData,
     CurveMetaPool: StableswapMetaData,
     CurveRaiPool: StableswapMetaData,
+    CurveCryptoPool: CryptoswapMetaData,
 }
 
 
@@ -34,7 +39,10 @@ def _parse_metadata_for_types(metadata_dict):
         else:
             pool_type = CurveMetaPool
     else:
-        pool_type = CurvePool
+        if metadata_dict["params"].get("gamma"):
+            pool_type = CurveCryptoPool
+        else:
+            pool_type = CurvePool
 
     try:
         sim_pool_type = _SIM_POOL_TYPE[pool_type]

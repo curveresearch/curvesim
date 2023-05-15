@@ -1,5 +1,6 @@
 import json
 
+from curvesim.pool.cryptoswap.pool import CurveCryptoPool
 from curvesim.pool.sim_interface.metapool import SimCurveMetaPool
 from curvesim.pool.sim_interface.pool import SimCurvePool
 from curvesim.pool.stableswap.metapool import CurveMetaPool
@@ -80,7 +81,8 @@ METAPOOL_TEST_METADATA_JSON = """
             "params": {
                 "A": 1500,
                 "fee": 1000000,
-                "fee_mul": null
+                "fee_mul": null,
+                "admin_fee": 5000000000
             },
             "coins": {
                 "names": ["FRAX", "USDC"],
@@ -124,7 +126,10 @@ CRYPTOPOOL_TEST_METADATA_JSON = """
         "price_scale": 1532848669525694314,
         "price_oracle": 1629891359676425537,
         "last_prices": 1625755383082188296,
-        "last_prices_timestamp": 1684107935
+        "last_prices_timestamp": 1684107935,
+        "admin_fee": 5000000000,
+        "xcp_profit": 1073065310463073367,
+        "xcp_profit_a": 1073065310463073367
     },
     "coins": {
         "names": ["STG", "USDC"],
@@ -265,4 +270,79 @@ def test_metapool():
         "fee_mul": None,
         "tokens": 9145685457506457679415433,
         "rate_multiplier": 10000000000000000000000000000000000,
+    }
+
+
+def test_cryptopool():
+    metadata = PoolMetaData(cryptopool_test_metadata)
+
+    assert metadata.address == "0x3211C6cBeF1429da3D0d58494938299C92Ad5860"
+    assert metadata.chain == "mainnet"
+
+    assert metadata.pool_type == CurveCryptoPool
+    # TODO: create sim pool for crypto pools
+    # assert metadata.sim_pool_type == SimCurveCryptoPool
+
+    assert metadata.coin_names == ["STG", "USDC"]
+    assert metadata.coins == [
+        "0xAf5191B0De278C7286d6C7CC6ab6BB8A73bA2Cd6",
+        "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    ]
+
+    assert metadata.n == 2
+
+    assert metadata.init_kwargs() == {
+        "A": 400000,
+        "gamma": 72500000000000,
+        "D": 18116170684879887969148488,
+        "n": 2,
+        "mid_fee": 26000000,
+        "out_fee": 45000000,
+        "adjustment_step": 146000000000000,
+        "allowed_extra_profit": 2000000000000,
+        "fee_gamma": 230000000000000,
+        "tokens": 17477479403491661243983086,
+        "ma_half_time": 146000000000000,
+        "xcp_profit": 1073065310463073367,
+        "xcp_profit_a": 1073065310463073367,
+    }
+    assert metadata.init_kwargs(balanced=False) == {
+        "A": 400000,
+        "gamma": 72500000000000,
+        "D": [
+            11278350350009782994292193,
+            6837820334873000000000000,
+        ],
+        "n": 2,
+        "mid_fee": 26000000,
+        "out_fee": 45000000,
+        "adjustment_step": 146000000000000,
+        "allowed_extra_profit": 2000000000000,
+        "fee_gamma": 230000000000000,
+        "tokens": 17477479403491661243983086,
+        "ma_half_time": 146000000000000,
+        "xcp_profit": 1073065310463073367,
+        "xcp_profit_a": 1073065310463073367,
+    }
+    assert metadata.init_kwargs(balanced=False, normalize=False) == {
+        "A": 400000,
+        "gamma": 72500000000000,
+        "D": [
+            11278350350009782994292193,
+            6837820334873,
+        ],
+        "n": 2,
+        "mid_fee": 26000000,
+        "out_fee": 45000000,
+        "adjustment_step": 146000000000000,
+        "allowed_extra_profit": 2000000000000,
+        "fee_gamma": 230000000000000,
+        "tokens": 17477479403491661243983086,
+        "ma_half_time": 146000000000000,
+        "xcp_profit": 1073065310463073367,
+        "xcp_profit_a": 1073065310463073367,
+        "precisions": [
+            1,
+            1000000000000,
+        ],
     }
