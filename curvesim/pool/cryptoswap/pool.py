@@ -62,12 +62,12 @@ class CurveCryptoPool(Pool):
         allowed_extra_profit: int,
         fee_gamma: int,
         adjustment_step: int,
-        admin_fee: int,
         ma_half_time: int,
         initial_price: int,
         balances=None,
         D=None,
         tokens=None,
+        admin_fee: int = 5 * 10**9,
         xcp_profit=10**18,
         xcp_profit_a=10**18,
     ):
@@ -97,8 +97,6 @@ class CurveCryptoPool(Pool):
             Factor used to control the transition from `mid_fee` to `out_fee`.
         adjustment_step:
             Minimum step size to adjust the price scale.
-        admin_fee: int
-            Percentage of `fee` with 10**10 precision.  Fee paid to the DAO.
         ma_half_time: int
             "Half-life" for exponential moving average of trade prices.
         initial_price: int
@@ -112,6 +110,9 @@ class CurveCryptoPool(Pool):
         tokens: int, optional
             LP token supply (default is calculated from `D`, which is also
             calculated if needed)
+        admin_fee: int, optional
+            Percentage of `fee` with 10**10 precision.  Fee paid to the DAO
+            (default = 5*10**9)
         xcp_profit: int, optional
             Counter for accumulated profits, no losses (default = 10**18)
         xcp_profit_a: int, optional
