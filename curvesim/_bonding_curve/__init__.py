@@ -41,7 +41,7 @@ def bonding_curve(pool, *, truncate=0.0005, resolution=1000, show=True):
     if isinstance(pool, CurveMetaPool):
         combos = [(0, 1)]
     else:
-        combos = combinations(range(pool.n), 2)
+        combos = list(combinations(range(pool.n), 2))
 
     try:
         labels = pool.metadata["coins"]["names"]
