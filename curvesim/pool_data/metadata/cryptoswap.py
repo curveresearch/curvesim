@@ -16,6 +16,7 @@ class CryptoswapMetaData(PoolMetaDataBase):
                 "allowed_extra_profit": data["params"]["allowed_extra_profit"],
                 "fee_gamma": data["params"]["fee_gamma"],
                 "adjustment_step": data["params"]["adjustment_step"],
+                "price_scale": data["params"]["price_scale"],
                 # FIXME: when subgraph is fixed, we can pull this
                 # "admin_fee": data["params"]["admin_fee"],
                 "ma_half_time": data["params"]["ma_half_time"],
@@ -32,7 +33,7 @@ class CryptoswapMetaData(PoolMetaDataBase):
                     coin_balances = data["reserves"]["by_coin"]
                 else:
                     coin_balances = data["reserves"]["unnormalized_by_coin"]
-                kwargs["D"] = coin_balances
+                kwargs["balances"] = coin_balances
             return kwargs
 
         kwargs = process_to_kwargs(data, balanced, normalize)

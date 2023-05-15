@@ -303,13 +303,15 @@ def test_cryptopool():
         "fee_gamma": 230000000000000,
         "tokens": 17477479403491661243983086,
         "ma_half_time": 146000000000000,
+        "price_scale": 1532848669525694314,
         "xcp_profit": 1073065310463073367,
         "xcp_profit_a": 1073065310463073367,
     }
     assert metadata.init_kwargs(balanced=False) == {
         "A": 400000,
         "gamma": 72500000000000,
-        "D": [
+        "D": 18116170684879887969148488,
+        "balances": [
             11278350350009782994292193,
             6837820334873000000000000,
         ],
@@ -321,13 +323,15 @@ def test_cryptopool():
         "fee_gamma": 230000000000000,
         "tokens": 17477479403491661243983086,
         "ma_half_time": 146000000000000,
+        "price_scale": 1532848669525694314,
         "xcp_profit": 1073065310463073367,
         "xcp_profit_a": 1073065310463073367,
     }
     assert metadata.init_kwargs(balanced=False, normalize=False) == {
         "A": 400000,
         "gamma": 72500000000000,
-        "D": [
+        "D": 18116170684879887969148488,
+        "balances": [
             11278350350009782994292193,
             6837820334873,
         ],
@@ -339,6 +343,7 @@ def test_cryptopool():
         "fee_gamma": 230000000000000,
         "tokens": 17477479403491661243983086,
         "ma_half_time": 146000000000000,
+        "price_scale": 1532848669525694314,
         "xcp_profit": 1073065310463073367,
         "xcp_profit_a": 1073065310463073367,
         "precisions": [
