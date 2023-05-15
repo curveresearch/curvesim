@@ -104,7 +104,6 @@ METAPOOL_TEST_METADATA_JSON = """
 }
 """
 
-# TODO; this needs to be updated once we have v2 snapshots
 CRYPTOPOOL_TEST_METADATA_JSON = """
 {
     "name": "Curve.fi Factory Crypto Pool: STG/USDC",
@@ -113,24 +112,37 @@ CRYPTOPOOL_TEST_METADATA_JSON = """
     "symbol": "STGUSDC-f",
     "version": 2,
     "pool_type": "CRYPTO_FACTORY",
-    "params": {"A": 400000, "fee": 40971769, "fee_mul": null},
+    "params": {
+        "A": 400000,
+        "gamma": 72500000000000,
+        "fee_gamma": 230000000000000,
+        "mid_fee": 26000000,
+        "out_fee": 45000000,
+        "allowed_extra_profit": 2000000000000,
+        "adjustment_step": 146000000000000,
+        "ma_half_time": 146000000000000,
+        "price_scale": 1532848669525694314,
+        "price_oracle": 1629891359676425537,
+        "last_prices": 1625755383082188296,
+        "last_prices_timestamp": 1684107935
+    },
     "coins": {
         "names": ["STG", "USDC"],
         "addresses": [
             "0xAf5191B0De278C7286d6C7CC6ab6BB8A73bA2Cd6",
-            "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"]
+            "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+        ],
+        "decimals": [18, 6]
     },
     "reserves": {
-        "D": 27009344624167129044473141,
-        "by_coin": [
-            13497126535708129065554254,
-            13512218088459000000000000
-        ],
-        "virtual_price": 1031212780979726100,
-        "tokens": 26191824929192900959501494
+        "D": 18116170684879887969148488,
+        "by_coin": [11278350350009782994292193, 6837820334873000000000000],
+        "unnormalized_by_coin": [11278350350009782994292193, 6837820334873],
+        "virtual_price": 1036543672382221695,
+        "tokens": 17477479403491661243983086
     },
     "basepool": null,
-    "timestamp": 1677715200
+    "timestamp": 1684108800
 }
 """
 
