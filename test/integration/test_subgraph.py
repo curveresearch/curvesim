@@ -20,8 +20,8 @@ def test_convex_subgraph_volume_query():
     assert len(volumes) == 0
 
 
-def test_convex_subgraph_pool_snapshot_query():
-    """Test the pool snapshot query."""
+def test_convex_subgraph_stableswap_snapshot_query():
+    """Test the pool snapshot query for stableswap."""
 
     chain = "mainnet"
     address = "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7"
@@ -30,5 +30,27 @@ def test_convex_subgraph_pool_snapshot_query():
     assert snapshot["address"] == address
     assert snapshot["chain"] == chain
 
+    assert snapshot["version"] == 1
+
+    params = snapshot["params"]
+    assert params["A"] > 0
+
     with pytest.raises(SubgraphError):
         _snapshot_sync(ZERO_ADDRESS, chain)
+
+
+def test_convex_subgraph_cryptoswap_snapshot_query():
+    """Test the pool snapshot query for cryptoswap."""
+
+    chain = "mainnet"
+    address = "0x3211C6cBeF1429da3D0d58494938299C92Ad5860"
+    _snapshot_sync = sync(pool_snapshot)
+    snapshot = _snapshot_sync(address, chain)
+    assert snapshot["address"] == address
+    assert snapshot["chain"] == chain
+
+    assert snapshot["version"] == 2
+
+    params = snapshot["params"]
+    assert params["A"] > 0
+    assert params["gamma"] > 0
