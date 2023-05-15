@@ -1,15 +1,17 @@
 """Script to generate data for CI test"""
 import os
 import pickle
-import shutil
 import sys
-from itertools import combinations
 
 from pandas import read_pickle
 
 import curvesim
-from curvesim.network.nomics import coin_ids_from_addresses_sync
+
+# from curvesim.network.nomics import coin_ids_from_addresses_sync
 from curvesim.pipelines.arbitrage import volume_limited_arbitrage as pipeline
+
+# import shutil
+# from itertools import combinations
 
 
 def main(fetch_data=False):
