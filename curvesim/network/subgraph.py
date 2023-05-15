@@ -253,6 +253,7 @@ async def _pool_snapshot(address, chain):
 
             A
             fee
+            adminFee
             offPegFeeMultiplier
             reserves
             normalizedReserves
@@ -270,6 +271,8 @@ async def _pool_snapshot(address, chain):
             priceOracle
             lastPrices
             lastPricesTimestamp
+            xcpProfit
+            xcpProfitA
           }
         }
     """
@@ -356,6 +359,7 @@ async def pool_snapshot(address, chain):
                 "A": int(r["A"]),
                 "fee": int(float(r["fee"]) * 10**10),
                 "fee_mul": fee_mul,
+                "admin_fee": int(r["adminFee"]),
             },
             "coins": coins,
             "reserves": {
@@ -389,6 +393,9 @@ async def pool_snapshot(address, chain):
                 "price_oracle": int(r["priceOracle"]),
                 "last_prices": int(r["lastPrices"]),
                 "last_prices_timestamp": int(r["lastPricesTimestamp"]),
+                "admin_fee": int(r["adminFee"]),
+                "xcp_profit": int(r["xcpProfit"]),
+                "xcp_profit_a": int(r["xcpProfitA"]),
             },
             "coins": coins,
             "reserves": {
