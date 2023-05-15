@@ -63,7 +63,9 @@ class CurveCryptoPool(Pool):
         fee_gamma: int,
         adjustment_step: int,
         ma_half_time: int,
-        initial_price: int,
+        price_scale: int,
+        price_oracle=None,
+        last_prices=None,
         balances=None,
         D=None,
         tokens=None,
@@ -99,8 +101,15 @@ class CurveCryptoPool(Pool):
             Minimum step size to adjust the price scale.
         ma_half_time: int
             "Half-life" for exponential moving average of trade prices.
-        initial_price: int
-            Initial price scale for the pool.
+        price_scale: int
+            Price scale value for the pool.  This is where liquidity is concentrated.
+        price_oracle: int, optional
+            Price oracle value for the pool.  This is the EMA price used to
+            adjust the price scale toward.
+            Defaults to `price_scale`.
+        last_prices: int, optional
+            Last trade price for the pool.
+            Defaults to `price_scale`.
         balances: list of int, optional
             Coin balances in native token units;
             either `balances` or `D` is required
@@ -128,9 +137,9 @@ class CurveCryptoPool(Pool):
         self.adjustment_step = adjustment_step
         self.admin_fee = admin_fee
 
-        self.price_scale = initial_price
-        self._price_oracle = initial_price
-        self.last_prices = initial_price
+        self.price_scale = price_scale
+        self._price_oracle = price_oracle or price_scale
+        self.last_prices = last_prices or price_scale
         self.ma_half_time = ma_half_time
 
         self._block_timestamp = _get_unix_timestamp()

@@ -54,7 +54,7 @@ def initialize_pool(vyper_cryptopool):
         adjustment_step=adjustment_step,
         admin_fee=admin_fee,
         ma_half_time=ma_half_time,
-        initial_price=price_scale,
+        price_scale=price_scale,
         balances=balances,
         D=D,
         tokens=lp_total_supply,
