@@ -512,7 +512,7 @@ def test_exchange(vyper_cryptopool, dx_perc, i):
     dx = pool.balances[i] * dx_perc // 100
 
     expected_dy = vyper_cryptopool.exchange(i, j, dx, 0)
-    dy = pool.exchange(i, j, dx)
+    dy, _ = pool.exchange(i, j, dx)
 
     assert dy == expected_dy
 

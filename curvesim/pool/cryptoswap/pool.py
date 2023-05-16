@@ -668,7 +668,8 @@ class CurveCryptoPool(Pool):
             dy = dy * PRECISION // price_scale
         dy = dy // prec_j
 
-        dy -= self._fee(xp) * dy // 10**10
+        fee = self._fee(xp) * dy // 10**10
+        dy -= fee
         assert dy >= min_dy, "Slippage"
         y -= dy
 
@@ -690,7 +691,7 @@ class CurveCryptoPool(Pool):
 
         self._tweak_price(A, gamma, xp, p, 0)
 
-        return dy
+        return dy, fee
 
     def exchange(
         self,
@@ -715,8 +716,8 @@ class CurveCryptoPool(Pool):
 
         Returns
         -------
-        int
-            Out-coin amount from the swap.
+        (int, int)
+            (amount of coin `j` received, trading fee)
 
         Note
         -----
