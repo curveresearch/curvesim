@@ -3,23 +3,17 @@ from abc import abstractmethod
 
 from curvesim.exceptions import CurvesimValueError
 from curvesim.pipelines.templates import SimPool
-from curvesim.pool.snapshot import SnapshotMixin
 from curvesim.utils import cache
 
 
-class SimStableswapBase(SimPool, SnapshotMixin):
+class SimStableswapBase(SimPool):
     """
     This base class contains common logic useful for all Curve
     stableswap implementations used in arbitrage pipelines:
 
     - translate from coin names to Curve pool indices
     - compute liquidity density of a coin pair and price-depth
-    - ability to snapshot balances and revert balance changes
     """
-
-    # need to configure in derived class otherwise the
-    # snapshotting will not work
-    snapshot_class = None
 
     @abstractmethod
     def _init_coin_indices(self):

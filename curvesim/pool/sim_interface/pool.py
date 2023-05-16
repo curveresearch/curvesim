@@ -2,7 +2,6 @@ from itertools import combinations
 
 from numpy import isnan
 
-from curvesim.pool.snapshot import CurvePoolBalanceSnapshot
 from curvesim.utils import override
 
 from ..stableswap import CurvePool
@@ -10,9 +9,6 @@ from .simpool import SimStableswapBase
 
 
 class SimCurvePool(SimStableswapBase, CurvePool):
-
-    snapshot_class = CurvePoolBalanceSnapshot
-
     @property
     def _precisions(self):
         return self.rates[:]

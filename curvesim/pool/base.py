@@ -4,14 +4,24 @@ in the Curvesim Framework.
 """
 
 
-class Pool:
+from curvesim.pool.snapshot import SnapshotMixin
+
+
+class Pool(SnapshotMixin):
     """
-    The `Pool` base class has the explicitly required properties for any pool-like
-    object used in Curvesim.
+    The `Pool` base class has the explicitly required properties for any
+    pool-like object used in Curvesim.
+
+    The `SnapshotMixin` gives the ability to snapshot balances and revert
+    balance changes.
 
     Currently the base attributes are not informative for pools
     constructed manually rather than from chain data.
     """
+
+    # need to configure in derived class otherwise the
+    # snapshotting will not work
+    snapshot_class = None
 
     @property
     def name(self):
