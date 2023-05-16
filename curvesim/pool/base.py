@@ -42,6 +42,13 @@ class Pool:
         return []
 
     @property
+    def coin_decimals(self):
+        """Addresses for the pool coins."""
+        if hasattr(self, "metadata"):
+            return self.metadata["coins"]["decimals"]
+        return []
+
+    @property
     def chain(self):
         """Chain for this pool"""
         if hasattr(self, "metadata"):
