@@ -20,17 +20,12 @@ class FakeSimStableswap(SimStableswapBase):
         super().__init__(*args, **kwargs)
         self.n = 3
 
-    @property
-    @override
-    def _base_index_combos(self):
-        return combinations(range(self.n), 2)
-
     @override
     def _init_coin_indices(self):
         return {"SYM_0": 0, "SYM_1": 1, "SYM_2": 2}
 
     @override
-    def _test_trade(self, coin_in, coin_out, factor):
+    def test_trade(self, coin_in, coin_out, factor):
         pre_price = self.price(coin_in, coin_out)
         # post_price should be less than pre_price
         post_price = 0.90 * pre_price
@@ -144,11 +139,3 @@ def test_do_trades(sim_stableswap):
     for t in trades_done:
         # `trade` is faked to produce out amount equal to in amount
         assert t[2] == t[3]
-
-
-def test_price_depth(sim_stableswap):
-    """Test price depth metric"""
-    price_depth = sim_stableswap.get_price_depth()
-    assert len(price_depth) == 3
-    for d in price_depth:
-        assert d > 0

@@ -18,6 +18,7 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
         p_base = self.basepool.rates[:]
         return [self.rate_multiplier, *p_base]
 
+    @override
     def _init_coin_indices(self):
         meta_coin_names = self.coin_names[:-1]
         base_coin_names = self.basepool.coin_names
@@ -29,19 +30,6 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
         coin_dict = {name: i for i, name in enumerate(coin_names)}
 
         return coin_dict
-
-    @property
-    def _base_index_combos(self):
-        """
-        Our convention for the basepool LP token index is to use
-        the total number of stablecoins (including basepool).
-        This removes ambiguity as it is one "off the end" and thus
-        either doesn't exist or is the basepool LP token.
-        """
-        base_idx = list(range(self.n))
-        base_idx[self.max_coin] = self.n_total
-        base_index_combos = combinations(base_idx, 2)
-        return base_index_combos
 
     @override
     def price(self, coin_in, coin_out, use_fee=True):
@@ -82,12 +70,8 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
 
         return out_amount, fee, volume
 
-    def _test_trade(
-        self,
-        coin_in,
-        coin_out,
-        factor,
-    ):
+    @override
+    def test_trade(self, coin_in, coin_out, factor, use_fee=True):
         """
         Trade between top-level coins but leaves balances affected.
 
@@ -115,7 +99,7 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
             self.exchange(i, j, dx)
 
             xp_post = self._xp()
-            price = self._dydx(i, j, xp_post, use_fee=True)
+            price = self._dydx(i, j, xp_post, use_fee=use_fee)
 
         return price
 

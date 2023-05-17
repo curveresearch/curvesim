@@ -4,7 +4,7 @@ from abc import abstractmethod
 from curvesim.exceptions import CurvesimValueError
 from curvesim.pipelines.templates import SimPool
 from curvesim.pool.snapshot import SnapshotMixin
-from curvesim.utils import cache, override
+from curvesim.utils import cache
 
 
 class SimStableswapBase(SimPool, SnapshotMixin):
@@ -48,35 +48,18 @@ class SimStableswapBase(SimPool, SnapshotMixin):
 
         return coin_indices
 
-    def get_liquidity_density(self, coin_in, coin_out, factor=10**8):
-        """
-        Only for top-level liquidity density.  Cannot compare between
-        coins in basepool and primary stablecoin in metapool.
-        """
-        price_pre = self.price(coin_in, coin_out, use_fee=False)
-        price_post = self._test_trade(coin_in, coin_out, factor)
-        LD1 = price_pre / ((price_pre - price_post) * factor)
-
-        price_pre = self.price(coin_out, coin_in, use_fee=False)
-        # pylint: disable-next=arguments-out-of-order
-        price_post = self._test_trade(coin_out, coin_in, factor)
-        LD2 = price_pre / ((price_pre - price_post) * factor)
-
-        return (LD1 + LD2) / 2
-
-    @override
-    def get_price_depth(self):
-        LD = []
-        for i, j in self._base_index_combos:
-            ld = self.get_liquidity_density(i, j)
-            LD.append(ld)
-        return LD
-
-    @property
     @abstractmethod
-    def _base_index_combos(self):
+    def price(self, coin_in, coin_out, use_fee=True):
         raise NotImplementedError
 
     @abstractmethod
-    def _test_trade(self, coin_in, coin_out, factor):
+    def trade(self, coin_in, coin_out, size):
+        raise NotImplementedError
+
+    @abstractmethod
+    def test_trade(self, coin_in, coin_out, factor):
+        raise NotImplementedError
+
+    @abstractmethod
+    def make_error_fns(self):
         raise NotImplementedError

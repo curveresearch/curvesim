@@ -6,13 +6,14 @@ so besides the network code there is a lack of coverage around the
 `pool_data` and `price_data` packages.
 """
 import os
-import pickle
 
-import numpy as np
+from pandas import DataFrame, read_pickle
 
 import curvesim
 
-if __name__ == "__main__":  # noqa: C901
+
+def main():  # noqa: C901
+
     data_dir = os.path.join("test", "data")
     pools = [
         # 3CRV
@@ -42,31 +43,21 @@ if __name__ == "__main__":  # noqa: C901
         # },
     ]
 
-    abs_tolerances = {
-        "ar": 1.5e-4,
-        "bal": 0.035,
-        "depth": 10,  # in liquidity density units
-        "err": 0.01,
-        "log_returns": 0,
-        "p": 1e15,
-        "pool_value": 0,  # in dollar units
-        "volume": 0,
-        "x": 0,
+    test_functions = {
+        "summary": summary,
+        "per_run": per_run,
+        "per_trade": per_trade,
     }
-
-    rel_tolerances = {"pool_value": 0.0001}
-
-    skipped = ["log_returns", "volume", "x"]
 
     for pool in pools:
         address = pool["address"]
         end_ts = pool["end_timestamp"]
         vol_mult = pool.get("vol_mult", None)
 
-        with open(os.path.join(data_dir, f"{address}-pool_data.pickle"), "rb") as f:
-            pool_data = pickle.load(f)
+        f_name = os.path.join(data_dir, f"{address}-pool_data.pickle")
+        pool_data = read_pickle(f_name)
 
-        res = curvesim.autosim(
+        results = curvesim.autosim(
             address,
             test=True,
             src="local",
@@ -75,62 +66,128 @@ if __name__ == "__main__":  # noqa: C901
             end=end_ts,
             vol_mult=vol_mult,
         )
-        # with open(os.path.join(data_dir, f"{address}-res-test.pickle"), "rb") as f:
-        #     res = pickle.load(f)
 
-        with open(os.path.join(data_dir, f"{address}-results.pickle"), "rb") as f:
-            res_pkl = pickle.load(f)
+        sim_data = {
+            "per_run": results.data_per_run,
+            "per_trade": results.data(),
+            "summary": results.summary(),
+        }
 
-        for (key, df1) in res.items():
-            if key in skipped:
-                continue
-            df2 = res_pkl[key]
-            if len(df1) != len(df2):
-                raise AssertionError(f"Different dataframe lengths for key: {key}")
+        for key in test_functions:
+            f_name = os.path.join(data_dir, f"{address}-results_{key}.pickle")
+            stored_data = read_pickle(f_name)
+            test_functions[key](sim_data[key], stored_data)
 
-            atol = abs_tolerances.get(key, 0)
-            rtol = rel_tolerances.get(key, 0)
 
-            if key not in ["p", "x"]:
-                for i in df1:
-                    if len(df1[i]) != len(df2[i]):
-                        raise AssertionError(f"Different row lengths for row: {i}")
-                    mismatch_indices = np.where(
-                        ~np.isclose(df1[i], df2[i], atol=atol, rtol=rtol)
-                    )[0]
-                    if len(mismatch_indices) > 0:  # numpy arrays are funny
-                        print(f"Mismatch in {key}, {i}")
-                        for j in mismatch_indices:
-                            array1 = np.array(df1[i])
-                            array2 = np.array(df2[i])
-                            print(
-                                "Diff:",
-                                abs(array1[j] - array2[j]),
-                                array1[j],
-                                array2[j],
-                            )
-                        raise AssertionError(f"Mismatch in {key}, {i}")
-            else:
-                for i in df1:
-                    if len(df1[i]) != len(df2[i]):
-                        raise AssertionError(f"Different row lengths for row: {i}")
-                    for (array1, array2) in zip(df1[i], df2[i]):
-                        array1 = np.array(array1, dtype=float)
-                        array2 = np.array(array2, dtype=float)
-                        if len(array1) != len(array2):
-                            raise AssertionError(
-                                f"Different array lengths for row: {i}"
-                            )
-                        mismatch_indices = np.where(
-                            ~np.isclose(array1, array2, atol=atol, rtol=rtol)
-                        )[0]
-                        if len(mismatch_indices) > 0:  # numpy arrays are funny
-                            print(f"Mismatch in {key}, {i}")
-                            for j in mismatch_indices:
-                                print(
-                                    "Diff:",
-                                    abs(array1[j] - array2[j]),
-                                    array1[j],
-                                    array2[j],
-                                )
-                            raise AssertionError(f"Mismatch in {key}, {i}")
+def per_run(sim, stored):
+    print("Testing per-run data...")
+
+    # Compare metric columns
+    compare_metrics(sim.columns, stored.columns)
+    sim = sim[stored.columns]
+
+    # Compare runs
+    sim_runs = list(sim.index)
+    stored_runs = list(stored.index)
+    assert (
+        sim_runs == stored_runs
+    ), "Simulation runs don't match between stored and tested data."
+
+    # Test exact equality
+    are_equal = sim == stored
+
+    # Feedback
+    if not are_equal.all(axis=None):
+        print("Per-run data: Equality Test")
+        print(are_equal)
+        raise AssertionError("Equality test failed.")
+
+    print("Equality test passed.")
+
+
+def per_trade(sim, stored, threshold=0.9):
+    print("Testing per-trade data...")
+
+    # Compare metric columns
+    compare_metrics(sim.columns, stored.columns)
+    sim = sim[stored.columns]
+
+    # Compare runs
+    sim_runs = list(sim["run"].unique())
+    stored_runs = list(stored["run"].unique())
+    assert (
+        sim_runs == stored_runs
+    ), "Simulation runs don't match between stored and tested data."
+
+    # Compute R-squared
+    R2 = []
+    for run in stored_runs:
+        _sim = sim[sim["run"] == run].set_index("timestamp").drop("run", axis=1)
+        _stored = (
+            stored[stored["run"] == run].set_index("timestamp").drop("run", axis=1)
+        )
+        assert (
+            _sim.shape == _stored.shape
+        ), f"Per trade data, run {run}: data shape mismatch"
+
+        R2.append(compute_R2(_sim.resample("1D").mean(), _stored.resample("1D").mean()))
+
+    R2 = DataFrame(R2).T
+
+    # Feedback
+    if not (R2 >= threshold).all(axis=None):
+        print(R2)
+        raise AssertionError(f"R-squared test failed. (Threshold: {threshold})")
+
+    print(R2)
+    print(f"R-squared test passed. (Threshold: {threshold}).")
+
+
+def summary(sim, stored, threshold=0.99):
+    print("Testing summary data...")
+
+    # Compare metric columns
+    compare_metrics(sim.columns, stored.columns)
+    sim = sim[stored.columns]
+
+    # Compare runs
+    sim_runs = list(sim.index)
+    stored_runs = list(stored.index)
+    assert (
+        sim_runs == stored_runs
+    ), "Simulation runs don't match between stored and tested data."
+
+    # Compute R-squared
+    R2 = compute_R2(sim, stored)
+
+    # Feedback
+    if not (R2 >= threshold).all(axis=None):
+        print(R2)
+        raise AssertionError(f"R-squared test failed. (Threshold: {threshold})")
+
+    print(R2)
+    print(f"R-squared test passed. (Threshold: {threshold}).")
+
+
+def compare_metrics(test, reference):
+    extra, missing = compare_elements(test, reference)
+    assert not missing, f"Metrics missing from simulation results: {missing}"
+
+    if extra:
+        print("WARNING: extra untested metrics in simulation results:", extra)
+
+
+def compare_elements(test, reference):
+    extra = [el for el in test if el not in reference]
+    missing = [el for el in reference if el not in test]
+    return extra, missing
+
+
+def compute_R2(sim, stored):
+    MSE = ((sim - stored) ** 2).sum()
+    total_variance = stored.var(ddof=0)
+    return 1 - MSE / total_variance
+
+
+if __name__ == "__main__":
+    main()
