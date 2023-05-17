@@ -1,0 +1,34 @@
+name: Generate comparison results for CI test
+
+on: workflow_dispatch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up latest Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Make the comparison results from saved data
+        run: |
+          python3 -m test.scripts.make_test_data
+
+      - name: Commit results
+        run: |
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add .
+          git commit -m "Commit results for CI test - GH run ID: ${{ github.run_id }}"
+          git push
+
