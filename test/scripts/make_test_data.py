@@ -26,21 +26,21 @@ def main(fetch_data=False):
             "address": "0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7",
             "end_timestamp": 1638316800,
         },
-        # # aCRV
-        # {
-        #     "address": "0xdebf20617708857ebe4f679508e7b7863a8a8eee",
-        #     "end_timestamp": 1622505600,
-        # },
-        # # frax3CRV"
-        # {
-        #     "address": "FRAX3CRV-f",
-        #     "end_timestamp": 1643673600,
-        # },
-        # # ousd3CRV
-        # {
-        #     "address": "OUSD3CRV-f",
-        #     "end_timestamp": 1646265600,
-        # },
+        # aCRV
+        {
+            "address": "0xdebf20617708857ebe4f679508e7b7863a8a8eee",
+            "end_timestamp": 1622505600,
+        },
+        # frax3CRV"
+        {
+            "address": "FRAX3CRV-f",
+            "end_timestamp": 1643673600,
+        },
+        # ousd3CRV
+        {
+            "address": "OUSD3CRV-f",
+            "end_timestamp": 1646265600,
+        },
         # rai3CRV
         # {
         #     "address": "0x618788357d0ebd8a37e763adab3bc575d54c2c7d",
