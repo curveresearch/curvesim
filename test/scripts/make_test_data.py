@@ -1,15 +1,15 @@
 """Script to generate data for CI test"""
 import os
 import pickle
-import shutil
 import sys
-from itertools import combinations
-
-from pandas import read_pickle
 
 import curvesim
-from curvesim.network.nomics import coin_ids_from_addresses_sync
+
+# from curvesim.network.nomics import coin_ids_from_addresses_sync
 from curvesim.pipelines.arbitrage import volume_limited_arbitrage as pipeline
+
+# import shutil
+# from itertools import combinations
 
 
 def main(fetch_data=False):
@@ -55,31 +55,33 @@ def main(fetch_data=False):
             address = pool["address"]
             end_ts = pool["end_timestamp"]
 
-            pool_data = curvesim.pool_data.get(address)
+        pool_data_cache = curvesim.pool_data.get_data_cache(address, end=end_ts)
+        pool_metadata = curvesim.pool_data.get_metadata(address)
 
-            # Store pool_data
-            pool_data.set_cache(end=end_ts)
-            f_name = os.path.join(test_data_dir, address + "-pool_data.pickle")
-            with open(f_name, "wb") as f:
-                pickle.dump(pool_data, f)
+        # Store pool_data
+        pool_data_cache.set_cache()
+        f_name = os.path.join(test_data_dir, address + "-pool_data_cache.pickle")
+        with open(f_name, "wb") as f:
+            pickle.dump(pool_data_cache, f)
+        f_name = os.path.join(test_data_dir, address + "-pool_metadata.pickle")
+        with open(f_name, "wb") as f:
+            pickle.dump(pool_metadata, f)
 
-            # Store price data
-            coins = pool_data.coins
-            curvesim.price_data.get(
-                coins, src="nomics", data_dir=test_data_dir, end=end_ts
-            )
+        # Store price data
+        # coins = pool_data.coins
+        # curvesim.price_data.get(coins, src="nomics", data_dir=test_data_dir, end=end_ts)
 
-            # Rename files from coin IDs to addresses.
-            # Need to do this because the sim pipeline actually uses the addresses.
-            # FIXME: update the nomics file download to use addresses.
-            coin_combos = combinations(coins, 2)
-            for pair in coin_combos:
-                id_pair = coin_ids_from_addresses_sync(pair)
-                f_from = os.path.join(
-                    test_data_dir, f"{id_pair[0]}-{id_pair[1]}-{end_ts}.csv"
-                )
-                f_to = os.path.join(test_data_dir, f"{pair[0]}-{pair[1]}-{end_ts}.csv")
-                shutil.copyfile(f_from, f_to)
+        # # Rename files from coin IDs to addresses.
+        # # Need to do this because the sim pipeline actually uses the addresses.
+        # # FIXME: update the nomics file download to use addresses.
+        # coin_combos = combinations(coins, 2)
+        # for pair in coin_combos:
+        #     id_pair = coin_ids_from_addresses_sync(pair)
+        #     f_from = os.path.join(
+        #         test_data_dir, f"{id_pair[0]}-{id_pair[1]}-{end_ts}.csv"
+        #     )
+        #     f_to = os.path.join(test_data_dir, f"{pair[0]}-{pair[1]}-{end_ts}.csv")
+        #     shutil.copyfile(f_from, f_to)
 
     # Run sim from stored data and save results
     print("Getting sim results...")
@@ -88,11 +90,16 @@ def main(fetch_data=False):
         end_ts = pool["end_timestamp"]
         vol_mult = pool.get("vol_mult", None)
 
-        f_name = os.path.join(test_data_dir, address + "-pool_data.pickle")
-        pool_data = read_pickle(f_name)
+        f_name = os.path.join(test_data_dir, address + "-pool_data_cache.pickle")
+        with open(f_name, "rb") as f:
+            pool_data_cache = pickle.load(f)
+        f_name = os.path.join(test_data_dir, address + "-pool_metadata.pickle")
+        with open(f_name, "rb") as f:
+            pool_metadata = pickle.load(f)
 
         results = pipeline(
-            pool_data,
+            pool_metadata,
+            pool_data_cache,
             test=True,
             src="local",
             data_dir=test_data_dir,

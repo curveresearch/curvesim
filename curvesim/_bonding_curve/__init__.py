@@ -59,8 +59,9 @@ def bonding_curve(pool, *, truncate=0.0005, resolution=1000, show=True):
     for n, combo in enumerate(combos):
         i, j = combo
 
+        truncated_D = int(D * truncate)
         xs_n = linspace(
-            int(D * truncate), pool.get_y(j, i, D * truncate, xp), resolution
+            truncated_D, pool.get_y(j, i, truncated_D, xp), resolution
         ).round()
 
         ys_n = []

@@ -253,11 +253,26 @@ async def _pool_snapshot(address, chain):
 
             A
             fee
+            adminFee
             offPegFeeMultiplier
             reserves
             normalizedReserves
             virtualPrice
             timestamp
+
+            gamma
+            midFee
+            outFee
+            feeGamma
+            allowedExtraProfit
+            adjustmentStep
+            maHalfTime
+            priceScale
+            priceOracle
+            lastPrices
+            lastPricesTimestamp
+            xcpProfit
+            xcpProfitA
           }
         }
     """
@@ -332,29 +347,67 @@ async def pool_snapshot(address, chain):
         basepool = None
 
     # Output
-    data = {
-        "name": r["name"],
-        "address": to_checksum_address(r["address"]),
-        "chain": chain,
-        "symbol": r["symbol"].strip(),
-        "version": version,
-        "pool_type": r["poolType"],
-        "params": {
-            "A": int(r["A"]),
-            "fee": int(float(r["fee"]) * 10**10),
-            "fee_mul": fee_mul,
-        },
-        "coins": coins,
-        "reserves": {
-            "D": D,
-            "by_coin": normalized_reserves,
-            "unnormalized_by_coin": unnormalized_reserves,
-            "virtual_price": int(r["virtualPrice"]),
-            "tokens": D * 10**18 // int(r["virtualPrice"]),
-        },
-        "basepool": basepool,
-        "timestamp": int(r["timestamp"]),
-    }
+    if version == 1:
+        data = {
+            "name": r["name"],
+            "address": to_checksum_address(r["address"]),
+            "chain": chain,
+            "symbol": r["symbol"].strip(),
+            "version": version,
+            "pool_type": r["poolType"],
+            "params": {
+                "A": int(r["A"]),
+                "fee": int(float(r["fee"]) * 10**10),
+                "fee_mul": fee_mul,
+                "admin_fee": int(r["adminFee"]),
+            },
+            "coins": coins,
+            "reserves": {
+                "D": D,
+                "by_coin": normalized_reserves,
+                "unnormalized_by_coin": unnormalized_reserves,
+                "virtual_price": int(r["virtualPrice"]),
+                "tokens": D * 10**18 // int(r["virtualPrice"]),
+            },
+            "basepool": basepool,
+            "timestamp": int(r["timestamp"]),
+        }
+    else:
+        data = {
+            "name": r["name"],
+            "address": to_checksum_address(r["address"]),
+            "chain": chain,
+            "symbol": r["symbol"].strip(),
+            "version": version,
+            "pool_type": r["poolType"],
+            "params": {
+                "A": int(r["A"]),
+                "gamma": int(r["gamma"]),
+                "fee_gamma": int(r["feeGamma"]),
+                "mid_fee": int(r["midFee"]),
+                "out_fee": int(r["outFee"]),
+                "allowed_extra_profit": int(r["allowedExtraProfit"]),
+                "adjustment_step": int(r["adjustmentStep"]),
+                "ma_half_time": int(r["adjustmentStep"]),
+                "price_scale": int(r["priceScale"]),
+                "price_oracle": int(r["priceOracle"]),
+                "last_prices": int(r["lastPrices"]),
+                "last_prices_timestamp": int(r["lastPricesTimestamp"]),
+                "admin_fee": int(r["adminFee"]),
+                "xcp_profit": int(r["xcpProfit"]),
+                "xcp_profit_a": int(r["xcpProfitA"]),
+            },
+            "coins": coins,
+            "reserves": {
+                "D": D,
+                "by_coin": normalized_reserves,
+                "unnormalized_by_coin": unnormalized_reserves,
+                "virtual_price": int(r["virtualPrice"]),
+                "tokens": D * 10**18 // int(r["virtualPrice"]),
+            },
+            "basepool": basepool,
+            "timestamp": int(r["timestamp"]),
+        }
 
     return override_subgraph_data(data, "pool_snapshot", (address, chain))
 

@@ -37,10 +37,10 @@ def compute_volume_multipliers(pool_vol, market_vol, n, pool_type, mode=1):
         3: mode 2 for trades with meta-pool asset, mode 1 for basepool-only trades
 
     """
-    if pool_type == CurvePool:
+    if pool_type is CurvePool:
         vol_mult = pool_vol_mult(pool_vol, market_vol, n, mode)
 
-    elif pool_type == CurveMetaPool:
+    elif pool_type is CurveMetaPool:
         vol_mult = metapool_vol_mult(pool_vol, market_vol, n, mode)
 
     else:

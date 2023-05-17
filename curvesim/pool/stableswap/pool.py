@@ -5,6 +5,8 @@ from math import prod
 
 from gmpy2 import mpz
 
+from curvesim.pool.snapshot import CurvePoolBalanceSnapshot
+
 from ..base import Pool
 
 
@@ -12,6 +14,8 @@ class CurvePool(Pool):  # pylint: disable=too-many-instance-attributes
     """
     Basic stableswap implementation in Python.
     """
+
+    snapshot_class = CurvePoolBalanceSnapshot
 
     __slots__ = (
         "A",

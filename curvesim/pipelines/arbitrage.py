@@ -8,21 +8,24 @@ from functools import partial
 from numpy import array, isnan
 from scipy.optimize import least_squares, root_scalar
 
-from curvesim.metrics import StateLog, init_metrics, make_results, metrics as Metrics
 from curvesim.iterators.param_samplers import Grid
 from curvesim.iterators.price_samplers import PriceVolume
 from curvesim.logging import get_logger
+from curvesim.metrics import StateLog, init_metrics, make_results
+from curvesim.metrics import metrics as Metrics
+from curvesim.pool import get_sim_pool
+from curvesim.pool_data.cache import PoolDataCache
 
-from .templates import run_pipeline, TradeData
+from .templates import TradeData, run_pipeline
 from .utils import compute_volume_multipliers
-
 
 logger = get_logger(__name__)
 
 
 # pylint: disable-next=too-many-arguments
 def volume_limited_arbitrage(
-    pool_data,
+    pool_metadata,
+    pool_data_cache=None,
     variable_params=None,
     fixed_params=None,
     metrics=None,
@@ -45,8 +48,8 @@ def volume_limited_arbitrage(
 
     Parameters
     ----------
-    pool_data : :class:`.PoolData`
-        Pool data object for the pool of interest.
+    pool_metadata : :class:`.PoolMetaDataInterface`
+        Pool metadata object for the pool of interest.
 
     variable_params : dict, defaults to broad range of A/fee values
         Pool parameters to vary across simulations.
@@ -113,20 +116,23 @@ def volume_limited_arbitrage(
     variable_params = variable_params or DEFAULT_PARAMS
     metrics = metrics or DEFAULT_METRICS
 
-    pool = pool_data.sim_pool()
-    coins = pool_data.coins
+    if pool_data_cache is None:
+        pool_data_cache = PoolDataCache(pool_metadata, days=days, end=end)
+
+    pool = get_sim_pool(pool_metadata, pool_data_cache=pool_data_cache)
+    coins = pool_metadata.coins
 
     param_sampler = Grid(pool, variable_params, fixed_params=fixed_params)
     price_sampler = PriceVolume(coins, days=days, data_dir=data_dir, src=src, end=end)
 
     if vol_mult is None:
-        volumes = pool_data.volume(days=days, end=end)
-        total_volumes = price_sampler.total_volumes()
+        total_pool_volume = pool_data_cache.volume
+        total_market_volume = price_sampler.total_volumes()
         vol_mult = compute_volume_multipliers(
-            volumes,
-            total_volumes,
-            pool_data.n,
-            pool_data.type,
+            total_pool_volume,
+            total_market_volume,
+            pool_metadata.n,
+            pool_metadata.pool_type,
             mode=vol_mode,
         )
 

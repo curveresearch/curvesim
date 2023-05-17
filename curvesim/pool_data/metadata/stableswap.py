@@ -1,20 +1,9 @@
-from curvesim.exceptions import CurvesimException
-from curvesim.network.subgraph import has_redemption_prices
-from curvesim.pool.sim_interface import SimCurveMetaPool, SimCurvePool, SimCurveRaiPool
-from curvesim.pool.stableswap import CurveMetaPool, CurvePool, CurveRaiPool
+from curvesim.pool.stableswap.pool import CurvePool
+
+from .base import PoolMetaDataBase
 
 
-class PoolMetaData:
-
-    _SIM_POOL_TYPE = {
-        CurvePool: SimCurvePool,
-        CurveMetaPool: SimCurveMetaPool,
-        CurveRaiPool: SimCurveRaiPool,
-    }
-
-    def __init__(self, metadata_dict):
-        self._dict = metadata_dict
-
+class StableswapMetaData(PoolMetaDataBase):
     def init_kwargs(self, balanced=True, balanced_base=True, normalize=True):
         data = self._dict
 
@@ -53,39 +42,6 @@ class PoolMetaData:
             kwargs["basepool"] = basepool
 
         return kwargs
-
-    @property
-    def address(self):
-        return self._dict["address"]
-
-    @property
-    def chain(self):
-        return self._dict["chain"]
-
-    @property
-    def has_redemption_prices(self):
-        address = self.address
-        chain = self.chain
-        return has_redemption_prices(address, chain)
-
-    @property
-    def pool_type(self):
-        if self._dict["basepool"]:
-            if self.has_redemption_prices:
-                _pool_type = CurveRaiPool
-            else:
-                _pool_type = CurveMetaPool
-        else:
-            _pool_type = CurvePool
-        return _pool_type
-
-    @property
-    def sim_pool_type(self):
-        pool_type = self.pool_type
-        try:
-            return self._SIM_POOL_TYPE[pool_type]
-        except KeyError:
-            raise CurvesimException(f"No sim pool type for this pool type: {pool_type}")
 
     @property
     def coins(self):

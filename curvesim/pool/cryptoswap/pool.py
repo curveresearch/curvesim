@@ -62,12 +62,14 @@ class CurveCryptoPool(Pool):
         allowed_extra_profit: int,
         fee_gamma: int,
         adjustment_step: int,
-        admin_fee: int,
         ma_half_time: int,
-        initial_price: int,
+        price_scale: int,
+        price_oracle=None,
+        last_prices=None,
         balances=None,
         D=None,
         tokens=None,
+        admin_fee: int = 5 * 10**9,
         xcp_profit=10**18,
         xcp_profit_a=10**18,
     ):
@@ -97,12 +99,17 @@ class CurveCryptoPool(Pool):
             Factor used to control the transition from `mid_fee` to `out_fee`.
         adjustment_step:
             Minimum step size to adjust the price scale.
-        admin_fee: int
-            Percentage of `fee` with 10**10 precision.  Fee paid to the DAO.
         ma_half_time: int
             "Half-life" for exponential moving average of trade prices.
-        initial_price: int
-            Initial price scale for the pool.
+        price_scale: int
+            Price scale value for the pool.  This is where liquidity is concentrated.
+        price_oracle: int, optional
+            Price oracle value for the pool.  This is the EMA price used to
+            adjust the price scale toward.
+            Defaults to `price_scale`.
+        last_prices: int, optional
+            Last trade price for the pool.
+            Defaults to `price_scale`.
         balances: list of int, optional
             Coin balances in native token units;
             either `balances` or `D` is required
@@ -112,6 +119,9 @@ class CurveCryptoPool(Pool):
         tokens: int, optional
             LP token supply (default is calculated from `D`, which is also
             calculated if needed)
+        admin_fee: int, optional
+            Percentage of `fee` with 10**10 precision.  Fee paid to the DAO
+            (default = 5*10**9)
         xcp_profit: int, optional
             Counter for accumulated profits, no losses (default = 10**18)
         xcp_profit_a: int, optional
@@ -127,9 +137,9 @@ class CurveCryptoPool(Pool):
         self.adjustment_step = adjustment_step
         self.admin_fee = admin_fee
 
-        self.price_scale = initial_price
-        self._price_oracle = initial_price
-        self.last_prices = initial_price
+        self.price_scale = price_scale
+        self._price_oracle = price_oracle or price_scale
+        self.last_prices = last_prices or price_scale
         self.ma_half_time = ma_half_time
 
         self._block_timestamp = _get_unix_timestamp()
@@ -459,18 +469,16 @@ class CurveCryptoPool(Pool):
         if old_virtual_price > 0:
             xcp: int = _geometric_mean(xp, True)
             virtual_price = 10**18 * xcp // total_supply
-            xcp_profit = old_xcp_profit * virtual_price // old_virtual_price
 
             if virtual_price < old_virtual_price:
                 raise CryptoPoolError("Loss")
 
+            xcp_profit = old_xcp_profit * virtual_price // old_virtual_price
+
         self.xcp_profit = xcp_profit
 
         norm: int = price_oracle * 10**18 // price_scale
-        if norm > 10**18:
-            norm -= 10**18
-        else:
-            norm = 10**18 - norm
+        norm = abs(norm - 10**18)
         adjustment_step: int = max(self.adjustment_step, norm // 5)
 
         needs_adjustment: bool = self.not_adjusted
@@ -500,19 +508,17 @@ class CurveCryptoPool(Pool):
             # Calculate "extended constant product" invariant xCP and virtual price
             D: int = self._newton_D(A, gamma, xp)
             xp = [D // n_coins, D * PRECISION // (n_coins * p_new)]
-            # We reuse old_virtual_price here but it's not old anymore
-            old_virtual_price = 10**18 * _geometric_mean(xp, True) // total_supply
+            new_virtual_price = 10**18 * _geometric_mean(xp, True) // total_supply
 
             # Proceed if we've got enough profit:
-            # if (old_virtual_price > 10**18) and
-            # (2 * (old_virtual_price - 10**18) > xcp_profit - 10**18):
-            if (old_virtual_price > 10**18) and (
-                2 * old_virtual_price - 10**18 > xcp_profit
+            #   new_virtual_price > 10**18
+            #   new_virtual_price - 10**18 > (xcp_profit - 10**18) / 2
+            if (new_virtual_price > 10**18) and (
+                2 * new_virtual_price - 10**18 > xcp_profit
             ):
                 self.price_scale = p_new
                 self.D = D
-                self.virtual_price = old_virtual_price
-
+                self.virtual_price = new_virtual_price
                 return
 
         # If we are here, the price_scale adjustment did not happen
@@ -662,7 +668,8 @@ class CurveCryptoPool(Pool):
             dy = dy * PRECISION // price_scale
         dy = dy // prec_j
 
-        dy -= self._fee(xp) * dy // 10**10
+        fee = self._fee(xp) * dy // 10**10
+        dy -= fee
         assert dy >= min_dy, "Slippage"
         y -= dy
 
@@ -684,7 +691,7 @@ class CurveCryptoPool(Pool):
 
         self._tweak_price(A, gamma, xp, p, 0)
 
-        return dy
+        return dy, fee
 
     def exchange(
         self,
@@ -709,8 +716,8 @@ class CurveCryptoPool(Pool):
 
         Returns
         -------
-        int
-            Out-coin amount from the swap.
+        (int, int)
+            (amount of coin `j` received, trading fee)
 
         Note
         -----

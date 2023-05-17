@@ -54,15 +54,17 @@ def main():  # noqa: C901
         end_ts = pool["end_timestamp"]
         vol_mult = pool.get("vol_mult", None)
 
-        f_name = os.path.join(data_dir, f"{address}-pool_data.pickle")
-        pool_data = read_pickle(f_name)
+        f_name = os.path.join(data_dir, f"{address}-pool_data_cache.pickle")
+        pool_data_cache = read_pickle(f_name)
+        f_name = os.path.join(data_dir, f"{address}-pool_metadata.pickle")
+        pool_metadata = read_pickle(f_name)
 
         results = curvesim.autosim(
-            address,
+            pool_metadata=pool_metadata,
             test=True,
             src="local",
             data_dir=data_dir,
-            pool_data=pool_data,
+            pool_data_cache=pool_data_cache,
             end=end_ts,
             vol_mult=vol_mult,
         )

@@ -54,7 +54,7 @@ def initialize_pool(vyper_cryptopool):
         adjustment_step=adjustment_step,
         admin_fee=admin_fee,
         ma_half_time=ma_half_time,
-        initial_price=price_scale,
+        price_scale=price_scale,
         balances=balances,
         D=D,
         tokens=lp_total_supply,
@@ -512,7 +512,7 @@ def test_exchange(vyper_cryptopool, dx_perc, i):
     dx = pool.balances[i] * dx_perc // 100
 
     expected_dy = vyper_cryptopool.exchange(i, j, dx, 0)
-    dy = pool.exchange(i, j, dx)
+    dy, _ = pool.exchange(i, j, dx)
 
     assert dy == expected_dy
 

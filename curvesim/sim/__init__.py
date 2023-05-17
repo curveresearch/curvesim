@@ -8,12 +8,14 @@ fee parameters given historical price and volume feeds.
 """
 from curvesim.logging import get_logger
 from curvesim.pipelines.arbitrage import DEFAULT_PARAMS, volume_limited_arbitrage
-from curvesim.pool_data import get as get_pool_data
+from curvesim.pool_data import get_metadata
 
 logger = get_logger(__name__)
 
 
-def autosim(pool=None, chain="mainnet", pool_data=None, **kwargs):
+def autosim(
+    pool=None, chain="mainnet", pool_metadata=None, pool_data_cache=None, **kwargs
+):
     """
     The autosim() function simulates existing Curve pools with a range of
     parameters (e.g., the amplitude parameter, A, and/or the exchange fee).
@@ -32,7 +34,7 @@ def autosim(pool=None, chain="mainnet", pool_data=None, **kwargs):
         This string identifies the pool by address or LP token symbol.
 
         .. note::
-            Either `pool` or `pool_data` must be provided.
+            Either `pool` or `pool_metadata` must be provided.
 
         .. warning::
             An LP token symbol need not be unique.  In particular, factory
@@ -46,11 +48,15 @@ def autosim(pool=None, chain="mainnet", pool_data=None, **kwargs):
             "mainnet", "arbitrum", "optimism", "fantom", "avalanche"
             "matic", "xdai"
 
-    pool_data: PoolData, optional
+    pool_metadata: PoolMetaDataInterface, optional
         Pool data necessary to instantiate a pool object.
 
         .. note::
-            Either `pool` or `pool_data` must be provided.
+            Either `pool` or `pool_metadata` must be provided.
+
+    pool_data_cache: PoolDataCache, optional
+        Cached data used in sims.  Useful for replication of results and
+        avoiding re-fetches of data.
 
     A: int or iterable of int, optional
         Amplification coefficient.  This controls the curvature of the
@@ -132,13 +138,17 @@ def autosim(pool=None, chain="mainnet", pool_data=None, **kwargs):
     dict
         Dictionary of results, each value being a pandas.Series.
     """
-    assert any([pool, pool_data]), "Must input 'pool' or 'pool_data'"
+    assert any([pool, pool_metadata]), "Must input 'pool' or 'pool_metadata'"
 
-    pool_data = pool_data or get_pool_data(pool, chain)
+    pool_metadata = pool_metadata or get_metadata(pool, chain)
     p_var, p_fixed, kwargs = _parse_arguments(**kwargs)
 
     results = volume_limited_arbitrage(
-        pool_data, variable_params=p_var, fixed_params=p_fixed, **kwargs
+        pool_metadata,
+        pool_data_cache,
+        variable_params=p_var,
+        fixed_params=p_fixed,
+        **kwargs,
     )
 
     return results

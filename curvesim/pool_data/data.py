@@ -62,13 +62,13 @@ class PoolData:
 
         Parameters
         ----------
-        balanced : bool, default=True
+        balanced : bool, default=False
             If True, balances the pool value across assets.
 
-        balanced_base : bool, default=True
+        balanced_base : bool, default=False
             If True and pool is metapool, balances the basepool value across assets.
 
-        normalize : bool, default=True
+        normalize : bool, default=False
             If True, normalizes balances to 18 decimals (useful for sim calculations).
 
         sim: bool, default=False

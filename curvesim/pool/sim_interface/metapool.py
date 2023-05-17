@@ -4,15 +4,11 @@ from numpy import isnan
 
 from curvesim.exceptions import CurvesimValueError
 from curvesim.pool.sim_interface.simpool import SimStableswapBase
-from curvesim.pool.snapshot import CurveMetaPoolBalanceSnapshot
 from curvesim.pool.stableswap.metapool import CurveMetaPool
 from curvesim.utils import override
 
 
 class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
-
-    snapshot_class = CurveMetaPoolBalanceSnapshot
-
     @property
     def _precisions(self):
         p_base = self.basepool.rates[:]
