@@ -4,6 +4,7 @@ import inspect
 import os
 import re
 
+from itertools import combinations
 from dotenv import load_dotenv
 
 from curvesim.exceptions import CurvesimException, MissingEnvVarError
@@ -108,3 +109,30 @@ def override(method):
             f'Overridden method "{method.__name__}" was not found in any super class.'
         )
     return method
+
+
+def get_pairs(arg):
+    """
+    Get sorted pairwise combinations of an iterable.
+    Integer inputs are treated as range(int).
+
+    Parameters
+    ----------
+    arg: iterable or int
+        The iterable to produce pairs from, or an integer specifying the range
+        to produce pairs from.
+
+    Returns
+    -------
+    list
+        Sorted pairwise combinations of the input.
+
+    Raise
+    -----
+    curvesim.exception.MissingEnvVarError
+        Raised if default is not set and env var is missing.
+    """
+    if isinstance(arg, int):
+        arg = range(arg)
+
+    return list(combinations(arg, 2))

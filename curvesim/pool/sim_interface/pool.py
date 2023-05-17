@@ -17,14 +17,9 @@ class SimCurvePool(SimStableswapBase, CurvePool):
     def _precisions(self):
         return self.rates[:]
 
+    @override
     def _init_coin_indices(self):
         return {name: i for i, name in enumerate(self.coin_names)}
-
-    @property
-    def _base_index_combos(self):
-        base_idx = range(self.n)
-        base_index_combos = combinations(base_idx, 2)
-        return base_index_combos
 
     @override
     def price(self, coin_in, coin_out, use_fee=True):
@@ -41,7 +36,8 @@ class SimCurvePool(SimStableswapBase, CurvePool):
 
         return out_amount, fee, volume
 
-    def _test_trade(self, coin_in, coin_out, factor):
+    @override
+    def test_trade(self, coin_in, coin_out, factor, use_fee=True):
         """
         This does the trade but leaves balances unaffected.
 
@@ -53,7 +49,7 @@ class SimCurvePool(SimStableswapBase, CurvePool):
 
         with self.use_snapshot_context():
             self.exchange(i, j, size)
-            price = self.dydxfee(i, j)
+            price = self.dydx(i, j, use_fee=use_fee)
 
         return price
 

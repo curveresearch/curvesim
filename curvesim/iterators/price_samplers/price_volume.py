@@ -1,4 +1,9 @@
-from ...price_data import get
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+
+from pandas import Series
+
+from curvesim.price_data import get
 
 
 class PriceVolume:
@@ -31,7 +36,13 @@ class PriceVolume:
 
         self.prices = prices
         self.volumes = volumes
-        self.pzero = pzero
+
+        self.freq = getattr(prices.index, "freq", None)
+        if self.freq:
+            self.freq /= timedelta(minutes=1)  # force minute units
+        else:
+            print("Warning: assuming 30 minute sampling for annualizing returns")
+            self.freq = 30
 
         self.price_generator = prices.iterrows()
         self.volume_generator = volumes.iterrows()
@@ -58,7 +69,7 @@ class PriceVolume:
 
         assert prices[0] == volumes[0], "Price/volume timestamps did not match"
 
-        return prices[1], volumes[1], prices[0]
+        return PriceVolumeSample(prices[0], prices[1].values, volumes[1].values)
 
     def total_volumes(self):
         """
@@ -81,3 +92,10 @@ class PriceVolume:
         self.volume_generator = self.volumes.iterrows()
 
         return self
+
+
+@dataclass(eq=False, slots=True)
+class PriceVolumeSample:
+    timestamp: datetime
+    prices: Series
+    volumes: Series

@@ -41,3 +41,15 @@ class CalculationError(CurvesimException):
 
 class CryptoPoolError(RuntimeError):
     """Runtime error from a CryptoSwap pool."""
+
+
+class MetricError(CurvesimException):
+    """Error using a metric."""
+
+
+class ResultsError(CurvesimException):
+    """Error processing pipeline/simulation results."""
+
+
+class PlotError(CurvesimException):
+    """Error in plotting."""

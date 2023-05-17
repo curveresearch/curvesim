@@ -3,27 +3,18 @@ Implements the volume-limited arbitrage pipeline.
 """
 
 import os
-from datetime import timedelta
 from functools import partial
 
-from numpy import array, exp, isnan, log
-from pandas import DataFrame, MultiIndex
+from numpy import array, isnan
 from scipy.optimize import least_squares, root_scalar
 
+from curvesim.metrics import StateLog, init_metrics, make_results, metrics as Metrics
 from curvesim.iterators.param_samplers import Grid
 from curvesim.iterators.price_samplers import PriceVolume
 from curvesim.logging import get_logger
-from curvesim.plot import saveplots
 
-from .templates import run_pipeline
+from .templates import run_pipeline, TradeData
 from .utils import compute_volume_multipliers
-
-DEFAULT_PARAMS = {
-    "A": [int(2 ** (a / 2)) for a in range(12, 28)],
-    "fee": list(range(1000000, 5000000, 1000000)),
-}
-
-TEST_PARAMS = {"A": [100, 1000], "fee": [3000000, 4000000]}
 
 
 logger = get_logger(__name__)
@@ -34,6 +25,7 @@ def volume_limited_arbitrage(
     pool_data,
     variable_params=None,
     fixed_params=None,
+    metrics=None,
     test=False,
     days=60,
     src="coingecko",
@@ -111,14 +103,15 @@ def volume_limited_arbitrage(
     dict
 
     """
-    if variable_params is None:
-        variable_params = DEFAULT_PARAMS
     if test:
         variable_params = TEST_PARAMS
 
     if ncpu is None:
         cpu_count = os.cpu_count()
         ncpu = cpu_count if cpu_count is not None else 1
+
+    variable_params = variable_params or DEFAULT_PARAMS
+    metrics = metrics or DEFAULT_METRICS
 
     pool = pool_data.sim_pool()
     coins = pool_data.coins
@@ -136,28 +129,23 @@ def volume_limited_arbitrage(
             pool_data.type,
             mode=vol_mode,
         )
-    strat = partial(strategy, vol_mult=vol_mult)
 
-    results = run_pipeline(param_sampler, price_sampler, strat, ncpu=ncpu)
-    results = format_results(
-        results, param_sampler.flat_grid(), price_sampler.prices.index
-    )
+    metrics = init_metrics(metrics, pool=pool, freq=price_sampler.freq)
+    strat = partial(strategy, metrics=metrics, vol_mult=vol_mult)
 
-    p_keys = sorted(variable_params.keys())
-    if p_keys == ["A", "fee"]:
-        folder_name = pool.folder_name
-        saveplots(
-            folder_name,
-            variable_params["A"],
-            variable_params["fee"],
-            results,
-        )
+    output = run_pipeline(param_sampler, price_sampler, strat, ncpu=ncpu)
+    results = make_results(*output, metrics)
+
+    # factors = list(variable_params.keys())
+    # results = SimResults(results, data_log.get_config(), factors)
+    # save_as = os.path.join("results", f"{pool.folder_name}", "plot.html")
+    # results.plot(save_as=save_as)
 
     return results
 
 
 # Strategy
-def strategy(pool, params, price_sampler, vol_mult):
+def strategy(pool, parameters, price_sampler, metrics, vol_mult):
     """
     Computes and executes volume-limited arbitrage trades at each timestep.
 
@@ -166,7 +154,7 @@ def strategy(pool, params, price_sampler, vol_mult):
     pool : Pool, MetaPool, or RaiPool
         The pool to be arbitraged.
 
-    params : dict
+    parameters : dict
         Current pool parameters from the param_sampler (only used for logging/display).
 
     price_sampler : iterator
@@ -183,20 +171,18 @@ def strategy(pool, params, price_sampler, vol_mult):
 
     """
     trader = Arbitrageur(pool)
-    metrics = Metrics()
+    state_log = StateLog(pool, metrics)
 
     symbol = pool.symbol
-    logger.info(f"[{symbol}] Simulating with {params}")
+    logger.info(f"[{symbol}] Simulating with {parameters}")
 
-    for prices, volumes, timestamp in price_sampler:
-        limits = volumes * vol_mult
-        pool.prepare_for_trades(timestamp)
-        trades, errors, _ = trader.compute_trades(prices, limits)
-        _, volume = trader.do_trades(trades)
+    for price_sample in price_sampler:
+        volume_limits = price_sample.volumes * vol_mult
+        pool.prepare_for_trades(price_sample.timestamp)
+        trade_data = trader.arb_pool(price_sample.prices, volume_limits)
+        state_log.update(price_sample=price_sample, trade_data=trade_data)
 
-        metrics.update(trader.pool, errors, volume)
-
-    return metrics()
+    return state_log.compute_metrics()
 
 
 class Arbitrageur:
@@ -267,178 +253,17 @@ class Arbitrageur:
         trades_done = []
         for trade in trades:
             i, j, dx = trade
-            dy, _, volume = self.pool.trade(i, j, dx)
-            trades_done.append((i, j, dx, dy))
+            dy, fee, volume = self.pool.trade(i, j, dx)
+            trades_done.append((i, j, dx, dy, fee))
 
             total_volume += volume
 
         return trades_done, total_volume
 
-
-# Metrics
-class Metrics:
-    """
-    Computes and stores metrics at each timestep.
-    Calling the instance returns the accumulated data.
-
-    """
-
-    def __init__(self):
-        self.xs = []
-        self.ps = []
-        self.pool_balance = []
-        self.pool_value = []
-        self.price_depth = []
-        self.price_error = []
-        self.volume = []
-
-    def __call__(self):
-        """
-        Returns the data accumulated through updates.
-
-        Returns
-        -------
-        records : tuple of lists
-            The accumulated data.
-
-        """
-        records = (
-            self.xs,
-            self.ps,
-            self.pool_balance,
-            self.pool_value,
-            self.price_depth,
-            self.price_error,
-            self.volume,
-        )
-
-        return records
-
-    def update(self, pool, errors, trade_volume):
-        """
-        Computes and stores pool metrics for each timestep.
-
-        Parameters
-        ----------
-        pool :
-            Simulation interface to a subclass of :class:`.Pool`.
-
-        errors : numpy.ndarray
-            Post-trade price error between pool price and market price for each token
-            pair (returned from :meth:`Arbitrageur.compute_trades`).
-
-        trade_volume: int
-            Total volume of trades in 18 decimal precision
-            (returned from :meth:`Arbitrageur.do_trades`).
-
-        """
-        p = pool.rates[:]
-        x = pool.balances[:]
-
-        # FIXME: this logic uses stableswap specific functionality
-        # and should be replaced by generic `SimPool` methods
-        xp = pool._xp()
-        bal = self.compute_balance(xp)
-        price_depth = self.compute_price_depth(pool)
-        value = pool.D() / 10**18
-
-        self.xs.append(x)
-        self.ps.append(p)
-        self.pool_balance.append(bal)
-        self.pool_value.append(value)
-        self.price_depth.append(sum(price_depth) / len(price_depth))
-        self.price_error.append(sum(abs(errors)))
-        self.volume.append(trade_volume / 10**18)
-
-    @staticmethod
-    def compute_balance(xp):
-        """Compute imbalance factor."""
-        n = len(xp)
-        xp = array(xp)
-        bal = 1 - sum(abs(xp / sum(xp) - 1 / n)) / (2 * (n - 1) / n)
-        return bal
-
-    @staticmethod
-    def compute_price_depth(pool):
-        """Compute price depth."""
-        return pool.get_price_depth()
-
-
-def format_results(results, parameters, timestamps):
-    """
-    Format metrics and compute additional statistics after simulation.
-
-    Parameters
-    ----------
-    results : iterable of iterables
-        Results returned by metrics.
-
-    parameters : iterable of dicts
-        Series of dicts listing the parameters used in each simulation run.
-
-    timestamps : iterable of datetime.datetime
-        Timestamps that were stepped through in the simulation.
-
-    Returns
-    -------
-    results : dict of pandas.DataFrame
-
-        ar: annualized returns
-        bal: pool balance
-        pool_value: pool value
-        depth: liquidity density
-        volume: pool trade volume
-        log_returns: log returns
-        err: post-trade price error
-        x: pool balances
-        p: pool precisions (including basepool virtual price and/or redemption price)
-
-    """
-    (
-        xs,
-        ps,
-        pool_balance,
-        pool_value,
-        price_depth,
-        price_error,
-        volume,
-    ) = results
-
-    param_tuples = [tuple(p.values()) for p in parameters]
-    names = list(parameters[0].keys())
-    p_list = MultiIndex.from_tuples(param_tuples, names=names)
-
-    x = DataFrame(xs, index=p_list, columns=timestamps)
-    p = DataFrame(ps, index=p_list, columns=timestamps)
-    err = DataFrame(price_error, index=p_list, columns=timestamps)
-    bal = DataFrame(pool_balance, index=p_list, columns=timestamps)
-    pool_value = DataFrame(pool_value, index=p_list, columns=timestamps)
-    depth = DataFrame(price_depth, index=p_list, columns=timestamps)
-    volume = DataFrame(volume, index=p_list, columns=timestamps)
-    # pylint: disable-next=no-member
-    log_returns = DataFrame(log(pool_value).diff(axis=1).iloc[:, 1:])
-
-    try:
-        freq = timestamps.freq / timedelta(minutes=1)
-    except Exception:
-        logger.warning("Assuming 30 minute sampling for annualizing returns.")
-        freq = 30
-    yearmult = 60 / freq * 24 * 365
-    ar = DataFrame(exp(log_returns.mean(axis=1) * yearmult) - 1)
-
-    res = {
-        "ar": ar,
-        "bal": bal,
-        "pool_value": pool_value,
-        "depth": depth,
-        "volume": volume,
-        "log_returns": log_returns,
-        "err": err,
-        "x": x,
-        "p": p,
-    }
-
-    return res
+    def arb_pool(self, prices, volume_limits):
+        trades, price_errors, _ = self.compute_trades(prices, volume_limits)
+        trades_done, volume = self.do_trades(trades)
+        return TradeData(trades_done, volume, volume_limits, price_errors)
 
 
 # Optimizers
@@ -665,3 +490,20 @@ def get_trade_args(get_pool_price, get_bounds, error_function, prices, limits, c
         price_targets.append(price)
 
     return x0, lo, hi, coins, price_targets
+
+
+# Defaults
+DEFAULT_METRICS = [
+    Metrics.Timestamp,
+    Metrics.PoolValue,
+    Metrics.PoolBalance,
+    Metrics.PriceDepth,
+    Metrics.ArbMetrics,
+]
+
+DEFAULT_PARAMS = {
+    "A": [int(2 ** (a / 2)) for a in range(12, 28)],
+    "fee": list(range(1000000, 5000000, 1000000)),
+}
+
+TEST_PARAMS = {"A": [100, 1000], "fee": [3000000, 4000000]}

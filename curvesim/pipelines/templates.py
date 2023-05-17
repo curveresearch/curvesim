@@ -2,7 +2,12 @@
 Functions and interfaces used in the simulation pipeline framework.
 """
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from multiprocessing import Pool as cpu_pool
+from typing import Union
+
+from numpy import ndarray
+from pandas import Series
 
 from curvesim.logging import (
     configure_multiprocess_logging,
@@ -54,7 +59,9 @@ def run_pipeline(param_sampler, price_sampler, strategy, ncpu=4):
             ]
 
             with cpu_pool(ncpu) as clust:
-                results = zip(*clust.starmap(wrapped_strategy, wrapped_args_list))
+                results = tuple(
+                    zip(*clust.starmap(wrapped_strategy, wrapped_args_list))
+                )
                 clust.close()
                 clust.join()  # coverage needs this
 
@@ -101,7 +108,6 @@ class SimPool(ABC):
         timestamp : datetime.datetime
             the time to sample from
         """
-        pass
 
     @abstractmethod
     def price(self, coin_in, coin_out, use_fee=True):
@@ -162,16 +168,17 @@ class SimPool(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_price_depth(self):
-        """
-        Returns the price depth between pairs of coins in the pool.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
     def make_error_fns(self):
         """
         Returns the pricing error functions needed for determining the
         optimal arbitrage in simulations.
         """
         raise NotImplementedError
+
+
+@dataclass(eq=False, slots=True)
+class TradeData:
+    trades: list
+    volume: int
+    volume_limits: Union[list, ndarray, Series]
+    price_errors: Union[list, ndarray, Series]

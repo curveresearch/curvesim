@@ -25,7 +25,7 @@ class Grid:
             -------
             .. code-block ::
 
-                variable_params = {"A": [100, 1000], "basepool": {fee: [10**6, 4*10**6]}}
+                {"A": [100, 1000], "basepool": {fee: [10**6, 4*10**6]}}
 
         fixed_params : dict, optional
             Pool parameters set before all simulations.
@@ -55,24 +55,6 @@ class Grid:
         pool = deepcopy(self.pool_template)
         self.set_attributes(pool, params)
         return pool, params
-
-    def flat_grid(self):
-        """
-        Returns
-        -------
-        list of dicts
-            A list of the parameters used in each iteration, flattened such
-            that basepool parameters are named, e.g., A_base, fee_base, etc.
-
-        """
-        flat = self.param_grid.copy()
-        for params in flat:
-            basepool = params.pop("basepool", None)
-            if basepool:
-                for key, val in basepool.items():
-                    params.update({key + "_base": val})
-
-        return flat
 
     @staticmethod
     def param_product(p_dict):
@@ -110,22 +92,22 @@ class Grid:
                 items = attribute_dict["basepool"].items()
                 for base_key, base_value in items:
                     if base_key == "D":
-                        p = pool.basepool.p[:]
+                        p = pool.basepool.rates[:]
                         n = pool.basepool.n
                         D = base_value
                         x = [D // n * 10**18 // _p for _p in p]
-                        pool.basepool.x = x
+                        pool.basepool.balances = x
 
                     else:
                         setattr(pool.basepool, base_key, base_value)
 
             else:
                 if key == "D":
-                    p = getattr(pool, "rates", pool.p[:])
+                    p = pool.rates[:]
                     n = pool.n
                     D = value
                     x = [D // n * 10**18 // _p for _p in p]
-                    pool.x = x
+                    pool.balances = x
 
                 else:
                     setattr(pool, key, value)

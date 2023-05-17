@@ -1,5 +1,8 @@
 .. _api:
 
+.. role:: python(code)
+   :language: python
+
 Developer Interface
 ===================
 
@@ -43,6 +46,15 @@ Curve Pools
    :inherited-members:
 
 
+Pool Plots
+----------
+
+.. _poolviewersapi:
+
+.. autofunction:: curvesim.bonding_curve
+.. autofunction:: curvesim.order_book
+
+
 Pipelines
 ---------
 .. _pipelinesapi:
@@ -57,10 +69,6 @@ Pipelines
 
     .. autoclass:: curvesim.pipelines.arbitrage.Arbitrageur
         :inherited-members:
-
-    .. autoclass:: curvesim.pipelines.arbitrage.Metrics
-        :members: update, __call__
-        :exclude-members: __init__, __new__
 
 .. autofunction:: curvesim.pipelines.templates.run_pipeline()
 
@@ -106,4 +114,50 @@ Iterators
     .. autoclass:: curvesim.iterators.price_samplers.PriceVolume
         :inherited-members:
 
+Metrics
+-------
 
+.. _metricsapi:
+
+.. automodule:: curvesim.metrics
+
+    Base & Generic Classes
+    ----------------------
+    .. automodule:: curvesim.metrics.base
+
+    .. autoclass:: curvesim.metrics.base.MetricBase
+        :members:
+
+    .. autoclass:: curvesim.metrics.base.Metric
+        :inherited-members:
+
+    .. autoclass:: curvesim.metrics.base.PoolMetric
+        :inherited-members:
+
+    .. autoclass:: curvesim.metrics.base.PricingMixin
+        :members:
+
+    .. autoclass:: curvesim.metrics.base.PricingMetric
+        :inherited-members:
+
+    .. autoclass:: curvesim.metrics.base.PoolPricingMetric
+        :inherited-members:
+
+
+
+    Specific Metric Classes
+    -----------------------
+    .. automodule:: curvesim.metrics.metrics
+
+    Metric Log
+    ----------
+    .. autoclass:: curvesim.metrics.log.MetricLog
+
+    Results
+    -------
+    .. autoclass:: curvesim.metrics.results.SimResults
+
+    Metric Configuration
+    --------------------
+
+    .. include:: metric_config.rst
