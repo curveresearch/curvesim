@@ -3,8 +3,6 @@ import os
 import pickle
 import sys
 
-from pandas import read_pickle
-
 import curvesim
 
 # from curvesim.network.nomics import coin_ids_from_addresses_sync
