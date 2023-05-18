@@ -56,3 +56,19 @@ html_static_path = ["_static"]
 mathjax3_config = {
     "tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]]},
 }
+
+# Custom sidebar templates, maps document names to template names.
+html_sidebars = {
+    # "index": ["sidebarintro.html", "sourcelink.html", "searchbox.html"],
+    "**": [
+        # "sidebarlogo.html",
+        "localtoc.html",
+        "relations.html",
+        "sourcelink.html",
+        "searchbox.html",
+    ],
+}
+
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3/", None),
+}
