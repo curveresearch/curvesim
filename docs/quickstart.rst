@@ -18,15 +18,15 @@ Before digging into more interesting examples, let's check the installed package
 run without issues.  In the console, run::
 
     $ python3 -m curvesim
-    Fetching CoinGecko price data...
-    Fetching historical volume...
-    Volume Multipliers:
-    2.159065993345862e-05
-    [3Crv] Simulating with {'A': 100, 'fee': 3000000}
-    [3Crv] Simulating with {'A': 100, 'fee': 4000000}
-    [3Crv] Simulating with {'A': 1000, 'fee': 3000000}
-    [3Crv] Simulating with {'A': 1000, 'fee': 4000000}
-    Elapsed time: 68.5599639415741
+    [INFO][13:58:06][curvesim.price_data.sources]-27988: Fetching CoinGecko price data...
+    [INFO][13:58:07][curvesim.pool_data.cache]-27988: Fetching historical volume...
+    [INFO][13:58:07][curvesim.network.subgraph]-27988: Volume end date: 2023-05-18 00:00:00+00:00
+    [INFO][13:58:33][curvesim.pipelines.utils]-27988: Volume Multipliers: 3.18995731844421e-05
+    [INFO][13:58:33][curvesim.pipelines.arbitrage]-27988: [3Crv] Simulating with {'A': 100, 'fee': 3000000}
+    [INFO][13:58:43][curvesim.pipelines.arbitrage]-27988: [3Crv] Simulating with {'A': 100, 'fee': 4000000}
+    [INFO][13:58:52][curvesim.pipelines.arbitrage]-27988: [3Crv] Simulating with {'A': 1000, 'fee': 3000000}
+    [INFO][13:59:00][curvesim.pipelines.arbitrage]-27988: [3Crv] Simulating with {'A': 1000, 'fee': 4000000}
+    Elapsed time: 62.90428018569946
 
 
 Fetch a pool from a chain
