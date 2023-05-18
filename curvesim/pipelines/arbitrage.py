@@ -78,7 +78,7 @@ def volume_limited_arbitrage(
         Number of days to pull pool and price data for.
 
     src : str, default="coingecko"
-        Source for price/volume data: "coingecko", "nomics", or "local".
+        Source for price/volume data: "coingecko" or "local".
 
     data_dir : str, default="data"
         relative path to saved price data folder

@@ -112,7 +112,7 @@ def autosim(
         Number of days to fetch data for.
 
     src: str, default='coingecko'
-        Valid values for data source are 'coingecko', 'nomics', or 'local'
+        Valid values for data source are 'coingecko' or 'local'
 
     data_dir: str, default='data'
         Relative path to saved data folder.

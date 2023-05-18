@@ -27,7 +27,7 @@ class PriceVolume:
             Relative path to saved data folder.
 
         src: str, defaults to "coingecko"
-            Identifies pricing source: coingecko, nomics, or local.
+            Identifies pricing source: coingecko or local.
 
         """
         prices, volumes, pzero = get(
