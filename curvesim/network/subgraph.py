@@ -134,6 +134,8 @@ async def symbol_address(symbol, chain):
         raise SubgraphResultError(
             "Multiple pools returned for symbol query:" + pool_list
         )
+    if len(data["pools"]) < 1:
+        raise SubgraphResultError("No pools found for symbol query.")
 
     addr = to_checksum_address(data["pools"][0]["address"])
 
