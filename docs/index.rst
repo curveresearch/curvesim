@@ -18,7 +18,7 @@ Pythonic interaction with Curve pool objects::
 
     >>> import curvesim
 
-    >>> pool = curvesim.pool.get("3CRV")
+    >>> pool = curvesim.pool.get("0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7")
     >>> pool.D()
     767840998051375021210088898
 
@@ -29,25 +29,23 @@ Pythonic interaction with Curve pool objects::
 Arbitrage simulations to see results of varying fee and amplification (A) parameters::
 
     >>> import curvesim
-    >>> res = curvesim.autosim("3CRV", A=[75, 100, 150])
-    Fetching CoinGecko price data...
-    Fetching historical volume...
-    Volume Multipliers:
-    2.435631111781869e-05
-    [3Crv] Simulating with {'A': 150}
-    [3Crv] Simulating with {'A': 100}
-    [3Crv] Simulating with {'A': 75}
-    >>> res['pool_value']
-         2022-09-01 23:30:00+00:00  ...  2022-11-01 23:30:00+00:00
-    A                               ...
-    75                7.922430e+08  ...               7.925223e+08
-    100               7.922430e+08  ...               7.925253e+08
-    150               7.922430e+08  ...               7.925288e+08
+    >>> res = curvesim.autosim("0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7", A=[75, 100, 150])
+    [INFO][18:07:40][curvesim.price_data.sources]-37676: Fetching CoinGecko price data...
+    [INFO][18:07:41][curvesim.pool_data.cache]-37676: Fetching historical volume...
+    [INFO][18:07:41][curvesim.network.subgraph]-37676: Volume end date: 2023-05-18 00:00:00+00:00
+    [INFO][18:08:01][curvesim.pipelines.utils]-37676: Volume Multipliers: 3.18995731844421e-05
+    [INFO][18:08:11][curvesim.pipelines.arbitrage]-37681: [3Crv] Simulating with {'A': 150}
+    [INFO][18:08:11][curvesim.pipelines.arbitrage]-37679: [3Crv] Simulating with {'A': 75}
+    [INFO][18:08:11][curvesim.pipelines.arbitrage]-37680: [3Crv] Simulating with {'A': 100}
+    >>> res.summary()
+    metric pool_value_virtual         pool_value pool_balance            ...    arb_profit      pool_fees   pool_volume price_error
+    stat   annualized_returns annualized_returns       median       min  ...           sum            sum           sum      median
+    0                0.004011           0.016755     0.978391  0.849874  ...  2.325945e+06  259281.790355  2.590492e+09    0.000755
+    1                0.004195           0.016959     0.971582  0.819401  ...  2.433098e+06  271161.675686  2.709161e+09    0.000839
+    2                0.004353           0.017136     0.958596  0.775227  ...  2.575127e+06  281329.583883  2.810715e+09    0.000933
 
-    [3 rows x 1465 columns]
+    [3 rows x 10 columns]
 
-
-Charts of the results are saved to the ``results`` folder.
 
 
 Features
