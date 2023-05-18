@@ -101,9 +101,10 @@ Contributor Guide
 Support
 -------
 
-If you are having issues, please let us know.
+If you are having issues, please let us know.  You can reach us via the following
 
-Discord:
+Discord: [Curve #advanced-maths](https://discord.com/channels/729808684359876718/808095641351749722)
+GitHub: [Curvesim issues](https://github.com/curveresearch/curvesim/issues)
 
 
 License
