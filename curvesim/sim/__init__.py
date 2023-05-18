@@ -31,17 +31,10 @@ def autosim(
     Parameters
     ----------
     pool: str, optional
-        This string identifies the pool by address or LP token symbol.
+        This 0x-prefixed string identifies the pool by address.
 
         .. note::
             Either `pool` or `pool_metadata` must be provided.
-
-        .. warning::
-            An LP token symbol need not be unique.  In particular, factory
-            pools are deployed permissionlessly and no checks are done to
-            ensure unique LP token symbol.  Currently the first pool
-            retrieved from the subgraph is used, which can be effectively
-            random if token symbols clash.
 
     chain: str, default='mainnet'
         Identifier for blockchain or layer2.  Supported values are:
