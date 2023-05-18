@@ -105,7 +105,7 @@ res = curvesim.autosim('0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7', D=100000000
 
 #For metapools, specifying D effects the deposit in the metapool, but not the basepool
 #Simulate USDN metapool assuming total deposit of $1B, fee = 0.03%
-res = curvesim.autosim('usdn3crv', D=1000000000, fee=3000000)
+res = curvesim.autosim('0x0f9cb53Ebe405d49A0bbdBD291A65Ff571bC83e1', D=1000000000, fee=3000000)
 
 #Simulate 3pool, limiting volume to 75% of market volume, fee = 0.03% 
 #Note: it is not reccomended to adjust this parameter, try vol_mode instead (see below)
