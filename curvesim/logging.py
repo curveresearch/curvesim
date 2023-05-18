@@ -59,6 +59,7 @@ CUSTOM_LOGGING_CONFIG = {
             "backupCount": 10,
             "filename": LOG_FILEPATH,
             "formatter": "standard",
+            "delay": True,
         },
     },
     "loggers": {
