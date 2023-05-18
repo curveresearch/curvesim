@@ -146,14 +146,8 @@ def get_pool(
 
     Parameters
     ----------
-    address_or_symbol: str
-        pool address prefixed with "0x" or LP token symbol
-
-        .. warning::
-            An LP token symbol need not be unique.  In particular, factory pools
-            are deployed permissionlessly and no checks are done to ensure unique
-            LP token symbol.  Currently the first pool retrieved from the subgraph
-            is used, which can be effectively random if token symbols clash.
+    address : str
+        pool address prefixed with "0x"
 
     chain: str, default="mainnet"
         chain/layer2 identifier, e.g. "mainnet", "arbitrum", "optimism"
