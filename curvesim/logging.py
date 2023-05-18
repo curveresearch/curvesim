@@ -37,6 +37,7 @@ MULTIPROCESS_LOGGING_FORMAT = (
 )
 
 
+# FIXME: need a function to update the config after module initialization
 HANDLERS = ["console", "file"] if USE_LOG_FILE else ["console"]
 
 CUSTOM_LOGGING_CONFIG = {
