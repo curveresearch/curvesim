@@ -155,16 +155,38 @@ Metrics
 
     Specific Metric Classes
     -----------------------
-    .. automodule:: curvesim.metrics.metrics
-        :members:
+    Specific metrics used in simulations are stored in :code:`curvesim.metrics.metrics`
+
+    State Log
+    ---------
+    .. autoclass:: curvesim.metrics.StateLog
+        :exclude-members: __init__, __new__
 
     Results
     -------
     .. autoclass:: curvesim.metrics.SimResults
         :members:
-        :exclude-members: __init__
+        :exclude-members: __init__, __new__
 
     Metric Configuration
     --------------------
 
     .. include:: metric_config.rst
+
+Plot
+----
+
+.. _plotapi:
+
+.. automodule:: curvesim.plot
+
+.. autoclass:: curvesim.plot.ResultPlotter
+    :members:
+
+.. autoclass:: curvesim.plot.altair.AltairResultPlotter
+    :members:
+    :exclude-members: __init__, __new__, save
+
+
+
+
