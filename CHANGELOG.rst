@@ -10,7 +10,7 @@ Removed
 - Nomics market data is no longer available, so we have removed all nomics related functionality.
 - Removed pool lp token symbol lookup when creating pools from on-chain data.
 - Standalone functions for AMM logic are removed.  This eases the testing burden
-  without impacting performance (due to other changes such as `__slot__` usage)./
+  without impacting performance (due to other changes such as `__slot__` usage).
 - The matplotlib results plotter was replaced with an altair plotter.
 
 
