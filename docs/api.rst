@@ -90,7 +90,7 @@ Pool Data
 Subgraph
 --------
 
-.. __subgraphapi:
+.. _subgraphapi:
 
 Curve
 ******
