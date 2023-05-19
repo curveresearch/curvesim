@@ -156,14 +156,13 @@ Metrics
     Specific Metric Classes
     -----------------------
     .. automodule:: curvesim.metrics.metrics
-
-    Metric Log
-    ----------
-    .. autoclass:: curvesim.metrics.log.MetricLog
+        :members:
 
     Results
     -------
-    .. autoclass:: curvesim.metrics.results.SimResults
+    .. autoclass:: curvesim.metrics.SimResults
+        :members:
+        :exclude-members: __init__
 
     Metric Configuration
     --------------------

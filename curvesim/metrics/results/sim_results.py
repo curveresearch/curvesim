@@ -108,14 +108,13 @@ class SimResults:
 
         save_as : str, optional
             Path to save plot output to. Typically an .html file. See
-            `Altair docs<https://altair-viz.github.io/user_guide/saving_charts.html>`_
+            `Altair docs <https://altair-viz.github.io/user_guide/saving_charts.html>`_
             for additional options.
 
 
         Returns
         -------
-        plot object
-            An interactive altair chart.
+        altair.VConcatChart
 
         """
         return self.plotter.plot(self, summary, data, save_as)
