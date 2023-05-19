@@ -23,6 +23,11 @@ from .base import Metric, PoolMetric, PricingMetric, PoolPricingMetric
 
 
 class ArbMetrics(PricingMetric):
+    """
+    Computes metrics characterizing arbitrage trades: arbitrageur profits, pool fees,
+    trade volume, and post-trade price error between target and pool price.
+    """
+
     @property
     def config(self):
         return {
@@ -90,6 +95,8 @@ class ArbMetrics(PricingMetric):
         super().__init__(coin_names, pool.n_total)
 
     def compute_arb_metrics(self, price_sample, trade_data, **kwargs):
+        """Computes all metrics for each timestamp in an individual run."""
+
         data = concat([price_sample.prices, trade_data], axis=1)
 
         profits = data.apply(self._compute_profits, axis=1, result_type="expand")
@@ -101,6 +108,10 @@ class ArbMetrics(PricingMetric):
         return results
 
     def _compute_profits(self, data_row):
+        """
+        Computes arbitrageur profits and pool fees for a single row of data (i.e.,
+        a single timestamp) in units of the chosen numeraire, `self.numeraire`.
+        """
         get_price = self.get_market_price
         num_idx = self.numeraire_idx
         prices = data_row.prices
@@ -123,6 +134,11 @@ class ArbMetrics(PricingMetric):
 
 
 class PoolBalance(PoolMetric):
+    """
+    Computes the pool balance metric, which ranges from 0 (completely imbalanced) to 1
+    (completely balanced).
+    """
+
     @property
     def pool_config(self):
         ss_config = {
@@ -161,10 +177,18 @@ class PoolBalance(PoolMetric):
         )
 
     def get_stableswap_balance(self, pool_state, **kwargs):
+        """
+        Computes pool balance metrics for each timestamp in an individual run.
+        Used for any stableswap pool.
+        """
         balance = pool_state.apply(self._compute_stableswap_balance, axis=1)
         return DataFrame(balance, columns=["pool_balance"])
 
     def _compute_stableswap_balance(self, pool_state_row):
+        """
+        Computes balance metric for a single row of data (i.e., a single timestamp).
+        Used for any stableswap pool.
+        """
         self.set_pool_state(pool_state_row)
         pool = self._pool
 
@@ -176,6 +200,11 @@ class PoolBalance(PoolMetric):
 
 
 class PoolValue(PoolPricingMetric):
+    """
+    Computes pool's value over time in virtual units and the chosen
+    numeraire, `self.numeraire`. Each are summarized as annualized returns.
+    """
+
     __slots__ = ["_freq"]
 
     @property
@@ -217,21 +246,21 @@ class PoolValue(PoolPricingMetric):
         return {
             SimCurvePool: {
                 "functions": {
-                    "metrics": self.get_curve_pool_value,
+                    "metrics": self.get_stableswap_pool_value,
                     "summary": ss_summary_fns,
                 },
                 "plot": ss_plot,
             },
             SimCurveMetaPool: {
                 "functions": {
-                    "metrics": self.get_curve_metapool_value,
+                    "metrics": self.get_stableswap_metapool_value,
                     "summary": ss_summary_fns,
                 },
                 "plot": ss_plot,
             },
             SimCurveRaiPool: {
                 "functions": {
-                    "metrics": self.get_curve_metapool_value,
+                    "metrics": self.get_stableswap_metapool_value,
                     "summary": ss_summary_fns,
                 },
                 "plot": ss_plot,
@@ -242,18 +271,28 @@ class PoolValue(PoolPricingMetric):
         self._freq = freq
         super().__init__(pool)
 
-    def get_curve_pool_value(self, pool_state, price_sample, **kwargs):
+    def get_stableswap_pool_value(self, pool_state, price_sample, **kwargs):
+        """
+        Computes all metrics for each timestamp in an individual run.
+        Used for non-meta stableswap pools.
+        """
         reserves = DataFrame(pool_state.balances.to_list())
         prices = DataFrame(price_sample.prices.to_list())
 
         pool_value = self._get_value_from_prices(reserves / 10**18, prices)
-        pool_value_virtual = pool_state.apply(self._get_virtual_value, axis=1)
+        pool_value_virtual = pool_state.apply(
+            self._get_stableswap_virtual_value, axis=1
+        )
 
         results = concat([pool_value_virtual, pool_value], axis=1)
         results.columns = list(self.config["plot"]["metrics"])
         return results.astype("float64")
 
-    def get_curve_metapool_value(self, pool_state, price_sample, **kwargs):
+    def get_stableswap_metapool_value(self, pool_state, price_sample, **kwargs):
+        """
+        Computes all metrics for each timestamp in an individual run.
+        Used for stableswap metapools.
+        """
         meta_reserves = DataFrame(pool_state.balances.to_list())
         base_reserves = DataFrame(pool_state.balances_base.to_list())
         prices = DataFrame(price_sample.prices.to_list())
@@ -265,13 +304,19 @@ class PoolValue(PoolPricingMetric):
         reserves.columns = range(len(reserves.columns))
 
         pool_value = self._get_value_from_prices(reserves / 10**18, prices)
-        pool_value_virtual = pool_state.apply(self._get_virtual_value, axis=1)
+        pool_value_virtual = pool_state.apply(
+            self._get_stableswap_virtual_value, axis=1
+        )
 
         results = concat([pool_value_virtual, pool_value], axis=1)
         results.columns = list(self.config["plot"]["metrics"])
         return results.astype("float64")
 
     def _get_value_from_prices(self, reserves, prices):
+        """
+        Computes pool value in the chosen numeraire, `self.numeraire`.
+        Can be used for any pool type.
+        """
         get_price = self.get_market_price
         num_idx = self.numeraire_idx
 
@@ -281,17 +326,27 @@ class PoolValue(PoolPricingMetric):
 
         return value
 
-    def _get_virtual_value(self, pool_state_row):
+    def _get_stableswap_virtual_value(self, pool_state_row):
+        """
+        Computes virtual pool value for a single row of data (i.e., a single timestamp).
+        Used for any stableswap pool.
+        """
         self.set_pool_state(pool_state_row)
         return self._pool.D() / 10**18
 
     def compute_annualized_returns(self, data):
+        """Computes annualized returns from a series of pool values."""
         log_returns = log(data).diff()  # pylint: disable=no-member
         year_mult = 60 / self._freq * 24 * 365
         return exp(log_returns.mean() * year_mult) - 1
 
 
 class PriceDepth(PoolMetric):
+    """
+    Computes metrics indicating a pool's price (liquidity) depth. Generally, uses
+    liquidity density, % change in reserves per % change in price.
+    """
+
     __slots__ = ["_factor"]
 
     @property
@@ -344,19 +399,35 @@ class PriceDepth(PoolMetric):
         super().__init__(pool)
 
     def get_curve_pool_LD(self, pool_state, **kwargs):
+        """
+        Computes liquidity density for each timestamp in an individual run, averaging
+        across all coin pairs. Used for non-meta stableswap pools.
+        """
         index_combos = self._curve_pool_index_combos
-        return self._get_stableswap_LD(index_combos, pool_state)
+        return self._get_curve_LD(index_combos, pool_state)
 
     def get_curve_metapool_LD(self, pool_state, **kwargs):
+        """
+        Computes liquidity density for each timestamp in an individual run, using only
+        top-level coin pairs in a metapool. Used for Curve metapools.
+        """
         index_combos = self._curve_metapool_index_combos
-        return self._get_stableswap_LD(index_combos, pool_state)
+        return self._get_curve_LD(index_combos, pool_state)
 
-    def _get_stableswap_LD(self, index_combos, pool_state):
-        get_LD = partial(self._get_stableswap_LD_by_row, index_combos=index_combos)
+    def _get_curve_LD(self, index_combos, pool_state):
+        """
+        Computes liquidity density for each timestamp in an individual run.
+        Used for all Curve pools.
+        """
+        get_LD = partial(self._get_curve_LD_by_row, index_combos=index_combos)
         LD = pool_state.apply(get_LD, axis=1)
         return DataFrame(LD, columns=["liquidity_density"])
 
-    def _get_stableswap_LD_by_row(self, pool_state_row, index_combos):
+    def _get_curve_LD_by_row(self, pool_state_row, index_combos):
+        """
+        Computes liquidity density for a single row of data (i.e., a single timestamp).
+        Used for all Curve pools.
+        """
         self.set_pool_state(pool_state_row)
         LD = []
         for i, j in index_combos:
@@ -367,12 +438,15 @@ class PriceDepth(PoolMetric):
     @property
     @cache
     def _curve_pool_index_combos(self):
+        """Returns all pairwise combinations of coin indices."""
         return get_pairs(self._pool.n)
 
     @property
     @cache
     def _curve_metapool_index_combos(self):
         """
+        Returns pairwise combinations of coin indices in the top level of a metapool.
+
         Our convention for the basepool LP token index is to use
         the total number of stablecoins (including basepool).
         This removes ambiguity as it is one "off the end" and thus
@@ -385,6 +459,8 @@ class PriceDepth(PoolMetric):
 
     def _compute_liquidity_density(self, coin_in, coin_out):
         """
+        Computes liquidity density for a single pair of coins.
+
         Only for top-level liquidity density.  Cannot compare between
         coins in basepool and primary stablecoin in metapool.
         """
@@ -404,6 +480,8 @@ class PriceDepth(PoolMetric):
 
 
 class Timestamp(Metric):
+    """Simple pass-through metric to record timestamps."""
+
     @property
     def config(self):
         return {"functions": {"metrics": self._get_timestamp}}

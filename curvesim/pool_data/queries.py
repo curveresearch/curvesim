@@ -6,6 +6,21 @@ from ..network.web3 import underlying_coin_addresses_sync
 
 
 def from_address(address, chain):
+    """
+    Returns
+
+    Parameters
+    ----------
+    address: str
+        Address prefixed with '0x'
+    chain: str
+        Chain name
+
+    Returns
+    -------
+    Pool snapshot dictionary in the format returned by
+    :func:`curvesim.network.subgraph.pool_snapshot`.
+    """
     loop = asyncio.get_event_loop()
     data = pool_snapshot_sync(address, chain, event_loop=loop)
 

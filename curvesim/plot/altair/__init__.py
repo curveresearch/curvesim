@@ -1,3 +1,5 @@
-__all__ = ["result_plotter"]
+"""Resources for plotting using Altair."""
 
-from .results.result_plotter import result_plotter
+__all__ = ["AltairResultPlotter", "result_plotter"]
+
+from .results.result_plotter import AltairResultPlotter, result_plotter

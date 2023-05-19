@@ -119,7 +119,7 @@ class MetricBase(ABC):
 
 class Metric(MetricBase):
     """
-    Metric that is computed on each call to :func:`update`.
+    Metric computed using a single function defined in the `config` property.
 
     The function for computing the metric should be mapped to
     :python:`config["functions"]["metrics"]`.
@@ -207,6 +207,9 @@ def summarize_data(record_df, summary_functions):
 
 
 def format_summary_functions(functions):
+    """
+    Returns summary functions as a list of (name, function) tuple pairs.
+    """
     if isinstance(functions, str):
         return [(functions, functions)]
     if isinstance(functions, dict):
@@ -218,6 +221,10 @@ def format_summary_functions(functions):
 
 
 def compute_summary_stat(data, fn):
+    """
+    Computes a summary statistic for "data" using the function "fn". If fn is a str,
+    it is interpreted as a pandas.DataFrame method.
+    """
     if isinstance(fn, str):
         return getattr(data, fn)()
 
@@ -352,6 +359,9 @@ class PricingMixin:
 
 
 def get_numeraire(coins):
+    """
+    Returns a preferred numeraire and its index based on the provided list of coins.
+    """
     numeraire = coins[0]
     preferred = ["USDC", "USDT", "ETH", "WETH", "CRV"]
 

@@ -48,7 +48,7 @@ def volume_limited_arbitrage(
 
     Parameters
     ----------
-    pool_metadata : :class:`.PoolMetaDataInterface`
+    pool_metadata : :class:`~curvesim.pool_data.metadata.PoolMetaDataInterface`
         Pool metadata object for the pool of interest.
 
     variable_params : dict, defaults to broad range of A/fee values
@@ -141,11 +141,6 @@ def volume_limited_arbitrage(
 
     output = run_pipeline(param_sampler, price_sampler, strat, ncpu=ncpu)
     results = make_results(*output, metrics)
-
-    # factors = list(variable_params.keys())
-    # results = SimResults(results, data_log.get_config(), factors)
-    # save_as = os.path.join("results", f"{pool.folder_name}", "plot.html")
-    # results.plot(save_as=save_as)
 
     return results
 

@@ -14,15 +14,17 @@ logger = get_logger(__name__)
 
 class PoolDataCache:
     """
-    Container with methods to return pool state, metadata, and pools employing them.
+    Container for fetching and caching historical volume and redemption price data.
+
+    Deprecation warning: this will likely be removed in a future release.
     """
 
     def __init__(self, metadata_dict, cache_data=False, days=60, end=None):
         """
         Parameters
         ----------
-        metadata_dict : dict, PoolMetaDataInterface
-            Pool metadata in the format returned by network.subgraph.pool_snapshot.
+        metadata_dict : dict, :class:`PoolMetaDataInterface`
+            Pool metadata in the format returned by :func:`curvesim.network.subgraph.pool_snapshot`.
 
         cache_data : bool, optional
             If True, fetches and caches historical volume and redemption price.

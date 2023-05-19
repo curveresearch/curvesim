@@ -1,5 +1,0 @@
-Simulation period: 12/25/21 to 02/23/22
-Data Availability:
-DAI/USDC: 100.0%
-DAI/USDT: 100.0%
-USDC/USDT: 100.0%
