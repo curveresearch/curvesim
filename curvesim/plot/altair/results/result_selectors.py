@@ -11,6 +11,8 @@ from ..selectors import make_selector
 
 
 def make_result_selectors(factors, dynamic_axes):
+    dynamic_axes = dict(list(dynamic_axes.items())[:len(factors)])
+
     axes = make_axis_selectors(factors, dynamic_axes)
     parameters = make_parameter_filters(factors, dynamic_axes)
 
@@ -33,8 +35,7 @@ def make_axis_selectors(factors, dynamic_axes):
 
     charts = []
     transforms = []
-    for i, axis in enumerate(dynamic_axes):
-        idx = i if i < n_factors else None
+    for idx, axis in enumerate(dynamic_axes):
         chart, transform = _make_axis_selector(axis, factor_names, idx)
 
         charts.append(chart)
