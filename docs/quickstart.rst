@@ -231,7 +231,6 @@ Other helpful parameters for :func:`.autosim` are:
     - ``src``: data source for prices and volumes.  Allowed values are:
 
       - **"coingecko"**: CoinGecko API (free); default
-      - **"nomics"**: Nomics API (paid); set ``NOMICS_API_KEY`` as env variable or in ``.env`` file.
       - **"local"**: local data stored in the "data" folder
 
     - ``ncpu``: Number of cores to use.
@@ -244,10 +243,6 @@ Other helpful parameters for :func:`.autosim` are:
 
     - ``test``: Sets ``A`` and ``fee`` params to a small set of values for testing purposes.
 
-.. Note::
-    Using the Nomics data source requires setting the NOMICS_API_KEY environment
-    variable with a paid nomics API key.
-
 
 Tips
 ----
@@ -255,23 +250,14 @@ Tips
 Pricing data
 ^^^^^^^^^^^^^^^
 
-By default, Curvesim uses Coingecko pricing and volume data.  If you have a paid
-API key for Nomics, you can specify Nomics as the data provider, by using
-``src='nomics'`` in simulations
-
-In order to use this feature you will need to set the ``NOMICS_API_KEY``
-environment variable. You can manually set this when starting the python
-process or include it in a local ``.env`` file which Curvesim will automatically
-load.
+By default, Curvesim uses Coingecko pricing and volume data.  To replace the no
+longer available Nomics service, we expect to onboard another data provider and
+also provide an option to load data files.
 
 
-Note on CoinGecko vs. Nomics Data
-""""""""""""""""""""""""""""""""""
-
-While Nomics provides 30-minute-interval data for each specific coin-pair, CoinGecko provides prices *per coin* in 1-hour intervals. Each coin's price is computed relative to all its trading pairs and converted to a quote currency (e.g., USD), with volume summed across all trading pairs. Therefore, market volume taken from CoinGecko is often much higher than one can expect for a specific coin-pair. This issue is largely ameloriated by our volume limiting approach, with CoinGecko results typically mirroring Nomics results qualitatively, but it should be noted that CoinGecko data may be less reliable than Nomics data for certain simulations.
-
-For comparison, compare ``3pool_cg`` and ``3pool_nomics`` results in the ``results/demo`` direectory.
-
+Note on CoinGecko Data
+"""""""""""""""""""""""
+Coingecko price/volume data is computed using all trading pairs for each coin, with volume summed across all pairs. Therefore, market volume taken from CoinGecko can be much higher than that of any specific trading pair used in a simulation. This issue is largely ameloriated by our volume limiting approach, with CoinGecko results typically mirroring results from pairwise data, but it should be noted that CoinGecko data may be less reliable than more granular data for certain simulations.
 
 
 Parallel processing
