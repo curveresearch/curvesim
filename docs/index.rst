@@ -103,8 +103,8 @@ Support
 
 If you are having issues, please let us know.  You can reach us via the following
 
-Discord: [Curve #advanced-maths](https://discord.com/channels/729808684359876718/808095641351749722)
-GitHub: [Curvesim issues](https://github.com/curveresearch/curvesim/issues)
+Discord: `Curve #advanced-maths <https://discord.com/channels/729808684359876718/808095641351749722>`_
+GitHub: `Curvesim issues <https://github.com/curveresearch/curvesim/issues>`_
 
 
 License
