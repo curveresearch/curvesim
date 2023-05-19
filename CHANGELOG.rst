@@ -1,4 +1,53 @@
 
+.. _changelog-0.4.0:
+
+0.4.0 — 2023-05-19
+==================
+
+Removed
+-------
+
+- Nomics market data is no longer available, so we have removed all nomics related functionality.
+- Removed pool lp token symbol lookup when creating pools from on-chain data.
+- Standalone functions for AMM logic are removed.  This eases the testing burden
+  without impacting performance (due to other changes such as `__slot__` usage).
+
+
+Added
+-----
+
+- Curve pool types now use `__slots__` for more performant attribute access.
+- Revamped pool hierarchy so that the implementations of `SimPool` derive
+  from Curve pools and `SimStableSwapBase`, which better organizes common
+  logic across stableswap sim pool types and decouples sim logic from the
+  core AMM pools.
+- Pools now have a revert-to-snapshot functionality.
+- Add `CurveCryptoPool`, a python implementation of the vyper factory
+  cryptoswap pool.
+- `curvesim.pool.get` can now be used to fetch and instantiate cryptopools.
+- `curvesim` now uses python logging with log levels.  This allows for debug logging and
+  saving logs to files.
+
+
+Changed
+-------
+
+- `CurveMetaPool` uses `rate_multiplier` as in the vyper logic instead of `p`
+- By default, pool instantiation will now create balances in native token units.
+  Previously it had normalized to 18 decimals.  This option still exists but must
+  now be chosen explicitly.
+- Some internal objects used by `curvesim` were refactored for better maintainability,
+  namely `PoolData` is now split into `PoolDataCache` and `PoolMetaData`.
+
+
+Fixed
+-----
+
+- Use `rates` property consistently across stableswap types
+- Add error handling for convex subgraph
+- Timezone issue in subgraph queries.
+
+
 .. _changelog-0.3.0:
 
 0.3.0 — 2022-11-08
