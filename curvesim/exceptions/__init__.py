@@ -53,3 +53,7 @@ class ResultsError(CurvesimException):
 
 class PlotError(CurvesimException):
     """Error in plotting."""
+
+
+class NetworkError(CurvesimException):
+    """Error for network subpackage."""

@@ -3,8 +3,8 @@ import functools
 import inspect
 import os
 import re
-
 from itertools import combinations
+
 from dotenv import load_dotenv
 
 from curvesim.exceptions import CurvesimException, MissingEnvVarError
@@ -126,11 +126,6 @@ def get_pairs(arg):
     -------
     list
         Sorted pairwise combinations of the input.
-
-    Raise
-    -----
-    curvesim.exception.MissingEnvVarError
-        Raised if default is not set and env var is missing.
     """
     if isinstance(arg, int):
         arg = range(arg)

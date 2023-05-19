@@ -3,6 +3,9 @@
 .. role:: python(code)
    :language: python
 
+:tocdepth: 2
+
+
 Developer Interface
 ===================
 
@@ -79,10 +82,15 @@ Pool Data
 
 .. automodule:: curvesim.pool_data
 
-.. autofunction:: curvesim.pool_data.get()
+.. autofunction:: curvesim.pool_data.get_metadata
 
-.. autoclass:: curvesim.pool_data.PoolData
+.. autofunction:: curvesim.pool_data.get_data_cache
+
+.. autofunction:: curvesim.pool_data.PoolMetaData
+
+.. autoclass:: curvesim.pool_data.PoolDataCache
     :inherited-members:
+
 
 Price Data
 -----------

@@ -6,7 +6,9 @@ To use nomics, set the OS environment variable NOMICS_API_KEY.
 
 """
 
-from .sources import coingecko, local, nomics
+from curvesim.exceptions import NetworkError
+
+from .sources import coingecko, local
 
 
 def get(coins, days=60, data_dir="data", src="coingecko", end=None):
@@ -46,7 +48,7 @@ def get(coins, days=60, data_dir="data", src="coingecko", end=None):
         prices, volumes, pzero = coingecko(coins, days=days)
 
     elif src == "nomics":
-        prices, volumes, pzero = nomics(coins, days=days, data_dir=data_dir, end=end)
+        raise NetworkError("Nomics data is no longer supported.")
 
     elif src == "local":
         prices, volumes, pzero = local(coins, data_dir=data_dir, end=end)
