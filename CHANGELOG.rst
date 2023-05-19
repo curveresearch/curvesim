@@ -10,7 +10,8 @@ Removed
 - Nomics market data is no longer available, so we have removed all nomics related functionality.
 - Removed pool lp token symbol lookup when creating pools from on-chain data.
 - Standalone functions for AMM logic are removed.  This eases the testing burden
-  without impacting performance (due to other changes such as `__slot__` usage).
+  without impacting performance (due to other changes such as `__slot__` usage)./
+- The matplotlib results plotter was replaced with an altair plotter.
 
 
 Added
@@ -27,6 +28,8 @@ Added
 - `curvesim.pool.get` can now be used to fetch and instantiate cryptopools.
 - `curvesim` now uses python logging with log levels.  This allows for debug logging and
   saving logs to files.
+- Altair results plotter added to improve readability and support flexible plotting (e.g., across pool types)
+- Metrics submodule added to facilitate simulation metric development.
 
 
 Changed
