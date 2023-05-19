@@ -162,6 +162,10 @@ Metrics
     .. autoclass:: curvesim.metrics.StateLog
         :exclude-members: __init__, __new__
 
+    State Log
+    ----------
+    .. autoclass:: curvesim.metrics.state_log.StateLog
+
     Results
     -------
     .. autoclass:: curvesim.metrics.SimResults
