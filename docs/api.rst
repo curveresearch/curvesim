@@ -81,15 +81,30 @@ Pool Data
 .. _pooldataapi:
 
 .. automodule:: curvesim.pool_data
+    :members:
 
-.. autofunction:: curvesim.pool_data.get_metadata
+.. autofunction:: curvesim.pool_data.metadata.PoolMetaData
+.. autoclass:: curvesim.pool_data.metadata.PoolMetaDataInterface
 
-.. autofunction:: curvesim.pool_data.get_data_cache
 
-.. autofunction:: curvesim.pool_data.PoolMetaData
+Subgraph
+--------
 
-.. autoclass:: curvesim.pool_data.PoolDataCache
-    :inherited-members:
+.. __subgraphapi:
+
+Curve
+******
+Used to pull pool state data and historical volume data.
+
+.. autofunction:: curvesim.network.subgraph.pool_snapshot
+.. autofunction:: curvesim.network.subgraph.volume
+
+Reflexer
+********
+Used to pull RAI redemption prices when simulating the RAI metapool.
+
+.. autofunction:: curvesim.network.subgraph.redemption_prices
+
 
 
 Price Data
@@ -100,6 +115,7 @@ Price Data
 .. automodule:: curvesim.price_data
 
 .. autofunction:: curvesim.price_data.get()
+
 
 Iterators
 ---------
