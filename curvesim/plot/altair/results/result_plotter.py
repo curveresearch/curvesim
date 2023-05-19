@@ -1,13 +1,14 @@
 from altair import TitleParams, vconcat
 
-from curvesim.utils import override
 from curvesim.plot.result_plotter import ResultPlotter
+from curvesim.utils import override
+
 from .make_page import make_page_from_results
 
 
 def plot_results(results):
     """
-    Takes a :class:`.metrics.SimResults` object and plots the data returned by both 
+    Takes a :class:`.metrics.SimResults` object and plots the data returned by both
     :func:`SimResults.summary` and :func:`SimResults.data`
     """
 
@@ -18,7 +19,7 @@ def plot_results(results):
 
 def plot_summary(results):
     """
-    Takes a :class:`.metrics.SimResults` object and plots the data returned by 
+    Takes a :class:`.metrics.SimResults` object and plots the data returned by
     :func:`SimResults.summary`.
     """
     title = TitleParams(text="Summary Metrics", fontSize=16)
@@ -31,7 +32,7 @@ def plot_summary(results):
 
 def plot_data(results):
     """
-    Takes a :class:`.metrics.SimResults` object and plots the data returned by 
+    Takes a :class:`.metrics.SimResults` object and plots the data returned by
     :func:`SimResults.data`.
     """
     title = TitleParams(text="Timeseries Data", fontSize=16)
@@ -46,6 +47,7 @@ class AltairResultPlotter(ResultPlotter):
     """
     :class:`.plot.ResultPlotter` implementation using Altair.
     """
+
     @override
     def save(self, chart, save_as):
         chart.save(save_as)

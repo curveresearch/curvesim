@@ -12,15 +12,15 @@ class ResultPlotter(ABC):
         Parameters
         ----------
         plot_data : callable
-            A function that takes a :class:`.metrics.SimResults` object and plots the 
+            A function that takes a :class:`.metrics.SimResults` object and plots the
             data returned by :func:`SimResults.data`.
 
         plot_results : callable
-            A function that takes a :class:`.metrics.SimResults` object and plots the 
+            A function that takes a :class:`.metrics.SimResults` object and plots the
             data returned by both :func:`SimResults.summary` and :func:`SimResults.data`
 
         plot_summary : callable
-            A function that takes a :class:`.metrics.SimResults` object and plots the 
+            A function that takes a :class:`.metrics.SimResults` object and plots the
             data returned by :func:`SimResults.summary`.
         """
 
@@ -30,7 +30,7 @@ class ResultPlotter(ABC):
 
     def plot(self, results, summary=True, data=True, save_as=None):
         """
-        Returns and optionally saves a plot of the results data. 
+        Returns and optionally saves a plot of the results data.
         Used in :func:`.results.SimResults.plot`
 
         Parameters
