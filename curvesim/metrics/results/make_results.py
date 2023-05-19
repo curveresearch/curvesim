@@ -4,6 +4,8 @@ from .sim_results import SimResults
 
 
 def make_results(data_per_run, data_per_trade, summary_data, metrics):
+    """Initializes a results object from the output of a simulation pipeline."""
+
     for run_n, data in enumerate(data_per_trade):  # add "run" column
         data.insert(0, "run", run_n)
 
@@ -19,6 +21,7 @@ def make_results(data_per_run, data_per_trade, summary_data, metrics):
 
 def combine_plot_configs(metrics):
     """Combines plot configs across all metrics."""
+
     metrics_config = {}
     summary_config = {}
     for metric in metrics:
@@ -32,6 +35,7 @@ def combine_plot_configs(metrics):
 
 def get_factors(data_per_run):
     """Returns dict mapping variable parameters to their values."""
+
     factors = {}
     for parameter in data_per_run:
         unique_values = data_per_run[parameter].unique()
