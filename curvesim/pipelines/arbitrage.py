@@ -48,7 +48,7 @@ def volume_limited_arbitrage(
 
     Parameters
     ----------
-    pool_metadata : :class:`.PoolMetaDataInterface`
+    pool_metadata : :class:`~curvesim.pool_data.metadata.PoolMetaDataInterface`
         Pool metadata object for the pool of interest.
 
     variable_params : dict, defaults to broad range of A/fee values
