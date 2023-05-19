@@ -28,6 +28,18 @@ _METADATA_TYPE = {
 
 
 def PoolMetaData(metadata_dict):
+    """
+    A factory function to return a :class:`PoolMetaDataInterface`.
+
+    Parameters
+    ----------
+    metadata_dict : dict
+        Pool metadata in the format returned by :func:`curvesim.network.subgraph.pool_snapshot`.
+
+    Returns
+    -------
+    :class:`PoolMetaDataInterface`
+    """
     metadata_type, pool_type, sim_pool_type = _parse_metadata_for_types(metadata_dict)
     return metadata_type(metadata_dict, pool_type, sim_pool_type)
 

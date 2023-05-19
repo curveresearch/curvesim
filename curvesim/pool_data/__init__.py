@@ -1,9 +1,15 @@
 """
 Tools for fetching pool state and metadata.
-Currently supports stableswap pools, meta-pools, and rebasing (RAI) metapools.
+
+Currently supports stableswap pools, metapools, rebasing (RAI) metapools,
+and 2-token cryptopools.
 """
 
-__all__ = ["PoolDataCache", "from_address", "get_data_cache"]
+__all__ = [
+    "from_address",
+    "get_data_cache",
+    "get_metadata",
+]
 
 from curvesim.pool_data.metadata import PoolMetaData
 
@@ -13,7 +19,10 @@ from .queries import from_address
 
 def get_data_cache(address, chain="mainnet", days=60, end=None):
     """
-    Pulls pool state and metadata from daily snapshot.
+    Fetch historical volume and redemption price data and return
+    in a cache object.
+
+    Deprecation warning: this will likely be removed in a future release.
 
     Parameters
     ----------
@@ -25,7 +34,7 @@ def get_data_cache(address, chain="mainnet", days=60, end=None):
 
     Returns
     -------
-    PoolData
+    :class:`PoolDataCache`
 
     """
     # TODO: validate function arguments
@@ -49,7 +58,7 @@ def get_metadata(address, chain="mainnet"):
 
     Returns
     -------
-    PoolData
+    :class:`~curvesim.pool_data.metadata.PoolMetaDataInterface`
 
     """
     # TODO: validate function arguments
