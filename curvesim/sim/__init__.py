@@ -21,12 +21,10 @@ def autosim(
     parameters (e.g., the amplitude parameter, A, and/or the exchange fee).
 
     The function fetches pool properties (e.g., current pool size) and 2
-    months of price/volume data, runs multiple simulations in parallel, and
-    saves results plots to the "results" directory.
+    months of price/volume data and runs multiple simulations in parallel.
 
     Curve pools from any chain supported by the Convex Community Subgraphs
-    can be simulated directly by inputting the pool's address or its LP
-    token symbol.
+    can be simulated directly by inputting the pool's address.
 
     Parameters
     ----------
@@ -42,7 +40,7 @@ def autosim(
             "matic", "xdai"
 
     pool_metadata: PoolMetaDataInterface, optional
-        Pool data necessary to instantiate a pool object.
+        Pool state and metadata necessary to instantiate a pool object.
 
         .. note::
             Either `pool` or `pool_metadata` must be provided.
