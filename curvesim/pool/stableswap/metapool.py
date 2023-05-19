@@ -700,16 +700,16 @@ class CurveMetaPool(Pool):  # pylint: disable=too-many-instance-attributes
         The following formulae are useful when swapping the primary stablecoin
         for one of the basepool underlyers:
 
-            $z$: primary coin virtual balance\n
-            $w$: basepool virtual balance in the metapool \n
-            $x_i$: basepool coin virtual balances\n
-            $D$: basepool invariant\n
+            |  $z$: primary coin virtual balance
+            |  $w$: basepool virtual balance in the metapool
+            |  $x_i$: basepool coin virtual balances
+            |  $D$: basepool invariant
 
             The chain rule gives:
 
             .. math::
-                \\frac{dz}{dx_i} = \\frac{dz}{dw} \\frac{dw}{dx_i}
-                    = \\frac{dz}{dw} \\frac{dD}{dx_i} = \\frac{dz}{dw} D'
+                \frac{dz}{dx_i} = \frac{dz}{dw} \frac{dw}{dx_i}
+                    = \frac{dz}{dw} \frac{dD}{dx_i} = \frac{dz}{dw} D'
 
             where
 
