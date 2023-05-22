@@ -1,3 +1,7 @@
+Advanced users may wish to create their own metrics to be recorded during a
+simulation. This can be achieved by creating a new Metric object in
+:code:`curvesim.metrics.metrics`.
+
 Each metric's :code:`config` property specifies how to compute, summarize,
 and/or plot recorded data. Users who intend to create their own metric objects
 should familiarize themselves with the formatting specifications.

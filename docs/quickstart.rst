@@ -1,3 +1,8 @@
+.. role:: python(code)
+   :language: python
+
+:tocdepth: 2
+
 .. _quickstart:
 
 Quickstart
@@ -178,20 +183,6 @@ impacting the pool's ability to handle large trades while holding imbalanced res
     [MIM-3LP3CRV-f] Simulating with {'A': 875, 'fee': 4000000}
 
 
-Charts showing different aspects of risk and reward are saved in the ``results`` folder.
-
-The output dictionary, ``res``, contains pandas dataframes for all of the data plotted in the figures:
-
-  - **ar**: annualized returns
-  - **bal**: balance parameter over time, bal=1 when in perfect balance, and bal=0 when all holdings are in 1 coin
-  - **pool_value**: time series of pool's value (based on virtual price)
-  - **depth**: time series of price depth, averaged across pool's coins
-  - **volume**: time series of pool volume
-  - **log_returns**: log returns over time
-  - **err**: time series of absolute price errors, (dy-fee)/dx - p, summed across coin pairs
-  - **x**: time series of pool holdings
-  - **p**: time series of pool precisions (incl. basepool virtual price and/or RAI redemption price)
-
 Likely you will want to see the impact over a range of ``A`` values.  The ``A`` and ``fee`` parameters will accept either a integer or iterables of integers; note ``fee`` values are in units of basis points multiplied by 10**6.::
     
     >>> res = curvesim.autosim(mim, chain="mainnet", A=range(500, 1500, 250), fee=4000000)
@@ -223,6 +214,105 @@ If you input multiple iterables for parameters, each possible combination of par
     [MIM-3LP3CRV-f] Simulating with {'A': 1000, 'fee': 3000000}
     [MIM-3LP3CRV-f] Simulating with {'A': 1000, 'fee': 4000000}
 
+Results
+-------
+
+The simulation returns a SimResults object (here, ``res``) that can plot simulation metrics or return them as DataFrames.
+
+Plotting
+^^^^^^^^
+
+The ``plot()`` method is used to generate and/or save plots::
+
+    #Plot results using Altair
+    >>> res.plot() 
+
+    #Save plot results as results.html
+    >>> res.plot(save_as="results.html")
+
+Screenshots of resulting plots (truncated):
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. image:: images/plot_summary_screenshot.png
+  :width: 700
+  :alt: Summary statistics
+
+.. image:: images/plot_timeseries_screenshot.png
+  :width: 700
+  :alt: Timeseries data
+
+Metrics
+^^^^^^^
+
+The ``summary`` method returns metrics summarizing each simulation run::
+
+    >>> res.summary()
+    metric pool_value_virtual         pool_value  ...   pool_volume price_error
+    stat   annualized_returns annualized_returns  ...           sum      median
+    0                0.003580           0.005156  ...  2.286297e+09    0.000669
+    1                0.006158           0.007741  ...  1.966299e+09    0.000600
+    2                0.007760           0.009348  ...  1.652965e+09    0.000775
+    3                0.008611           0.010200  ...  1.377299e+09    0.000956
+    4                0.003760           0.005439  ...  2.400174e+09    0.000777
+    ..                    ...                ...  ...           ...         ...
+    59               0.009523           0.012018  ...  1.521524e+09    0.001155
+    60               0.003742           0.006247  ...  2.388746e+09    0.001063
+    61               0.006533           0.009082  ...  2.084530e+09    0.000915
+    62               0.008344           0.010894  ...  1.775963e+09    0.000974
+    63               0.009402           0.011974  ...  1.502494e+09    0.001133
+
+
+To include the parameters used in each run, use the ``full`` argument::
+
+    >>> res.summary(full=True)
+            A             D  ...  pool_volume sum  price_error median
+    0      64  3.802712e+08  ...     2.286297e+09            0.000669
+    1      64  3.802712e+08  ...     1.966299e+09            0.000600
+    2      64  3.802712e+08  ...     1.652965e+09            0.000775
+    3      64  3.802712e+08  ...     1.377299e+09            0.000956
+    4      90  3.802712e+08  ...     2.400174e+09            0.000777
+    ..    ...           ...  ...              ...                 ...
+    59   8192  3.802712e+08  ...     1.521524e+09            0.001155
+    60  11585  3.802712e+08  ...     2.388746e+09            0.001063
+    61  11585  3.802712e+08  ...     2.084530e+09            0.000915
+    62  11585  3.802712e+08  ...     1.775963e+09            0.000974
+    63  11585  3.802712e+08  ...     1.502494e+09            0.001133
+
+
+The ``data`` method returns metrics recorded at each timestamp of each run::
+
+    >>> res.data()
+           run                 timestamp  ...      pool_volume  price_error
+    0        0 2023-03-21 23:30:00+00:00  ...  15206414.533633     0.005310
+    1        0 2023-03-22 00:30:00+00:00  ...    7278720.40969     0.002029
+    2        0 2023-03-22 01:30:00+00:00  ...   6125207.553072     0.000100
+    3        0 2023-03-22 02:30:00+00:00  ...    7066251.03295     0.000100
+    4        0 2023-03-22 03:30:00+00:00  ...   3512782.000945     0.000299
+    ...    ...                       ...  ...              ...          ...
+    93755   63 2023-05-21 19:30:00+00:00  ...    879436.331564     0.000893
+    93756   63 2023-05-21 20:30:00+00:00  ...              0.0     0.001091
+    93757   63 2023-05-21 21:30:00+00:00  ...    720837.826971     0.000800
+    93758   63 2023-05-21 22:30:00+00:00  ...    445967.506177     0.001414
+
+The data method also accepts the ``full`` argument. However, the output may be prohibitively large::
+
+    >>> res.data(full=True)
+               A             D     fee  ...    pool_fees      pool_volume  price_error
+    0         64  3.802712e+08  0.0001  ...  1522.608454  15206414.533633     0.005310
+    1         64  3.802712e+08  0.0001  ...   727.480283    7278720.40969     0.002029
+    2         64  3.802712e+08  0.0001  ...   614.494463   6125207.553072     0.000100
+    3         64  3.802712e+08  0.0001  ...   707.021149    7066251.03295     0.000100
+    4         64  3.802712e+08  0.0001  ...   352.544017   3512782.000945     0.000299
+    ...      ...           ...     ...  ...          ...              ...          ...
+    93755  11585  3.802712e+08  0.0004  ...   351.854745    879436.331564     0.000893
+    93756  11585  3.802712e+08  0.0004  ...     0.000000              0.0     0.001091
+    93757  11585  3.802712e+08  0.0004  ...   288.500150    720837.826971     0.000800
+    93758  11585  3.802712e+08  0.0004  ...   178.639272    445967.506177     0.001414
+    93759  11585  3.802712e+08  0.0004  ...   156.525641    391060.986022     0.000906
+
+    [93760 rows x 13 columns]
+
+
 
 Fine-tuning the simulator
 -------------------------
@@ -248,7 +338,7 @@ Tips
 ----
 
 Pricing data
-^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^
 
 By default, Curvesim uses Coingecko pricing and volume data.  To replace the no
 longer available Nomics service, we expect to onboard another data provider and
