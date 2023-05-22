@@ -46,7 +46,7 @@ res = curvesim.autosim("0x7f90122BF0700F9E7e1F688fe926940E8839F353", chain="arbi
 ```
 
 
-## Simulation Results:
+## Simulation Results
 The simulation returns a SimResults object that can plot simulation metrics or return them as DataFrames.
 
 ### Plotting results:
@@ -58,6 +58,11 @@ res.plot()
 res.plot(save_as="results.html")
 
 ```
+
+Screenshots of example output:
+![Alt text](/docs/images/plot_summary_screenshot.png?raw=true "Summary statistics")
+
+![Alt text](/docs/images/plot_timeseries_screenshot.png?raw=true "Timeseries data")
 
 
 
@@ -79,7 +84,7 @@ stat   annualized_returns annualized_returns  ...           sum      median
 63               0.009402           0.011974  ...  1.502494e+09    0.001133
 ```
 
-### Metrics for each timestamp for each simulation run:
+### Timeseries data:
 ```python
 >>> res.data()
        run                 timestamp  ...      pool_volume  price_error
