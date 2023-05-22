@@ -47,17 +47,57 @@ res = curvesim.autosim("0x7f90122BF0700F9E7e1F688fe926940E8839F353", chain="arbi
 
 
 ### Results:
-Plots of the results will be saved to the "results/poolname" (e.g., pools/3crv) directory. The output dictionary, "res", contains pandas dataframes for all of the data plotted in the figures:
+The simulation returns a SimResults object that can plot simulation metrics or return them as DataFrames.
 
-* **ar**: annualized returns
-* **bal**: balance parameter over time, bal=1 when in perfect balance, and bal=0 when all holdings are in 1 coin
-* **pool_value**: time series of pool's value (based on virtual price)
-* **depth**: time series of price depth, averaged across pool's coins
-* **volume**: time series of pool volume
-* **log_returns**: log returns over time
-* **err**: time series of absolute price errors, (dy-fee)/dx - p, summed accros coin pairs
-* **x**: time series of pool holdings
-* **p**: time series of pool precisions (incl. basepool virtual price and/or RAI redemption price)
+# Plotting results:
+```python
+#Plot results using Altair
+res.plot() 
+
+#Save plot results as results.html
+res.plot(save_as="results.html")
+
+```
+
+
+
+# Summary statistics:
+```python
+>>> res.summary()
+metric pool_value_virtual         pool_value  ...   pool_volume price_error
+stat   annualized_returns annualized_returns  ...           sum      median
+0                0.003580           0.005156  ...  2.286297e+09    0.000669
+1                0.006158           0.007741  ...  1.966299e+09    0.000600
+2                0.007760           0.009348  ...  1.652965e+09    0.000775
+3                0.008611           0.010200  ...  1.377299e+09    0.000956
+4                0.003760           0.005439  ...  2.400174e+09    0.000777
+..                    ...                ...  ...           ...         ...
+59               0.009523           0.012018  ...  1.521524e+09    0.001155
+60               0.003742           0.006247  ...  2.388746e+09    0.001063
+61               0.006533           0.009082  ...  2.084530e+09    0.000915
+62               0.008344           0.010894  ...  1.775963e+09    0.000974
+63               0.009402           0.011974  ...  1.502494e+09    0.001133
+```
+
+# Metrics for each timestamp for each simulation run:
+```python
+>>> res.data()
+       run                 timestamp  ...      pool_volume  price_error
+0        0 2023-03-21 23:30:00+00:00  ...  15206414.533633     0.005310
+1        0 2023-03-22 00:30:00+00:00  ...    7278720.40969     0.002029
+2        0 2023-03-22 01:30:00+00:00  ...   6125207.553072     0.000100
+3        0 2023-03-22 02:30:00+00:00  ...    7066251.03295     0.000100
+4        0 2023-03-22 03:30:00+00:00  ...   3512782.000945     0.000299
+...    ...                       ...  ...              ...          ...
+93755   63 2023-05-21 19:30:00+00:00  ...    879436.331564     0.000893
+93756   63 2023-05-21 20:30:00+00:00  ...              0.0     0.001091
+93757   63 2023-05-21 21:30:00+00:00  ...    720837.826971     0.000800
+93758   63 2023-05-21 22:30:00+00:00  ...    445967.506177     0.001414
+93759   63 2023-05-21 23:30:00+00:00  ...    391060.986022     0.000906
+```
+
+
+
 
 ## Customizing Simulation Parameters
 By default, pools are simulated using:
