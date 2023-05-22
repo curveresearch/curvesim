@@ -3,7 +3,6 @@ Implements the volume-limited arbitrage pipeline.
 """
 
 import os
-from functools import partial
 
 from numpy import array, isnan
 from scipy.optimize import least_squares, root_scalar
@@ -124,7 +123,6 @@ def volume_limited_arbitrage(
 
     param_sampler = Grid(pool, variable_params, fixed_params=fixed_params)
     price_sampler = PriceVolume(coins, days=days, data_dir=data_dir, src=src, end=end)
-
     if vol_mult is None:
         total_pool_volume = pool_data_cache.volume
         total_market_volume = price_sampler.total_volumes()
@@ -137,56 +135,15 @@ def volume_limited_arbitrage(
         )
 
     metrics = init_metrics(metrics, pool=pool, freq=price_sampler.freq)
-    strat = partial(strategy, metrics=metrics, vol_mult=vol_mult)
+    strategy = VolumeLimitedStrategy(metrics, vol_mult)
 
-    output = run_pipeline(param_sampler, price_sampler, strat, ncpu=ncpu)
+    output = run_pipeline(param_sampler, price_sampler, strategy, ncpu=ncpu)
     results = make_results(*output, metrics)
 
     return results
 
 
-# Strategy
-def strategy(pool, parameters, price_sampler, metrics, vol_mult):
-    """
-    Computes and executes volume-limited arbitrage trades at each timestep.
-
-    Parameters
-    ----------
-    pool : Pool, MetaPool, or RaiPool
-        The pool to be arbitraged.
-
-    parameters : dict
-        Current pool parameters from the param_sampler (only used for logging/display).
-
-    price_sampler : iterator
-        Iterator that returns prices and volumes at each timestep.
-
-    vol_mult : float or numpy.ndarray
-        Value(s) multiplied by market volume to specify volume limits.
-
-        Can be a scalar or vector with values for each pairwise coin combination.
-
-    Returns
-    -------
-    metrics : tuple of lists
-
-    """
-    trader = Arbitrageur(pool)
-    state_log = StateLog(pool, metrics)
-
-    symbol = pool.symbol
-    logger.info(f"[{symbol}] Simulating with {parameters}")
-
-    for price_sample in price_sampler:
-        volume_limits = price_sample.volumes * vol_mult
-        pool.prepare_for_trades(price_sample.timestamp)
-        trade_data = trader.arb_pool(price_sample.prices, volume_limits)
-        state_log.update(price_sample=price_sample, trade_data=trade_data)
-
-    return state_log.compute_metrics()
-
-
-class Arbitrageur:
+class VolumeLimitedArbitrageur:
     """
     Computes, executes, and reports out arbitrage trades.
     """
@@ -265,6 +222,74 @@ class Arbitrageur:
         trades, price_errors, _ = self.compute_trades(prices, volume_limits)
         trades_done, volume = self.do_trades(trades)
         return TradeData(trades_done, volume, volume_limits, price_errors)
+
+
+class Strategy:
+
+    arbitrageur_class = None
+    state_log_class = StateLog
+
+    def __init__(self, metrics):
+        self.metrics = metrics
+
+    def __call__(self, pool, parameters, price_sampler):
+        """
+        Computes and executes volume-limited arbitrage trades at each timestep.
+
+        Parameters
+        ----------
+        pool : Pool, MetaPool, or RaiPool
+            The pool to be arbitraged.
+
+        parameters : dict
+            Current pool parameters from the param_sampler (only used for logging/display).
+
+        price_sampler : iterable
+            Iterable to returns prices and volumes for each timestep.
+
+        vol_mult : float or numpy.ndarray
+            Value(s) multiplied by market volume to specify volume limits.
+
+            Can be a scalar or vector with values for each pairwise coin combination.
+
+        Returns
+        -------
+        metrics : tuple of lists
+
+        """
+        trader = self.arbitrageur_class(pool)  # noqa
+        state_log = self.state_log_class(pool, self.metrics)
+
+        symbol = pool.symbol
+        logger.info(f"[{symbol}] Simulating with {parameters}")
+
+        for sample in price_sampler:
+            pool.prepare_for_trades(sample.timestamp)
+            trader_args = self._get_trader_inputs(sample)
+            trade_data = trader.arb_pool(*trader_args)
+            state_log.update(price_sample=sample, trade_data=trade_data)
+
+        return state_log.compute_metrics()
+
+    def _get_trader_inputs(self, sample):
+        """
+        Process the price sample into appropriate inputs for the
+        arbitrageur instance.
+        """
+        raise NotImplementedError
+
+
+class VolumeLimitedStrategy(Strategy):
+
+    arbitrageur_class = VolumeLimitedArbitrageur
+
+    def __init__(self, metrics, vol_mult=None):
+        super().__init__(metrics)
+        self.vol_mult = vol_mult
+
+    def _get_trader_inputs(self, sample):
+        volume_limits = sample.volumes * self.vol_mult
+        return sample.prices, volume_limits
 
 
 # Optimizers
