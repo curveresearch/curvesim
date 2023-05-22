@@ -59,7 +59,7 @@ res.plot(save_as="results.html")
 
 ```
 
-Screenshots of example output:
+### Example output:
 ![Alt text](/docs/images/plot_summary_screenshot.png?raw=true "Summary statistics")
 
 ![Alt text](/docs/images/plot_timeseries_screenshot.png?raw=true "Timeseries data")
