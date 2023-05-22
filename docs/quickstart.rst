@@ -1,3 +1,8 @@
+.. role:: python(code)
+   :language: python
+
+:tocdepth: 2
+
 .. _quickstart:
 
 Quickstart
@@ -215,7 +220,7 @@ Results
 The simulation returns a SimResults object (here, ``res``) that can plot simulation metrics or return them as DataFrames.
 
 Plotting
-~~~~~~~~~
+^^^^^^^^
 
 The ``plot()`` method is used to generate and/or save plots::
 
@@ -226,7 +231,7 @@ The ``plot()`` method is used to generate and/or save plots::
     >>> res.plot(save_as="results.html")
 
 Screenshots of resulting plots (truncated):
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. image:: images/plot_summary_screenshot.png
   :width: 700
@@ -237,7 +242,7 @@ Screenshots of resulting plots (truncated):
   :alt: Timeseries data
 
 Metrics
-~~~~~~~~
+^^^^^^^
 
 The ``summary`` method returns metrics summarizing each simulation run::
 
@@ -333,7 +338,7 @@ Tips
 ----
 
 Pricing data
-^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^
 
 By default, Curvesim uses Coingecko pricing and volume data.  To replace the no
 longer available Nomics service, we expect to onboard another data provider and

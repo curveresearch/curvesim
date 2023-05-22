@@ -63,7 +63,7 @@ class MetricBase(ABC):
     def config(self):
         """
         A dict specifying how to compute, summarize, and/or plot the recorded data.
-        See `Metric Configuration`_ for formatting details.
+        See :ref:`metric-configuration` for formatting details.
 
         Raises :python:`NotImplementedError` if property is not defined.
         """
@@ -99,7 +99,7 @@ class MetricBase(ABC):
         -------
             dict or None
                 Plot specification for each sub-metric and/or summary statistic.
-                See `Metric Configuration`_ for format details. Returns None if
+                See :ref:`metric-configuration` for format details. Returns None if
                 :python:`self.config["plot"]` is not present.
         """
 
@@ -112,7 +112,7 @@ class MetricBase(ABC):
         -------
         dict or None
             A dict specifying the functions used to summarize each sub-metric.
-            See `Metric Configuration`_ for format details. Returns None if
+            See :ref:`metric-configuration` for format details. Returns None if
             :python:`self.config["functions"]["summary"]` not present.
         """
 
@@ -158,7 +158,7 @@ class Metric(MetricBase):
         -------
         config["plot"] : dict or None
             Plot specification for each sub-metric and/or summary statistic.
-            See `Metric Configuration`_ for format details. Returns None if
+            See :ref:`metric-configuration` for format details. Returns None if
             :python:`self.config["plot"]` is not present.
         """
         try:
@@ -176,7 +176,7 @@ class Metric(MetricBase):
         -------
         config["functions"]["summary"] : dict or None
             A dict specifying the functions used to summarize each sub-metric.
-            See `Metric Configuration`_ for format details. Returns None if
+            See :ref:`metric-configuration` for format details. Returns None if
             :python:`self.config["functions"]["summary"]` not present.
         """
         try:
@@ -259,7 +259,7 @@ class PoolMetric(Metric):
     def pool_config(self):
         """
         A dict mapping pool types to dicts in the format of :func:`MetricBase.config`.
-        See `Metric Configuration`_ for format details.
+        See :ref:`metric-configuration` for format details.
 
         Raises :python:`NotImplementedError` if property is not defined.
         """

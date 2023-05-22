@@ -1,9 +1,16 @@
+.. role:: python(code)
+   :language: python
+
+:tocdepth: 2
+
 .. _advanced:
 
-Advanced usage
+Advanced Usage
 ==============
 
-This document will explain some of the more advanced features and customizations
-that can be done in the Curvesim framework.
+.. _metric-configuration:
 
-<coming!>
+Metric Configuration
+--------------------
+
+.. include:: metric_config.rst
