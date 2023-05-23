@@ -1,5 +1,3 @@
-from itertools import combinations
-
 from curvesim.utils import override
 
 from ..stableswap import CurvePool

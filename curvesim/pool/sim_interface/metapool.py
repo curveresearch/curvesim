@@ -1,5 +1,3 @@
-from itertools import combinations
-
 from curvesim.exceptions import CurvesimValueError
 from curvesim.pool.sim_interface.simpool import SimStableswapBase
 from curvesim.pool.stableswap.metapool import CurveMetaPool
