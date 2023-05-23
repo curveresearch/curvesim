@@ -3,7 +3,7 @@ from itertools import combinations
 
 import pytest
 
-from curvesim.pipelines.vol_limited_arb.arbitrageur import (
+from curvesim.pipelines.vol_limited_arb.trader import (
     VolumeLimitedArbitrageur,
     pool_type_to_error_functions,
 )
