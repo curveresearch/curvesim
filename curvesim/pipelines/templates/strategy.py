@@ -15,12 +15,12 @@ class Strategy(ABC):
     ----------------
     trader_class : :class:`~curvesim.pipelines.templates.Trader`
         Class for creating trader instances.
-    state_log_class : :class:`~curvesim.metrics.state_log.StateLog`
+    state_log_class : :class:`~curvesim.metrics.StateLog`
         Class for creating state logger instances.
 
     Attributes
     ----------
-    metrics : list
+    metrics : List[Metric]
         A list of metrics used to evaluate the performance of the strategy.
     """
 

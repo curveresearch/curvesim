@@ -1,9 +1,10 @@
 """
 Tools for retrieving price data.
-Currently supports Coingecko, Nomics, and locally stored data.
+Currently supports Coingecko and locally stored data.
 
-To use nomics, set the OS environment variable NOMICS_API_KEY.
-
+Note
+-----
+Nomics data is deprecated.
 """
 
 from curvesim.exceptions import NetworkError
