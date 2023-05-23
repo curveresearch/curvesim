@@ -9,7 +9,3 @@ Each pipeline implements a "strategy" dictating what is done at each timestep
 Typically, a pipeline takes in :class:`.PoolData`; specifies a param_sampler,
 price_sampler, and strategy; and returns metrics/results.
 """
-
-__all__ = ["templates", "utils", "volume_limited_arbitrage"]
-
-from .vol_limited_arb import pipeline as volume_limited_arbitrage

@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 
 from curvesim.logging import get_logger
-from curvesim.metrics.state_log import StateLog
 
 logger = get_logger(__name__)
 
@@ -9,7 +8,7 @@ logger = get_logger(__name__)
 class Strategy(ABC):
 
     arbitrageur_class = None
-    state_log_class = StateLog
+    state_log_class = None
 
     def __init__(self, metrics):
         self.metrics = metrics

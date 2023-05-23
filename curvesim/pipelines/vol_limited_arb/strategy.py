@@ -1,4 +1,5 @@
 from curvesim.logging import get_logger
+from curvesim.metrics.state_log import StateLog
 from curvesim.pipelines.templates import Strategy
 from curvesim.pipelines.vol_limited_arb.arbitrageur import VolumeLimitedArbitrageur
 
@@ -8,6 +9,7 @@ logger = get_logger(__name__)
 class VolumeLimitedStrategy(Strategy):
 
     arbitrageur_class = VolumeLimitedArbitrageur
+    state_log_class = StateLog
 
     def __init__(self, metrics, vol_mult=None):
         super().__init__(metrics)
