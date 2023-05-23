@@ -1,13 +1,9 @@
-Advanced users may wish to create their own metrics to be recorded during a
-simulation. This can be achieved by creating a new Metric object in
-:code:`curvesim.metrics.metrics`.
-
 Each metric's :code:`config` property specifies how to compute, summarize,
 and/or plot recorded data. Users who intend to create their own metric objects
 should familiarize themselves with the formatting specifications.
 
 Config Specification
-^^^^^^^^^^^^^^^^^^^^
+.....................
 
 The general :code:`config` specification is:
 
@@ -49,7 +45,7 @@ The general :code:`config` specification is:
 
 
 Pool Config Specification
-^^^^^^^^^^^^^^^^^^^^^^^^^
+.........................
 
 For :class:`PoolMetric<curvesim.metrics.base.PoolMetric>` subclasses, a
 :code:`pool_config` property must be specified to map pool-types to individual configs
@@ -71,7 +67,7 @@ in the above format:
 
 
 Functions
-^^^^^^^^^
+.........
 
 Functions used to compute metrics and/or summary statistics. Includes two sub-keys:
 
@@ -124,7 +120,7 @@ Or, if we sought to rename the summary statistics:
 
 
 Plot
-^^^^
+....
 
 Plotting specifications for metrics and/or summary statistics.
 
