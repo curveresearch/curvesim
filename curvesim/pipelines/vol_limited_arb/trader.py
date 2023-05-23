@@ -5,9 +5,7 @@ from scipy.optimize import least_squares, root_scalar
 
 from curvesim.logging import get_logger
 from curvesim.pipelines.templates.trader import Trader
-from curvesim.pool.stableswap.metapool import CurveMetaPool
-from curvesim.pool.stableswap.pool import CurvePool
-from curvesim.pool.stableswap.raipool import CurveRaiPool
+from curvesim.pool.sim_interface import SimCurveMetaPool, SimCurvePool, SimCurveRaiPool
 
 logger = get_logger(__name__)
 
@@ -231,9 +229,9 @@ def make_error_fns_for_metapool(pool):  # noqa: C901
 
 
 pool_type_to_error_functions = {
-    CurvePool: make_error_fns,
-    CurveMetaPool: make_error_fns_for_metapool,
-    CurveRaiPool: make_error_fns_for_metapool,
+    SimCurvePool: make_error_fns,
+    SimCurveMetaPool: make_error_fns_for_metapool,
+    SimCurveRaiPool: make_error_fns_for_metapool,
 }
 
 
