@@ -64,16 +64,24 @@ Pipelines
 
 .. automodule:: curvesim.pipelines
 
+.. autoclass:: curvesim.pipelines.templates.Strategy
+    :members:
+.. autoclass:: curvesim.pipelines.templates.Trader
+    :members:
+.. autoclass:: curvesim.pipelines.templates.SimPool
+    :members:
 
-    Arbitrage
-    ---------
-    .. autofunction:: curvesim.pipelines.arbitrage.volume_limited_arbitrage()
-    .. autofunction:: curvesim.pipelines.arbitrage.strategy()
+.. autofunction:: curvesim.pipelines.templates.run_pipeline
 
-    .. autoclass:: curvesim.pipelines.arbitrage.Arbitrageur
-        :inherited-members:
 
-.. autofunction:: curvesim.pipelines.templates.run_pipeline()
+    Volume-limited arbitrage
+    ------------------------
+    .. autofunction:: curvesim.pipelines.vol_limited_arb.pipeline
+    .. autoclass:: curvesim.pipelines.vol_limited_arb.strategy.VolumeLimitedStrategy
+        :members:
+    .. autoclass:: curvesim.pipelines.vol_limited_arb.trader.VolumeLimitedArbitrageur
+        :members:
+
 
 Pool Data
 ----------
