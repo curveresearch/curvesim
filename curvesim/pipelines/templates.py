@@ -165,14 +165,6 @@ class SimPool(ABC):
         """
         raise NotImplementedError
 
-    @abstractmethod
-    def make_error_fns(self):
-        """
-        Returns the pricing error functions needed for determining the
-        optimal arbitrage in simulations.
-        """
-        raise NotImplementedError
-
 
 @dataclass(eq=False, slots=True)
 class TradeData:

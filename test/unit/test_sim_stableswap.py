@@ -3,7 +3,7 @@ from itertools import combinations
 
 import pytest
 
-from curvesim.pipelines.arbitrage import Arbitrageur
+from curvesim.pipelines.arbitrage import VolumeLimitedArbitrageur
 from curvesim.pool.sim_interface.simpool import SimStableswapBase
 from curvesim.utils import override
 
@@ -110,7 +110,7 @@ def test_sim_stableswap_coin_indices(sim_stableswap):
 
 def test_compute_trades(sim_stableswap):
     """Test error functions with Arbitrageur.compute_trades"""
-    trader = Arbitrageur(sim_stableswap)
+    trader = VolumeLimitedArbitrageur(sim_stableswap)
     prices = [1.00, 1.01, 0.98]
     volume_limits = [100000, 125000, 150000]
     trades, _, _ = trader.compute_trades(prices, volume_limits)
@@ -122,7 +122,7 @@ def test_compute_trades(sim_stableswap):
 
 def test_do_trades(sim_stableswap):
     """Test trade method with Arbitrageur.do_trades"""
-    trader = Arbitrageur(sim_stableswap)
+    trader = VolumeLimitedArbitrageur(sim_stableswap)
     trades = []
     trades_done, volume = trader.do_trades(trades)
     assert trades_done == []  # pylint: disable=use-implicit-booleaness-not-comparison

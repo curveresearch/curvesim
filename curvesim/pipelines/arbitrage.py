@@ -340,6 +340,149 @@ def opt_arb(get_bounds, error_function, i, j, p):
     return trade, error, res
 
 
+def make_error_fns(pool):  # noqa: C901
+    """
+    Returns the pricing error functions needed for determining the
+    optimal arbitrage in simulations.
+
+    Note
+    ----
+    For performance, does not support string coin-names.
+    """
+    xp = pool._xp_mem(pool.balances, pool.rates)
+
+    all_idx = range(pool.n_total)
+    index_combos = combinations(all_idx, 2)
+
+    def get_trade_bounds(i, j):
+        xp_j = int(xp[j] * 0.01)
+        high = pool.get_y(j, i, xp_j, xp) - xp[i]
+        return (0, high)
+
+    def post_trade_price_error(dx, i, j, price_target):
+        dx = int(dx) * 10**18 // pool.rates[i]
+
+        with pool.use_snapshot_context():
+            if dx > 0:
+                pool.exchange(i, j, dx)
+
+            dydx = pool.dydxfee(i, j)
+
+        return dydx - price_target
+
+    def post_trade_price_error_multi(dxs, price_targets, coins):
+        with pool.use_snapshot_context():
+            # Do trades
+            for k, pair in enumerate(coins):
+                i, j = pair
+
+                if isnan(dxs[k]):
+                    dx = 0
+                else:
+                    dx = int(dxs[k]) * 10**18 // pool.rates[i]
+
+                if dx > 0:
+                    pool.exchange(i, j, dx)
+
+            # Record price errors
+            errors = []
+            for k, pair in enumerate(coins):
+                i, j = pair
+                dydx = pool.dydxfee(i, j)
+                errors.append(dydx - price_targets[k])
+
+        return errors
+
+    return (
+        get_trade_bounds,
+        post_trade_price_error,
+        post_trade_price_error_multi,
+        index_combos,
+    )
+
+
+def make_error_fns_for_metapool(pool):  # noqa: C901
+    # Note: for performance, does not support string coin-names
+
+    max_coin = pool.max_coin
+
+    p_all = [pool.rate_multiplier] + pool.basepool.rates
+    xp_meta = pool._xp_mem(pool.balances, pool.rates)
+    xp_base = pool._xp_mem(pool.basepool.balances, pool.basepool.rates)
+
+    all_idx = range(pool.n_total)
+    index_combos = combinations(all_idx, 2)
+
+    def get_trade_bounds(i, j):
+        base_i = i - max_coin
+        base_j = j - max_coin
+        meta_i = max_coin
+        meta_j = max_coin
+        if base_i < 0:
+            meta_i = i
+        if base_j < 0:
+            meta_j = j
+
+        if base_i < 0 or base_j < 0:
+            xp_j = int(xp_meta[meta_j] * 0.01)
+            high = pool.get_y(meta_j, meta_i, xp_j, xp_meta)
+            high -= xp_meta[meta_i]
+        else:
+            xp_j = int(xp_base[base_j] * 0.01)
+            high = pool.basepool.get_y(base_j, base_i, xp_j, xp_base)
+            high -= xp_base[base_i]
+
+        return (0, high)
+
+    def post_trade_price_error(dx, i, j, price_target):
+        dx = int(dx) * 10**18 // p_all[i]
+
+        with pool.use_snapshot_context():
+            if dx > 0:
+                pool.exchange_underlying(i, j, dx)
+
+            dydx = pool.dydxfee(i, j)
+
+        return dydx - price_target
+
+    def post_trade_price_error_multi(dxs, price_targets, coins):
+        with pool.use_snapshot_context():
+            # Do trades
+            for k, pair in enumerate(coins):
+                i, j = pair
+
+                if isnan(dxs[k]):
+                    dx = 0
+                else:
+                    dx = int(dxs[k]) * 10**18 // p_all[i]
+
+                if dx > 0:
+                    pool.exchange_underlying(i, j, dx)
+
+            # Record price errors
+            errors = []
+            for k, pair in enumerate(coins):
+                i, j = pair
+                dydx = pool.dydxfee(i, j)
+                errors.append(dydx - price_targets[k])
+
+        return errors
+
+    return (
+        get_trade_bounds,
+        post_trade_price_error,
+        post_trade_price_error_multi,
+        index_combos,
+    )
+
+
+pool_type_to_error_functions = {
+    CurvePool: make_error_fns,
+    CurveMetaPool: make_error_fns_for_metapool,
+    CurveRaiPool: make_error_fns_for_metapool,
+}
+
+
 def opt_arb_multi(pool, prices, limits):  # noqa: C901
     """
     Computes trades to optimally arbitrage the pool, constrained by volume limits.
@@ -373,7 +516,7 @@ def opt_arb_multi(pool, prices, limits):  # noqa: C901
         error_function,
         error_function_multi,
         index_combos,
-    ) = pool.make_error_fns()
+    ) = pool_type_to_error_functions[type(pool)](pool)
     x0, lo, hi, coins, price_targets = get_trade_args(
         pool.price,
         get_bounds,
