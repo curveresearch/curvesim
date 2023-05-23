@@ -2,13 +2,13 @@
 Tools for implementing and running simulation pipelines.
 
 The basic model for a pipeline is demonstrated in the implementation of
-:function:`run_pipeline`.  It takes in a `param_sampler`, `price_sampler`, and
+:func:`run_pipeline`.  It takes in a `param_sampler`, `price_sampler`, and
 `strategy`.
 
 Pipelines iterate over pools with parameters set by
 :mod:`curvesim.iterators.param_samplers` and time-series data produced by
-:mod:`curvesim.iterators.price_samplers`. The :class:`Strategy`dictates
-what is done at each timestep.
+:mod:`curvesim.iterators.price_samplers`. The :class:`~curvesim.pipelines.templates.Strategy`
+dictates what is done at each timestep.
 
 A typical pipeline implementation is a function that takes in whatever market data needed;
 pool data such as :class:`~curvesim.pool_data.metadata.PoolMetaDataInterface`;
@@ -31,7 +31,7 @@ def run_pipeline(param_sampler, price_sampler, strategy, ncpu=4):
     Core function for running pipelines.
 
     Typically called within a function specifying the pipeline components
-    (see, e.g., :func:`.volume_limited_arbitrage()`)
+    (see, e.g., :func:`curvesim.pipelines.vol_limited_arb.pipeline`)
 
     Parameters
     ----------

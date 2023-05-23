@@ -59,10 +59,12 @@ Pool Plots
 
 
 Simulation Pipelines
----------
+---------------------
 .. _pipelinesapi:
 
 .. automodule:: curvesim.pipelines
+    :members:
+    :exclude-members: wrapped_strategy
 
 .. autoclass:: curvesim.pipelines.templates.Strategy
     :members:
@@ -71,7 +73,6 @@ Simulation Pipelines
 .. autoclass:: curvesim.pipelines.templates.SimPool
     :members:
 
-.. autofunction:: curvesim.pipelines.templates.run_pipeline
 
 
     Volume-limited arbitrage
