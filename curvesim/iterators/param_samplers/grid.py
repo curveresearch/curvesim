@@ -38,7 +38,7 @@ class Grid:
 
     def __iter__(self):
         """
-        Returns
+        Yields
         -------
         pool : pool object
             A pool object with the current variable parameters set.
