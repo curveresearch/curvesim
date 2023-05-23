@@ -35,12 +35,8 @@ class Grid:
         self.pool_template = pool
         self.set_attributes(self.pool_template, fixed_params)
         self.param_grid = self.param_product(variable_params)
-        self.param_generator = iter(self.param_grid)
 
     def __iter__(self):
-        return self
-
-    def __next__(self):
         """
         Returns
         -------
@@ -51,10 +47,10 @@ class Grid:
             A dictionary of the pool parameters set on this iteration.
 
         """
-        params = next(self.param_generator)
-        pool = deepcopy(self.pool_template)
-        self.set_attributes(pool, params)
-        return pool, params
+        for params in self.param_grid:
+            pool = deepcopy(self.pool_template)
+            self.set_attributes(pool, params)
+            yield pool, params
 
     @staticmethod
     def param_product(p_dict):

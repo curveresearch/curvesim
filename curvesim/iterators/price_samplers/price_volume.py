@@ -44,7 +44,7 @@ class PriceVolume:
 
     def __iter__(self):
         """
-        Returns
+        Yields
         -------
         prices : pandas.Series
             Prices for each pairwise coin combination.
