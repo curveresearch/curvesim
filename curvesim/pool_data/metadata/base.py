@@ -1,7 +1,7 @@
-from abc import abstractmethod, abstractproperty
+from abc import ABC, abstractmethod, abstractproperty
 
 
-class PoolMetaDataInterface:
+class PoolMetaDataInterface(ABC):
     @abstractmethod
     def init_kwargs(self, balanced=True, balanced_base=True, normalize=True):
         raise NotImplementedError
@@ -94,7 +94,7 @@ class PoolMetaDataInterface:
         raise NotImplementedError
 
 
-class PoolMetaDataBase(PoolMetaDataInterface):
+class PoolMetaDataBase(PoolMetaDataInterface, ABC):
     def __init__(self, metadata_dict, pool_type, sim_pool_type):
         self._dict = metadata_dict
         self._pool_type = pool_type

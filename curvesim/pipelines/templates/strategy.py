@@ -7,6 +7,8 @@ logger = get_logger(__name__)
 
 class Strategy(ABC):
 
+    # These classes should be injected in child classes
+    # to create the desired behavior.
     trader_class = None
     state_log_class = None
 
@@ -38,7 +40,8 @@ class Strategy(ABC):
         metrics : tuple of lists
 
         """
-        trader = self.trader_class(pool)  # noqa
+        # pylint: disable=not-callable
+        trader = self.trader_class(pool)
         state_log = self.state_log_class(pool, self.metrics)
 
         symbol = pool.symbol
