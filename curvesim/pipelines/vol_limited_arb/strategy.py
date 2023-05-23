@@ -1,3 +1,10 @@
+from curvesim.logging import get_logger
+from curvesim.pipelines.templates import Strategy
+from curvesim.pipelines.vol_limited_arb.arbitrageur import VolumeLimitedArbitrageur
+
+logger = get_logger(__name__)
+
+
 class VolumeLimitedStrategy(Strategy):
 
     arbitrageur_class = VolumeLimitedArbitrageur
