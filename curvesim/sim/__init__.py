@@ -7,7 +7,8 @@ The primary use-case is to determine optimal amplitude (A) and
 fee parameters given historical price and volume feeds.
 """
 from curvesim.logging import get_logger
-from curvesim.pipelines.arbitrage import DEFAULT_PARAMS, volume_limited_arbitrage
+from curvesim.pipelines.vol_limited_arb import DEFAULT_PARAMS
+from curvesim.pipelines.vol_limited_arb import pipeline as volume_limited_arbitrage
 from curvesim.pool_data import get_metadata
 
 logger = get_logger(__name__)

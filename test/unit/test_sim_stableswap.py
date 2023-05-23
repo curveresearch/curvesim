@@ -3,11 +3,52 @@ from itertools import combinations
 
 import pytest
 
-from curvesim.pipelines.arbitrage import Arbitrageur
+from curvesim.pipelines.vol_limited_arb.trader import (
+    VolumeLimitedArbitrageur,
+    pool_type_to_error_functions,
+)
 from curvesim.pool.sim_interface.simpool import SimStableswapBase
 from curvesim.utils import override
 
 # pylint: disable=redefined-outer-name
+
+
+def make_error_fns(pool):
+    all_idx = range(pool.n)
+    index_combos = combinations(all_idx, 2)
+
+    # pylint: disable=unused-argument
+
+    def get_trade_bounds(i, j):
+        xp = [529818 * 10**18, 760033 * 10**18, 434901 * 10**18]
+        high = xp[i]
+        return (0, high)
+
+    def post_trade_price_error(dx, i, j, price_target):
+        price = pool.price(i, j)
+
+        # solver requires opposite signs for the value
+        # of the error function on the bounds
+        lo, hi = get_trade_bounds(i, j)
+        if abs(dx - lo) < 0.000000005:  # pylint: disable=no-else-return
+            price = 2
+            return price - price_target
+        elif abs(dx - hi) < 0.000000005:
+            price = 0
+            return price - price_target
+        else:
+            return 0.00000001
+
+    def post_trade_price_error_multi(dxs, price_targets, coins):
+        errors = [0.00000001] * len(dxs)
+        return errors
+
+    return (
+        get_trade_bounds,
+        post_trade_price_error,
+        post_trade_price_error_multi,
+        index_combos,
+    )
 
 
 class FakeSimStableswap(SimStableswapBase):
@@ -32,44 +73,6 @@ class FakeSimStableswap(SimStableswapBase):
         return post_price
 
     @override
-    def make_error_fns(self):
-        all_idx = range(self.n)
-        index_combos = combinations(all_idx, 2)
-
-        # pylint: disable=unused-argument
-
-        def get_trade_bounds(i, j):
-            xp = [529818 * 10**18, 760033 * 10**18, 434901 * 10**18]
-            high = xp[i]
-            return (0, high)
-
-        def post_trade_price_error(dx, i, j, price_target):
-            price = self.price(i, j)
-
-            # solver requires opposite signs for the value
-            # of the error function on the bounds
-            lo, hi = get_trade_bounds(i, j)
-            if abs(dx - lo) < 0.000000005:  # pylint: disable=no-else-return
-                price = 2
-                return price - price_target
-            elif abs(dx - hi) < 0.000000005:
-                price = 0
-                return price - price_target
-            else:
-                return 0.00000001
-
-        def post_trade_price_error_multi(dxs, price_targets, coins):
-            errors = [0.00000001] * len(dxs)
-            return errors
-
-        return (
-            get_trade_bounds,
-            post_trade_price_error,
-            post_trade_price_error_multi,
-            index_combos,
-        )
-
-    @override
     def price(self, coin_in, coin_out, use_fee=True):
         _prices = {
             (0, 1): 1.0002,
@@ -86,6 +89,9 @@ class FakeSimStableswap(SimStableswapBase):
         fee = 0
         volume = 10**18
         return out_amount, fee, volume
+
+
+pool_type_to_error_functions[FakeSimStableswap] = make_error_fns
 
 
 @pytest.fixture(scope="function")
@@ -110,7 +116,7 @@ def test_sim_stableswap_coin_indices(sim_stableswap):
 
 def test_compute_trades(sim_stableswap):
     """Test error functions with Arbitrageur.compute_trades"""
-    trader = Arbitrageur(sim_stableswap)
+    trader = VolumeLimitedArbitrageur(sim_stableswap)
     prices = [1.00, 1.01, 0.98]
     volume_limits = [100000, 125000, 150000]
     trades, _, _ = trader.compute_trades(prices, volume_limits)
@@ -122,7 +128,7 @@ def test_compute_trades(sim_stableswap):
 
 def test_do_trades(sim_stableswap):
     """Test trade method with Arbitrageur.do_trades"""
-    trader = Arbitrageur(sim_stableswap)
+    trader = VolumeLimitedArbitrageur(sim_stableswap)
     trades = []
     trades_done, volume = trader.do_trades(trades)
     assert trades_done == []  # pylint: disable=use-implicit-booleaness-not-comparison

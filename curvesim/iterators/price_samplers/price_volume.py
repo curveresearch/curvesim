@@ -30,9 +30,7 @@ class PriceVolume:
             Identifies pricing source: coingecko or local.
 
         """
-        prices, volumes, pzero = get(
-            coins, days=days, data_dir=data_dir, src=src, end=end
-        )
+        prices, volumes, _ = get(coins, days=days, data_dir=data_dir, src=src, end=end)
 
         self.prices = prices
         self.volumes = volumes
@@ -44,13 +42,7 @@ class PriceVolume:
             print("Warning: assuming 30 minute sampling for annualizing returns")
             self.freq = 30
 
-        self.price_generator = prices.iterrows()
-        self.volume_generator = volumes.iterrows()
-
     def __iter__(self):
-        return self
-
-    def __next__(self):
         """
         Returns
         -------
@@ -64,12 +56,9 @@ class PriceVolume:
             Timestamp for the current price/volume.
 
         """
-        prices = next(self.price_generator)
-        volumes = next(self.volume_generator)
-
-        assert prices[0] == volumes[0], "Price/volume timestamps did not match"
-
-        return PriceVolumeSample(prices[0], prices[1].values, volumes[1].values)
+        for prices, volumes in zip(self.prices.iterrows(), self.volumes.iterrows()):
+            assert prices[0] == volumes[0], "Price/volume timestamps did not match"
+            yield PriceVolumeSample(prices[0], prices[1].values, volumes[1].values)
 
     def total_volumes(self):
         """
@@ -79,19 +68,6 @@ class PriceVolume:
             Total volume for each pairwise coin combination, summed accross timestamps.
         """
         return self.volumes.sum()
-
-    def restart(self):
-        """
-        Resets the iterator.
-
-        Returns
-        -------
-        self
-        """
-        self.price_generator = self.prices.iterrows()
-        self.volume_generator = self.volumes.iterrows()
-
-        return self
 
 
 @dataclass(eq=False, slots=True)

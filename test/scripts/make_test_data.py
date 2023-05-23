@@ -6,7 +6,7 @@ import sys
 import curvesim
 
 # from curvesim.network.nomics import coin_ids_from_addresses_sync
-from curvesim.pipelines.arbitrage import volume_limited_arbitrage as pipeline
+from curvesim.pipelines.vol_limited_arb import pipeline
 
 # import shutil
 # from itertools import combinations

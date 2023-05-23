@@ -53,7 +53,3 @@ class SimStableswapBase(SimPool):
     @abstractmethod
     def test_trade(self, coin_in, coin_out, factor):
         raise NotImplementedError
-
-    @abstractmethod
-    def make_error_fns(self):
-        raise NotImplementedError

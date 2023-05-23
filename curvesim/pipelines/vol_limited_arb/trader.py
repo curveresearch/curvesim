@@ -1,205 +1,19 @@
-"""
-Implements the volume-limited arbitrage pipeline.
-"""
-
-import os
-from functools import partial
+from itertools import combinations
 
 from numpy import array, isnan
 from scipy.optimize import least_squares, root_scalar
 
-from curvesim.iterators.param_samplers import Grid
-from curvesim.iterators.price_samplers import PriceVolume
 from curvesim.logging import get_logger
-from curvesim.metrics import StateLog, init_metrics, make_results
-from curvesim.metrics import metrics as Metrics
-from curvesim.pool import get_sim_pool
-from curvesim.pool_data.cache import PoolDataCache
-
-from .templates import TradeData, run_pipeline
-from .utils import compute_volume_multipliers
+from curvesim.pipelines.templates.trader import Trader
+from curvesim.pool.sim_interface import SimCurveMetaPool, SimCurvePool, SimCurveRaiPool
 
 logger = get_logger(__name__)
 
 
-# pylint: disable-next=too-many-arguments
-def volume_limited_arbitrage(
-    pool_metadata,
-    pool_data_cache=None,
-    variable_params=None,
-    fixed_params=None,
-    metrics=None,
-    test=False,
-    days=60,
-    src="coingecko",
-    data_dir="data",
-    vol_mult=None,
-    vol_mode=1,
-    ncpu=None,
-    end=None,
-):
-    """
-    Implements the volume-limited arbitrage pipeline.
-
-    At each timestep, the pool is arbitraged as close to the prevailing market price
-    as possible without surpassing a volume constraint. By default, volume is limited
-    to the total market volume at each timestep, scaled by the proportion of
-    volume attributable to the pool over the whole simulation period (vol_mult).
-
-    Parameters
-    ----------
-    pool_metadata : :class:`~curvesim.pool_data.metadata.PoolMetaDataInterface`
-        Pool metadata object for the pool of interest.
-
-    variable_params : dict, defaults to broad range of A/fee values
-        Pool parameters to vary across simulations.
-        keys: pool parameters, values: iterables of ints
-
-        Example
-        --------
-        >>> variable_params = {"A": [100, 1000], "fee": [10**6, 4*10**6]}
-
-    fixed_params : dict, optional
-        Pool parameters set before all simulations.
-        keys: pool parameters, values: ints
-
-        Example
-        --------
-        >>> fixed_params = {"D": 1000000*10**18}
-
-    test : bool, optional
-        Overrides variable_params to use four test values:
-
-        .. code-block::
-
-            {"A": [100, 1000], "fee": [3000000, 4000000]}
-
-    days : int, default=60
-        Number of days to pull pool and price data for.
-
-    src : str, default="coingecko"
-        Source for price/volume data: "coingecko" or "local".
-
-    data_dir : str, default="data"
-        relative path to saved price data folder
-
-    vol_mult : float or numpy.ndarray, default computed from data
-        Value(s) multiplied by market volume to specify volume limits
-        (overrides vol_mode).
-
-        Can be a scalar or vector with values for each pairwise coin combination.
-
-    vol_mode : int, default=1
-        Modes for limiting trade volume.
-
-        1: limits trade volumes proportionally to market volume for each pair
-
-        2: limits trade volumes equally across pairs
-
-        3: mode 2 for trades with meta-pool asset, mode 1 for basepool-only trades
-
-    ncpu : int, default=os.cpu_count()
-        Number of cores to use.
-
-    Returns
-    -------
-    dict
-
-    """
-    if test:
-        variable_params = TEST_PARAMS
-
-    if ncpu is None:
-        cpu_count = os.cpu_count()
-        ncpu = cpu_count if cpu_count is not None else 1
-
-    variable_params = variable_params or DEFAULT_PARAMS
-    metrics = metrics or DEFAULT_METRICS
-
-    if pool_data_cache is None:
-        pool_data_cache = PoolDataCache(pool_metadata, days=days, end=end)
-
-    pool = get_sim_pool(pool_metadata, pool_data_cache=pool_data_cache)
-    coins = pool_metadata.coins
-
-    param_sampler = Grid(pool, variable_params, fixed_params=fixed_params)
-    price_sampler = PriceVolume(coins, days=days, data_dir=data_dir, src=src, end=end)
-
-    if vol_mult is None:
-        total_pool_volume = pool_data_cache.volume
-        total_market_volume = price_sampler.total_volumes()
-        vol_mult = compute_volume_multipliers(
-            total_pool_volume,
-            total_market_volume,
-            pool_metadata.n,
-            pool_metadata.pool_type,
-            mode=vol_mode,
-        )
-
-    metrics = init_metrics(metrics, pool=pool, freq=price_sampler.freq)
-    strat = partial(strategy, metrics=metrics, vol_mult=vol_mult)
-
-    output = run_pipeline(param_sampler, price_sampler, strat, ncpu=ncpu)
-    results = make_results(*output, metrics)
-
-    return results
-
-
-# Strategy
-def strategy(pool, parameters, price_sampler, metrics, vol_mult):
-    """
-    Computes and executes volume-limited arbitrage trades at each timestep.
-
-    Parameters
-    ----------
-    pool : Pool, MetaPool, or RaiPool
-        The pool to be arbitraged.
-
-    parameters : dict
-        Current pool parameters from the param_sampler (only used for logging/display).
-
-    price_sampler : iterator
-        Iterator that returns prices and volumes at each timestep.
-
-    vol_mult : float or numpy.ndarray
-        Value(s) multiplied by market volume to specify volume limits.
-
-        Can be a scalar or vector with values for each pairwise coin combination.
-
-    Returns
-    -------
-    metrics : tuple of lists
-
-    """
-    trader = Arbitrageur(pool)
-    state_log = StateLog(pool, metrics)
-
-    symbol = pool.symbol
-    logger.info(f"[{symbol}] Simulating with {parameters}")
-
-    for price_sample in price_sampler:
-        volume_limits = price_sample.volumes * vol_mult
-        pool.prepare_for_trades(price_sample.timestamp)
-        trade_data = trader.arb_pool(price_sample.prices, volume_limits)
-        state_log.update(price_sample=price_sample, trade_data=trade_data)
-
-    return state_log.compute_metrics()
-
-
-class Arbitrageur:
+class VolumeLimitedArbitrageur(Trader):
     """
     Computes, executes, and reports out arbitrage trades.
     """
-
-    def __init__(self, pool):
-        """
-        Parameters
-        ----------
-        pool :
-            Simulation interface to a subclass of :class:`.Pool`.
-
-        """
-        self.pool = pool
 
     def compute_trades(self, prices, volume_limits):
         """
@@ -228,43 +42,6 @@ class Arbitrageur:
         """
         trades, errors, res = opt_arb_multi(self.pool, prices, volume_limits)
         return trades, errors, res
-
-    def do_trades(self, trades):
-        """
-        Executes a series of trades.
-
-        Parameters
-        ----------
-        trades : list of tuples
-            Trades to execute, formatted as (coin_in, coin_out, trade_size).
-
-        Returns
-        -------
-        trades_done: list of tuples
-            Trades executed, formatted as (coin_in, coin_out, amount_in, amount_out).
-
-        volume : int
-            Total volume of trades in 18 decimal precision.
-
-        """
-        if len(trades) == 0:
-            return [], 0
-
-        total_volume = 0
-        trades_done = []
-        for trade in trades:
-            i, j, dx = trade
-            dy, fee, volume = self.pool.trade(i, j, dx)
-            trades_done.append((i, j, dx, dy, fee))
-
-            total_volume += volume
-
-        return trades_done, total_volume
-
-    def arb_pool(self, prices, volume_limits):
-        trades, price_errors, _ = self.compute_trades(prices, volume_limits)
-        trades_done, volume = self.do_trades(trades)
-        return TradeData(trades_done, volume, volume_limits, price_errors)
 
 
 # Optimizers
@@ -315,6 +92,149 @@ def opt_arb(get_bounds, error_function, i, j, p):
     return trade, error, res
 
 
+def make_error_fns(pool):  # noqa: C901
+    """
+    Returns the pricing error functions needed for determining the
+    optimal arbitrage in simulations.
+
+    Note
+    ----
+    For performance, does not support string coin-names.
+    """
+    xp = pool._xp_mem(pool.balances, pool.rates)
+
+    all_idx = range(pool.n_total)
+    index_combos = combinations(all_idx, 2)
+
+    def get_trade_bounds(i, j):
+        xp_j = int(xp[j] * 0.01)
+        high = pool.get_y(j, i, xp_j, xp) - xp[i]
+        return (0, high)
+
+    def post_trade_price_error(dx, i, j, price_target):
+        dx = int(dx) * 10**18 // pool.rates[i]
+
+        with pool.use_snapshot_context():
+            if dx > 0:
+                pool.exchange(i, j, dx)
+
+            dydx = pool.dydxfee(i, j)
+
+        return dydx - price_target
+
+    def post_trade_price_error_multi(dxs, price_targets, coins):
+        with pool.use_snapshot_context():
+            # Do trades
+            for k, pair in enumerate(coins):
+                i, j = pair
+
+                if isnan(dxs[k]):
+                    dx = 0
+                else:
+                    dx = int(dxs[k]) * 10**18 // pool.rates[i]
+
+                if dx > 0:
+                    pool.exchange(i, j, dx)
+
+            # Record price errors
+            errors = []
+            for k, pair in enumerate(coins):
+                i, j = pair
+                dydx = pool.dydxfee(i, j)
+                errors.append(dydx - price_targets[k])
+
+        return errors
+
+    return (
+        get_trade_bounds,
+        post_trade_price_error,
+        post_trade_price_error_multi,
+        index_combos,
+    )
+
+
+def make_error_fns_for_metapool(pool):  # noqa: C901
+    # Note: for performance, does not support string coin-names
+
+    max_coin = pool.max_coin
+
+    p_all = [pool.rate_multiplier] + pool.basepool.rates
+    xp_meta = pool._xp_mem(pool.balances, pool.rates)
+    xp_base = pool._xp_mem(pool.basepool.balances, pool.basepool.rates)
+
+    all_idx = range(pool.n_total)
+    index_combos = combinations(all_idx, 2)
+
+    def get_trade_bounds(i, j):
+        base_i = i - max_coin
+        base_j = j - max_coin
+        meta_i = max_coin
+        meta_j = max_coin
+        if base_i < 0:
+            meta_i = i
+        if base_j < 0:
+            meta_j = j
+
+        if base_i < 0 or base_j < 0:
+            xp_j = int(xp_meta[meta_j] * 0.01)
+            high = pool.get_y(meta_j, meta_i, xp_j, xp_meta)
+            high -= xp_meta[meta_i]
+        else:
+            xp_j = int(xp_base[base_j] * 0.01)
+            high = pool.basepool.get_y(base_j, base_i, xp_j, xp_base)
+            high -= xp_base[base_i]
+
+        return (0, high)
+
+    def post_trade_price_error(dx, i, j, price_target):
+        dx = int(dx) * 10**18 // p_all[i]
+
+        with pool.use_snapshot_context():
+            if dx > 0:
+                pool.exchange_underlying(i, j, dx)
+
+            dydx = pool.dydxfee(i, j)
+
+        return dydx - price_target
+
+    def post_trade_price_error_multi(dxs, price_targets, coins):
+        with pool.use_snapshot_context():
+            # Do trades
+            for k, pair in enumerate(coins):
+                i, j = pair
+
+                if isnan(dxs[k]):
+                    dx = 0
+                else:
+                    dx = int(dxs[k]) * 10**18 // p_all[i]
+
+                if dx > 0:
+                    pool.exchange_underlying(i, j, dx)
+
+            # Record price errors
+            errors = []
+            for k, pair in enumerate(coins):
+                i, j = pair
+                dydx = pool.dydxfee(i, j)
+                errors.append(dydx - price_targets[k])
+
+        return errors
+
+    return (
+        get_trade_bounds,
+        post_trade_price_error,
+        post_trade_price_error_multi,
+        index_combos,
+    )
+
+
+pool_type_to_error_functions = {
+    SimCurvePool: make_error_fns,
+    SimCurveMetaPool: make_error_fns_for_metapool,
+    SimCurveRaiPool: make_error_fns_for_metapool,
+}
+
+
 def opt_arb_multi(pool, prices, limits):  # noqa: C901
     """
     Computes trades to optimally arbitrage the pool, constrained by volume limits.
@@ -348,7 +268,7 @@ def opt_arb_multi(pool, prices, limits):  # noqa: C901
         error_function,
         error_function_multi,
         index_combos,
-    ) = pool.make_error_fns()
+    ) = pool_type_to_error_functions[type(pool)](pool)
     x0, lo, hi, coins, price_targets = get_trade_args(
         pool.price,
         get_bounds,
@@ -491,20 +411,3 @@ def get_trade_args(get_pool_price, get_bounds, error_function, prices, limits, c
         price_targets.append(price)
 
     return x0, lo, hi, coins, price_targets
-
-
-# Defaults
-DEFAULT_METRICS = [
-    Metrics.Timestamp,
-    Metrics.PoolValue,
-    Metrics.PoolBalance,
-    Metrics.PriceDepth,
-    Metrics.ArbMetrics,
-]
-
-DEFAULT_PARAMS = {
-    "A": [int(2 ** (a / 2)) for a in range(12, 28)],
-    "fee": list(range(1000000, 5000000, 1000000)),
-}
-
-TEST_PARAMS = {"A": [100, 1000], "fee": [3000000, 4000000]}
