@@ -93,6 +93,7 @@ Pool Data
 
 .. autofunction:: curvesim.pool_data.metadata.PoolMetaData
 .. autoclass:: curvesim.pool_data.metadata.PoolMetaDataInterface
+    :members:
 
 
 Subgraph
