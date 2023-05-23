@@ -40,13 +40,13 @@ Curve Pools
    :inherited-members:
 
 .. autoclass:: curvesim.pool.CurvePool
-   :inherited-members:
+   :members:
 
 .. autoclass:: curvesim.pool.CurveMetaPool
-   :inherited-members:
+   :members:
 
 .. autoclass:: curvesim.pool.CurveRaiPool
-   :inherited-members:
+   :members:
 
 
 Pool Plots
