@@ -69,7 +69,7 @@ class Strategy(ABC):
         for sample in price_sampler:
             pool.prepare_for_trades(sample.timestamp)
             trader_args = self._get_trader_inputs(sample)
-            trade_data = trader.arb_pool(*trader_args)
+            trade_data = trader.process_time_sample(*trader_args)
             state_log.update(price_sample=sample, trade_data=trade_data)
 
         return state_log.compute_metrics()

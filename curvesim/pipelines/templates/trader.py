@@ -84,7 +84,14 @@ class Trader(ABC):
 
         return trades_done, total_volume
 
-    def arb_pool(self, *args):
+    def process_time_sample(self, *args):
+        """
+        Process given tick data by computing and executing trades.
+
+        The input args must be properly formed and fed by the
+        parent `Strategy` object housing the trader class via its
+        :meth:`~curvesim.pipelines.templates.Strategy._get_trader_inputs`.
+        """
         trades, price_errors, _ = self.compute_trades(*args)
         trades_done, volume = self.do_trades(trades)
         return TradeData(trades_done, volume, price_errors)
