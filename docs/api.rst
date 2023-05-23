@@ -58,7 +58,7 @@ Pool Plots
 .. autofunction:: curvesim.order_book
 
 
-Pipelines
+Simulation Pipelines
 ---------
 .. _pipelinesapi:
 
