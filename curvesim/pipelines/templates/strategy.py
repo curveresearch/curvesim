@@ -7,7 +7,7 @@ logger = get_logger(__name__)
 
 class Strategy(ABC):
 
-    arbitrageur_class = None
+    trader_class = None
     state_log_class = None
 
     def __init__(self, metrics):
@@ -38,7 +38,7 @@ class Strategy(ABC):
         metrics : tuple of lists
 
         """
-        trader = self.arbitrageur_class(pool)  # noqa
+        trader = self.trader_class(pool)  # noqa
         state_log = self.state_log_class(pool, self.metrics)
 
         symbol = pool.symbol

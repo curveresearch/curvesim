@@ -2,7 +2,7 @@
 Functions and interfaces used in the simulation pipeline framework.
 """
 
-__all__ = ["Arbitrageur", "Strategy", "SimPool", "run_pipeline"]
+__all__ = ["Trader", "Strategy", "SimPool", "run_pipeline"]
 
 from multiprocessing import Pool as cpu_pool
 
@@ -12,9 +12,9 @@ from curvesim.logging import (
     multiprocessing_logging_queue,
 )
 
-from .arbitrageur import Arbitrageur
 from .sim_pool import SimPool
 from .strategy import Strategy
+from .trader import Trader
 
 logger = get_logger(__name__)
 

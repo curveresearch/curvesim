@@ -4,7 +4,7 @@ from numpy import array, isnan
 from scipy.optimize import least_squares, root_scalar
 
 from curvesim.logging import get_logger
-from curvesim.pipelines.templates.arbitrageur import Arbitrageur
+from curvesim.pipelines.templates.trader import Trader
 from curvesim.pool.stableswap.metapool import CurveMetaPool
 from curvesim.pool.stableswap.pool import CurvePool
 from curvesim.pool.stableswap.raipool import CurveRaiPool
@@ -12,7 +12,7 @@ from curvesim.pool.stableswap.raipool import CurveRaiPool
 logger = get_logger(__name__)
 
 
-class VolumeLimitedArbitrageur(Arbitrageur):
+class VolumeLimitedArbitrageur(Trader):
     """
     Computes, executes, and reports out arbitrage trades.
     """

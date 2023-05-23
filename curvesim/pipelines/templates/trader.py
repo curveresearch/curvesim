@@ -17,7 +17,7 @@ class TradeData:
     price_errors: Union[list, ndarray, Series]
 
 
-class Arbitrageur:
+class Trader(ABC):
     """
     Computes, executes, and reports out arbitrage trades.
     """
