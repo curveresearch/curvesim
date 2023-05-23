@@ -3,7 +3,10 @@ from datetime import datetime, timedelta
 
 from pandas import Series
 
+from curvesim.logging import get_logger
 from curvesim.price_data import get
+
+logger = get_logger(__name__)
 
 
 class PriceVolume:
@@ -39,7 +42,7 @@ class PriceVolume:
         if self.freq:
             self.freq /= timedelta(minutes=1)  # force minute units
         else:
-            print("Warning: assuming 30 minute sampling for annualizing returns")
+            logger.warning("Assuming 30 minute sampling for annualizing returns.")
             self.freq = 30
 
     def __iter__(self):
