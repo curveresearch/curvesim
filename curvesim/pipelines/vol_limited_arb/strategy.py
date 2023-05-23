@@ -7,11 +7,24 @@ logger = get_logger(__name__)
 
 
 class VolumeLimitedStrategy(Strategy):
+    """
+    Computes and executes volume-limited arbitrage trades at each timestep.
+    """
 
     trader_class = VolumeLimitedArbitrageur
     state_log_class = StateLog
 
-    def __init__(self, metrics, vol_mult=None):
+    def __init__(self, metrics, vol_mult):
+        """
+        Parameters
+        -----------
+        metrics : List[Metric]
+            A list of metrics used to evaluate the performance of the strategy.
+        vol_mult : float or numpy.ndarray
+            Value(s) multiplied by market volume to specify volume limits.
+
+            Can be a scalar or vector with values for each pairwise coin combination.
+        """
         super().__init__(metrics)
         self.vol_mult = vol_mult
 

@@ -6,6 +6,23 @@ logger = get_logger(__name__)
 
 
 class Strategy(ABC):
+    """
+    A Strategy defines the trading approach used during each step of a simulation.
+    It executes the trades using an injected `Trader` class and then logs the changes
+    using the injected `StateLog` class.
+
+    Class Attributes
+    ----------------
+    trader_class : :class:`~curvesim.pipelines.templates.Trader`
+        Class for creating trader instances.
+    state_log_class : :class:`~curvesim.metrics.state_log.StateLog`
+        Class for creating state logger instances.
+
+    Attributes
+    ----------
+    metrics : list
+        A list of metrics used to evaluate the performance of the strategy.
+    """
 
     # These classes should be injected in child classes
     # to create the desired behavior.
@@ -13,27 +30,29 @@ class Strategy(ABC):
     state_log_class = None
 
     def __init__(self, metrics):
+        """
+        Parameters
+        ----------
+        metrics : List[Metric]
+            A list of metrics used to evaluate the performance of the strategy.
+        """
         self.metrics = metrics
 
     def __call__(self, pool, parameters, price_sampler):
         """
-        Computes and executes volume-limited arbitrage trades at each timestep.
+        Computes and executes trades at each timestep.
 
         Parameters
         ----------
-        pool : Pool, MetaPool, or RaiPool
-            The pool to be arbitraged.
+        pool : :class:`~curvesim.pipelines.templates.SimPool`
+            The pool to be traded against.
 
         parameters : dict
             Current pool parameters from the param_sampler (only used for logging/display).
 
         price_sampler : iterable
-            Iterable to returns prices and volumes for each timestep.
+            Iterable that for each timestep returns market data used by the trader.
 
-        vol_mult : float or numpy.ndarray
-            Value(s) multiplied by market volume to specify volume limits.
-
-            Can be a scalar or vector with values for each pairwise coin combination.
 
         Returns
         -------
@@ -59,6 +78,6 @@ class Strategy(ABC):
     def _get_trader_inputs(self, sample):
         """
         Process the price sample into appropriate inputs for the
-        arbitrageur instance.
+        trader instance.
         """
         raise NotImplementedError
