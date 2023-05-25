@@ -205,8 +205,6 @@ class PoolValue(PoolPricingMetric):
     numeraire, `self.numeraire`. Each are summarized as annualized returns.
     """
 
-    __slots__ = ["_freq"]
-
     @property
     def pool_config(self):
         ss_plot = {
@@ -266,10 +264,6 @@ class PoolValue(PoolPricingMetric):
                 "plot": ss_plot,
             },
         }
-
-    def __init__(self, pool, freq, **kwargs):
-        self._freq = freq
-        super().__init__(pool)
 
     def get_stableswap_pool_value(self, pool_state, price_sample, **kwargs):
         """
