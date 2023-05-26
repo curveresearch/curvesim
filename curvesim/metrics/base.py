@@ -55,7 +55,8 @@ class MetricBase(ABC):
                 :func:`summary_functions`. If :func:`summary_functions` is not
                 specified, returns None.
         """
-        data = self.metric_function(**state_log)
+        timestamps = state_log["price_sample"].timestamp
+        data = self.metric_function(**state_log).set_index(timestamps)
         return data, summarize_data(data, self.summary_functions)
 
     @property

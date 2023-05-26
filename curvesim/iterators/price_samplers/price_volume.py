@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from pandas import Series
 
@@ -37,13 +37,6 @@ class PriceVolume:
 
         self.prices = prices
         self.volumes = volumes
-
-        self.freq = getattr(prices.index, "freq", None)
-        if self.freq:
-            self.freq /= timedelta(minutes=1)  # force minute units
-        else:
-            logger.warning("Assuming 30 minute sampling for annualizing returns.")
-            self.freq = 30
 
     def __iter__(self):
         """

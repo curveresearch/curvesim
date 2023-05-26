@@ -14,7 +14,7 @@ __all__ = [
 from functools import partial
 
 from altair import Axis, Scale
-from numpy import array, exp, log
+from numpy import array, exp, log, timedelta64
 from pandas import DataFrame, concat
 
 from curvesim.pool.sim_interface import SimCurveMetaPool, SimCurvePool, SimCurveRaiPool
@@ -205,8 +205,6 @@ class PoolValue(PoolPricingMetric):
     numeraire, `self.numeraire`. Each are summarized as annualized returns.
     """
 
-    __slots__ = ["_freq"]
-
     @property
     def pool_config(self):
         ss_plot = {
@@ -266,10 +264,6 @@ class PoolValue(PoolPricingMetric):
                 "plot": ss_plot,
             },
         }
-
-    def __init__(self, pool, freq, **kwargs):
-        self._freq = freq
-        super().__init__(pool)
 
     def get_stableswap_pool_value(self, pool_state, price_sample, **kwargs):
         """
@@ -336,9 +330,10 @@ class PoolValue(PoolPricingMetric):
 
     def compute_annualized_returns(self, data):
         """Computes annualized returns from a series of pool values."""
+        year_multipliers = timedelta64(1, "Y") / data.index.to_series().diff()
         log_returns = log(data).diff()  # pylint: disable=no-member
-        year_mult = 60 / self._freq * 24 * 365
-        return exp(log_returns.mean() * year_mult) - 1
+
+        return exp((log_returns * year_multipliers).mean()) - 1
 
 
 class PriceDepth(PoolMetric):
