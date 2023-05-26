@@ -92,40 +92,6 @@ def opt_arb(get_bounds, error_function, i, j, p):
     return trade, error, res
 
 
-def post_trade_price_error(dx, i, j, price_target):
-    with pool.use_snapshot_context():
-        if dx > 0:
-            pool.trade(i, j, dx)
-
-        price = pool.price(i, j, use_fee=True)
-
-    return price - price_target
-
-
-def post_trade_price_error_multi(dxs, price_targets, coins):
-    with pool.use_snapshot_context():
-        # Do trades
-        for k, pair in enumerate(coins):
-            i, j = pair
-
-            if isnan(dxs[k]):
-                dx = 0
-            else:
-                dx = int(dxs[k])
-
-            if dx > 0:
-                pool.trade(i, j, dx)
-
-        # Record price errors
-        errors = []
-        for k, pair in enumerate(coins):
-            i, j = pair
-            price = pool.price(i, j, use_fee=True)
-            errors.append(price - price_targets[k])
-
-    return errors
-
-
 def make_error_fns(pool):  # noqa: C901
     """
     Returns the pricing error functions needed for determining the
@@ -136,9 +102,6 @@ def make_error_fns(pool):  # noqa: C901
     For performance, does not support string coin-names.
     """
     xp = pool._xp_mem(pool.balances, pool.rates)
-
-    all_idx = range(pool.n_total)
-    index_combos = combinations(all_idx, 2)
 
     def get_trade_bounds(i, j):
         xp_j = int(xp[j] * 0.01)
@@ -219,30 +182,56 @@ def opt_arb_multi(pool, prices, limits):  # noqa: C901
     index_combos = combinations(all_idx, 2)
 
     get_bounds = pool_type_to_error_functions[type(pool)](pool)
-    x0, lo, hi, coins, price_targets = get_trade_args(
-        pool.price,
+    initial_trades = get_arb_trades(
+        pool,
         get_bounds,
-        error_function,
         prices,
-        limits,
         index_combos,
     )
 
+    lo = []
+    hi = []
+    for k, pair in enumerate(index_combos):
+        i, j = pair
+        limit = int(limits[k] * 10**18)
+        lo.append(0)
+        hi.append(limit + 1)
+        # limit trade size
+        size, coin, price_target = initial_trades[k]
+        initial_trades[k] = min(size, limit), coin, price_target
+
     # Order trades in terms of expected size
-    order = sorted(range(len(x0)), reverse=True, key=x0.__getitem__)
-    x0 = [x0[i] for i in order]
-    lo = [lo[i] for i in order]
-    hi = [hi[i] for i in order]
-    coins = [coins[i] for i in order]
-    price_targets = [price_targets[i] for i in order]
+    initial_trades = sorted(initial_trades, reverse=True, key=lambda t: t[0])
+    sizes, coins, price_targets = zip(*initial_trades)
+
+    def post_trade_price_error_multi(dxs, price_targets, coins):
+        with pool.use_snapshot_context():
+            for k, pair in enumerate(coins):
+                i, j = pair
+
+                if isnan(dxs[k]):
+                    dx = 0
+                else:
+                    dx = int(dxs[k])
+
+                if dx > 0:
+                    pool.trade(i, j, dx)
+
+            errors = []
+            for k, pair in enumerate(coins):
+                i, j = pair
+                price = pool.price(i, j, use_fee=True)
+                errors.append(price - price_targets[k])
+
+        return errors
 
     # Find trades that minimize difference between
     # pool price and external market price
     trades = []
     try:
         res = least_squares(
-            error_function_multi,
-            x0=x0,
+            post_trade_price_error_multi,
+            x0=sizes,
             args=(price_targets, coins),
             bounds=(lo, hi),
             gtol=10**-15,
@@ -266,16 +255,18 @@ def opt_arb_multi(pool, prices, limits):  # noqa: C901
 
     except Exception:
         logger.error(
-            f"Optarbs args: x0: {x0}, lo: {lo}, hi: {hi}, prices: {price_targets}",
+            f"Optarbs args: x0: {sizes}, lo: {lo}, hi: {hi}, prices: {price_targets}",
             exc_info=True,
         )
-        errors = array(error_function_multi([0] * len(x0), price_targets, coins))
+        errors = array(
+            post_trade_price_error_multi([0] * len(sizes), price_targets, coins)
+        )
         res = []
 
     return trades, errors, res
 
 
-def get_trade_args(get_pool_price, get_bounds, error_function, prices, limits, combos):
+def get_arb_trades(pool, get_bounds, prices, combos):
     """
     Returns initial guesses (x0), bounds (lo, hi), ordered coin-pairs, and
     price targets used to estimate the optimal set of arbitrage trades.
@@ -304,12 +295,6 @@ def get_trade_args(get_pool_price, get_bounds, error_function, prices, limits, c
     x0 : list
         Initial "guess" values for trade size for each token pair
 
-    lo : list
-        Lower bounds on trade sizes for each token pair
-
-    hi: list
-        Upper bounds on trade sizes for each token pair
-
     coins : list of tuples
         Ordered list of token pairs
 
@@ -317,47 +302,46 @@ def get_trade_args(get_pool_price, get_bounds, error_function, prices, limits, c
         Ordered list of price targets for each token pair
 
     """
-    x0 = []
-    lo = []
-    hi = []
-    coins = []
-    price_targets = []
+
+    def post_trade_price_error(dx, i, j, price_target):
+        with pool.use_snapshot_context():
+            if dx > 0:
+                pool.trade(i, j, dx)
+
+            price = pool.price(i, j, use_fee=True)
+
+        return price - price_target
+
+    trades = []
 
     for k, pair in enumerate(combos):
         i, j = pair
-        limit = int(limits[k] * 10**18)
-        lo.append(0)
-        hi.append(limit + 1)
 
-        if get_pool_price(i, j) - prices[k] > 0:
+        if pool.price(i, j) - prices[k] > 0:
             price = prices[k]
             in_index = i
             out_index = j
-        elif get_pool_price(j, i) - 1 / prices[k] > 0:
+        elif pool.price(j, i) - 1 / prices[k] > 0:
             price = 1 / prices[k]
             in_index = j
             out_index = i
         else:
-            x0.append(0)
-            coins.append((i, j))
-            price_targets.append(prices[k])
+            trades.append((0, (i, j), prices[k]))
             continue
 
         try:
             trade, _, _ = opt_arb(
-                get_bounds, error_function, in_index, out_index, price
+                get_bounds, post_trade_price_error, in_index, out_index, price
             )
-            size = min(trade[2], limit)
-            x0.append(size)
+            size = trade[2]
         except ValueError:
-            pool_price = get_pool_price(in_index, out_index)
+            pool_price = pool.price(in_index, out_index)
             logger.error(
                 f"Opt_arb error: Pair: {(in_index, out_index)}, Pool price: {pool_price},"
                 f"Target Price: {price}, Diff: {pool_price - price}"
             )
-            x0.append(0)
+            size = 0
 
-        coins.append((in_index, out_index))
-        price_targets.append(price)
+        trades.append(size, (in_index, out_index), price)
 
-    return x0, lo, hi, coins, price_targets
+    return trades
