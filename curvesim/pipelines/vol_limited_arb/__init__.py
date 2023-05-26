@@ -132,7 +132,7 @@ def pipeline(
             mode=vol_mode,
         )
 
-    metrics = init_metrics(metrics, pool=pool, freq=price_sampler.freq)
+    metrics = init_metrics(metrics, pool=pool)
     strategy = VolumeLimitedStrategy(metrics, vol_mult)
 
     output = run_pipeline(param_sampler, price_sampler, strategy, ncpu=ncpu)
