@@ -1,6 +1,4 @@
 """Unit tests for SimStableswapBase"""
-from itertools import combinations
-
 import pytest
 
 from curvesim.pipelines.vol_limited_arb.trader import (
@@ -14,20 +12,20 @@ from curvesim.utils import override
 # pylint: disable=redefined-outer-name
 
 
-def post_trade_price_error(dx, i, j, price_target):
-    price = pool.price(i, j)
-
-    # solver requires opposite signs for the value
-    # of the error function on the bounds
-    lo, hi = get_trade_bounds(i, j)
-    if abs(dx - lo) < 0.000000005:  # pylint: disable=no-else-return
-        price = 2
-        return price - price_target
-    elif abs(dx - hi) < 0.000000005:
-        price = 0
-        return price - price_target
-    else:
-        return 0.00000001
+# def post_trade_price_error(dx, i, j, price_target):
+#     price = pool.price(i, j)
+#
+#     # solver requires opposite signs for the value
+#     # of the error function on the bounds
+#     lo, hi = get_trade_bounds(i, j)
+#     if abs(dx - lo) < 0.000000005:  # pylint: disable=no-else-return
+#         price = 2
+#         return price - price_target
+#     elif abs(dx - hi) < 0.000000005:
+#         price = 0
+#         return price - price_target
+#     else:
+#         return 0.00000001
 
 
 def post_trade_price_error_multi(dxs, price_targets, coins):

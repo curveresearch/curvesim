@@ -46,3 +46,10 @@ class SimCurvePool(SimStableswapBase, CurvePool):
             price = self.dydx(i, j, use_fee=use_fee)
 
         return price
+
+    def get_in_amount(self, coin_in, coin_out, out_amount):
+        i, j = self.get_coin_indices(coin_in, coin_out)
+        xp = self._xp_mem(self.balances, self.rates)
+        xp_j = xp[j] - out_amount
+        in_amount = self.get_y(j, i, xp_j, xp) - xp[i]
+        return in_amount
