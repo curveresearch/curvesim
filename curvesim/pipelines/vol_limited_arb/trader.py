@@ -92,6 +92,40 @@ def opt_arb(get_bounds, error_function, i, j, p):
     return trade, error, res
 
 
+def post_trade_price_error(dx, i, j, price_target):
+    with pool.use_snapshot_context():
+        if dx > 0:
+            pool.trade(i, j, dx)
+
+        price = pool.price(i, j, use_fee=True)
+
+    return price - price_target
+
+
+def post_trade_price_error_multi(dxs, price_targets, coins):
+    with pool.use_snapshot_context():
+        # Do trades
+        for k, pair in enumerate(coins):
+            i, j = pair
+
+            if isnan(dxs[k]):
+                dx = 0
+            else:
+                dx = int(dxs[k])
+
+            if dx > 0:
+                pool.trade(i, j, dx)
+
+        # Record price errors
+        errors = []
+        for k, pair in enumerate(coins):
+            i, j = pair
+            price = pool.price(i, j, use_fee=True)
+            errors.append(price - price_targets[k])
+
+    return errors
+
+
 def make_error_fns(pool):  # noqa: C901
     """
     Returns the pricing error functions needed for determining the
@@ -111,44 +145,7 @@ def make_error_fns(pool):  # noqa: C901
         high = pool.get_y(j, i, xp_j, xp) - xp[i]
         return (0, high)
 
-    def post_trade_price_error(dx, i, j, price_target):
-        with pool.use_snapshot_context():
-            if dx > 0:
-                pool.trade(i, j, dx)
-
-            price = pool.price(i, j, use_fee=True)
-
-        return price - price_target
-
-    def post_trade_price_error_multi(dxs, price_targets, coins):
-        with pool.use_snapshot_context():
-            # Do trades
-            for k, pair in enumerate(coins):
-                i, j = pair
-
-                if isnan(dxs[k]):
-                    dx = 0
-                else:
-                    dx = int(dxs[k])
-
-                if dx > 0:
-                    pool.trade(i, j, dx)
-
-            # Record price errors
-            errors = []
-            for k, pair in enumerate(coins):
-                i, j = pair
-                price = pool.price(i, j, use_fee=True)
-                errors.append(price - price_targets[k])
-
-        return errors
-
-    return (
-        get_trade_bounds,
-        post_trade_price_error,
-        post_trade_price_error_multi,
-        index_combos,
-    )
+    return get_trade_bounds
 
 
 def make_error_fns_for_metapool(pool):  # noqa: C901
@@ -158,9 +155,6 @@ def make_error_fns_for_metapool(pool):  # noqa: C901
 
     xp_meta = pool._xp_mem(pool.balances, pool.rates)
     xp_base = pool._xp_mem(pool.basepool.balances, pool.basepool.rates)
-
-    all_idx = range(pool.n_total)
-    index_combos = combinations(all_idx, 2)
 
     def get_trade_bounds(i, j):
         base_i = i - max_coin
@@ -183,44 +177,7 @@ def make_error_fns_for_metapool(pool):  # noqa: C901
 
         return (0, high)
 
-    def post_trade_price_error(dx, i, j, price_target):
-        with pool.use_snapshot_context():
-            if dx > 0:
-                pool.trade(i, j, dx)
-
-            price = pool.price(i, j, use_fee=True)
-
-        return price - price_target
-
-    def post_trade_price_error_multi(dxs, price_targets, coins):
-        with pool.use_snapshot_context():
-            # Do trades
-            for k, pair in enumerate(coins):
-                i, j = pair
-
-                if isnan(dxs[k]):
-                    dx = 0
-                else:
-                    dx = int(dxs[k])
-
-                if dx > 0:
-                    pool.trade(i, j, dx)
-
-            # Record price errors
-            errors = []
-            for k, pair in enumerate(coins):
-                i, j = pair
-                price = pool.price(i, j, use_fee=True)
-                errors.append(price - price_targets[k])
-
-        return errors
-
-    return (
-        get_trade_bounds,
-        post_trade_price_error,
-        post_trade_price_error_multi,
-        index_combos,
-    )
+    return get_trade_bounds
 
 
 pool_type_to_error_functions = {
@@ -258,12 +215,10 @@ def opt_arb_multi(pool, prices, limits):  # noqa: C901
         Results object from the numerical optimizer.
 
     """
-    (
-        get_bounds,
-        error_function,
-        error_function_multi,
-        index_combos,
-    ) = pool_type_to_error_functions[type(pool)](pool)
+    all_idx = range(pool.n_total)
+    index_combos = combinations(all_idx, 2)
+
+    get_bounds = pool_type_to_error_functions[type(pool)](pool)
     x0, lo, hi, coins, price_targets = get_trade_args(
         pool.price,
         get_bounds,
