@@ -44,54 +44,6 @@ class VolumeLimitedArbitrageur(Trader):
         return trades, errors, res
 
 
-# Optimizers
-def opt_arb(get_bounds, error_function, i, j, p):
-    """
-    Estimates a single trade to optimally arbitrage coin[i] for coin[j] given
-    external price p (base: i, quote: j).
-
-    p must be less than dy[j]/dx[i], including fees.
-
-    Parameters
-    ----------
-    get_bounds : callable
-        Function that returns bounds on trade size hypotheses for any
-        token pairs (i,j).
-
-    error_function: callable
-        Error function that returns the difference between pool price and
-        market price (p) after some trade (coin_i, coin_j, trade_size)
-
-    i : int
-        Index for the input coin (base)
-
-    j : int
-        Index for the output coin (quote)
-
-    p : float
-        External market price to arbitrage the pool to
-
-    Returns
-    -------
-    trade : tuple
-        Trades to perform, formatted as (coin_i, coin_j, trade_size).
-
-    error : numpy.ndarray
-        Post-trade price error between pool price and market price.
-
-    res : scipy.optimize.OptimizeResult
-        Results object from the numerical optimizer.
-
-    """
-    bounds = get_bounds(i, j)
-    res = root_scalar(error_function, args=(i, j, p), bracket=bounds, method="brentq")
-
-    trade = (i, j, int(res.root))
-    error = error_function(int(res.root), i, j, p)
-
-    return trade, error, res
-
-
 def make_error_fns(pool):  # noqa: C901
     """
     Returns the pricing error functions needed for determining the
@@ -268,13 +220,15 @@ def opt_arb_multi(pool, prices, limits):  # noqa: C901
 
 def get_arb_trades(pool, get_bounds, prices, combos):
     """
-    Returns initial guesses (x0), bounds (lo, hi), ordered coin-pairs, and
-    price targets used to estimate the optimal set of arbitrage trades.
+    Returns triples of "trades", one for each coin pair in `combo`.
+
+    Each trade is a triple consisting of size, ordered coin-pair,
+    and price target to move the pool price to.
 
     Parameters
     ----------
-    get_pool_price : callable
-        Function that returns the pool price for any token pair (i,j)
+    pool: SimPool
+        Pool to arbitrage on
 
     get_bounds : callable
         Function that returns bounds on trade size hypotheses for
@@ -292,15 +246,11 @@ def get_arb_trades(pool, get_bounds, prices, combos):
 
     Returns
     -------
-    x0 : list
-        Initial "guess" values for trade size for each token pair
-
-    coins : list of tuples
-        Ordered list of token pairs
-
-    price_targets : list of floats
-        Ordered list of price targets for each token pair
-
+    trades: List[Tuple]
+        List of triples (size, coins, price_target)
+        "size": trade size
+        "coins": in token, out token
+        "price_target": price target for arbing the token pair
     """
 
     def post_trade_price_error(dx, i, j, price_target):
@@ -329,11 +279,15 @@ def get_arb_trades(pool, get_bounds, prices, combos):
             trades.append((0, (i, j), prices[k]))
             continue
 
+        bounds = get_bounds(i, j)
         try:
-            trade, _, _ = opt_arb(
-                get_bounds, post_trade_price_error, in_index, out_index, price
+            res = root_scalar(
+                post_trade_price_error,
+                args=(i, j, price),
+                bracket=bounds,
+                method="brentq",
             )
-            size = trade[2]
+            size = int(res.root)
         except ValueError:
             pool_price = pool.price(in_index, out_index)
             logger.error(
