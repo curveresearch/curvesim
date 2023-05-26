@@ -21,10 +21,12 @@ class SimCurvePool(SimStableswapBase, CurvePool):
     @override
     def trade(self, coin_in, coin_out, size):
         i, j = self.get_coin_indices(coin_in, coin_out)
+        # volume is always in D units
+        volume = size
+        # convert from D units to native token units
+        size = int(size) * 10**18 // self._precisions[i]
 
         out_amount, fee = self.exchange(i, j, size)
-        # in D units
-        volume = size * self._precisions[i] // 10**18
 
         return out_amount, fee, volume
 
