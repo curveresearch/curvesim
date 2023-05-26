@@ -273,11 +273,11 @@ def get_arb_trades(pool, get_bounds, prices):
             trades.append((0, (i, j), prices[k]))
             continue
 
-        bounds = get_bounds(i, j)
+        bounds = get_bounds(in_index, out_index)
         try:
             res = root_scalar(
                 post_trade_price_error,
-                args=(i, j, price),
+                args=(in_index, out_index, price),
                 bracket=bounds,
                 method="brentq",
             )
