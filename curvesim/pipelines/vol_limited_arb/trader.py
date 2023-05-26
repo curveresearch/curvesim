@@ -130,31 +130,25 @@ def opt_arb_multi(pool, prices, limits):  # noqa: C901
         Results object from the numerical optimizer.
 
     """
-    all_idx = range(pool.n_total)
-    index_combos = combinations(all_idx, 2)
-
     get_bounds = pool_type_to_error_functions[type(pool)](pool)
-    initial_trades = get_arb_trades(
+    init_trades = get_arb_trades(
         pool,
         get_bounds,
         prices,
-        index_combos,
     )
 
-    lo = []
-    hi = []
-    for k, pair in enumerate(index_combos):
+    # Limit trade size, add size bounds
+    limited_init_trades = []
+    for t, limit in zip(init_trades, limits):
+        size, pair, price_target = t
         i, j = pair
-        limit = int(limits[k] * 10**18)
-        lo.append(0)
-        hi.append(limit + 1)
-        # limit trade size
-        size, coin, price_target = initial_trades[k]
-        initial_trades[k] = min(size, limit), coin, price_target
+        limit = int(limit * 10**18)
+        t = min(size, limit), pair, price_target, 0, limit + 1
+        limited_init_trades.append(t)
 
     # Order trades in terms of expected size
-    initial_trades = sorted(initial_trades, reverse=True, key=lambda t: t[0])
-    sizes, coins, price_targets = zip(*initial_trades)
+    limited_init_trades = sorted(limited_init_trades, reverse=True, key=lambda t: t[0])
+    sizes, coins, price_targets, lo, hi = zip(*limited_init_trades)
 
     def post_trade_price_error_multi(dxs, price_targets, coins):
         with pool.use_snapshot_context():
@@ -218,7 +212,7 @@ def opt_arb_multi(pool, prices, limits):  # noqa: C901
     return trades, errors, res
 
 
-def get_arb_trades(pool, get_bounds, prices, combos):
+def get_arb_trades(pool, get_bounds, prices):
     """
     Returns triples of "trades", one for each coin pair in `combo`.
 
@@ -252,6 +246,8 @@ def get_arb_trades(pool, get_bounds, prices, combos):
         "coins": in token, out token
         "price_target": price target for arbing the token pair
     """
+    all_idx = range(pool.n_total)
+    index_combos = list(combinations(all_idx, 2))
 
     def post_trade_price_error(dx, i, j, price_target):
         with pool.use_snapshot_context():
@@ -264,7 +260,7 @@ def get_arb_trades(pool, get_bounds, prices, combos):
 
     trades = []
 
-    for k, pair in enumerate(combos):
+    for k, pair in enumerate(index_combos):
         i, j = pair
 
         if pool.price(i, j) - prices[k] > 0:
@@ -296,6 +292,6 @@ def get_arb_trades(pool, get_bounds, prices, combos):
             )
             size = 0
 
-        trades.append(size, (in_index, out_index), price)
+        trades.append((size, (in_index, out_index), price))
 
     return trades
