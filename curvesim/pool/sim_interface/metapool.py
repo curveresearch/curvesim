@@ -51,6 +51,7 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
         We count only volume when one coin is the primary stable.
         """
         i, j = self.get_coin_indices(coin_in, coin_out)
+        size = int(size) * 10**18 // self._precisions[i]
 
         out_amount, fee = self.exchange_underlying(i, j, size)
 

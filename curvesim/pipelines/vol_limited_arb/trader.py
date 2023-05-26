@@ -156,7 +156,6 @@ def make_error_fns_for_metapool(pool):  # noqa: C901
 
     max_coin = pool.max_coin
 
-    p_all = [pool.rate_multiplier] + pool.basepool.rates
     xp_meta = pool._xp_mem(pool.balances, pool.rates)
     xp_base = pool._xp_mem(pool.basepool.balances, pool.basepool.rates)
 
@@ -185,15 +184,13 @@ def make_error_fns_for_metapool(pool):  # noqa: C901
         return (0, high)
 
     def post_trade_price_error(dx, i, j, price_target):
-        dx = int(dx) * 10**18 // p_all[i]
-
         with pool.use_snapshot_context():
             if dx > 0:
-                pool.exchange_underlying(i, j, dx)
+                pool.trade(i, j, dx)
 
-            dydx = pool.dydxfee(i, j)
+            price = pool.price(i, j, use_fee=True)
 
-        return dydx - price_target
+        return price - price_target
 
     def post_trade_price_error_multi(dxs, price_targets, coins):
         with pool.use_snapshot_context():
@@ -204,17 +201,17 @@ def make_error_fns_for_metapool(pool):  # noqa: C901
                 if isnan(dxs[k]):
                     dx = 0
                 else:
-                    dx = int(dxs[k]) * 10**18 // p_all[i]
+                    dx = int(dxs[k])
 
                 if dx > 0:
-                    pool.exchange_underlying(i, j, dx)
+                    pool.trade(i, j, dx)
 
             # Record price errors
             errors = []
             for k, pair in enumerate(coins):
                 i, j = pair
-                dydx = pool.dydxfee(i, j)
-                errors.append(dydx - price_targets[k])
+                price = pool.price(i, j, use_fee=True)
+                errors.append(price - price_targets[k])
 
         return errors
 
