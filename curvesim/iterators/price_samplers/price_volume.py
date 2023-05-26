@@ -3,7 +3,10 @@ from datetime import datetime
 
 from pandas import Series
 
+from curvesim.logging import get_logger
 from curvesim.price_data import get
+
+logger = get_logger(__name__)
 
 
 class PriceVolume:

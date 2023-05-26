@@ -40,13 +40,13 @@ Curve Pools
    :inherited-members:
 
 .. autoclass:: curvesim.pool.CurvePool
-   :inherited-members:
+   :members:
 
 .. autoclass:: curvesim.pool.CurveMetaPool
-   :inherited-members:
+   :members:
 
 .. autoclass:: curvesim.pool.CurveRaiPool
-   :inherited-members:
+   :members:
 
 
 Pool Plots
@@ -58,22 +58,31 @@ Pool Plots
 .. autofunction:: curvesim.order_book
 
 
-Pipelines
----------
+Simulation Pipelines
+---------------------
 .. _pipelinesapi:
 
 .. automodule:: curvesim.pipelines
+    :members:
+    :exclude-members: wrapped_strategy
+
+.. autoclass:: curvesim.pipelines.templates.Strategy
+    :members:
+.. autoclass:: curvesim.pipelines.templates.Trader
+    :members:
+.. autoclass:: curvesim.pipelines.templates.SimPool
+    :members:
 
 
-    Arbitrage
-    ---------
-    .. autofunction:: curvesim.pipelines.arbitrage.volume_limited_arbitrage()
-    .. autofunction:: curvesim.pipelines.arbitrage.strategy()
 
-    .. autoclass:: curvesim.pipelines.arbitrage.Arbitrageur
-        :inherited-members:
+    Volume-limited arbitrage
+    ------------------------
+    .. autofunction:: curvesim.pipelines.vol_limited_arb.pipeline
+    .. autoclass:: curvesim.pipelines.vol_limited_arb.strategy.VolumeLimitedStrategy
+        :members:
+    .. autoclass:: curvesim.pipelines.vol_limited_arb.trader.VolumeLimitedArbitrageur
+        :members:
 
-.. autofunction:: curvesim.pipelines.templates.run_pipeline()
 
 Pool Data
 ----------
@@ -85,6 +94,7 @@ Pool Data
 
 .. autofunction:: curvesim.pool_data.metadata.PoolMetaData
 .. autoclass:: curvesim.pool_data.metadata.PoolMetaDataInterface
+    :members:
 
 
 Subgraph
