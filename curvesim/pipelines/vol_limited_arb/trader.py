@@ -160,7 +160,8 @@ def opt_arb_multi(pool, prices, limits):  # noqa: C901
                 else:
                     dx = int(dxs[k])
 
-                pool.trade(i, j, dx)
+                if dx > 0:
+                    pool.trade(i, j, dx)
 
             errors = []
             for k, pair in enumerate(coins):
@@ -251,7 +252,8 @@ def get_arb_trades(pool, get_bounds, prices):
 
     def post_trade_price_error(dx, i, j, price_target):
         with pool.use_snapshot_context():
-            pool.trade(i, j, dx)
+            if dx > 0:
+                pool.trade(i, j, dx)
             price = pool.price(i, j, use_fee=True)
 
         return price - price_target

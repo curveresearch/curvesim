@@ -53,9 +53,6 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
         i, j = self.get_coin_indices(coin_in, coin_out)
         size = int(size) * 10**18 // self._precisions[i]
 
-        if size == 0:
-            return 0, 0, 0
-
         out_amount, fee = self.exchange_underlying(i, j, size)
 
         max_coin = self.max_coin

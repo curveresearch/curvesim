@@ -26,9 +26,6 @@ class SimCurvePool(SimStableswapBase, CurvePool):
         # convert from D units to native token units
         size = int(size) * 10**18 // self._precisions[i]
 
-        if size == 0:
-            return 0, 0, 0
-
         out_amount, fee = self.exchange(i, j, size)
         return out_amount, fee, volume
 
