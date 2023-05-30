@@ -211,7 +211,7 @@ def get_arb_trades(pool, prices):
             trades.append((0, (i, j), prices[k]))
             continue
 
-        high = pool.get_in_amount(in_index, out_index, out_perc=0.99)
+        high = pool.get_in_amount(in_index, out_index, out_balance_perc=0.01)
         bounds = (0, high)
         try:
             res = root_scalar(
