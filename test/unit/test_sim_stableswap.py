@@ -1,10 +1,7 @@
 """Unit tests for SimStableswapBase"""
 import pytest
 
-from curvesim.pipelines.vol_limited_arb.trader import (
-    VolumeLimitedArbitrageur,
-    pool_type_to_error_functions,
-)
+from curvesim.pipelines.vol_limited_arb.trader import VolumeLimitedArbitrageur
 from curvesim.pool.sim_interface.simpool import SimStableswapBase
 from curvesim.pool.snapshot import CurvePoolBalanceSnapshot, SnapshotMixin
 from curvesim.utils import override
@@ -85,7 +82,7 @@ class FakeSimStableswap(SimStableswapBase, SnapshotMixin):
         return out_amount, fee, volume
 
 
-pool_type_to_error_functions[FakeSimStableswap] = make_error_fns
+# pool_type_to_error_functions[FakeSimStableswap] = make_error_fns
 
 
 @pytest.fixture(scope="function")
