@@ -84,3 +84,20 @@ class SimPool(ABC):
             cross-token comparisons and totaling of volume.
         """
         raise NotImplementedError
+
+    @abstractmethod
+    @property
+    def number_of_coins(self):
+        """
+        Return number of coins you are swapping between for the simulation.
+
+        Note this quantity is used for understanding how many tradable pairs
+        in the pool there are for the purpose of the simulation.  This doesn't
+        necessarily mean the same thing as the number of assets in the pool.
+
+        Returns
+        --------
+        int
+            The number of coins you can swap between.
+        """
+        raise NotImplementedError

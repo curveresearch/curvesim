@@ -248,8 +248,7 @@ def get_arb_trades(pool, get_bounds, prices):
         "coins": in token, out token
         "price_target": price target for arbing the token pair
     """
-    # FIXME: `n_total` is not a SimPool property!
-    all_idx = range(pool.n_total)
+    all_idx = range(pool.number_of_coins)
     index_combos = list(combinations(all_idx, 2))
 
     def post_trade_price_error(dx, i, j, price_target):
