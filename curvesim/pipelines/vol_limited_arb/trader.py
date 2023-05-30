@@ -1,8 +1,7 @@
-from itertools import combinations
-
 from numpy import array, isnan
 from scipy.optimize import least_squares, root_scalar
 
+from curvesim import utils
 from curvesim.logging import get_logger
 from curvesim.pipelines.templates.trader import Trader
 
@@ -180,8 +179,7 @@ def get_arb_trades(pool, prices):
         "coins": in token, out token
         "price_target": price target for arbing the token pair
     """
-    all_idx = range(pool.number_of_coins)
-    index_combos = list(combinations(all_idx, 2))
+    index_combos = utils.get_pairs(pool.number_of_coins)
 
     def post_trade_price_error(dx, i, j, price_target):
         with pool.use_snapshot_context():
