@@ -54,7 +54,7 @@ class SimStableswapBase(SimPool):
     def test_trade(self, coin_in, coin_out, factor):
         raise NotImplementedError
 
-    @override
     @property
+    @override
     def number_of_coins(self):
         return self.n_total  # pylint: disable=no-member

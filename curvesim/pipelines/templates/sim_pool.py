@@ -85,8 +85,8 @@ class SimPool(ABC):
         """
         raise NotImplementedError
 
-    @abstractmethod
     @property
+    @abstractmethod
     def number_of_coins(self):
         """
         Return number of coins you are swapping between for the simulation.
