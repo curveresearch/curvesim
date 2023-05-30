@@ -40,7 +40,9 @@ class VolumeLimitedArbitrageur(Trader):
             Results object from the numerical optimizer.
 
         """
-        trades, errors, res = opt_arb_multi(self.pool, prices, volume_limits)
+        trades, errors, res = multipair_optimal_arbitrage(
+            self.pool, prices, volume_limits
+        )
         return trades, errors, res
 
 
@@ -102,7 +104,7 @@ pool_type_to_error_functions = {
 }
 
 
-def opt_arb_multi(pool, prices, limits):  # noqa: C901
+def multipair_optimal_arbitrage(pool, prices, limits):  # noqa: C901
     """
     Computes trades to optimally arbitrage the pool, constrained by volume limits.
 
