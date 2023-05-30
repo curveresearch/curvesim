@@ -218,9 +218,7 @@ def get_arb_trades(pool, prices):
             trades.append((0, (i, j), prices[k]))
             continue
 
-        out_amount = xp[out_index] - int(xp[out_index] * 0.01)
-
-        high = pool.get_in_amount(in_index, out_index, out_amount)
+        high = pool.get_in_amount(in_index, out_index, out_perc=0.01)
         # _high = get_trade_bounds(in_index, out_index)
         # diff = abs(high - _high)
         # assert diff < 10**9, f"{high} != {_high}, diff={diff}"
