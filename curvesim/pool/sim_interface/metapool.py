@@ -97,7 +97,6 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
         return price
 
     def get_in_amount(self, coin_in, coin_out, out_balance_perc):
-        # Note: for performance, does not support string coin-names
         i, j = self.get_coin_indices(coin_in, coin_out)
 
         max_coin = self.max_coin
