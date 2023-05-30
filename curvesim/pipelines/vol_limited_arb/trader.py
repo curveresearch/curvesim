@@ -73,10 +73,7 @@ def multipair_optimal_arbitrage(pool, prices, limits):  # noqa: C901
         Results object from the numerical optimizer.
 
     """
-    init_trades = get_arb_trades(
-        pool,
-        prices,
-    )
+    init_trades = get_arb_trades(pool, prices)
 
     # Limit trade size, add size bounds
     limited_init_trades = []
