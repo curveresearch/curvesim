@@ -3,7 +3,7 @@ from abc import abstractmethod
 
 from curvesim.exceptions import CurvesimValueError
 from curvesim.pipelines.templates import SimPool
-from curvesim.utils import cache
+from curvesim.utils import cache, override
 
 
 class SimStableswapBase(SimPool):
@@ -53,3 +53,8 @@ class SimStableswapBase(SimPool):
     @abstractmethod
     def test_trade(self, coin_in, coin_out, factor):
         raise NotImplementedError
+
+    @property
+    @override
+    def number_of_coins(self):
+        return self.n_total  # pylint: disable=no-member

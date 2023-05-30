@@ -51,6 +51,7 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
         We count only volume when one coin is the primary stable.
         """
         i, j = self.get_coin_indices(coin_in, coin_out)
+        size = int(size) * 10**18 // self._precisions[i]
 
         out_amount, fee = self.exchange_underlying(i, j, size)
 
@@ -94,3 +95,31 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
             price = self._dydx(i, j, xp_post, use_fee=use_fee)
 
         return price
+
+    def get_in_amount(self, coin_in, coin_out, out_balance_perc):
+        i, j = self.get_coin_indices(coin_in, coin_out)
+
+        max_coin = self.max_coin
+
+        xp_meta = self._xp_mem(self.balances, self.rates)
+        xp_base = self._xp_mem(self.basepool.balances, self.basepool.rates)
+
+        base_i = i - max_coin
+        base_j = j - max_coin
+        meta_i = max_coin
+        meta_j = max_coin
+        if base_i < 0:
+            meta_i = i
+        if base_j < 0:
+            meta_j = j
+
+        if base_i < 0 or base_j < 0:
+            xp_j = int(xp_meta[meta_j] * out_balance_perc)
+            in_amount = self.get_y(meta_j, meta_i, xp_j, xp_meta)
+            in_amount -= xp_meta[meta_i]
+        else:
+            xp_j = int(xp_base[base_j] * out_balance_perc)
+            in_amount = self.basepool.get_y(base_j, base_i, xp_j, xp_base)
+            in_amount -= xp_base[base_i]
+
+        return in_amount
