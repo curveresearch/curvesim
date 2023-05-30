@@ -277,7 +277,10 @@ def get_arb_trades(pool, get_bounds, prices):
             trades.append((0, (i, j), prices[k]))
             continue
 
-        bounds = get_bounds(in_index, out_index)
+        # bounds = get_bounds(in_index, out_index)
+        out_amount = int(pool._xp()[out_index] * 0.99)
+        high = pool.get_in_amount(in_index, out_index, out_amount)
+        bounds = (0, high)
         try:
             res = root_scalar(
                 post_trade_price_error,
