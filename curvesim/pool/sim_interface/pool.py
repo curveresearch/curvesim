@@ -50,7 +50,7 @@ class SimCurvePool(SimStableswapBase, CurvePool):
         i, j = self.get_coin_indices(coin_in, coin_out)
 
         xp = self._xp()
-        xp_j = int(xp[j] * out_perc)
+        xp_j = int(xp[j] * (1 - out_perc))
 
         in_amount = self.get_y(j, i, xp_j, xp) - xp[i]
         return in_amount

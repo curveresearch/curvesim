@@ -194,13 +194,6 @@ def get_arb_trades(pool, prices):
 
         return price - price_target
 
-    xp = pool._xp()  # pylint: disable=protected-access
-
-    def get_trade_bounds(i, j):
-        xp_j = int(xp[j] * 0.01)
-        high = pool.get_y(j, i, xp_j, xp) - xp[i]
-        return high
-
     trades = []
 
     for k, pair in enumerate(index_combos):
@@ -218,10 +211,7 @@ def get_arb_trades(pool, prices):
             trades.append((0, (i, j), prices[k]))
             continue
 
-        high = pool.get_in_amount(in_index, out_index, out_perc=0.01)
-        # _high = get_trade_bounds(in_index, out_index)
-        # diff = abs(high - _high)
-        # assert diff < 10**9, f"{high} != {_high}, diff={diff}"
+        high = pool.get_in_amount(in_index, out_index, out_perc=0.99)
         bounds = (0, high)
         try:
             res = root_scalar(
