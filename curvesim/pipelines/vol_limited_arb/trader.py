@@ -5,7 +5,6 @@ from scipy.optimize import least_squares, root_scalar
 
 from curvesim.logging import get_logger
 from curvesim.pipelines.templates.trader import Trader
-from curvesim.pool.sim_interface import SimCurveMetaPool, SimCurvePool, SimCurveRaiPool
 
 logger = get_logger(__name__)
 
@@ -46,64 +45,6 @@ class VolumeLimitedArbitrageur(Trader):
         return trades, errors, res
 
 
-def make_error_fns(pool):  # noqa: C901
-    """
-    Returns the pricing error functions needed for determining the
-    optimal arbitrage in simulations.
-
-    Note
-    ----
-    For performance, does not support string coin-names.
-    """
-    xp = pool._xp_mem(pool.balances, pool.rates)
-
-    def get_trade_bounds(i, j):
-        xp_j = int(xp[j] * 0.01)
-        high = pool.get_y(j, i, xp_j, xp) - xp[i]
-        return (0, high)
-
-    return get_trade_bounds
-
-
-def make_error_fns_for_metapool(pool):  # noqa: C901
-    # Note: for performance, does not support string coin-names
-
-    max_coin = pool.max_coin
-
-    xp_meta = pool._xp_mem(pool.balances, pool.rates)
-    xp_base = pool._xp_mem(pool.basepool.balances, pool.basepool.rates)
-
-    def get_trade_bounds(i, j):
-        base_i = i - max_coin
-        base_j = j - max_coin
-        meta_i = max_coin
-        meta_j = max_coin
-        if base_i < 0:
-            meta_i = i
-        if base_j < 0:
-            meta_j = j
-
-        if base_i < 0 or base_j < 0:
-            xp_j = int(xp_meta[meta_j] * 0.01)
-            high = pool.get_y(meta_j, meta_i, xp_j, xp_meta)
-            high -= xp_meta[meta_i]
-        else:
-            xp_j = int(xp_base[base_j] * 0.01)
-            high = pool.basepool.get_y(base_j, base_i, xp_j, xp_base)
-            high -= xp_base[base_i]
-
-        return (0, high)
-
-    return get_trade_bounds
-
-
-pool_type_to_error_functions = {
-    SimCurvePool: make_error_fns,
-    SimCurveMetaPool: make_error_fns_for_metapool,
-    SimCurveRaiPool: make_error_fns_for_metapool,
-}
-
-
 def multipair_optimal_arbitrage(pool, prices, limits):  # noqa: C901
     """
     Computes trades to optimally arbitrage the pool, constrained by volume limits.
@@ -132,10 +73,8 @@ def multipair_optimal_arbitrage(pool, prices, limits):  # noqa: C901
         Results object from the numerical optimizer.
 
     """
-    get_bounds = pool_type_to_error_functions[type(pool)](pool)
     init_trades = get_arb_trades(
         pool,
-        get_bounds,
         prices,
     )
 
@@ -214,7 +153,7 @@ def multipair_optimal_arbitrage(pool, prices, limits):  # noqa: C901
     return trades, errors, res
 
 
-def get_arb_trades(pool, get_bounds, prices):
+def get_arb_trades(pool, prices):
     """
     Returns triples of "trades", one for each coin pair in `combo`.
 
@@ -225,10 +164,6 @@ def get_arb_trades(pool, get_bounds, prices):
     ----------
     pool: SimPool
         Pool to arbitrage on
-
-    get_bounds : callable
-        Function that returns bounds on trade size hypotheses for
-        any token pairs (i,j).
 
     error_function: callable
         Error function that returns the difference between pool price and
@@ -276,8 +211,8 @@ def get_arb_trades(pool, get_bounds, prices):
             trades.append((0, (i, j), prices[k]))
             continue
 
-        # bounds = get_bounds(in_index, out_index)
-        out_amount = int(pool._xp()[out_index] * 0.99)
+        xp = pool._xp()  # pylint: disable=protected-access
+        out_amount = int(xp[out_index] * 0.99)
         high = pool.get_in_amount(in_index, out_index, out_amount)
         bounds = (0, high)
         try:
