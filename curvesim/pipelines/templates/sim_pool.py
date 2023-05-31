@@ -101,3 +101,26 @@ class SimPool(ABC):
             The number of coins you can swap between.
         """
         raise NotImplementedError
+
+    @abstractmethod
+    def get_in_amount(self, coin_in, coin_out, out_balance_perc):
+        """
+        Calculate the swap amount of the "in" coin needed to leave
+        the specified percentage of the "out" coin.
+
+        Parameters
+        ----------
+        coin_in : str, int
+            ID of "in" coin.
+        coin_out : str, int
+            ID of "out" coin.
+        out_balance_perc : float
+            Percentage of the "out" coin balance that should remain
+            after doing the swap.
+
+        Returns
+        -------
+        int
+            The amount of "in" coin needed.
+        """
+        raise NotImplementedError
