@@ -440,7 +440,7 @@ def test_tweak_price(
 
     old_virtual_price = pool.virtual_price
 
-    xp[0] = xp[0] * 105 // 100
+    xp[0] = xp[0] * 115 // 100
 
     # omitting price will calculate the spot price in `tweak_price`
     pool._tweak_price(A, gamma, xp, 0, 0)
