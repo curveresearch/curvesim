@@ -47,6 +47,7 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
         Note all quantities are in D units.
         """
         i, j = self.get_coin_indices(coin_in, coin_out)
+        size = int(size)
         out_amount, fee = self.exchange_underlying(i, j, size)
         return out_amount, fee
 
