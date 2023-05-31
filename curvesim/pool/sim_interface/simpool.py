@@ -1,7 +1,7 @@
 """Base SimPool implementation for Curve stableswap pools, both regular and meta."""
 from abc import abstractmethod
 
-from curvesim.exceptions import CurvesimValueError
+from curvesim.exceptions import CurvesimValueError, SimPoolError
 from curvesim.pipelines.templates import SimPool
 from curvesim.utils import cache, override
 
@@ -14,6 +14,12 @@ class SimStableswapBase(SimPool):
     - translate from coin names to Curve pool indices
     - compute liquidity density of a coin pair and price-depth
     """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for r in self.rates:  # pylint: disable=no-member
+            if r != 10**18:
+                raise SimPoolError("SimPool must have 18 decimals for each coin.")
 
     @abstractmethod
     def _init_coin_indices(self):
