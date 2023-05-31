@@ -58,3 +58,7 @@ class SimStableswapBase(SimPool):
     @override
     def number_of_coins(self):
         return self.n_total  # pylint: disable=no-member
+
+    @abstractmethod
+    def get_in_amount(self, coin_in, coin_out, out_balance_perc):
+        raise NotImplementedError
