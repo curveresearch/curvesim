@@ -65,6 +65,11 @@ class SimPool(ABC):
         Coin IDs should be strings but as a legacy feature integer indices
         corresponding to the pool implementation are allowed (caveat lector).
 
+        Note that all amounts are normalized to be in the same units as
+        pool value, e.g. for Curve Stableswap pools, the same units as `D`.
+        This simplifies cross-token comparisons and creation of metrics.
+
+
         Parameters
         ----------
         coin_in : str, int
@@ -78,10 +83,6 @@ class SimPool(ABC):
         -------
         (int, int, int)
             (amount of coin `j` received, trading fee, volume)
-
-            Note that coin amounts and fee are in native token units but `volume`
-            is normalized to be in the same units as pool value.  This enables
-            cross-token comparisons and totaling of volume.
         """
         raise NotImplementedError
 
