@@ -81,6 +81,10 @@ class FakeSimStableswap(SimStableswapBase, SnapshotMixin):
         volume = 10**18
         return out_amount, fee, volume
 
+    @override
+    def get_in_amount(self, coin_in, coin_out, out_balance_perc):
+        return 0
+
 
 # pool_type_to_error_functions[FakeSimStableswap] = make_error_fns
 
