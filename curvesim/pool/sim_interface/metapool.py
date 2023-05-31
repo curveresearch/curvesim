@@ -5,11 +5,6 @@ from curvesim.utils import override
 
 
 class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
-    @property
-    def _precisions(self):
-        p_base = self.basepool.rates[:]
-        return [self.rate_multiplier, *p_base]
-
     @override
     def _init_coin_indices(self):
         meta_coin_names = self.coin_names[:-1]
@@ -47,21 +42,13 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
     def trade(self, coin_in, coin_out, size):
         """
         Trade between two coins in a pool.
-        Coin index runs over basepool underlyers.
-        We count only volume when one coin is the primary stable.
+        Coins run over basepool underlyers.
+
+        Note all quantities are in D units.
         """
         i, j = self.get_coin_indices(coin_in, coin_out)
-        size = int(size) * 10**18 // self._precisions[i]
-
         out_amount, fee = self.exchange_underlying(i, j, size)
-
-        max_coin = self.max_coin
-        if i < max_coin or j < max_coin:
-            volume = size * self._precisions[i] // 10**18  # in D units
-        else:
-            volume = 0
-
-        return out_amount, fee, volume
+        return out_amount, fee
 
     @override
     def test_trade(self, coin_in, coin_out, factor, use_fee=True):

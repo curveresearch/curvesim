@@ -5,10 +5,6 @@ from .simpool import SimStableswapBase
 
 
 class SimCurvePool(SimStableswapBase, CurvePool):
-    @property
-    def _precisions(self):
-        return self.rates[:]
-
     @override
     def _init_coin_indices(self):
         return {name: i for i, name in enumerate(self.coin_names)}
@@ -20,14 +16,12 @@ class SimCurvePool(SimStableswapBase, CurvePool):
 
     @override
     def trade(self, coin_in, coin_out, size):
+        """
+        Note all quantities are in D units.
+        """
         i, j = self.get_coin_indices(coin_in, coin_out)
-        # volume is always in D units
-        volume = size
-        # convert from D units to native token units
-        size = int(size) * 10**18 // self._precisions[i]
-
         out_amount, fee = self.exchange(i, j, size)
-        return out_amount, fee, volume
+        return out_amount, fee
 
     @override
     def test_trade(self, coin_in, coin_out, factor, use_fee=True):
