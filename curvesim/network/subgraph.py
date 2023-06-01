@@ -4,6 +4,7 @@ Network connector for subgraphs
 
 from asyncio import gather
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 
 import pandas as pd
 from eth_utils import to_checksum_address
@@ -359,9 +360,9 @@ async def pool_snapshot(address, chain):
             "pool_type": r["poolType"],
             "params": {
                 "A": int(r["A"]),
-                "fee": int(float(r["fee"]) * 10**10),
+                "fee": int(Decimal(r["fee"]) * 10**10),
                 "fee_mul": fee_mul,
-                "admin_fee": int(float(r["adminFee"]) * 10**10),
+                "admin_fee": int(Decimal(r["adminFee"]) * 10**10),
             },
             "coins": coins,
             "reserves": {
@@ -395,7 +396,7 @@ async def pool_snapshot(address, chain):
                 "price_oracle": int(r["priceOracle"]),
                 "last_prices": int(r["lastPrices"]),
                 "last_prices_timestamp": int(r["lastPricesTimestamp"]),
-                "admin_fee": int(float(r["adminFee"]) * 10**10),
+                "admin_fee": int(Decimal(r["adminFee"]) * 10**10),
                 "xcp_profit": int(r["xcpProfit"]),
                 "xcp_profit_a": int(r["xcpProfitA"]),
             },
