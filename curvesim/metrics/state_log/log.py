@@ -34,7 +34,10 @@ class StateLog:
 
         df = DataFrame(self.state_per_trade)
         state_per_trade = {col: DataFrame(df[col].to_list()) for col in df}
-        return {**self.state_per_run, **state_per_trade}
+        return {
+            "pool_parameters": DataFrame(self.state_per_run, index=[0]),
+            **state_per_trade,
+        }
 
     def compute_metrics(self):
         """Computes metrics from the accumulated log data."""
@@ -44,7 +47,7 @@ class StateLog:
         data_per_trade, summary_data = tuple(zip(*metric_data))  # transpose tuple list
 
         return (
-            DataFrame(self.state_per_run, index=[0]),
+            state_logs["pool_parameters"],
             concat(data_per_trade, axis=1),
             concat(summary_data, axis=1),
         )

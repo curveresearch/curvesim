@@ -1,13 +1,11 @@
-Advanced users may wish to create their own metrics to be recorded during a
-simulation. This can be achieved by creating a new Metric object in
-:code:`curvesim.metrics.metrics`.
-
 Each metric's :code:`config` property specifies how to compute, summarize,
-and/or plot recorded data. Users who intend to create their own metric objects
-should familiarize themselves with the formatting specifications.
+and/or plot recorded data. The formatting specifications are outlined below.
+
 
 Config Specification
-^^^^^^^^^^^^^^^^^^^^
+.....................
+
+.. _config-spec:
 
 The general :code:`config` specification is:
 
@@ -49,7 +47,9 @@ The general :code:`config` specification is:
 
 
 Pool Config Specification
-^^^^^^^^^^^^^^^^^^^^^^^^^
+.........................
+
+.. _pool-config-spec:
 
 For :class:`PoolMetric<curvesim.metrics.base.PoolMetric>` subclasses, a
 :code:`pool_config` property must be specified to map pool-types to individual configs
@@ -71,15 +71,16 @@ in the above format:
 
 
 Functions
-^^^^^^^^^
+.........
+
+.. _function-config:
 
 Functions used to compute metrics and/or summary statistics. Includes two sub-keys:
 
-- :python:`config["functions"]["metrics"]`:
-    A single function that computes all sub-metrics (in the same order specified
-    throughout the config).
+- :python:`config["functions"]["metrics"]` *(required)*:
+    A single function that computes all sub-metrics and returns them in a single DataFrame
 
-- :python:`config["functions"]["summary"]`:
+- :python:`config["functions"]["summary"]` *(optional)*:
     A dict mapping sub-metric names to functions for computing summary statistics. Functions can be specified using either:
 
     * a string referring to a pandas.DataFrame method (e.g., "sum", "mean", "median")
@@ -123,8 +124,9 @@ Or, if we sought to rename the summary statistics:
     "pool_balance": {"Median": "median", "Minimum": "min"}
 
 
-Plot
-^^^^
+Plot *(optional)*
+..................
+.. _plot-config:
 
 Plotting specifications for metrics and/or summary statistics.
 
@@ -213,4 +215,4 @@ For example, in the :class:`ArbMetrics<curvesim.metrics.metrics.ArbMetrics>`
     },
 
 
-In the above example, the :code:`"encoding"` key would be passed to :python:`altair.Chart` as a keyword argument after the sub-dict :code:`"x"` was passed to :python:`altair.X`.
+In the above example, the :code:`"encoding"` key would be passed to :python:`altair.Chart` as a keyword argument after the sub-dict :code:`"x"` was passed to :python:`altair.X` (i.e., the relevant Altair class constructor).
