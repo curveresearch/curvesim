@@ -8,7 +8,10 @@
 
 
 # Curvesim
-Curvesim simulates Curve finance pools with optimal arbitrageurs trading against them. It's primary use is to determine optimal amplitude (A) and fee parameters given historical price and volume feeds.
+Curvesim simulates Curve pools with optimal arbitrageurs trading against them to determine reasonable risk and reward parameters, such as amplitude (A) and fee, given historical price and volume feeds.
+
+Users can re-use simulation components to simulate custom strategies and generate custom metrics.  Curve-specific objects such as pools enable simpler integration with Curve pools for various analytics purposes.
+
 
 #### Dependencies:
 The maintainers use Python 3.8 or above, but 3.11 is not yet supported.  The code is likely fine for 3.6 and 3.7 but not officially supported.
@@ -27,7 +30,7 @@ Portions of the codebase are authorized derivatives of code owned by Curve.fi (S
 ## Basic Use: Autosim
 The autosim() function simulates existing Curve pools with a range of A and/or fee parameters. The function fetches pool properties (e.g., current pool size) and 2 months of price/volume data, runs multiple simulations in parallel, and returns a results object that can be introspected or generate charts.
 
-Curve pools from any chain supported by the [Convex Community Subgraphs](https://thegraph.com/hosted-service/subgraph/convex-community/volume-mainnet) can be simulated directly by inputting the pool's address or symbol. For factory pools, the pool and LP token use the same symbol. For earlier pools, we use the LP token symbol.
+Curve pools from any chain supported by the [Convex Community Subgraphs](https://thegraph.com/hosted-service/subgraph/convex-community/volume-mainnet) can be simulated directly by inputting the pool's address.
 
 ### Example:
 To simulate 3pool with the default configuration:
@@ -139,7 +142,7 @@ res = curvesim.autosim('0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7', test=True)
 The following parameters are automatically specified by autosim(), but can be overridden with keyword arguments:
 * **D**: total deposit size; default: fetched from on-chain data
 * **vol_mult**: multiplied by market volume to produce trade size limits; default: computed from Curve Subraph data (see Volume Limits for details)
-* **feemul**: fee multiplier used in dynamic fee pools; default: specified in poolDF_\*.csv
+* **feemul**: fee multiplier used in dynamic fee pools
 
 ```python
 import curvesim
@@ -171,7 +174,7 @@ In some cases, it may be helpful to limit trade volume differently. In particula
 We reccomend using the default vol_mode 1 in most cases. However, if that returns noisy/uninterpretable results, it may be worth trying mode 2 (for normal pools) or mode 3 (for meta-pools).
 
 ### Data Sources
-The "src" argument can be used to choose between 3 different data sources:
+The "src" argument can be used to choose between two different data sources:
 * **src = "coingecko"**: CoinGecko API (free); default
 * **src = "local"**: local data stored in the "data" folder
 
