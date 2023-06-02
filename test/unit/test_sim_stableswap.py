@@ -47,10 +47,13 @@ class FakeSimStableswap(SimStableswapBase, SnapshotMixin):
     snapshot_class = CurvePoolBalanceSnapshot
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        # setup the pool attributes before initializing `SimStableSwapBase`
         self.n_total = 3
         self.balances = [529818 * 10**18, 760033 * 10**18, 434901 * 10**18]
         self.admin_balances = [0, 0, 0]
+        self.rates = [10**18] * 3
+
+        super().__init__(*args, **kwargs)
 
     @override
     def _init_coin_indices(self):
