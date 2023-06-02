@@ -208,14 +208,15 @@ your metric function (i.e., for each column in the returned DataFrame).
 
 If you specify a custom summary function, it should take the column of 
 per-timestamp values for your sub-metric as an argument and return a single 
-value. For example, the :class:`PoolValue` metric takes a pandas.Series as input, 
+value. For example, the :class:`PoolValue` metric takes a pandas.DataFrame as input, 
 and returns a single value which summarizes each run::
 
-    def compute_annualized_returns(self, data):
-        """Computes annualized returns from a series of pool values."""
-        log_returns = log(data).diff()  
-        year_mult = 60 / self._freq * 24 * 365
-        return exp(log_returns.mean() * year_mult) - 1
+        def compute_annualized_returns(self, data):
+            """Computes annualized returns from a series of pool values."""
+            year_multipliers = timedelta64(1, "Y") / data.index.to_series().diff()
+            log_returns = log(data).diff()
+
+            return exp((log_returns * year_multipliers).mean()) - 1
 
 
 
