@@ -98,9 +98,9 @@ def sim_stableswap():
     return FakeSimStableswap()
 
 
-def test_sim_stableswap_init(sim_stableswap):
-    """Test __init__"""
-    assert sim_stableswap.n_total == 3
+def test_number_of_coins(sim_stableswap):
+    """Test `number_of_coins`"""
+    assert sim_stableswap.number_of_coins == 3
 
 
 def test_sim_stableswap_coin_indices(sim_stableswap):
