@@ -22,7 +22,7 @@ class SimCurvePool(SimStableswapBase, CurvePool):
         i, j = self.get_coin_indices(coin_in, coin_out)
         size = int(size)
         out_amount, fee = self.exchange(i, j, size)
-        return out_amount, fee
+        return out_amount, fee, size
 
     @override
     def test_trade(self, coin_in, coin_out, factor, use_fee=True):

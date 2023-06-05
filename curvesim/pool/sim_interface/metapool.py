@@ -49,7 +49,14 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
         i, j = self.get_coin_indices(coin_in, coin_out)
         size = int(size)
         out_amount, fee = self.exchange_underlying(i, j, size)
-        return out_amount, fee
+
+        max_coin = self.max_coin
+        if i < max_coin or j < max_coin:
+            volume = size
+        else:
+            volume = 0
+
+        return out_amount, fee, volume
 
     @override
     def test_trade(self, coin_in, coin_out, factor, use_fee=True):

@@ -65,14 +65,23 @@ class Trader(ABC):
         -------
         trades_done: list of tuples
             Trades executed, formatted as (coin_in, coin_out, amount_in, amount_out).
+
+        volume: int
+            Total volume of trades in 18 decimal precision.
         """
+        if len(trades) == 0:
+            return [], 0
+
+        total_volume = 0
         trades_done = []
         for trade in trades:
             i, j, dx = trade
-            dy, fee = self.pool.trade(i, j, dx)
-            trades_done.append((i, j, dx, dy, fee))
+            dy, fee, volume = self.pool.trade(i, j, dx)
 
-        return trades_done
+            trades_done.append((i, j, dx, dy, fee))
+            total_volume += volume
+
+        return trades_done, total_volume
 
     def process_time_sample(self, *args):
         """
@@ -83,6 +92,5 @@ class Trader(ABC):
         :meth:`~curvesim.pipelines.templates.Strategy._get_trader_inputs`.
         """
         trades, price_errors, _ = self.compute_trades(*args)
-        trades_done = self.do_trades(trades)
-        volume = sum(t[2] for t in trades_done)
+        trades_done, volume = self.do_trades(trades)
         return TradeData(trades_done, volume, price_errors)
