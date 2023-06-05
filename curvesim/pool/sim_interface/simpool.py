@@ -17,7 +17,21 @@ class SimStableswapBase(SimPool):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for r in self.rates:  # pylint: disable=no-member
+
+        # The rates check has a couple special cases:
+        # 1. For metapools, we need to use the basepool rates
+        #    instead of the virtual price for the basepool.
+        # 2. If `rate_multiplier` is passed as a kwarg, this will
+        #    likely be some price, which we should skip.
+        if hasattr(self, "rate_multiplier"):
+            rates = [self.rate_multiplier] + self.basepool.rates
+        else:
+            rates = self.rates  # pylint: disable=no-member
+
+        if "rate_multiplier" in kwargs:
+            rates = rates[1:]
+
+        for r in rates:
             if r != 10**18:
                 raise SimPoolError("SimPool must have 18 decimals for each coin.")
 
