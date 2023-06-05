@@ -66,9 +66,8 @@ class Trader(ABC):
         trades_done: list of tuples
             Trades executed, formatted as (coin_in, coin_out, amount_in, amount_out).
 
-        volume : int
+        volume: int
             Total volume of trades in 18 decimal precision.
-
         """
         if len(trades) == 0:
             return [], 0
@@ -78,8 +77,8 @@ class Trader(ABC):
         for trade in trades:
             i, j, dx = trade
             dy, fee, volume = self.pool.trade(i, j, dx)
-            trades_done.append((i, j, dx, dy, fee))
 
+            trades_done.append((i, j, dx, dy, fee))
             total_volume += volume
 
         return trades_done, total_volume

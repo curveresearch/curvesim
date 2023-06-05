@@ -57,3 +57,7 @@ class PlotError(CurvesimException):
 
 class NetworkError(CurvesimException):
     """Error for network subpackage."""
+
+
+class SimPoolError(CurvesimException):
+    """Error in a SimPool operation."""

@@ -1,7 +1,7 @@
 """Base SimPool implementation for Curve stableswap pools, both regular and meta."""
 from abc import abstractmethod
 
-from curvesim.exceptions import CurvesimValueError
+from curvesim.exceptions import CurvesimValueError, SimPoolError
 from curvesim.pipelines.templates import SimPool
 from curvesim.utils import cache, override
 
@@ -14,6 +14,26 @@ class SimStableswapBase(SimPool):
     - translate from coin names to Curve pool indices
     - compute liquidity density of a coin pair and price-depth
     """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # The rates check has a couple special cases:
+        # 1. For metapools, we need to use the basepool rates
+        #    instead of the virtual price for the basepool.
+        # 2. If `rate_multiplier` is passed as a kwarg, this will
+        #    likely be some price, which we should skip.
+        if hasattr(self, "rate_multiplier"):
+            rates = [self.rate_multiplier] + self.basepool.rates
+        else:
+            rates = self.rates  # pylint: disable=no-member
+
+        if "rate_multiplier" in kwargs:
+            rates = rates[1:]
+
+        for r in rates:
+            if r != 10**18:
+                raise SimPoolError("SimPool must have 18 decimals for each coin.")
 
     @abstractmethod
     def _init_coin_indices(self):
@@ -58,3 +78,7 @@ class SimStableswapBase(SimPool):
     @override
     def number_of_coins(self):
         return self.n_total  # pylint: disable=no-member
+
+    @abstractmethod
+    def get_in_amount(self, coin_in, coin_out, out_balance_perc):
+        raise NotImplementedError
