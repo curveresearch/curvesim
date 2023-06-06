@@ -120,7 +120,9 @@ def pipeline(
     coins = pool_metadata.coins
 
     param_sampler = Grid(pool, variable_params, fixed_params=fixed_params)
-    price_sampler = PriceVolume(coins, days=days, data_dir=data_dir, src=src, end=end)
+    price_sampler = PriceVolume(
+        coins, pool.chain, days=days, data_dir=data_dir, src=src, end=end
+    )
     if vol_mult is None:
         total_pool_volume = pool_data_cache.volume
         total_market_volume = price_sampler.total_volumes()

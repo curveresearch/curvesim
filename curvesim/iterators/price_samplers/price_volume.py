@@ -14,7 +14,9 @@ class PriceVolume:
     An iterator that retrieves price/volume and iterates over timepoints in the data.
     """
 
-    def __init__(self, coins, days=60, data_dir="data", src="coingecko", end=None):
+    def __init__(
+        self, coins, chain, days=60, data_dir="data", src="coingecko", end=None
+    ):
         """
         Retrieves price/volume data and prepares it for iteration.
 
@@ -33,7 +35,9 @@ class PriceVolume:
             Identifies pricing source: coingecko or local.
 
         """
-        prices, volumes, _ = get(coins, days=days, data_dir=data_dir, src=src, end=end)
+        prices, volumes, _ = get(
+            coins, chain=chain, days=days, data_dir=data_dir, src=src, end=end
+        )
 
         self.prices = prices
         self.volumes = volumes

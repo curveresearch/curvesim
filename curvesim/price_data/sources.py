@@ -29,9 +29,9 @@ def nomics(coins, days=60, data_dir="data", end=None):
     return prices, volumes, pzero
 
 
-def coingecko(coins, days=60):
+def coingecko(coins, chain="mainnet", days=60):
     logger.info("Fetching CoinGecko price data...")
-    prices, volumes = _coingecko.pool_prices(coins, "usd", days)
+    prices, volumes = _coingecko.pool_prices(coins, "usd", days, chain=chain)
     pzero = 0
 
     return prices, volumes, pzero

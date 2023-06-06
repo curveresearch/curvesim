@@ -12,7 +12,7 @@ from curvesim.exceptions import NetworkError
 from .sources import coingecko, local
 
 
-def get(coins, days=60, data_dir="data", src="coingecko", end=None):
+def get(coins, chain="mainnet", days=60, data_dir="data", src="coingecko", end=None):
     """
     Pull price and volume data for given coins.
 
@@ -46,7 +46,7 @@ def get(coins, days=60, data_dir="data", src="coingecko", end=None):
 
     """
     if src == "coingecko":
-        prices, volumes, pzero = coingecko(coins, days=days)
+        prices, volumes, pzero = coingecko(coins, chain=chain, days=days)
 
     elif src == "nomics":
         raise NetworkError("Nomics data is no longer supported.")
