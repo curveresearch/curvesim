@@ -130,7 +130,7 @@ async def contract(address, abi=None):
     return c
 
 
-async def _underlying_coin_address(address):
+async def _underlying_coin_info(address):
     c = await contract(address)
 
     fns = ["upgradeToAndCall", "underlying", "token"]
@@ -149,12 +149,14 @@ async def _underlying_coin_address(address):
         c = await contract(address, abi)
         fn = "UNDERLYING_ASSET_ADDRESS"
 
-    address = await c.functions[fn]().call()
+    address, decimals = await gather(
+        c.functions[fn]().call(), c.functions.decimals().call()
+    )
 
-    return address
+    return address, decimals
 
 
-async def underlying_coin_addresses(addresses):
+async def underlying_coin_info(addresses):
     """
     Async function to get the underlying coin addresses for lending tokens
     (aTokens, cTokens, and yTokens).
@@ -171,20 +173,21 @@ async def underlying_coin_addresses(addresses):
 
     """
     if isinstance(addresses, str):
-        addrs = await _underlying_coin_address(addresses)
+        addrs, decimals = await _underlying_coin_info(addresses)
 
     else:
         tasks = []
         for address in addresses:
-            tasks.append(_underlying_coin_address(address))
+            tasks.append(_underlying_coin_info(address))
 
-        addrs = await gather(*tasks)
+        response = await gather(*tasks)
+        addrs, decimals = map(list, zip(*response))
 
-    return addrs
+    return addrs, decimals
 
 
 # Sync
 explorer_sync = sync(explorer)
 ABI_sync = sync(ABI)
 contract_sync = sync(contract)
-underlying_coin_addresses_sync = sync(underlying_coin_addresses)
+underlying_coin_info_sync = sync(underlying_coin_info)

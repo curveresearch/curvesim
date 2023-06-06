@@ -79,7 +79,7 @@ async def _pool_prices(coins, vs_currency, days):
     return qprices, qvolumes
 
 
-def pool_prices(coins, vs_currency, days):
+def pool_prices(coins, vs_currency, days, chain="mainnet"):
     """
     Pull price and volume data for given coins, quoted in given
     quote currency for given days.
@@ -99,7 +99,7 @@ def pool_prices(coins, vs_currency, days):
         prices Series and volumes Series
     """
     # Get data
-    coins = coin_ids_from_addresses_sync(coins, "mainnet")
+    coins = coin_ids_from_addresses_sync(coins, chain)
     qprices, qvolumes = _pool_prices_sync(coins, vs_currency, days)
 
     # Compute prices by coin pairs
