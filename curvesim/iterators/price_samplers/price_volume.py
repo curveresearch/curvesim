@@ -5,6 +5,7 @@ from pandas import Series
 
 from curvesim.logging import get_logger
 from curvesim.price_data import get
+from curvesim.utils import get_pairs
 
 logger = get_logger(__name__)
 
@@ -14,16 +15,15 @@ class PriceVolume:
     An iterator that retrieves price/volume and iterates over timepoints in the data.
     """
 
-    def __init__(
-        self, coins, chain, days=60, data_dir="data", src="coingecko", end=None
-    ):
+    def __init__(self, assets, days=60, data_dir="data", src="coingecko", end=None):
         """
         Retrieves price/volume data and prepares it for iteration.
 
         Parameters
         ----------
-        coins: list of str
-            Addresses of coins in the pool.
+        assets: SimAssets
+            Object giving the properties of the assets for simulation
+            (e.g., symbols, addresses, chain)
 
         days: int, defaults to 60
             Number of days to pull data for.
@@ -36,11 +36,18 @@ class PriceVolume:
 
         """
         prices, volumes, _ = get(
-            coins, chain=chain, days=days, data_dir=data_dir, src=src, end=end
+            assets.addresses,
+            chain=assets.chain,
+            days=days,
+            data_dir=data_dir,
+            src=src,
+            end=end,
         )
 
-        self.prices = prices
-        self.volumes = volumes
+        coin_pairs = get_pairs(assets.symbols)
+
+        self.prices = prices.set_axis(coin_pairs, axis="columns")
+        self.volumes = volumes.set_axis(coin_pairs, axis="columns")
 
     def __iter__(self):
         """
@@ -58,7 +65,7 @@ class PriceVolume:
         """
         for prices, volumes in zip(self.prices.iterrows(), self.volumes.iterrows()):
             assert prices[0] == volumes[0], "Price/volume timestamps did not match"
-            yield PriceVolumeSample(prices[0], prices[1].values, volumes[1].values)
+            yield PriceVolumeSample(prices[0], prices[1], volumes[1])
 
     def total_volumes(self):
         """

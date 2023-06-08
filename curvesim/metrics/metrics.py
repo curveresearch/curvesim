@@ -92,7 +92,7 @@ class ArbMetrics(PricingMetric):
 
     def __init__(self, pool, **kwargs):
         coin_names = list(pool.coin_indices.keys())
-        super().__init__(coin_names, pool.n_total)
+        super().__init__(coin_names)
 
     def compute_arb_metrics(self, price_sample, trade_data, **kwargs):
         """Computes all metrics for each timestamp in an individual run."""
@@ -113,17 +113,17 @@ class ArbMetrics(PricingMetric):
         a single timestamp) in units of the chosen numeraire, `self.numeraire`.
         """
         get_price = self.get_market_price
-        num_idx = self.numeraire_idx
+        numeraire = self.numeraire
         prices = data_row.prices
 
         arb_profit = 0
         pool_profit = 0
         for trade in data_row.trades:
-            i, j, dx, dy, fee = trade
-            arb = dy - dx * get_price(i, j, prices)
+            coin_in, coin_out, dx, dy, fee = trade
+            arb = dy - dx * get_price(coin_in, coin_out, prices)
 
-            if j != num_idx:
-                price = get_price(j, num_idx, prices)
+            if coin_out != numeraire:
+                price = get_price(coin_out, numeraire, prices)
                 arb = arb * price
                 fee = fee * price
 
@@ -270,7 +270,12 @@ class PoolValue(PoolPricingMetric):
         Computes all metrics for each timestamp in an individual run.
         Used for non-meta stableswap pools.
         """
-        reserves = DataFrame(pool_state.balances.to_list())
+        reserves = DataFrame(
+            pool_state.balances.to_list(),
+            index=pool_state.index,
+            columns=self._pool.coin_names,
+        )
+
         prices = DataFrame(price_sample.prices.to_list())
 
         pool_value = self._get_value_from_prices(reserves / 10**18, prices)
@@ -287,15 +292,26 @@ class PoolValue(PoolPricingMetric):
         Computes all metrics for each timestamp in an individual run.
         Used for stableswap metapools.
         """
-        meta_reserves = DataFrame(pool_state.balances.to_list())
-        base_reserves = DataFrame(pool_state.balances_base.to_list())
-        prices = DataFrame(price_sample.prices.to_list())
         max_coin = self._pool.max_coin
+        pool = self._pool
 
-        LP_token_proportion = meta_reserves[max_coin] / pool_state.tokens_base
+        meta_reserves = DataFrame(
+            pool_state.balances.to_list(),
+            index=pool_state.index,
+            columns=pool.coin_names,
+        )
+
+        base_reserves = DataFrame(
+            pool_state.balances_base.to_list(),
+            index=pool_state.index,
+            columns=pool.basepool.coin_names,
+        )
+
+        prices = DataFrame(price_sample.prices.to_list())
+
+        LP_token_proportion = meta_reserves.iloc[:, max_coin] / pool_state.tokens_base
         base_reserves = base_reserves.mul(LP_token_proportion, axis=0)
         reserves = concat([meta_reserves.iloc[:, :max_coin], base_reserves], axis=1)
-        reserves.columns = range(len(reserves.columns))
 
         pool_value = self._get_value_from_prices(reserves / 10**18, prices)
         pool_value_virtual = pool_state.apply(
@@ -312,12 +328,11 @@ class PoolValue(PoolPricingMetric):
         Can be used for any pool type.
         """
         get_price = self.get_market_price
-        num_idx = self.numeraire_idx
+        numeraire = self.numeraire
 
         value = 0
-        for i in reserves.columns:  # columns are ordered range of ints
-            value += reserves[i] * get_price(i, num_idx, prices)
-
+        for coin_name in reserves.columns:
+            value += reserves[coin_name] * get_price(coin_name, numeraire, prices)
         return value
 
     def _get_stableswap_virtual_value(self, pool_state_row):

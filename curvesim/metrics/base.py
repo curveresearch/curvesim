@@ -11,10 +11,10 @@ __all__ = [
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
 
-from pandas import DataFrame, MultiIndex
+from pandas import DataFrame, Series, MultiIndex
 
 from curvesim.exceptions import MetricError
-from curvesim.utils import cache, get_pairs, override
+from curvesim.utils import cache, override
 
 
 class MetricBase(ABC):
@@ -304,64 +304,61 @@ class PricingMixin:
     prices or values with a preferred numeraire.
     """
 
-    def __init__(self, coin_names, n_coins=None, **kwargs):
+    def __init__(self, coin_names, **kwargs):
         """
         Parameters
         ----------
         coin_names : iterable of str
             Symbols for the coins used in a simulation. A numeraire is selected from
             the specified coins.
-
-        n_coins : int, optional
-            Number of coins used in the simulation. Defaults to length of "coin_names".
-            Used to map pools' coin indices to columns of the price feed.
         """
-        n_coins = n_coins or len(coin_names)
-        idx_pairs = get_pairs(n_coins)
-        self._idx_map = {pair: i for i, pair in enumerate(idx_pairs)}
-        self.numeraire, self.numeraire_idx = get_numeraire(coin_names)
+
+        self.coin_names = coin_names
+        self.numeraire = get_numeraire(coin_names)
         super().__init__(**kwargs)
 
-    def get_market_price(self, i, j, prices):
+    def get_market_price(self, base, quote, prices):
         """
         Returns exchange rate for two coins identified by their pool indicies.
 
         Parameters
         ----------
-        i : int
-            Index of "in" coin; the "base" currency
-        j : int
-            Index of "out" coin; the "quote" currency
-        prices : list-like
-            Market prices for each pair, ordered as in
-            :python:`itertools.combinations(range(n_coins), 2)`. In the simulator
-            context, this is provided on each iteration of the :mod:`price_sampler`.
+        base : str
+            Symbol for the "in" coin; the "base" currency
+        quote : str
+            Symbol for the "out" coin; the "quote" currency
+        prices : pandas.DataFrame or pandas.Series
+            Market prices for each pair. In the simulator context, this is provided on
+            each iteration of the :mod:`price_sampler`.
 
         Returns
         -------
         float
-            The price of coin i, quoted in coin j.
+            The price of the "base" coin, quoted in the "quote" coin.
 
         """
-        if i == j:
+        try:
+            coin_pairs = getattr(prices, pandas_coin_pair_attr[type(prices)])
+        except KeyError as e:
+            raise MetricError(
+                f"Argument 'price' must be DataFrame or Series, not {type(prices)}"
+            ) from e
+
+        if base == quote:
             return 1
-        if i > j:
-            j, i = i, j
-            reciprocal = True
-        else:
-            reciprocal = False
 
-        idx = self._idx_map[(i, j)]
-        price = prices[idx]
-        if reciprocal:
-            return 1 / price
+        if (base, quote) not in coin_pairs:
+            return 1 / prices[(quote, base)]
 
-        return price
+        return prices[(base, quote)]
+
+
+pandas_coin_pair_attr = {DataFrame: "columns", Series: "index"}
 
 
 def get_numeraire(coins):
     """
-    Returns a preferred numeraire and its index based on the provided list of coins.
+    Returns a preferred numeraire from the provided list of coins.
     """
     numeraire = coins[0]
     preferred = ["USDC", "USDT", "ETH", "WETH", "CRV"]
@@ -376,7 +373,7 @@ def get_numeraire(coins):
             numeraire = coin
             break
 
-    return numeraire, coins.index(numeraire)
+    return numeraire
 
 
 class PricingMetric(PricingMixin, Metric):
@@ -384,7 +381,7 @@ class PricingMetric(PricingMixin, Metric):
     :class:`Metric` with :class:`PricingMixin` functionality.
     """
 
-    def __init__(self, coin_names, n_coins=None, **kwargs):
+    def __init__(self, coin_names, **kwargs):
         """
         Parameters
         ----------
@@ -392,11 +389,8 @@ class PricingMetric(PricingMixin, Metric):
             Symbols for the coins used in a simulation. A numeraire is selected from
             the specified coins.
 
-        n_coins : int, optional
-            Number of coins used in the simulation. Defaults to length of "coin_names".
-            Used to map pools' coin indices to columns of the price feed.
         """
-        super().__init__(coin_names, n_coins)
+        super().__init__(coin_names)
 
 
 class PoolPricingMetric(PricingMixin, PoolMetric):
@@ -414,4 +408,4 @@ class PoolPricingMetric(PricingMixin, PoolMetric):
             metric computations. Number and names of coins derived from pool metadata.
         """
         coin_names = list(pool.coin_indices)
-        super().__init__(coin_names, pool.n_total, pool=pool)
+        super().__init__(coin_names, pool=pool)

@@ -1,7 +1,6 @@
 from numpy import array, isnan
 from scipy.optimize import least_squares, root_scalar
 
-from curvesim import utils
 from curvesim.logging import get_logger
 from curvesim.pipelines.templates.trader import Trader
 
@@ -90,20 +89,17 @@ def multipair_optimal_arbitrage(pool, prices, limits):  # noqa: C901
     def post_trade_price_error_multi(dxs, price_targets, coins):
         with pool.use_snapshot_context():
             for k, pair in enumerate(coins):
-                i, j = pair
-
                 if isnan(dxs[k]):
                     dx = 0
                 else:
                     dx = int(dxs[k])
 
                 if dx > 0:
-                    pool.trade(i, j, dx)
+                    pool.trade(*pair, dx)
 
             errors = []
             for k, pair in enumerate(coins):
-                i, j = pair
-                price = pool.price(i, j, use_fee=True)
+                price = pool.price(*pair, use_fee=True)
                 errors.append(price - price_targets[k])
 
         return errors
@@ -179,51 +175,50 @@ def get_arb_trades(pool, prices):
         "coins": in token, out token
         "price_target": price target for arbing the token pair
     """
-    index_combos = utils.get_pairs(pool.number_of_coins)
 
-    def post_trade_price_error(dx, i, j, price_target):
+    def post_trade_price_error(dx, coin_in, coin_out, price_target):
         with pool.use_snapshot_context():
             if dx > 0:
-                pool.trade(i, j, dx)
-            price = pool.price(i, j, use_fee=True)
+                pool.trade(coin_in, coin_out, dx)
+            price = pool.price(coin_in, coin_out, use_fee=True)
 
         return price - price_target
 
     trades = []
 
-    for k, pair in enumerate(index_combos):
+    for pair in prices.index:
         i, j = pair
 
-        if pool.price(i, j) - prices[k] > 0:
-            price = prices[k]
-            in_index = i
-            out_index = j
-        elif pool.price(j, i) - 1 / prices[k] > 0:
-            price = 1 / prices[k]
-            in_index = j
-            out_index = i
+        if pool.price(i, j) - prices[pair] > 0:
+            price = prices[pair]
+            coin_in = i
+            coin_out = j
+        elif pool.price(j, i) - 1 / prices[pair] > 0:
+            price = 1 / prices[pair]
+            coin_in = j
+            coin_out = i
         else:
-            trades.append((0, (i, j), prices[k]))
+            trades.append((0, pair, prices[pair]))
             continue
 
-        high = pool.get_in_amount(in_index, out_index, out_balance_perc=0.01)
+        high = pool.get_in_amount(coin_in, coin_out, out_balance_perc=0.01)
         bounds = (0, high)
         try:
             res = root_scalar(
                 post_trade_price_error,
-                args=(in_index, out_index, price),
+                args=(coin_in, coin_out, price),
                 bracket=bounds,
                 method="brentq",
             )
             size = int(res.root)
         except ValueError:
-            pool_price = pool.price(in_index, out_index)
+            pool_price = pool.price(coin_in, coin_out)
             logger.error(
-                f"Opt_arb error: Pair: {(in_index, out_index)}, Pool price: {pool_price},"
+                f"Opt_arb error: Pair: {(coin_in, coin_out)}, Pool price: {pool_price},"
                 f"Target Price: {price}, Diff: {pool_price - price}"
             )
             size = 0
 
-        trades.append((size, (in_index, out_index), price))
+        trades.append((size, (coin_in, coin_out), price))
 
     return trades

@@ -13,6 +13,7 @@ from curvesim.pool import get_sim_pool
 from curvesim.pool_data.cache import PoolDataCache
 
 from .. import run_pipeline
+from ..templates import SimAssets
 from ..utils import compute_volume_multipliers
 from .strategy import VolumeLimitedStrategy
 
@@ -117,12 +118,13 @@ def pipeline(
         pool_data_cache = PoolDataCache(pool_metadata, days=days, end=end)
 
     pool = get_sim_pool(pool_metadata, pool_data_cache=pool_data_cache)
-    coins = pool_metadata.coins
+    assets = SimAssets(
+        pool_metadata.coin_names, pool_metadata.coins, pool_metadata.chain
+    )
 
     param_sampler = Grid(pool, variable_params, fixed_params=fixed_params)
-    price_sampler = PriceVolume(
-        coins, pool.chain, days=days, data_dir=data_dir, src=src, end=end
-    )
+    price_sampler = PriceVolume(assets, days=days, data_dir=data_dir, src=src, end=end)
+
     if vol_mult is None:
         total_pool_volume = pool_data_cache.volume
         total_market_volume = price_sampler.total_volumes()
