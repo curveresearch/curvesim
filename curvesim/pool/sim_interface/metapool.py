@@ -5,7 +5,6 @@ from curvesim.pool.stableswap.metapool import CurveMetaPool
 from curvesim.utils import cache, override
 
 
-
 class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
     @override
     def _init_coin_indices(self):

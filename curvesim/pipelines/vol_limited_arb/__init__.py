@@ -119,7 +119,9 @@ def pipeline(
     pool = get_sim_pool(pool_metadata, pool_data_cache=pool_data_cache)
 
     param_sampler = Grid(pool, variable_params, fixed_params=fixed_params)
-    price_sampler = PriceVolume(pool.assets, days=days, data_dir=data_dir, src=src, end=end)
+    price_sampler = PriceVolume(
+        pool.assets, days=days, data_dir=data_dir, src=src, end=end
+    )
 
     if vol_mult is None:
         total_pool_volume = pool_data_cache.volume
