@@ -407,5 +407,4 @@ class PoolPricingMetric(PricingMixin, PoolMetric):
             :func:`pool_config` and stored as :python:`self._pool` for access during
             metric computations. Number and names of coins derived from pool metadata.
         """
-        coin_names = list(pool.coin_indices)
-        super().__init__(coin_names, pool=pool)
+        super().__init__(pool.assets.symbols, pool=pool)

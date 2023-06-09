@@ -1,7 +1,9 @@
 from curvesim.exceptions import CurvesimValueError
+from curvesim.pipelines.templates import SimAssets
 from curvesim.pool.sim_interface.simpool import SimStableswapBase
 from curvesim.pool.stableswap.metapool import CurveMetaPool
-from curvesim.utils import override
+from curvesim.utils import cache, override
+
 
 
 class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
@@ -118,3 +120,13 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
             in_amount -= xp_base[base_i]
 
         return in_amount
+
+    @property
+    @override
+    @cache
+    def assets(self):
+        max_coin = self.max_coin
+        symbols = self.coin_names[:max_coin] + self.basepool.coin_names
+        addresses = self.coin_addresses[:max_coin] + self.basepool.coin_addresses
+
+        return SimAssets(symbols, addresses, self.chain)

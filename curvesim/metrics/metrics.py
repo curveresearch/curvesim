@@ -91,8 +91,7 @@ class ArbMetrics(PricingMetric):
         }
 
     def __init__(self, pool, **kwargs):
-        coin_names = list(pool.coin_indices.keys())
-        super().__init__(coin_names)
+        super().__init__(pool.assets.symbols)
 
     def compute_arb_metrics(self, price_sample, trade_data, **kwargs):
         """Computes all metrics for each timestamp in an individual run."""

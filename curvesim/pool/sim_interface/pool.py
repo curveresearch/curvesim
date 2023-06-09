@@ -1,7 +1,8 @@
-from curvesim.utils import override
+from curvesim.utils import cache, override
 
 from ..stableswap import CurvePool
 from .simpool import SimStableswapBase
+from curvesim.pipelines.templates import SimAssets, SimPool
 
 
 class SimCurvePool(SimStableswapBase, CurvePool):
@@ -49,3 +50,10 @@ class SimCurvePool(SimStableswapBase, CurvePool):
 
         in_amount = self.get_y(j, i, xp_j, xp) - xp[i]
         return in_amount
+    
+    @property
+    @override
+    @cache
+    def assets(self):
+        return SimAssets(self.coin_names, self.coin_addresses, self.chain)
+
