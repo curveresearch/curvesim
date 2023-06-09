@@ -1,10 +1,12 @@
 """Unit tests for SimStableswapBase"""
 import pytest
 
+from curvesim.pipelines.templates import SimAssets
 from curvesim.pipelines.vol_limited_arb.trader import VolumeLimitedArbitrageur
 from curvesim.pool.sim_interface.simpool import SimStableswapBase
 from curvesim.pool.snapshot import CurvePoolBalanceSnapshot, SnapshotMixin
 from curvesim.utils import override
+
 
 # pylint: disable=redefined-outer-name
 
@@ -87,6 +89,11 @@ class FakeSimStableswap(SimStableswapBase, SnapshotMixin):
     @override
     def get_in_amount(self, coin_in, coin_out, out_balance_perc):
         return 0
+
+    @property
+    @override
+    def assets(self):
+        return SimAssets(["SYM_0", "SYM_1", "SYM_2"], ["0x0, 0x1, 0x2"], "mainnet")
 
 
 # pool_type_to_error_functions[FakeSimStableswap] = make_error_fns
