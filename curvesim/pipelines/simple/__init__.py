@@ -23,15 +23,18 @@ DEFAULT_PARAMS = {
 TEST_PARAMS = {"A": [100, 1000], "fee": [3000000, 4000000]}
 
 
-def pipeline(pool_address, chain, ncpu=1):
-    variable_params = TEST_PARAMS
-    fixed_params = {}
-    days = 60
+def pipeline(pool_address, chain, end_ts=None, days=60, ncpu=4):
     pool_metadata = get_metadata(pool_address, chain)
     pool = get_sim_pool(pool_metadata)
-    param_sampler = Grid(pool, variable_params, fixed_params=fixed_params)
+
+    # FIXME: need to handle metapools by using the new SimPool interface
+    # to get the right underlying coin addresses
     coin_addresses = pool.coin_addresses
-    price_sampler = PriceVolume(coin_addresses, chain, days=days)
+    price_sampler = PriceVolume(coin_addresses, chain, days=days, end=end_ts)
+
+    variable_params = TEST_PARAMS
+    fixed_params = {}
+    param_sampler = Grid(pool, variable_params, fixed_params=fixed_params)
 
     metrics = DEFAULT_METRICS
     metrics = init_metrics(metrics, pool=pool)
