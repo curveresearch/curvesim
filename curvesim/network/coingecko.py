@@ -51,13 +51,18 @@ async def get_prices(coin_id, vs_currency, days):
 
 async def _pool_prices(coins, vs_currency, days, end=None):
     if end is not None:
+        # Times to reindex to: daily intervals
+        # Coingecko only allows daily data when more than 90 days in the past
+        # for the free REST endpoint
         t_end = datetime.fromtimestamp(end, tz=timezone.utc)
+        t_start = t_end - timedelta(days=days + 1)
+        t_samples = pd.date_range(start=t_start, end=t_end, freq="1D", tz=timezone.utc)
     else:
+        # Times to reindex to: hourly intervals starting on half hour mark
         t_end = datetime.now(timezone.utc) - timedelta(days=1)
-    # Times to reindex to: hourly intervals starting on half hour mark
-    t_end = t_end.replace(hour=23, minute=30, second=0, microsecond=0)
-    t_start = t_end - timedelta(days=days + 1)
-    t_samples = pd.date_range(start=t_start, end=t_end, freq="60T", tz=timezone.utc)
+        t_end = t_end.replace(hour=23, minute=30, second=0, microsecond=0)
+        t_start = t_end - timedelta(days=days + 1)
+        t_samples = pd.date_range(start=t_start, end=t_end, freq="60T", tz=timezone.utc)
 
     # Fetch data
     tasks = []
