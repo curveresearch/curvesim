@@ -1,11 +1,10 @@
 from itertools import combinations
 
-from numpy import array, isnan
-from scipy.optimize import least_squares, root_scalar
+from numpy import array
+from scipy.optimize import root_scalar
 
 from curvesim.logging import get_logger
 from curvesim.pipelines.templates.trader import Trader
-from curvesim.pool.sim_interface import SimCurveMetaPool, SimCurvePool, SimCurveRaiPool
 
 logger = get_logger(__name__)
 
@@ -39,6 +38,13 @@ class SimpleArbitrageur(Trader):
             "coin_in": in token
             "coin_out": out token
             "size": trade size
+
+        price_errors: List[float]
+            Differences between resulting pool price and target price
+
+        optimizer_result: object
+            Optional object holding any useful debugging information
+            for the arbitraging algorithms
         """
         pool = self.pool
         trades = get_arb_trades(pool, prices)
@@ -58,9 +64,9 @@ class SimpleArbitrageur(Trader):
                     price_error = pool.price(i, j) - price_target
 
         if not best_trade:
-            return [], [], None
+            return [], array([]), None
 
-        return [best_trade], [price_error], None
+        return [best_trade], array([price_error]), None
 
 
 def get_arb_trades(pool, prices):

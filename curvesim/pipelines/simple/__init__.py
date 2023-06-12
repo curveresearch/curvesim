@@ -24,7 +24,7 @@ TEST_PARAMS = {"A": [100, 1000], "fee": [3000000, 4000000]}
 
 
 def pipeline(pool_address, chain, ncpu=1):
-    variable_params = DEFAULT_PARAMS
+    variable_params = TEST_PARAMS
     fixed_params = {}
     days = 60
     pool_metadata = get_metadata(pool_address, chain)
@@ -40,9 +40,3 @@ def pipeline(pool_address, chain, ncpu=1):
     output = run_pipeline(param_sampler, price_sampler, strategy, ncpu=ncpu)
     results = make_results(*output, metrics)
     return results
-
-
-if __name__ == "__main__":
-    pool_address = "0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7"
-    chain = "mainnet"
-    pipeline(pool_address, chain)
