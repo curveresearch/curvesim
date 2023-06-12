@@ -60,10 +60,10 @@ def main():  # noqa: C901
             f_name = os.path.join(
                 data_dir, f"{pool_address}-simple_results_{key}.pickle"
             )
-            with open(f_name, "wb") as f:
-                pickle.dump(sim_data[key], f)
-            # stored_data = read_pickle(f_name)
-            # test_functions[key](sim_data[key], stored_data)
+            # with open(f_name, "wb") as f:
+            #     pickle.dump(sim_data[key], f)
+            stored_data = read_pickle(f_name)
+            test_functions[key](sim_data[key], stored_data)
 
 
 def per_run(sim, stored):
