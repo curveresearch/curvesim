@@ -39,8 +39,8 @@ class SimpleArbitrageur(Trader):
             "coin_out": out token
             "size": trade size
 
-        price_errors: List[float]
-            Differences between resulting pool price and target price
+        price_errors: numpy.ndarray
+            Post-trade price error between pool price and market price.
 
         optimizer_result: object
             Optional object holding any useful debugging information
