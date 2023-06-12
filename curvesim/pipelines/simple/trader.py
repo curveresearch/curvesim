@@ -34,28 +34,33 @@ class SimpleArbitrageur(Trader):
         trades: List[Tuple]
             List of trades to perform.
 
-            Each trade is a tuple (size, coins, price_target).
+            Each trade is a tuple (coin_in, coin_out, size).
 
+            "coin_in": in token
+            "coin_out": out token
             "size": trade size
-            "coins": in token, out token
-            "price_target": price target for arbing the token pair
         """
         pool = self.pool
         trades = get_arb_trades(pool, prices)
 
         max_profit = 0
         best_trade = None
+        price_error = None
         for t in trades:
             size, coins, price_target = t
             i, j = coins
             with pool.use_snapshot_context():
                 out_amount, _, _ = pool.trade(i, j, size)
-            profit = out_amount - size * price_target
-            if profit > max_profit:
-                max_profit = profit
-                best_trade = t
+                profit = out_amount - size * price_target
+                if profit > max_profit:
+                    max_profit = profit
+                    best_trade = i, j, size
+                    price_error = pool.price(i, j) - price_target
 
-        return [best_trade] if best_trade else []
+        if not best_trade:
+            return [], [], None
+
+        return [best_trade], [price_error], None
 
 
 def get_arb_trades(pool, prices):

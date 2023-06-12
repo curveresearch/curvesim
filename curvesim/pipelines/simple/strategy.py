@@ -13,4 +13,4 @@ class SimpleStrategy(Strategy):
     state_log_class = StateLog
 
     def _get_trader_inputs(self, sample):
-        return sample.prices
+        return (sample.prices,)
