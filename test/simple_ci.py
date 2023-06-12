@@ -6,7 +6,6 @@ so besides the network code there is a lack of coverage around the
 `pool_data` and `price_data` packages.
 """
 import os
-import pickle
 
 from pandas import DataFrame, read_pickle
 
@@ -60,6 +59,7 @@ def main():  # noqa: C901
             f_name = os.path.join(
                 data_dir, f"{pool_address}-simple_results_{key}.pickle"
             )
+            # import pickle
             # with open(f_name, "wb") as f:
             #     pickle.dump(sim_data[key], f)
             stored_data = read_pickle(f_name)
