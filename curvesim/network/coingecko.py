@@ -26,17 +26,17 @@ PLATFORMS = {
 }
 
 
-async def _get_prices(coin_id, vs_currency, days):
-    url = URL + f"coins/{coin_id}/market_chart"
-    p = {"vs_currency": vs_currency, "days": days}
+async def _get_prices(coin_id, vs_currency, start, end):
+    url = URL + f"coins/{coin_id}/market_chart/range"
+    p = {"vs_currency": vs_currency, "from": start, "to": end}
 
     r = await HTTP.get(url, params=p)
 
     return r
 
 
-async def get_prices(coin_id, vs_currency, days):
-    r = await _get_prices(coin_id, vs_currency, days)
+async def get_prices(coin_id, vs_currency, start, end):
+    r = await _get_prices(coin_id, vs_currency, start, end)
 
     # Format data
     data = pd.DataFrame(r["prices"], columns=["timestamp", "prices"])
@@ -63,11 +63,13 @@ async def _pool_prices(coins, vs_currency, days, end=None):
         t_end = t_end.replace(hour=23, minute=30, second=0, microsecond=0)
         t_start = t_end - timedelta(days=days + 1)
         t_samples = pd.date_range(start=t_start, end=t_end, freq="60T", tz=timezone.utc)
+        end = t_end.timestamp()
 
     # Fetch data
     tasks = []
     for coin in coins:
-        tasks.append(get_prices(coin, vs_currency, days + 3))
+        start = t_start.timestamp() - 86400 * 3
+        tasks.append(get_prices(coin, vs_currency, start, end))
 
     data = await asyncio.gather(*tasks)
 
