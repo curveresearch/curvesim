@@ -49,9 +49,12 @@ async def get_prices(coin_id, vs_currency, days):
     return data
 
 
-async def _pool_prices(coins, vs_currency, days):
+async def _pool_prices(coins, vs_currency, days, end=None):
+    if end is not None:
+        t_end = datetime.fromtimestamp(end, tz=timezone.utc)
+    else:
+        t_end = datetime.now(timezone.utc) - timedelta(days=1)
     # Times to reindex to: hourly intervals starting on half hour mark
-    t_end = datetime.utcnow() - timedelta(days=1)
     t_end = t_end.replace(hour=23, minute=30, second=0, microsecond=0)
     t_start = t_end - timedelta(days=days + 1)
     t_samples = pd.date_range(start=t_start, end=t_end, freq="60T", tz=timezone.utc)
@@ -79,7 +82,7 @@ async def _pool_prices(coins, vs_currency, days):
     return qprices, qvolumes
 
 
-def pool_prices(coins, vs_currency, days, chain="mainnet"):
+def pool_prices(coins, vs_currency, days, chain="mainnet", end=None):
     """
     Pull price and volume data for given coins, quoted in given
     quote currency for given days.
@@ -100,7 +103,7 @@ def pool_prices(coins, vs_currency, days, chain="mainnet"):
     """
     # Get data
     coins = coin_ids_from_addresses_sync(coins, chain)
-    qprices, qvolumes = _pool_prices_sync(coins, vs_currency, days)
+    qprices, qvolumes = _pool_prices_sync(coins, vs_currency, days, end)
 
     # Compute prices by coin pairs
     combos = list(combinations(range(len(coins)), 2))

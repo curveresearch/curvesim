@@ -46,7 +46,7 @@ def get(coins, chain="mainnet", days=60, data_dir="data", src="coingecko", end=N
 
     """
     if src == "coingecko":
-        prices, volumes, pzero = coingecko(coins, chain=chain, days=days)
+        prices, volumes, pzero = coingecko(coins, chain=chain, days=days, end=end)
 
     elif src == "nomics":
         raise NetworkError("Nomics data is no longer supported.")
