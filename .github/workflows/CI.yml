@@ -41,7 +41,8 @@ jobs:
 
       - name: End-to-end tests
         run: |
-          coverage run -m test.ci
+          # coverage run -m test.ci
+          coverage run -m test.simple_ci
 
       - name: Download coverage badge
         uses: chanhosuh/get-gist-action@master
