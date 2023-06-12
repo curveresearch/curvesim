@@ -57,6 +57,8 @@ class SimpleArbitrageur(Trader):
             i, j = coins
             with pool.use_snapshot_context():
                 out_amount, _, _ = pool.trade(i, j, size)
+                # assume we transacted at "infinite" depth at target price
+                # on the other exchange to obtain our in-token
                 profit = out_amount - size * price_target
                 if profit > max_profit:
                     max_profit = profit
