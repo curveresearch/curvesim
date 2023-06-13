@@ -97,10 +97,13 @@ class ArbMetrics(PricingMetric):
         """Computes all metrics for each timestamp in an individual run."""
 
         data = concat([price_sample.prices, trade_data], axis=1)
+        pool_prices = DataFrame(data.pool_prices.to_list(), index=data.index)
+        market_prices = DataFrame(data.prices.to_list(), index=data.index)
 
         profits = data.apply(self._compute_profits, axis=1, result_type="expand")
-        volume = data.volume / 10**18
-        price_error = data.price_errors.abs().apply(sum)
+        volume = data.trades.apply(lambda x: sum([trade.amount_out for trade in x]))
+
+        price_error = abs(pool_prices - market_prices).sum(axis=1)
 
         results = concat([profits, volume, price_error], axis=1)
         results.columns = list(self.config["plot"]["metrics"])
@@ -118,8 +121,10 @@ class ArbMetrics(PricingMetric):
         arb_profit = 0
         pool_profit = 0
         for trade in data_row.trades:
-            coin_in, coin_out, dx, dy, fee = trade
-            arb = dy - dx * get_price(coin_in, coin_out, prices)
+            coin_in, coin_out, amount_in, amount_out, fee = trade
+
+            market_price = get_price(coin_in, coin_out, prices)
+            arb = amount_out - amount_in * market_price
 
             if coin_out != numeraire:
                 price = get_price(coin_out, numeraire, prices)

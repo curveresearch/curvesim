@@ -2,7 +2,7 @@ from numpy import array, isnan
 from scipy.optimize import least_squares, root_scalar
 
 from curvesim.logging import get_logger
-from curvesim.pipelines.templates.trader import Trader
+from curvesim.pipelines.templates.trader import Trader, Trade
 
 logger = get_logger(__name__)
 
@@ -120,15 +120,13 @@ def multipair_optimal_arbitrage(pool, prices, limits):  # noqa: C901
         # Format trades into tuples, ignore if dx=0
         dxs = res.x
 
-        for k, dx in enumerate(dxs):
-            if isnan(dx):
+        for k, amount_in in enumerate(dxs):
+            if isnan(amount_in):
                 continue
 
-            dx = int(dx)
-            if dx > 0:
-                i = coins[k][0]
-                j = coins[k][1]
-                trades.append((i, j, dx))
+            amount_in = int(amount_in)
+            if amount_in > 0:
+                trades.append(Trade(*coins[k], amount_in))
 
         errors = res.fun
 

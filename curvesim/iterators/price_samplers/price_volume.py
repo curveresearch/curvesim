@@ -5,7 +5,6 @@ from pandas import Series
 
 from curvesim.logging import get_logger
 from curvesim.price_data import get
-from curvesim.utils import get_pairs
 
 logger = get_logger(__name__)
 
@@ -44,10 +43,8 @@ class PriceVolume:
             end=end,
         )
 
-        coin_pairs = get_pairs(assets.symbols)
-
-        self.prices = prices.set_axis(coin_pairs, axis="columns")
-        self.volumes = volumes.set_axis(coin_pairs, axis="columns")
+        self.prices = prices.set_axis(assets.symbol_pairs, axis="columns")
+        self.volumes = volumes.set_axis(assets.symbol_pairs, axis="columns")
 
     def __iter__(self):
         """

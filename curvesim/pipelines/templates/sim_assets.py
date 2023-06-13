@@ -1,3 +1,6 @@
+from curvesim.utils import get_pairs
+
+
 class SimAssets:
     """
     Stores the properties of the assets to be used in a simulation. Currently, only
@@ -10,3 +13,5 @@ class SimAssets:
         self.symbols = symbols
         self.addresses = addresses
         self.chain = chain
+        self.symbol_pairs = get_pairs(symbols)
+        self.address_pairs = get_pairs(addresses)
