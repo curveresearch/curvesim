@@ -4,6 +4,7 @@ parallel = True
 concurrency = multiprocessing
 omit = 
     test/*
+    curvesim/network/nomics.py
 
 [report]
 exclude_lines =
