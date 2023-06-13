@@ -47,6 +47,7 @@ def main():  # noqa: C901
             pool_address=pool_address,
             chain="mainnet",
             end_ts=end_ts,
+            # ncpu=1,
         )
 
         sim_data = {
@@ -173,6 +174,7 @@ def compare_elements(test, reference):
 def compute_R2(sim, stored):
     MSE = ((sim - stored) ** 2).sum()
     total_variance = stored.var(ddof=0)
+    total_variance = total_variance.replace(0, 1)
     return 1 - MSE / total_variance
 
 
