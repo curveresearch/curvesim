@@ -14,6 +14,7 @@ class Trade:
     amount_in: int
 
     def __iter__(self):
+        # pylint: disable=no-member
         return (getattr(self, attr) for attr in self.__slots__)
 
 
@@ -26,6 +27,7 @@ class TradeResult:
     fee: int
 
     def __iter__(self):
+        # pylint: disable=no-member
         return (getattr(self, attr) for attr in self.__slots__)
 
 
