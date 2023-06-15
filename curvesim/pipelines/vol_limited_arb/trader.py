@@ -24,23 +24,20 @@ class VolumeLimitedArbitrageur(Trader):
         volume_limits : pandas.Series
             Current volume limits.
 
+
         Returns
         -------
-        trades : list of tuples
+        trades : list of :class:`Trade` objects
             List of trades to perform.
-            Trades are formatted as (coin_in, coin_out, trade_size).
 
-        errors : numpy.ndarray
-            Post-trade price error between pool price and market price.
-
-        res : scipy.optimize.OptimizeResult
-            Results object from the numerical optimizer.
-
+        additional_data: dict
+            Dict of additional data to be passed to the state log as part of trade_data.
         """
+
         trades, errors, res = multipair_optimal_arbitrage(
             self.pool, prices, volume_limits
         )
-        return trades, errors, res
+        return trades, {"price_errors": errors}
 
 
 def multipair_optimal_arbitrage(pool, prices, limits):  # noqa: C901
@@ -155,15 +152,9 @@ def get_arb_trades(pool, prices):
     pool: SimPool
         Pool to arbitrage on
 
-    error_function: callable
-        Error function that returns the difference between pool price and
-        market price (p) after some trade (coin_i, coin_j, trade_size)
-
     prices : iterable
         External market prices for each coin-pair
 
-    combos : iterable of tuples
-        Ordered pairwise combinations of coin indices
 
     Returns
     -------
@@ -177,7 +168,7 @@ def get_arb_trades(pool, prices):
     def post_trade_price_error(dx, coin_in, coin_out, price_target):
         with pool.use_snapshot_context():
             if dx > 0:
-                pool.trade(coin_in, coin_out, dx)
+                pool.trade(coin_in, coin_out, int(dx))
             price = pool.price(coin_in, coin_out, use_fee=True)
 
         return price - price_target

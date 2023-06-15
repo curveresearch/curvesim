@@ -149,6 +149,7 @@ DEFAULT_METRICS = [
     Metrics.PoolValue,
     Metrics.PoolBalance,
     Metrics.PriceDepth,
+    Metrics.PoolVolume,
     Metrics.ArbMetrics,
 ]
 

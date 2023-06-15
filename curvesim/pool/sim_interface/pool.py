@@ -16,14 +16,13 @@ class SimCurvePool(SimStableswapBase, CurvePool):
         return self.dydx(i, j, use_fee=use_fee)
 
     @override
-    def trade(self, coin_in, coin_out, size):
+    def trade(self, coin_in, coin_out, amount_in):
         """
         Note all quantities are in D units.
         """
         i, j = self.get_coin_indices(coin_in, coin_out)
-        size = int(size)
-        out_amount, fee = self.exchange(i, j, size)
-        return out_amount, fee, size
+        amount_out, fee = self.exchange(i, j, amount_in)
+        return amount_out, fee
 
     @override
     def test_trade(self, coin_in, coin_out, factor, use_fee=True):

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, FrozenInstanceError
 from typing import Union
 
 from curvesim.logging import get_logger
@@ -9,26 +9,41 @@ logger = get_logger(__name__)
 
 @dataclass(slots=True)
 class Trade:
-    coin_in: Union[str, int]
-    coin_out: Union[str, int]
-    amount_in: int
+    coin_in: Union[str, int] = None
+    coin_out: Union[str, int] = None
+    amount_in: int = None
+    amount_out: int = None
+    fee: int = None
 
     def __iter__(self):
         # pylint: disable=no-member
         return (getattr(self, attr) for attr in self.__slots__)
 
+    def __setattr__(self, name, value):
+        """
+        Freezes attribute once it is changed from its default (None).
+        Behavior modified from dataclass(Frozen=True).
 
-@dataclass(slots=True)
-class TradeResult:
-    coin_in: Union[str, int]
-    coin_out: Union[str, int]
-    amount_in: int
-    amount_out: int
-    fee: int
+        """
+        if getattr(self, name, None) is not None:
+            raise FrozenInstanceError(f"cannot assign to field {name}")
 
-    def __iter__(self):
-        # pylint: disable=no-member
-        return (getattr(self, attr) for attr in self.__slots__)
+        super(Trade, self).__setattr__(name, value)
+
+    def __delattr__(self, name):
+        """
+        Disables attribute deletion.
+
+        """
+        raise FrozenInstanceError(f"cannot delete field {name}")
+
+    def set_attrs(self, **kwargs):
+        """
+        Sets multiple attributes defined by keyword arguments.
+        """
+
+        for attr, value in kwargs.items():
+            setattr(self, attr, value)
 
 
 class Trader(ABC):
@@ -49,19 +64,15 @@ class Trader(ABC):
     @abstractmethod
     def compute_trades(self, *args):
         """
-        Computes trades to optimally arbitrage the pool, constrained by volume limits.
+        Computes trades to execute on the pool.
 
         Returns
         -------
         trades : list of :class:`Trade` objects
             List of trades to perform.
 
-        errors : numpy.ndarray
-            Post-trade price error between pool price and market price.
-
-        res : scipy.optimize.OptimizeResult
-            Results object from the numerical optimizer.
-
+        additional_data: dict
+            Dict of additional data to be passed to the state log as part of trade_data.
         """
         raise NotImplementedError
 
@@ -76,17 +87,16 @@ class Trader(ABC):
 
         Returns
         -------
-        trades_done: list of tuples
-            Trades executed, formatted as (coin_in, coin_out, amount_in, amount_out).
+        trades: list of :class:`Trade` objects
+            The input trades with the resulting amount_out and fee attributes set.
 
         """
 
-        trade_results = []
         for trade in trades:
-            dy, fee, volume = self.pool.trade(*trade)
-            trade_results.append(TradeResult(*trade, dy, fee))
+            dy, fee = self.pool.trade(trade.coin_in, trade.coin_out, trade.amount_in)
+            trade.set_attrs(amount_out=dy, fee=fee)
 
-        return trade_results
+        return trades
 
     def process_time_sample(self, *args):
         """
@@ -96,10 +106,7 @@ class Trader(ABC):
         parent `Strategy` object housing the trader class via its
         :meth:`~curvesim.pipelines.templates.Strategy._get_trader_inputs`.
         """
-        trades, _, _ = self.compute_trades(*args)
+        trades, additional_data = self.compute_trades(*args)
         trade_results = self.do_trades(trades)
 
-        pool = self.pool
-        pool_prices = {pair: pool.price(*pair) for pair in pool.assets.symbol_pairs}
-
-        return {"trades": trade_results, "pool_prices": pool_prices}
+        return {"trades": trade_results, **additional_data}
