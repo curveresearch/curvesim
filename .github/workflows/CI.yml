@@ -11,16 +11,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
-    permissions:
-      # Gives the action the necessary permissions for publishing new
-      # comments in pull requests.
-      pull-requests: write
-      # Gives the action the necessary permissions for pushing data to the
-      # python-coverage-comment-action branch, and for editing existing
-      # comments (to avoid publishing multiple comments in the same PR)
-      contents: write
-
     steps:
       - uses: actions/checkout@v3
 
@@ -35,6 +25,10 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
+  lint:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
       - name: Format
         run: |
           black --version
@@ -44,15 +38,34 @@ jobs:
         run: |
           make lint
 
+  unit-test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
       - name: Unit tests
         run: |
           coverage run -m pytest
 
+  end-to-end-test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
       - name: End-to-end tests
         run: |
-          # coverage run -m test.ci
           coverage run -m test.simple_ci
 
+  coverage:
+    needs: [unit-test, end-to-end-test]
+    runs-on: ubuntu-latest
+    permissions:
+      # Gives the action the necessary permissions for publishing new
+      # comments in pull requests.
+      pull-requests: write
+      # Gives the action the necessary permissions for pushing data to the
+      # python-coverage-comment-action branch, and for editing existing
+      # comments (to avoid publishing multiple comments in the same PR)
+      contents: write
+    steps:
       - name: Download coverage badge
         uses: chanhosuh/get-gist-action@master
         id: covbadge
