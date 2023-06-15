@@ -27,10 +27,10 @@ def main():  # noqa: C901
             "end_timestamp": 1622505600,
         },
         # # frax3CRV"
-        # {
-        #     "address": "0xd632f22692FaC7611d2AA1C0D552930D43CAEd3B",
-        #     "end_timestamp": 1643673600,
-        # },
+        {
+            "address": "0xd632f22692FaC7611d2AA1C0D552930D43CAEd3B",
+            "end_timestamp": 1643673600,
+        },
     ]
 
     test_functions = {
