@@ -62,6 +62,7 @@ def main():  # noqa: C901
                 data_dir, f"{pool_address}-simple_results_{key}.pickle"
             )
             # import pickle
+
             # with open(f_name, "wb") as f:
             #     pickle.dump(sim_data[key], f)
             stored_data = read_pickle(f_name)
