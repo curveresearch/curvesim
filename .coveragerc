@@ -1,5 +1,6 @@
 [run]
 branch = True
+relative_files = true
 parallel = True
 concurrency = multiprocessing
 omit = 
