@@ -10,6 +10,35 @@ Advanced Usage
 
 .. _advanced:
 
+
+Adding Custom Simulation
+-------------------------
+
+.. _adding-simulation:
+
+
+A simulation consists of a "pipeline" taking in iterables of pool configurations and "market data".
+For each pool configuration, a "run" consists of applying the strategy to the given configuration
+and stream of market data.  A report of various metrics can then be created from the results of
+all the runs.
+
+The basic model for a pipeline is demonstrated in the implementation of
+:func:`run_pipeline`.  It takes in a :mod:`param sampler <curvesim.iterators.param_samplers>`, :mod:`price sampler <curvesim.iterators.price_samplers>`, and :class:`strategy <curvesim.pipeline.templates.Strategy>`.  The pipeline iterates over the pool with parameters set from the param sampler; for each set of parameters, the strategy is applied on each time series sample produced by the price sampler.
+
+Typically you would use :func:`run_pipeline` by creating a function that:
+
+1. takes in pool data such as :class:`~curvesim.pool_data.metadata.PoolMetaDataInterface`, although this can be easily instantiated from a pool address, and any other arguments needed for the other steps
+2. instantiates a param_sampler, price_sampler, and strategy
+3. invokes `run_pipeline`, returning its result metrics
+
+The main pipeline, which was developed for the specific use-case of optimizing Curve pools
+for best reward-risk tradeoff, is the
+:mod:`volume limited arbitrage pipeline <curvesim.pipelines.vol_limited_arb>`.
+
+The :mod:`simple pipeline <curvesim.pipelines.simple>` provides an easier starting
+point for creating a custom pipeline.
+
+
 Adding Custom Metrics
 ---------------------
 

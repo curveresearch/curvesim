@@ -75,20 +75,28 @@ Simulation Pipelines
 
     Simple arbitrage
     -----------------
+    .. automodule:: curvesim.pipelines.simple
+
     .. autofunction:: curvesim.pipelines.simple.pipeline
+
     .. autoclass:: curvesim.pipelines.simple.strategy.SimpleStrategy
         :members:
         :exclude-members: __init__, __new__, trader_class, state_log_class
         :private-members: _get_trader_inputs
+
     .. autoclass:: curvesim.pipelines.simple.trader.SimpleArbitrageur
         :members:
         :private-members:
 
     Volume-limited arbitrage
     ------------------------
+    .. automodule:: curvesim.pipelines.vol_limited_arb
+
     .. autofunction:: curvesim.pipelines.vol_limited_arb.pipeline
+
     .. autoclass:: curvesim.pipelines.vol_limited_arb.strategy.VolumeLimitedStrategy
         :members:
+
     .. autoclass:: curvesim.pipelines.vol_limited_arb.trader.VolumeLimitedArbitrageur
         :members:
 
