@@ -1,10 +1,15 @@
 """
-A simulation runs trades against Curve pools, possibly a variety of
-informed and noisy trades, although currently only "optimal" arbitrages
-are supported.
+A simulation runs trades against Curve pools, using a strategy that may
+utilize different types of informed or noise trades.
 
-The primary use-case is to determine optimal amplitude (A) and
-fee parameters given historical price and volume feeds.
+The :mod:`simulation pipeline framework <curvesim.pipelines>` allows the
+user to build custom strategies for simulation.
+
+Most users will want to use the `autosim` function, which supports
+"optimal" arbitrages via the
+:func:`volume-limited arbitrage pipeline <curvesim.pipelines.vol_limited_arb.pipeline>`.
+The primary use-case is to determine optimal amplitude (A) and fee
+parameters given historical price and volume feeds.
 """
 from curvesim.logging import get_logger
 from curvesim.pipelines.vol_limited_arb import DEFAULT_PARAMS
