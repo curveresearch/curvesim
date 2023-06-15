@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, FrozenInstanceError
+from dataclasses import dataclass
 from typing import Union
 
 from curvesim.logging import get_logger
@@ -7,41 +7,37 @@ from curvesim.logging import get_logger
 logger = get_logger(__name__)
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class Trade:
-    coin_in: Union[str, int] = None
-    coin_out: Union[str, int] = None
-    amount_in: int = None
-    amount_out: int = None
-    fee: int = None
+    coin_in: Union[str, int]
+    coin_out: Union[str, int]
+    amount_in: int
 
     def __iter__(self):
         # pylint: disable=no-member
         return (getattr(self, attr) for attr in self.__slots__)
 
-    def __setattr__(self, name, value):
-        """
-        Freezes attribute once it is changed from its default (None).
-        Behavior modified from dataclass(Frozen=True).
 
-        """
-        if getattr(self, name, None) is not None:
-            raise FrozenInstanceError(f"cannot assign to field {name}")
+@dataclass(slots=True)
+class TradeResult:
+    coin_in: Union[str, int]
+    coin_out: Union[str, int]
+    amount_in: int
+    amount_out: int
+    fee: int
 
-        super(Trade, self).__setattr__(name, value)
+    def __iter__(self):
+        # pylint: disable=no-member
+        return (getattr(self, attr) for attr in self.__slots__)
 
-    def __delattr__(self, name):
-        """
-        Disables attribute deletion.
-
-        """
-        raise FrozenInstanceError(f"cannot delete field {name}")
+    def from_trade(trade, amount_out=None, fee=None):
+        """Initializes a TradeResult object from a Trade object"""
+        return TradeResult(
+            trade.coin_in, trade.coin_out, trade.amount_in, amount_out, fee
+        )
 
     def set_attrs(self, **kwargs):
-        """
-        Sets multiple attributes defined by keyword arguments.
-        """
-
+        """Sets multiple attributes defined by keyword arguments."""
         for attr, value in kwargs.items():
             setattr(self, attr, value)
 
@@ -87,16 +83,17 @@ class Trader(ABC):
 
         Returns
         -------
-        trades: list of :class:`Trade` objects
-            The input trades with the resulting amount_out and fee attributes set.
+        trades: list of :class:`TradeResult` objects
+            The results of the trades.
 
         """
 
+        trade_results = []
         for trade in trades:
             dy, fee = self.pool.trade(trade.coin_in, trade.coin_out, trade.amount_in)
-            trade.set_attrs(amount_out=dy, fee=fee)
+            trade_results.append(TradeResult.from_trade(trade, amount_out=dy, fee=fee))
 
-        return trades
+        return trade_results
 
     def process_time_sample(self, *args):
         """
