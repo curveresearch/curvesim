@@ -20,9 +20,9 @@ jobs:
 
       - name: Install dependencies into virtual env
         run: |
-	        python3 -m venv .venv
+          python3 -m venv .venv
           .venv/bin/pip install --upgrade pip
-	        .venv/bin/pip install -r requirements.txt
+          .venv/bin/pip install -r requirements.txt
 
       - name: Upload virtual env
         uses: actions/upload-artifact@v3
