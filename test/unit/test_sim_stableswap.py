@@ -2,7 +2,7 @@
 import pytest
 
 from curvesim.pipelines.templates import SimAssets
-from curvesim.pipelines.vol_limited_arb.trader import VolumeLimitedArbitrageur
+from curvesim.pipelines.vol_limited_arb.trader import VolumeLimitedArbitrageur, Trade
 from curvesim.pool.sim_interface.simpool import SimStableswapBase
 from curvesim.pool.snapshot import CurvePoolBalanceSnapshot, SnapshotMixin
 from curvesim.utils import override
@@ -83,8 +83,7 @@ class FakeSimStableswap(SimStableswapBase, SnapshotMixin):
     def trade(self, coin_in, coin_out, size):
         out_amount = size
         fee = 0
-        volume = 10**18
-        return out_amount, fee, volume
+        return out_amount, fee
 
     @override
     def get_in_amount(self, coin_in, coin_out, out_balance_perc):
@@ -137,18 +136,15 @@ def test_do_trades(sim_stableswap):
     """Test trade method with Arbitrageur.do_trades"""
     trader = VolumeLimitedArbitrageur(sim_stableswap)
     trades = []
-    trades_done, volume = trader.do_trades(trades)
+    trades_done = trader.do_trades(trades)
     assert trades_done == []  # pylint: disable=use-implicit-booleaness-not-comparison
-    assert volume == 0
 
     trades = [
-        (0, 1, 99999999990000015900672),
-        (2, 0, 86980634902377172828160),
-        (2, 1, 86980634902377172828160),
+        Trade(0, 1, 99999999990000015900672),
+        Trade(2, 0, 86980634902377172828160),
+        Trade(2, 1, 86980634902377172828160),
     ]
-    trades_done, volume = trader.do_trades(trades)
-    # volume is faked to produce 1 * 10**18 each trade
-    assert volume == len(trades) * 10**18
+    trades_done = trader.do_trades(trades)
     for t in trades_done:
         # `trade` is faked to produce out amount equal to in amount
-        assert t[2] == t[3]
+        assert t.amount_in == t.amount_out
