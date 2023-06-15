@@ -12,6 +12,15 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    permissions:
+      # Gives the action the necessary permissions for publishing new
+      # comments in pull requests.
+      pull-requests: write
+      # Gives the action the necessary permissions for pushing data to the
+      # python-coverage-comment-action branch, and for editing existing
+      # comments (to avoid publishing multiple comments in the same PR)
+      contents: write
+
     steps:
       - uses: actions/checkout@v3
 
@@ -72,4 +81,10 @@ jobs:
           minColorRange: 50
           maxColorRange: 90
           valColorRange: ${{ env.COVERAGE_SCORE }}%
+
+      - name: Commit coverage report
+        id: coverage_comment
+        uses: py-cov-action/python-coverage-comment-action@v3
+        with:
+          GITHUB_TOKEN: ${{ github.token }}
 
