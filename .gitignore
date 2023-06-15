@@ -22,8 +22,10 @@ __pycache__/
 /docs/_build
 
 # Jupyter
-/.ipynb_checkpoints
+.ipynb_checkpoints
 
 # coverage
 .coverage
 .coverage.*
+
+/.pdbrc

@@ -7,8 +7,8 @@ from tenacity import retry, stop_after_attempt, wait_random_exponential
 
 from curvesim.exceptions import HttpClientError
 
-stop_rule = stop_after_attempt(10)
-wait_rule = wait_random_exponential(multiplier=1, min=2, max=20)
+stop_rule = stop_after_attempt(8)
+wait_rule = wait_random_exponential(multiplier=1, min=2, max=60)
 
 
 class HTTP:

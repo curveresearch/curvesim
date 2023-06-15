@@ -73,7 +73,7 @@ CUSTOM_LOGGING_CONFIG = {
 }
 
 # 3rd party loggers that we want to largely ignore
-silenced_loggers = ["matplotlib", "asyncio", "rlp", "parso"]
+silenced_loggers = ["matplotlib", "asyncio", "rlp", "parso", "web3"]
 configured_loggers = CUSTOM_LOGGING_CONFIG["loggers"]
 for name in silenced_loggers:
     configured_loggers[name] = {

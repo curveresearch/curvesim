@@ -26,17 +26,17 @@ PLATFORMS = {
 }
 
 
-async def _get_prices(coin_id, vs_currency, days):
-    url = URL + f"coins/{coin_id}/market_chart"
-    p = {"vs_currency": vs_currency, "days": days}
+async def _get_prices(coin_id, vs_currency, start, end):
+    url = URL + f"coins/{coin_id}/market_chart/range"
+    p = {"vs_currency": vs_currency, "from": start, "to": end}
 
     r = await HTTP.get(url, params=p)
 
     return r
 
 
-async def get_prices(coin_id, vs_currency, days):
-    r = await _get_prices(coin_id, vs_currency, days)
+async def get_prices(coin_id, vs_currency, start, end):
+    r = await _get_prices(coin_id, vs_currency, start, end)
 
     # Format data
     data = pd.DataFrame(r["prices"], columns=["timestamp", "prices"])
@@ -49,17 +49,27 @@ async def get_prices(coin_id, vs_currency, days):
     return data
 
 
-async def _pool_prices(coins, vs_currency, days):
-    # Times to reindex to: hourly intervals starting on half hour mark
-    t_end = datetime.utcnow() - timedelta(days=1)
-    t_end = t_end.replace(hour=23, minute=30, second=0, microsecond=0)
-    t_start = t_end - timedelta(days=days + 1)
-    t_samples = pd.date_range(start=t_start, end=t_end, freq="60T", tz=timezone.utc)
+async def _pool_prices(coins, vs_currency, days, end=None):
+    if end is not None:
+        # Times to reindex to: daily intervals
+        # Coingecko only allows daily data when more than 90 days in the past
+        # for the free REST endpoint
+        t_end = datetime.fromtimestamp(end, tz=timezone.utc)
+        t_start = t_end - timedelta(days=days + 1)
+        t_samples = pd.date_range(start=t_start, end=t_end, freq="1D", tz=timezone.utc)
+    else:
+        # Times to reindex to: hourly intervals starting on half hour mark
+        t_end = datetime.now(timezone.utc) - timedelta(days=1)
+        t_end = t_end.replace(hour=23, minute=30, second=0, microsecond=0)
+        t_start = t_end - timedelta(days=days + 1)
+        t_samples = pd.date_range(start=t_start, end=t_end, freq="60T", tz=timezone.utc)
+        end = t_end.timestamp()
 
     # Fetch data
     tasks = []
     for coin in coins:
-        tasks.append(get_prices(coin, vs_currency, days + 3))
+        start = t_start.timestamp() - 86400 * 3
+        tasks.append(get_prices(coin, vs_currency, start, end))
 
     data = await asyncio.gather(*tasks)
 
@@ -79,7 +89,7 @@ async def _pool_prices(coins, vs_currency, days):
     return qprices, qvolumes
 
 
-def pool_prices(coins, vs_currency, days, chain="mainnet"):
+def pool_prices(coins, vs_currency, days, chain="mainnet", end=None):
     """
     Pull price and volume data for given coins, quoted in given
     quote currency for given days.
@@ -100,7 +110,7 @@ def pool_prices(coins, vs_currency, days, chain="mainnet"):
     """
     # Get data
     coins = coin_ids_from_addresses_sync(coins, chain)
-    qprices, qvolumes = _pool_prices_sync(coins, vs_currency, days)
+    qprices, qvolumes = _pool_prices_sync(coins, vs_currency, days, end)
 
     # Compute prices by coin pairs
     combos = list(combinations(range(len(coins)), 2))
