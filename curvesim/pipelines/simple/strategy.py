@@ -8,6 +8,14 @@ logger = get_logger(__name__)
 
 
 class SimpleStrategy(Strategy):
+    """
+    Class Attributes
+    ----------------
+    trader_class : :class:`~curvesim.pipelines.simple.trader.SimpleArbitrageur`
+        Class for creating trader instances.
+    state_log_class : :class:`~curvesim.metrics.StateLog`
+        Class for creating state logger instances.
+    """
 
     trader_class = SimpleArbitrageur
     state_log_class = StateLog
