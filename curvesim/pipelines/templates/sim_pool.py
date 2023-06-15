@@ -125,3 +125,16 @@ class SimPool(ABC):
             The amount of "in" coin needed.
         """
         raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def assets(self):
+        """
+        Return :class:`.SimAssets` object with the properties of the pool's assets.
+
+        Returns
+        -------
+        SimAssets
+            SimAssets object that stores the properties of the pool's assets.
+        """
+        raise NotImplementedError

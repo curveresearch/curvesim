@@ -1,7 +1,8 @@
-from curvesim.utils import override
+from curvesim.utils import cache, override
 
 from ..stableswap import CurvePool
 from .simpool import SimStableswapBase
+from curvesim.pipelines.templates import SimAssets
 
 
 class SimCurvePool(SimStableswapBase, CurvePool):
@@ -15,14 +16,13 @@ class SimCurvePool(SimStableswapBase, CurvePool):
         return self.dydx(i, j, use_fee=use_fee)
 
     @override
-    def trade(self, coin_in, coin_out, size):
+    def trade(self, coin_in, coin_out, amount_in):
         """
         Note all quantities are in D units.
         """
         i, j = self.get_coin_indices(coin_in, coin_out)
-        size = int(size)
-        out_amount, fee = self.exchange(i, j, size)
-        return out_amount, fee, size
+        amount_out, fee = self.exchange(i, j, amount_in)
+        return amount_out, fee
 
     @override
     def test_trade(self, coin_in, coin_out, factor, use_fee=True):
@@ -49,3 +49,9 @@ class SimCurvePool(SimStableswapBase, CurvePool):
 
         in_amount = self.get_y(j, i, xp_j, xp) - xp[i]
         return in_amount
+
+    @property
+    @override
+    @cache
+    def assets(self):
+        return SimAssets(self.coin_names, self.coin_addresses, self.chain)

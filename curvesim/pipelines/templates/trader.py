@@ -2,19 +2,43 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Union
 
-from numpy import ndarray
-from pandas import Series
-
 from curvesim.logging import get_logger
 
 logger = get_logger(__name__)
 
 
-@dataclass(eq=False, slots=True)
-class TradeData:
-    trades: list
-    volume: int
-    price_errors: Union[list, ndarray, Series]
+@dataclass(slots=True, frozen=True)
+class Trade:
+    coin_in: Union[str, int]
+    coin_out: Union[str, int]
+    amount_in: int
+
+    def __iter__(self):
+        # pylint: disable=no-member
+        return (getattr(self, attr) for attr in self.__slots__)
+
+
+@dataclass(slots=True)
+class TradeResult:
+    coin_in: Union[str, int]
+    coin_out: Union[str, int]
+    amount_in: int
+    amount_out: int
+    fee: int
+
+    def __iter__(self):
+        # pylint: disable=no-member
+        return (getattr(self, attr) for attr in self.__slots__)
+
+    def set_attrs(self, **kwargs):
+        """Sets multiple attributes defined by keyword arguments."""
+        for attr, value in kwargs.items():
+            setattr(self, attr, value)
+
+    @classmethod
+    def from_trade(cls, trade, amount_out=None, fee=None):
+        """Initializes a TradeResult object from a Trade object"""
+        return cls(trade.coin_in, trade.coin_out, trade.amount_in, amount_out, fee)
 
 
 class Trader(ABC):
@@ -35,20 +59,15 @@ class Trader(ABC):
     @abstractmethod
     def compute_trades(self, *args):
         """
-        Computes trades to optimally arbitrage the pool, constrained by volume limits.
+        Computes trades to execute on the pool.
 
         Returns
         -------
-        trades : list of tuples
+        trades : list of :class:`Trade` objects
             List of trades to perform.
-            Trades are formatted as (coin_in, coin_out, trade_size).
 
-        errors : numpy.ndarray
-            Post-trade price error between pool price and market price.
-
-        res : scipy.optimize.OptimizeResult
-            Results object from the numerical optimizer.
-
+        additional_data: dict
+            Dict of additional data to be passed to the state log as part of trade_data.
         """
         raise NotImplementedError
 
@@ -58,30 +77,22 @@ class Trader(ABC):
 
         Parameters
         ----------
-        trades : list of tuples
-            Trades to execute, formatted as (coin_in, coin_out, trade_size).
+        trades : list of :class:`Trade` objects
+            Trades to execute.
 
         Returns
         -------
-        trades_done: list of tuples
-            Trades executed, formatted as (coin_in, coin_out, amount_in, amount_out).
+        trades: list of :class:`TradeResult` objects
+            The results of the trades.
 
-        volume: int
-            Total volume of trades in 18 decimal precision.
         """
-        if len(trades) == 0:
-            return [], 0
 
-        total_volume = 0
-        trades_done = []
+        trade_results = []
         for trade in trades:
-            i, j, dx = trade
-            dy, fee, volume = self.pool.trade(i, j, dx)
+            dy, fee = self.pool.trade(trade.coin_in, trade.coin_out, trade.amount_in)
+            trade_results.append(TradeResult.from_trade(trade, amount_out=dy, fee=fee))
 
-            trades_done.append((i, j, dx, dy, fee))
-            total_volume += volume
-
-        return trades_done, total_volume
+        return trade_results
 
     def process_time_sample(self, *args):
         """
@@ -91,6 +102,7 @@ class Trader(ABC):
         parent `Strategy` object housing the trader class via its
         :meth:`~curvesim.pipelines.templates.Strategy._get_trader_inputs`.
         """
-        trades, price_errors, _ = self.compute_trades(*args)
-        trades_done, volume = self.do_trades(trades)
-        return TradeData(trades_done, volume, price_errors)
+        trades, additional_data = self.compute_trades(*args)
+        trade_results = self.do_trades(trades)
+
+        return {"trades": trade_results, **additional_data}

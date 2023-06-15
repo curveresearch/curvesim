@@ -1,7 +1,8 @@
 from curvesim.exceptions import CurvesimValueError
+from curvesim.pipelines.templates import SimAssets
 from curvesim.pool.sim_interface.simpool import SimStableswapBase
 from curvesim.pool.stableswap.metapool import CurveMetaPool
-from curvesim.utils import override
+from curvesim.utils import cache, override
 
 
 class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
@@ -39,7 +40,7 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
         return self._dydx(i, j, xp=xp, use_fee=use_fee)
 
     @override
-    def trade(self, coin_in, coin_out, size):
+    def trade(self, coin_in, coin_out, amount_in):
         """
         Trade between two coins in a pool.
         Coins run over basepool underlyers.
@@ -47,16 +48,8 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
         Note all quantities are in D units.
         """
         i, j = self.get_coin_indices(coin_in, coin_out)
-        size = int(size)
-        out_amount, fee = self.exchange_underlying(i, j, size)
-
-        max_coin = self.max_coin
-        if i < max_coin or j < max_coin:
-            volume = size
-        else:
-            volume = 0
-
-        return out_amount, fee, volume
+        amount_out, fee = self.exchange_underlying(i, j, amount_in)
+        return amount_out, fee
 
     @override
     def test_trade(self, coin_in, coin_out, factor, use_fee=True):
@@ -118,3 +111,13 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
             in_amount -= xp_base[base_i]
 
         return in_amount
+
+    @property
+    @override
+    @cache
+    def assets(self):
+        max_coin = self.max_coin
+        symbols = self.coin_names[:max_coin] + self.basepool.coin_names
+        addresses = self.coin_addresses[:max_coin] + self.basepool.coin_addresses
+
+        return SimAssets(symbols, addresses, self.chain)
