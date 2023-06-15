@@ -30,16 +30,15 @@ class TradeResult:
         # pylint: disable=no-member
         return (getattr(self, attr) for attr in self.__slots__)
 
-    def from_trade(trade, amount_out=None, fee=None):
-        """Initializes a TradeResult object from a Trade object"""
-        return TradeResult(
-            trade.coin_in, trade.coin_out, trade.amount_in, amount_out, fee
-        )
-
     def set_attrs(self, **kwargs):
         """Sets multiple attributes defined by keyword arguments."""
         for attr, value in kwargs.items():
             setattr(self, attr, value)
+
+    @classmethod
+    def from_trade(cls, trade, amount_out=None, fee=None):
+        """Initializes a TradeResult object from a Trade object"""
+        return cls(trade.coin_in, trade.coin_out, trade.amount_in, amount_out, fee)
 
 
 class Trader(ABC):
