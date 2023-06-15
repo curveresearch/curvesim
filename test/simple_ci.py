@@ -47,6 +47,7 @@ def main():  # noqa: C901
             pool_address=pool_address,
             chain="mainnet",
             end_ts=end_ts,
+            test=True,
             # ncpu=1,
         )
 
