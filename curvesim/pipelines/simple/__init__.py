@@ -102,11 +102,9 @@ def pipeline(
     pool_metadata = get_metadata(pool_address, chain)
     pool = get_sim_pool(pool_metadata)
 
-    # FIXME: need to handle metapools by using the new SimPool interface
-    # to get the right underlying coin addresses
-    coin_addresses = pool.coin_addresses
+    sim_assets = pool.assets
     price_sampler = PriceVolume(
-        coin_addresses, chain, days=days, end=end_ts, data_dir=data_dir, src=src
+        sim_assets, days=days, end=end_ts, data_dir=data_dir, src=src
     )
 
     variable_params = variable_params or DEFAULT_PARAMS
