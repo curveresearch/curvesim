@@ -4,7 +4,7 @@ from ..network.subgraph import pool_snapshot_sync, symbol_address_sync
 from ..network.web3 import underlying_coin_info_sync
 
 
-def from_address(address, chain):
+def from_address(address, chain, end_ts):
     """
     Returns
 
@@ -21,7 +21,7 @@ def from_address(address, chain):
     :func:`curvesim.network.subgraph.pool_snapshot`.
     """
     loop = asyncio.get_event_loop()
-    data = pool_snapshot_sync(address, chain, event_loop=loop)
+    data = pool_snapshot_sync(address, chain, end_ts=end_ts, event_loop=loop)
 
     # Get underlying token addresses
     if data["pool_type"] == "LENDING":

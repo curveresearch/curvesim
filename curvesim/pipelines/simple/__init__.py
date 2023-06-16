@@ -100,7 +100,7 @@ def pipeline(
     ncpu = ncpu or os.cpu_count()
 
     pool_metadata = get_metadata(pool_address, chain)
-    pool = get_sim_pool(pool_metadata)
+    pool = get_sim_pool(pool_metadata, end_ts=end_ts)
 
     sim_assets = pool.assets
     price_sampler = PriceVolume(

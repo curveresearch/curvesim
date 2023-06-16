@@ -205,6 +205,7 @@ def get_sim_pool(
     balanced_base=True,
     custom_kwargs=None,
     pool_data_cache=None,
+    end_ts=None,
 ):
     """
     Effectively the same as the `get_pool` function but returns
@@ -213,7 +214,7 @@ def get_sim_pool(
     custom_kwargs = custom_kwargs or {}
 
     if isinstance(pool_metadata, str):
-        pool_metadata = get_metadata(pool_metadata, chain=chain)
+        pool_metadata = get_metadata(pool_metadata, chain=chain, end_ts=end_ts)
     elif isinstance(pool_metadata, dict):
         pool_metadata = PoolMetaData(pool_metadata)
     elif isinstance(pool_metadata, PoolMetaDataInterface):
