@@ -46,7 +46,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install -r requirements-py$${ matrix.py }}.txt
+          pip install -r requirements-py${{ matrix.py }}.txt
 
       - name: Format
         run: |
