@@ -32,7 +32,7 @@ coverage==7.0.5
 
 # specify versions for titanboa as it doesn't provide bounds and this makes
 # pip choke on its dependency resolution
-titanoboa @ git+https://github.com/vyperlang/titanoboa@50fda0724d4a8b89d55603683c2407a3003ae218
+titanoboa==0.1.7  # 0.1.6 for python versions before 3.10
 py-evm==0.6.0a1
 
 sphinx==5.3.0 
