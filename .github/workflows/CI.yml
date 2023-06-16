@@ -11,6 +11,16 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    permissions:
+      # Gives the action the necessary permissions for publishing new
+      # comments in pull requests.
+      pull-requests: write
+      # Gives the action the necessary permissions for pushing data to the
+      # python-coverage-comment-action branch, and for editing existing
+      # comments (to avoid publishing multiple comments in the same PR)
+      contents: write
+
     steps:
       - uses: actions/checkout@v3
 
@@ -20,35 +30,10 @@ jobs:
           python-version: "3.10"
           cache: 'pip'
 
-      - name: Install dependencies into virtual env
+      - name: Install dependencies
         run: |
-          python3 -m venv .venv
-          .venv/bin/pip install --upgrade pip
-          .venv/bin/pip install -r requirements.txt
-
-      - run: tar -cvf .venv.tar .venv
-
-      - name: Upload virtual env
-        uses: actions/upload-artifact@v3
-        with:
-          name: venv
-          path: .venv.tar
-
-  lint:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Download virtual env
-        uses: actions/download-artifact@v3
-        with:
-          name: venv
-
-      - run: |
-          mkdir -p .venv
-          tar -xf .venv.tar -C .venv
-          source .venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
 
       - name: Format
         run: |
@@ -59,67 +44,14 @@ jobs:
         run: |
           make lint
 
-  unit-test:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Download virtual env
-        uses: actions/download-artifact@v3
-        with:
-          name: venv
-
-      - run: |
-          mkdir -p .venv
-          tar -xf .venv.tar -C .venv
-          source .venv/bin/activate
-
       - name: Unit tests
         run: |
           coverage run -m pytest
 
-  end-to-end-test:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Download virtual env
-        uses: actions/download-artifact@v3
-        with:
-          name: venv
-
-      - run: |
-          mkdir -p .venv
-          tar -xf .venv.tar -C .venv
-          source .venv/bin/activate
-
       - name: End-to-end tests
         run: |
+          # coverage run -m test.ci
           coverage run -m test.simple_ci
-
-  coverage:
-    needs: [unit-test, end-to-end-test]
-    runs-on: ubuntu-latest
-    permissions:
-      # Gives the action the necessary permissions for publishing new
-      # comments in pull requests.
-      pull-requests: write
-      # Gives the action the necessary permissions for pushing data to the
-      # python-coverage-comment-action branch, and for editing existing
-      # comments (to avoid publishing multiple comments in the same PR)
-      contents: write
-    steps:
-      - name: Download virtual env
-        uses: actions/download-artifact@v3
-        with:
-          name: venv
-
-      - run: |
-          mkdir -p .venv
-          tar -xf .venv.tar -C .venv
-          source .venv/bin/activate
 
       - name: Download coverage badge
         uses: chanhosuh/get-gist-action@master
