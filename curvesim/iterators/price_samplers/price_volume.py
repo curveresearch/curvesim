@@ -1,3 +1,4 @@
+import sys
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -7,6 +8,8 @@ from curvesim.logging import get_logger
 from curvesim.price_data import get
 
 logger = get_logger(__name__)
+
+py310 = sys.version_info.minor >= 10 or sys.version_info.major > 3
 
 
 class PriceVolume:
@@ -74,7 +77,7 @@ class PriceVolume:
         return self.volumes.sum()
 
 
-@dataclass(eq=False, slots=True)
+@dataclass(eq=False, **({"slots": True} if py310 else {}))
 class PriceVolumeSample:
     timestamp: datetime
     prices: Series
