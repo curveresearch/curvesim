@@ -67,7 +67,7 @@
             <a id="nextFileLink" class="nav" href="d_7485e330971eb008_subgraph_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.2.7">coverage.py v7.2.7</a>,
-            created at 2023-06-15 23:09 +0000
+            created at 2023-06-16 18:00 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"/>
@@ -87,12 +87,12 @@
     <p class="pln"><span class="n"><a id="t3" href="#t3">3</a></span><span class="t"><span class="str">"""</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t4" href="#t4">4</a></span><span class="t"><span class="key">import</span> <span class="nam">aiohttp</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t5" href="#t5">5</a></span><span class="t"><span class="key">from</span> <span class="nam">aiohttp</span> <span class="key">import</span> <span class="nam">ClientResponseError</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t6" href="#t6">6</a></span><span class="t"><span class="key">from</span> <span class="nam">tenacity</span> <span class="key">import</span> <span class="nam">retry</span><span class="op">,</span> <span class="nam">stop_after_attempt</span><span class="op">,</span> <span class="nam">wait_random_exponential</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t6" href="#t6">6</a></span><span class="t"><span class="key">from</span> <span class="nam">tenacity</span> <span class="key">import</span> <span class="nam">retry</span><span class="op">,</span> <span class="nam">stop_after_attempt</span><span class="op">,</span> <span class="nam">wait_exponential</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t7" href="#t7">7</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t8" href="#t8">8</a></span><span class="t"><span class="key">from</span> <span class="nam">curvesim</span><span class="op">.</span><span class="nam">exceptions</span> <span class="key">import</span> <span class="nam">HttpClientError</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t9" href="#t9">9</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t10" href="#t10">10</a></span><span class="t"><span class="nam">stop_rule</span> <span class="op">=</span> <span class="nam">stop_after_attempt</span><span class="op">(</span><span class="num">8</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t11" href="#t11">11</a></span><span class="t"><span class="nam">wait_rule</span> <span class="op">=</span> <span class="nam">wait_random_exponential</span><span class="op">(</span><span class="nam">multiplier</span><span class="op">=</span><span class="num">1</span><span class="op">,</span> <span class="nam">min</span><span class="op">=</span><span class="num">2</span><span class="op">,</span> <span class="nam">max</span><span class="op">=</span><span class="num">60</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t11" href="#t11">11</a></span><span class="t"><span class="nam">wait_rule</span> <span class="op">=</span> <span class="nam">wait_exponential</span><span class="op">(</span><span class="nam">multiplier</span><span class="op">=</span><span class="num">1.5</span><span class="op">,</span> <span class="nam">min</span><span class="op">=</span><span class="num">2</span><span class="op">,</span> <span class="nam">max</span><span class="op">=</span><span class="num">60</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t12" href="#t12">12</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t13" href="#t13">13</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t14" href="#t14">14</a></span><span class="t"><span class="key">class</span> <span class="nam">HTTP</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
@@ -147,7 +147,7 @@
             <a id="nextFileLink" class="nav" href="d_7485e330971eb008_subgraph_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.2.7">coverage.py v7.2.7</a>,
-            created at 2023-06-15 23:09 +0000
+            created at 2023-06-16 18:00 +0000
         </p>
     </div>
 </footer>
