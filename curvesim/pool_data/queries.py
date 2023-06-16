@@ -4,7 +4,7 @@ from ..network.subgraph import pool_snapshot_sync, symbol_address_sync
 from ..network.web3 import underlying_coin_info_sync
 
 
-def from_address(address, chain, end_ts):
+def from_address(address, chain, end_ts=None):
     """
     Returns
 
