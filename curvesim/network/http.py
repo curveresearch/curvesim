@@ -3,12 +3,12 @@ General utility for http requests.
 """
 import aiohttp
 from aiohttp import ClientResponseError
-from tenacity import retry, stop_after_attempt, wait_random_exponential
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 from curvesim.exceptions import HttpClientError
 
 stop_rule = stop_after_attempt(8)
-wait_rule = wait_random_exponential(multiplier=1, min=2, max=60)
+wait_rule = wait_exponential(multiplier=1.5, min=2, max=60)
 
 
 class HTTP:

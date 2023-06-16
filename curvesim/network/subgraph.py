@@ -227,9 +227,12 @@ async def volume(addresses, chain, days=60, end=None):
     return vol
 
 
-async def _pool_snapshot(address, chain):
-    q = (
-        """
+async def _pool_snapshot(address, chain, end_ts=None):
+    if not end_ts:
+        end_date = datetime.now(timezone.utc)
+        end_ts = int(end_date.timestamp())
+
+    q = """
         {
           dailyPoolSnapshots(
             orderBy: timestamp,
@@ -238,6 +241,7 @@ async def _pool_snapshot(address, chain):
             where:
               {
                 pool: "%s"
+                timestamp_lte: %d
               }
           )
           {
@@ -278,8 +282,9 @@ async def _pool_snapshot(address, chain):
             xcpProfitA
           }
         }
-    """
-        % address.lower()
+    """ % (
+        address.lower(),
+        end_ts,
     )
 
     r = await convex(chain, q)
@@ -293,7 +298,7 @@ async def _pool_snapshot(address, chain):
     return r
 
 
-async def pool_snapshot(address, chain):
+async def pool_snapshot(address, chain, end_ts=None):
     """
     Async function to pull pool state and metadata from daily snapshots.
 
@@ -311,7 +316,7 @@ async def pool_snapshot(address, chain):
         A formatted dict of pool state/metadata information.
 
     """
-    r = await _pool_snapshot(address, chain)
+    r = await _pool_snapshot(address, chain, end_ts)
 
     # Flatten
     pool = r.pop("pool")
