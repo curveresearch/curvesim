@@ -13,6 +13,7 @@ jobs:
     name: test ${{ matrix.py }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         py:
           # - "3.11"
