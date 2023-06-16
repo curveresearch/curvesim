@@ -26,11 +26,13 @@ jobs:
           .venv/bin/pip install --upgrade pip
           .venv/bin/pip install -r requirements.txt
 
+      - run: tar -cvf .venv.tar .venv
+
       - name: Upload virtual env
         uses: actions/upload-artifact@v3
         with:
           name: venv
-          path: .venv
+          path: .venv.tar
 
   lint:
     needs: build
@@ -43,7 +45,10 @@ jobs:
         with:
           name: venv
 
-      - run: source .venv/bin/activate
+      - run: |
+          mkdir -p .venv
+          tar -xf .venv.tar -C .venv
+          source .venv/bin/activate
 
       - name: Format
         run: |
@@ -65,7 +70,10 @@ jobs:
         with:
           name: venv
 
-      - run: source .venv/bin/activate
+      - run: |
+          mkdir -p .venv
+          tar -xf .venv.tar -C .venv
+          source .venv/bin/activate
 
       - name: Unit tests
         run: |
@@ -82,7 +90,10 @@ jobs:
         with:
           name: venv
 
-      - run: source .venv/bin/activate
+      - run: |
+          mkdir -p .venv
+          tar -xf .venv.tar -C .venv
+          source .venv/bin/activate
 
       - name: End-to-end tests
         run: |
@@ -105,7 +116,10 @@ jobs:
         with:
           name: venv
 
-      - run: source .venv/bin/activate
+      - run: |
+          mkdir -p .venv
+          tar -xf .venv.tar -C .venv
+          source .venv/bin/activate
 
       - name: Download coverage badge
         uses: chanhosuh/get-gist-action@master
