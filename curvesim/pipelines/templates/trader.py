@@ -1,19 +1,16 @@
-import sys
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from typing import Union
 
 from curvesim.logging import get_logger
-
-# slots on dataclass is supported only in python >= 3.10
-py310 = sys.version_info.minor >= 10 or sys.version_info.major > 3
-
+from curvesim.utils import dataclass
 
 logger = get_logger(__name__)
 
 
-@dataclass(frozen=True, **({"slots": True} if py310 else {}))
+@dataclass(frozen=True, slots=True)
 class Trade:
+    """Data container for a trade to be executed."""
+
     coin_in: Union[str, int]
     coin_out: Union[str, int]
     amount_in: int
@@ -23,8 +20,10 @@ class Trade:
         return (getattr(self, attr) for attr in self.__slots__)
 
 
-@dataclass(**({"slots": True} if py310 else {}))
+@dataclass(slots=True)
 class TradeResult:
+    """Data container for a trade execution."""
+
     coin_in: Union[str, int]
     coin_out: Union[str, int]
     amount_in: int

@@ -3,6 +3,8 @@ import functools
 import inspect
 import os
 import re
+import sys
+from dataclasses import dataclass as _dataclass
 from itertools import combinations
 
 from dotenv import load_dotenv
@@ -11,11 +13,18 @@ from curvesim.exceptions import CurvesimException, MissingEnvVarError
 
 load_dotenv()
 
+is_py310 = sys.version_info.minor >= 10 or sys.version_info.major > 3
+"""
+Some utils require knowing the python version.  Right now it's only important to
+distinguish between 3.10 and earlier versions.
+"""
 
-# Dummy value for optional default arg
-# so that any value, including `None`,
-# can be set as a default.
 _NOT_VALUE = object()
+"""
+Dummy value for optional default arg
+so that any value, including `None`,
+can be set as a default.
+"""
 
 
 def get_env_var(var_name, default=_NOT_VALUE):
@@ -131,3 +140,19 @@ def get_pairs(arg):
         arg = range(arg)
 
     return list(combinations(arg, 2))
+
+
+def dataclass(*args, **kwargs):
+    """
+    Slightly modified version of the standard library's `dataclass`.
+
+    The modification is to allow the setting of slots on versions of
+    python before 3.10.
+
+    Right now, we just remove the `slots` kwarg if it exists, but in the
+    future we can implement our own custom slots for old versions.
+    """
+    if "slots" in kwargs and not is_py310:
+        del kwargs["slots"]
+
+    return _dataclass(*args, **kwargs)
