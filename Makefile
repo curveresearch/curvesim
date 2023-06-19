@@ -37,12 +37,12 @@ venv:
 
 .PHONY: requirements
 requirements:
-	@echo "Generating requirements.txt from core dependencies in requirements_base.txt ..."
+	@echo "Generating requirements.txt from core and dev dependencies ..."
 	python3 -m venv temp_venv
 	temp_venv/bin/pip install --upgrade pip
-	temp_venv/bin/pip install -r requirements_base.txt
+	temp_venv/bin/pip install -r requirements_base.txt -r requirements_dev.txt
 	echo '# generated via "make requirements"' > requirements.txt
-	temp_venv/bin/pip freeze -r requirements_base.txt >> requirements.txt
+	temp_venv/bin/pip freeze -r requirements_base.txt -r requirements_dev.txt >> requirements.txt
 	rm -rf temp_venv
 	@echo "requirements.txt has been updated 🍉"
 
