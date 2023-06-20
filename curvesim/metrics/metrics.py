@@ -87,40 +87,53 @@ class ArbMetrics(PricingMetric):
     def compute_arb_metrics(self, price_sample, trade_data, **kwargs):
         """Computes all metrics for each timestamp in an individual run."""
 
-        data = concat([price_sample.prices, trade_data], axis=1)
+        prices = DataFrame(price_sample.prices.to_list(), index=price_sample.index)
 
-        profits = data.apply(self._compute_profits, axis=1, result_type="expand")
-        price_error = data.price_errors.abs().apply(sum)
+        profits = self._compute_profits(prices, trade_data.trades)
+        price_error = trade_data.price_errors.abs().apply(sum)
 
         results = concat([profits, price_error], axis=1)
         results.columns = list(self.config["plot"]["metrics"])
+
         return results
 
-    def _compute_profits(self, data_row):
+    def _compute_profits(self, price_df, trade_df):
         """
         Computes arbitrageur profits and pool fees for a single row of data (i.e.,
         a single timestamp) in units of the chosen numeraire, `self.numeraire`.
         """
         get_price = self.get_market_price
         numeraire = self.numeraire
-        prices = data_row.prices
 
-        arb_profit = 0
-        pool_profit = 0
-        for trade in data_row.trades:
-            market_price = get_price(trade.coin_in, trade.coin_out, prices)
-            arb = trade.amount_out - trade.amount_in * market_price
-            fee = trade.fee
+        profit = []
+        for price_row, trade_row in zip(price_df.iterrows(), trade_df):
 
-            if trade.coin_out != numeraire:
-                price = get_price(trade.coin_out, numeraire, prices)
-                arb = arb * price
-                fee = fee * price
+            timestamp, prices = price_row
+            arb_profit = 0
+            pool_profit = 0
 
-            arb_profit += arb / 10**18
-            pool_profit += fee / 10**18
+            for trade in trade_row:
+                market_price = get_price(trade.coin_in, trade.coin_out, prices)
+                arb = trade.amount_out - trade.amount_in * market_price
+                fee = trade.fee
 
-        return arb_profit, pool_profit
+                if trade.coin_out != numeraire:
+                    price = get_price(trade.coin_out, numeraire, prices)
+                    arb = arb * price
+                    fee = fee * price
+
+                arb_profit += arb / 10**18
+                pool_profit += fee / 10**18
+
+            profit.append(
+                {
+                    "timestamp": timestamp,
+                    "arb_profit": arb_profit,
+                    "pool_profit": pool_profit,
+                }
+            )
+
+        return DataFrame(profit).set_index("timestamp")
 
 
 class PoolVolume(PoolMetric):
@@ -340,7 +353,7 @@ class PoolValue(PoolPricingMetric):
             columns=self._pool.coin_names,
         )
 
-        prices = DataFrame(price_sample.prices.to_list())
+        prices = DataFrame(price_sample.prices.to_list(), index=price_sample.index)
 
         pool_value = self._get_value_from_prices(reserves / 10**18, prices)
         pool_value_virtual = pool_state.apply(
@@ -371,7 +384,7 @@ class PoolValue(PoolPricingMetric):
             columns=pool.basepool.coin_names,
         )
 
-        prices = DataFrame(price_sample.prices.to_list())
+        prices = DataFrame(price_sample.prices.to_list(), index=price_sample.index)
 
         LP_token_proportion = meta_reserves.iloc[:, max_coin] / pool_state.tokens_base
         base_reserves = base_reserves.mul(LP_token_proportion, axis=0)

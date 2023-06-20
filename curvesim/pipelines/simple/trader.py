@@ -110,7 +110,7 @@ def get_arb_trades(pool, prices):
 
     trades = []
 
-    for pair in prices.index:
+    for pair in prices.keys():
         i, j = pair
 
         if pool.price(i, j) - prices[pair] > 0:
