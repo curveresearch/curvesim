@@ -62,7 +62,9 @@ class PriceVolume:
         """
         for prices, volumes in zip(self.prices.iterrows(), self.volumes.iterrows()):
             assert prices[0] == volumes[0], "Price/volume timestamps did not match"
-            yield PriceVolumeSample(prices[0], prices[1], volumes[1])
+            yield PriceVolumeSample(
+                prices[0], prices[1].to_dict(), volumes[1].to_dict()
+            )
 
     def total_volumes(self):
         """
@@ -71,7 +73,7 @@ class PriceVolume:
         pandas.Series
             Total volume for each pairwise coin combination, summed accross timestamps.
         """
-        return self.volumes.sum()
+        return self.volumes.sum().to_dict()
 
 
 @dataclass(eq=False, slots=True)

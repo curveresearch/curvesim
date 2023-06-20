@@ -1,5 +1,3 @@
-from numpy import array
-
 from curvesim.exceptions import CurvesimValueError
 from curvesim.logging import get_logger
 from curvesim.network.subgraph import redemption_prices_sync as _redemption_prices
@@ -110,10 +108,10 @@ class PoolDataCache:
             basepool_address = self.metadata._dict["basepool"]["address"]
             addresses = [addresses, basepool_address]
             vol = _volume(addresses, chain, days=days, end=end)
-            summed_vol = array([sum(v) for v in vol])
+            summed_vol = [sum(v) for v in vol]
         else:
             vol = _volume(addresses, chain, days=days, end=end)
-            summed_vol = array(sum(vol))
+            summed_vol = sum(vol)
 
         return summed_vol
 
