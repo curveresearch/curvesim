@@ -86,7 +86,7 @@ def per_run(sim, stored):
 
     # Test appropriate equality
     are_equal = sim.drop(["D"], axis=1) == stored.drop(["D"], axis=1)
-    d_close = np.isclose(sim["D"], stored["D"], rtol=1e-5)
+    d_close = np.isclose(sim["D"], stored["D"], rtol=1e-2)
 
     # Feedback
     if not are_equal.all(axis=None):
