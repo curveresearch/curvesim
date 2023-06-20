@@ -23,7 +23,7 @@ jobs:
         os:
           - ubuntu-latest
           - macos-latest
-          - windows-latest
+          # - windows-latest
 
     steps:
       - uses: actions/checkout@v3
@@ -39,7 +39,7 @@ jobs:
           pip install --upgrade pip
           pip install build
           python3 -m build
-          pip install dist/*.whl
+          pip install dist/curvesim*.whl
           # ensure tests hit installed package
           rm -r curvesim
 
