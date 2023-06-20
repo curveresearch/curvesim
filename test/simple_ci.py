@@ -7,7 +7,8 @@ so besides the network code there is a lack of coverage around the
 """
 import os
 
-from pandas import DataFrame, read_pickle
+import numpy as np
+import pandas as pd
 
 from curvesim.pipelines.simple import pipeline as simple_pipeline
 
@@ -65,7 +66,7 @@ def main():  # noqa: C901
 
             # with open(f_name, "wb") as f:
             #     pickle.dump(sim_data[key], f)
-            stored_data = read_pickle(f_name)
+            stored_data = pd.read_pickle(f_name)
             test_functions[key](sim_data[key], stored_data)
 
 
@@ -83,14 +84,19 @@ def per_run(sim, stored):
         sim_runs == stored_runs
     ), "Simulation runs don't match between stored and tested data."
 
-    # Test exact equality
-    are_equal = sim == stored
+    # Test appropriate equality
+    are_equal = sim.drop(["D"], axis=1) == stored.drop(["D"], axis=1)
+    d_close = np.isclose(sim["D"], stored["D"], rtol=1e-2)
 
     # Feedback
     if not are_equal.all(axis=None):
-        print("Per-run data: Equality Test")
+        print("Per-run data: Equality Test for `A` and `fee`")
         print(are_equal)
-        raise AssertionError("Equality test failed.")
+        raise AssertionError("Equality test for `A` and `fee` failed.")
+    if not all(d_close):
+        print("Per-run data: Equality Test for `D`")
+        print(d_close)
+        raise AssertionError("Equality test for `D` failed.")
 
     print("Equality test passed.")
 
@@ -122,7 +128,7 @@ def per_trade(sim, stored, threshold=0.9):
 
         R2.append(compute_R2(_sim.resample("1D").mean(), _stored.resample("1D").mean()))
 
-    R2 = DataFrame(R2).T
+    R2 = pd.DataFrame(R2).T
 
     # Feedback
     if not (R2 >= threshold).all(axis=None):

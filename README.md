@@ -14,7 +14,7 @@ Users can re-use simulation components to simulate custom strategies and generat
 
 
 #### Dependencies:
-The maintainers use Python 3.8 or above, but 3.11 is not yet supported.  The code is likely fine for 3.6 and 3.7 but not officially supported.
+Python versions 3.8 - 3.10 are supported but 3.11 is not yet supported.
 
 Primary package dependencies: scipy, numpy, pandas, altair, matplotlib, requests, web3, gmpy2
 

@@ -1,14 +1,16 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from typing import Union
 
 from curvesim.logging import get_logger
+from curvesim.utils import dataclass
 
 logger = get_logger(__name__)
 
 
-@dataclass(slots=True, frozen=True)
+@dataclass(frozen=True, slots=True)
 class Trade:
+    """Data container for a trade to be executed."""
+
     coin_in: Union[str, int]
     coin_out: Union[str, int]
     amount_in: int
@@ -20,6 +22,8 @@ class Trade:
 
 @dataclass(slots=True)
 class TradeResult:
+    """Data container for a trade execution."""
+
     coin_in: Union[str, int]
     coin_out: Union[str, int]
     amount_in: int

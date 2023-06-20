@@ -9,7 +9,47 @@ on:
     branches: [ main, develop ]
 
 jobs:
-  build:
+  package:
+    name: test package (${{ matrix.py }} on ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        py:
+          # - "3.11"
+          - "3.10"
+          - "3.9"
+          - "3.8"
+        os:
+          - ubuntu-latest
+          - macos-latest
+          # - windows-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up latest Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.py }}
+          cache: 'pip'
+
+      - name: Build and install package
+        run: |
+          pip install --upgrade pip
+          pip install build
+          python3 -m build
+          pip install dist/curvesim*.whl
+          # ensure tests hit installed package
+          rm -r curvesim
+
+      - name: End-to-end tests
+        run: |
+          python3 -m test.simple_ci
+
+
+  source:
+    name: Test source with coverage
     runs-on: ubuntu-latest
 
     permissions:

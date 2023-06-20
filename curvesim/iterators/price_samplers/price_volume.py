@@ -1,10 +1,10 @@
-from dataclasses import dataclass
 from datetime import datetime
 
 from pandas import Series
 
 from curvesim.logging import get_logger
 from curvesim.price_data import get
+from curvesim.utils import dataclass
 
 logger = get_logger(__name__)
 
