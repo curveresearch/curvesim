@@ -1,32 +1,10 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 from curvesim.logging import get_logger
 from curvesim.network import coingecko as _coingecko
 from curvesim.network import nomics as _nomics
 
 logger = get_logger(__name__)
-
-
-def nomics(coins, days=60, data_dir="data", end=None):
-    if end is None:
-        t_end = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-        custom_suffix = ""
-    else:
-        t_end = datetime.fromtimestamp(end, tz=timezone.utc)
-        custom_suffix = "-" + str(end)
-    t_start = t_end - timedelta(days=days)
-
-    logger.info("Fetching Nomics price data...")
-    logger.info("Timerange: %s to %s" % (str(t_start), str(t_end)))
-
-    _nomics.update(
-        coins, None, t_start, t_end, data_dir=data_dir, custom_suffix=custom_suffix
-    )
-    prices, volumes, pzero = _nomics.pool_prices(
-        coins, data_dir=data_dir, custom_suffix=custom_suffix
-    )
-
-    return prices, volumes, pzero
 
 
 def coingecko(coins, chain="mainnet", days=60, end=None):
