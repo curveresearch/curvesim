@@ -39,7 +39,7 @@ jobs:
           pip install --upgrade pip
           pip install build
           python3 -m build
-          pip install dist/curvesim*.whl
+          pip install dist/*.whl
           # ensure tests hit installed package
           rm -r curvesim
 
