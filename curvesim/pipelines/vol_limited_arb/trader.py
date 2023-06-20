@@ -18,11 +18,11 @@ class VolumeLimitedArbitrageur(Trader):
 
         Parameters
         ----------
-        prices : pandas.Series
+        prices : dict
             Current market prices from the price_sampler.
 
-        volume_limits : pandas.Series
-            Current volume limits.
+        volume_limits : dict
+            Current volume limits for each trading pair.
 
 
         Returns
@@ -49,11 +49,11 @@ def multipair_optimal_arbitrage(pool, prices, limits):  # noqa: C901
     pool :
         Simulation interface to a subclass of :class:`Pool`.
 
-    prices : pandas.Series
-        Current market prices from the price_sampler
+    prices : dict
+        Current market prices from the price_sampler.
 
-    volume_limits : pandas.Series
-        Current volume limits
+    volume_limits : dict
+        Current volume limits for each trading pair.
 
     Returns
     -------
@@ -72,10 +72,9 @@ def multipair_optimal_arbitrage(pool, prices, limits):  # noqa: C901
 
     # Limit trade size, add size bounds
     limited_init_trades = []
-    for t, limit in zip(init_trades, limits):
+    for t in init_trades:
         size, pair, price_target = t
-        i, j = pair
-        limit = int(limit * 10**18)
+        limit = int(limits[pair] * 10**18)
         t = min(size, limit), pair, price_target, 0, limit + 1
         limited_init_trades.append(t)
 
@@ -175,7 +174,7 @@ def get_arb_trades(pool, prices):
 
     trades = []
 
-    for pair in prices.index:
+    for pair in prices.keys():
         i, j = pair
 
         if pool.price(i, j) - prices[pair] > 0:

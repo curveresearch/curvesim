@@ -1,0 +1,93 @@
+name: CI
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the main and develop branches.
+on: workflow_dispatch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      # Gives the action the necessary permissions for publishing new
+      # comments in pull requests.
+      pull-requests: write
+      # Gives the action the necessary permissions for pushing data to the
+      # python-coverage-comment-action branch, and for editing existing
+      # comments (to avoid publishing multiple comments in the same PR)
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up latest Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Format
+        run: |
+          black --version
+          black . --check
+
+      - name: Lint
+        run: |
+          make lint
+
+      - name: Unit tests
+        run: |
+          coverage run -m pytest
+
+      - name: End-to-end tests
+        run: |
+          coverage run -m test.ci
+
+      - name: Download coverage badge
+        uses: chanhosuh/get-gist-action@master
+        id: covbadge
+        with:
+          gistURL: "https://gist.github.com/chanhosuh/3da3c072e081f4509ebdd09c63e6ede5" 
+
+      - name: Coverage report
+        run: |
+          # combine coverage results from the previous steps
+          # and checks if score decreased since last CI run
+          coverage combine
+          BADGE_JSON=`cat ${{ steps.covbadge.outputs.file }}`
+          COVERAGE_SCORE=$(python3 -c "import json; score=json.loads('${BADGE_JSON}')['message'].rstrip('%'); print(score)")
+          coverage report --fail-under="${COVERAGE_SCORE:-0}"
+          echo "COVERAGE_SCORE=`coverage report --format=total`" >> $GITHUB_ENV
+
+      - name: Upload coverage badge
+        uses: schneegans/dynamic-badges-action@v1.6.0
+        if: github.ref == 'refs/heads/main'
+        with:
+          auth: ${{ secrets.GIST_TOKEN }}  # personal access token with scope "gist"
+          gistID: 3da3c072e081f4509ebdd09c63e6ede5  # id of previously created gist
+          filename: curvesim_coverage_badge.json
+          label: Coverage
+          message: ${{ env.COVERAGE_SCORE }}%
+          minColorRange: 50
+          maxColorRange: 90
+          valColorRange: ${{ env.COVERAGE_SCORE }}%
+
+      - name: Commit coverage report
+        id: coverage_comment
+        uses: py-cov-action/python-coverage-comment-action@v3
+        with:
+          GITHUB_TOKEN: ${{ github.token }}
+ 
+      - name: Store PR comment for posting
+        uses: actions/upload-artifact@v3
+        if: steps.coverage_comment.outputs.COMMENT_FILE_WRITTEN == 'true'
+        with:
+          # If you use a different name, update COMMENT_ARTIFACT_NAME accordingly
+          name: python-coverage-comment-action
+          # If you use a different name, update COMMENT_FILENAME accordingly
+          path: python-coverage-comment-action.txt
