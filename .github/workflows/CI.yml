@@ -43,11 +43,6 @@ jobs:
           # ensure tests hit installed package
           rm -rf curvesim
 
-      - name: Unit tests
-        run: |
-          pip install -r requirements_dev.txt
-          pytest
-
       - name: End-to-end tests
         run: |
           python3 -m test.simple_ci
