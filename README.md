@@ -25,7 +25,7 @@
 | curvesim/metrics/state\_log/pool\_parameters.py      |       17 |        0 |        6 |        0 |    100% |           |
 | curvesim/metrics/state\_log/pool\_state.py           |       12 |        0 |        2 |        0 |    100% |           |
 | curvesim/network/\_\_init\_\_.py                     |        0 |        0 |        0 |        0 |    100% |           |
-| curvesim/network/coingecko.py                        |      113 |       37 |       22 |        2 |     64% |62-66, 148, 161-169, 173-184, 188-200, 204-214 |
+| curvesim/network/coingecko.py                        |       76 |        6 |       12 |        2 |     91% |62-66, 148 |
 | curvesim/network/http.py                             |       39 |        5 |        8 |        1 |     87% |42->45, 49-54 |
 | curvesim/network/subgraph.py                         |      135 |       55 |       48 |        3 |     55% |78, 112-143, 148, 211-227, 231->235, 438-464, 497-521 |
 | curvesim/network/utils.py                            |       38 |        6 |        8 |        1 |     80% |41-42, 68-71 |
@@ -60,7 +60,7 @@
 | curvesim/pool/\_\_init\_\_.py                        |       50 |       25 |       18 |        4 |     43% |106-134, 177-195, 217, 219, 223, 233-236 |
 | curvesim/pool/base.py                                |       50 |       21 |       18 |        4 |     49% |29-31, 36-38, 45, 52, 57-59, 66, 71-73, 80, 85-89 |
 | curvesim/pool/cryptoswap/\_\_init\_\_.py             |        2 |        0 |        0 |        0 |    100% |           |
-| curvesim/pool/cryptoswap/pool.py                     |      538 |       69 |      156 |       36 |     83% |153, 158, 161, 163->166, 169-176, 182, 228, 230, 260, 285, 299, 302, 316, 318, 320, 347, 360-361, 374, 388, 396, 469->478, 474, 516->526, 531-532, 536-559, 684->692, 744, 794->793, 804, 818->842, 820-840, 845-848, 1128, 1141, 1163, 1167, 1187 |
+| curvesim/pool/cryptoswap/pool.py                     |      538 |       69 |      156 |       36 |     83% |153, 158, 161, 163->166, 169-176, 182, 228, 230, 260, 285, 299, 302, 316, 318, 320, 347, 360-361, 374, 388, 396, 469->478, 474, 516->526, 531-532, 536-559, 684->692, 744, 794->793, 804, 818->842, 820-840, 845-848, 1123, 1128, 1163, 1167, 1187 |
 | curvesim/pool/sim\_interface/\_\_init\_\_.py         |        4 |        0 |        0 |        0 |    100% |           |
 | curvesim/pool/sim\_interface/metapool.py             |       81 |        3 |       26 |        3 |     94% |37, 64, 75 |
 | curvesim/pool/sim\_interface/pool.py                 |       36 |        0 |        4 |        0 |    100% |           |
@@ -79,11 +79,11 @@
 | curvesim/pool\_data/metadata/stableswap.py           |       45 |        0 |       18 |        0 |    100% |           |
 | curvesim/pool\_data/queries.py                       |       16 |        3 |        4 |        0 |     85% |     46-50 |
 | curvesim/price\_data/\_\_init\_\_.py                 |       10 |        4 |        6 |        1 |     44% |     51-55 |
-| curvesim/price\_data/sources.py                      |       31 |       19 |        4 |        0 |     34% |11-29, 41-52 |
+| curvesim/price\_data/sources.py                      |       19 |        8 |        2 |        0 |     52% |     19-30 |
 | curvesim/sim/\_\_init\_\_.py                         |       38 |       31 |       20 |        0 |     12% |138-151, 155-193 |
 | curvesim/utils.py                                    |       50 |       11 |       21 |        7 |     72% |54, 57, 93, 105-114, 116->exit, 117, 156 |
 | curvesim/version.py                                  |        7 |        0 |        0 |        0 |    100% |           |
-|                                            **TOTAL** | **3444** |  **875** |  **920** |   **95** | **71%** |           |
+|                                            **TOTAL** | **3395** |  **833** |  **908** |   **95** | **71%** |           |
 
 
 ## Setup coverage badge
