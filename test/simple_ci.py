@@ -6,6 +6,7 @@ so besides the network code there is a lack of coverage around the
 `pool_data` and `price_data` packages.
 """
 import os
+import pickle
 
 import numpy as np
 import pandas as pd
@@ -13,7 +14,7 @@ import pandas as pd
 from curvesim.pipelines.simple import pipeline as simple_pipeline
 
 
-def main():  # noqa: C901
+def main(write=False):  # noqa: C901
 
     data_dir = os.path.join("test", "data")
     pools = [
@@ -62,12 +63,14 @@ def main():  # noqa: C901
             f_name = os.path.join(
                 data_dir, f"{pool_address}-simple_results_{key}.pickle"
             )
-            # import pickle
 
-            # with open(f_name, "wb") as f:
-            #     pickle.dump(sim_data[key], f)
-            stored_data = pd.read_pickle(f_name)
-            test_functions[key](sim_data[key], stored_data)
+            if write:
+                with open(f_name, "wb") as f:
+                    pickle.dump(sim_data[key], f)
+
+            else:
+                stored_data = pd.read_pickle(f_name)
+                test_functions[key](sim_data[key], stored_data)
 
 
 def per_run(sim, stored):
