@@ -117,10 +117,10 @@ class ArbMetrics(PricingMetric):
                 arb = arb * price
                 fee = fee * price
 
-            arb_profit += arb / 10**18
-            pool_profit += fee / 10**18
+            arb_profit += arb
+            pool_profit += fee
 
-        return arb_profit, pool_profit
+        return arb_profit / 10**18, pool_profit / 10**18
 
 
 class PoolVolume(PoolMetric):
