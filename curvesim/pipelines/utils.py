@@ -46,10 +46,10 @@ def compute_volume_multipliers(pool_vol, market_vol, n, pool_type, mode=1):
         vol_mult = metapool_vol_mult(array(pool_vol), array(market_vol), n, mode)
 
     else:
-        raise TypeError(f"Pool type {pool_type} not supported by this pipeline")
+        raise TypeError(f"Pool type {pool_type} not supported by volume limiter.")
 
     vol_mult_dict = dict(zip(pairs, vol_mult))
-    logger.info(f"Volume Multipliers: {vol_mult_dict}")
+    logger.info(f"Volume Multipliers: {format_info_str(vol_mult_dict)}")
     return vol_mult_dict
 
 
@@ -94,3 +94,9 @@ def metapool_vol_mult(pool_vol, market_vol, n, mode):
         )
 
     return vol_mult
+
+
+def format_info_str(vol_mult_dict):
+    info = [f"{base}/{quote}: {mult}" for (base, quote), mult in vol_mult_dict.items()]
+    new_line = "\n    "
+    return new_line + new_line.join(info)

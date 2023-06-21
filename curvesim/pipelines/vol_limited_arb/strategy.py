@@ -34,6 +34,6 @@ class VolumeLimitedStrategy(Strategy):
 
 
 def compute_volume_limits(volumes, vol_mult):
-    limits = {key: vol * vol_mult[key] for key, vol in volumes.items()}
-    reversed_limits = {tuple(reversed(pair)): val for pair, val in limits.items()}
+    limits = {key: volumes[key] * vol_mult[key] for key in volumes}
+    reversed_limits = {(j, i): lim for (i, j), lim in limits.items()}
     return {**limits, **reversed_limits}
