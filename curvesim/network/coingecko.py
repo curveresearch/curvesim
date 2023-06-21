@@ -157,68 +157,9 @@ async def coin_ids_from_addresses(addresses, chain):
     return coin_ids
 
 
-async def _coin_info_from_id(ID, chain, chain_out="mainnet"):
-    chain = PLATFORMS[chain.lower()]
-    chain_out = PLATFORMS[chain_out.lower()]
-    url = URL + f"coins/{ID}"
-
-    r = await HTTP.get(url)
-    address = r["platforms"][chain_out]
-    symbol = r["symbol"]
-
-    return address, symbol
-
-
-async def coin_info_from_ids(IDs, chain, chain_out="mainnet"):
-    if isinstance(IDs, str):
-        addresses, symbols = await _coin_info_from_id(IDs, chain, chain_out=chain_out)
-
-    else:
-        tasks = []
-        for ID in IDs:
-            tasks.append(_coin_info_from_id(ID, chain, chain_out=chain_out))
-
-        r = await asyncio.gather(*tasks)
-        addresses, symbols = list(zip(*r))
-
-    return addresses, symbols
-
-
-async def _crosschain_coin_address(address, chain_in, chain_out):
-    if chain_in == "mainnet" and chain_out == "mainnet":
-        return address
-
-    address = address.lower()
-    chain_in = PLATFORMS[chain_in.lower()]
-    chain_out = PLATFORMS[chain_out.lower()]
-    url = URL + f"coins/{chain_in}/contract/{address}"
-
-    r = await HTTP.get(url)
-
-    address = r["platforms"][chain_out]
-
-    return address
-
-
-async def crosschain_coin_addresses(addresses, chain_in, chain_out):
-    if isinstance(addresses, str):
-        addresses_out = await _crosschain_coin_address(addresses, chain_in, chain_out)
-
-    else:
-        tasks = []
-        for addr in addresses:
-            tasks.append(_crosschain_coin_address(addr, chain_in, chain_out))
-
-        addresses_out = await asyncio.gather(*tasks)
-
-    return addresses_out
-
-
 # Sync
 _pool_prices_sync = sync(_pool_prices)
 coin_ids_from_addresses_sync = sync(coin_ids_from_addresses)
-coin_info_from_ids_sync = sync(coin_info_from_ids)
-crosschain_coin_addresses_sync = sync(crosschain_coin_addresses)
 
 
 if __name__ == "__main__":
@@ -230,11 +171,9 @@ if __name__ == "__main__":
     chain = "mainnet"
     print("Coin addresses:", coin_addresses)
     print("Chain", chain)
-    coin_ids = coin_ids_from_addresses_sync(coin_addresses, chain)
-    print("Coin IDs:", coin_ids)
 
     vs_ccy = "USD"
     days = 1
-    prices, volumes = pool_prices(coin_addresses, vs_ccy, days)
+    prices, volumes = pool_prices(coin_addresses, vs_ccy, days, chain)
     print(prices.head())
     print(volumes.head())
