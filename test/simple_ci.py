@@ -22,16 +22,32 @@ def main(write=False):  # noqa: C901
         {
             "address": "0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7",
             "end_timestamp": 1638316800,
+            "fixed_params": {
+                "D": 336041297077932159499316465,
+                "tokens": 327462357109953929993497577,
+            },
         },
         # aCRV
         {
             "address": "0xdebf20617708857ebe4f679508e7b7863a8a8eee",
             "end_timestamp": 1622505600,
+            "fixed_params": {
+                "D": 22001385630568389196881923,
+                "tokens": 19746986605317638698691614,
+            },
         },
         # # frax3CRV"
         {
             "address": "0xd632f22692FaC7611d2AA1C0D552930D43CAEd3B",
             "end_timestamp": 1643673600,
+            "fixed_params": {
+                "D": 182660582368395052451883972,
+                "tokens": 180761075791638456903589778,
+                "basepool": {
+                    "D_base": 336041297077932159499316465,
+                    "tokens_base": 327462357109953929993497577,
+                },
+            },
         },
     ]
 
