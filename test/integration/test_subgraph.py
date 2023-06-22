@@ -25,10 +25,13 @@ def test_convex_subgraph_stableswap_snapshot_query():
 
     chain = "mainnet"
     address = "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7"
+    end_ts = 1687305600
     _snapshot_sync = sync(pool_snapshot)
-    snapshot = _snapshot_sync(address, chain)
+    snapshot = _snapshot_sync(address, chain, end_ts=end_ts)
     assert snapshot["address"] == address
     assert snapshot["chain"] == chain
+
+    assert snapshot["timestamp"] <= end_ts
 
     assert snapshot["version"] == 1
 
@@ -44,10 +47,13 @@ def test_convex_subgraph_cryptoswap_snapshot_query():
 
     chain = "mainnet"
     address = "0x3211C6cBeF1429da3D0d58494938299C92Ad5860"
+    end_ts = 1687305600
     _snapshot_sync = sync(pool_snapshot)
-    snapshot = _snapshot_sync(address, chain)
+    snapshot = _snapshot_sync(address, chain, end_ts=end_ts)
     assert snapshot["address"] == address
     assert snapshot["chain"] == chain
+
+    assert snapshot["timestamp"] <= end_ts
 
     assert snapshot["version"] == 2
 

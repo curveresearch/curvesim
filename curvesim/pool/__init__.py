@@ -216,8 +216,16 @@ def get_sim_pool(
     if isinstance(pool_metadata, str):
         pool_metadata = get_metadata(pool_metadata, chain=chain, end_ts=end_ts)
     elif isinstance(pool_metadata, dict):
+        if end_ts:
+            raise CurvesimValueError(
+                "`end_ts` has no effect unless pool address is used."
+            )
         pool_metadata = PoolMetaData(pool_metadata)
     elif isinstance(pool_metadata, PoolMetaDataInterface):
+        if end_ts:
+            raise CurvesimValueError(
+                "`end_ts` has no effect unless pool address is used."
+            )
         pass
     else:
         raise CurvesimValueError(

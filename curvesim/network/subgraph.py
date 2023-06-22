@@ -317,6 +317,7 @@ async def pool_snapshot(address, chain, end_ts=None):
 
     """
     r = await _pool_snapshot(address, chain, end_ts)
+    logger.debug(f"Pool snapshot: {r}")
 
     # Flatten
     pool = r.pop("pool")
@@ -350,7 +351,7 @@ async def pool_snapshot(address, chain, end_ts=None):
 
     # Basepool
     if r["metapool"]:
-        basepool = await pool_snapshot(r["basePool"], chain)
+        basepool = await pool_snapshot(r["basePool"], chain, end_ts)
     else:
         basepool = None
 
