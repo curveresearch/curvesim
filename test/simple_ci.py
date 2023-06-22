@@ -15,7 +15,7 @@ import pandas as pd
 from curvesim.pipelines.simple import pipeline as simple_pipeline
 
 
-def main(generate=False):
+def main(generate=False, ncpu=None):
 
     data_dir = os.path.join("test", "data")
     pools = [
@@ -51,7 +51,7 @@ def main(generate=False):
             chain="mainnet",
             end_ts=end_ts,
             test=True,
-            # ncpu=1,
+            ncpu=ncpu,
         )
 
         sim_data = {
@@ -195,6 +195,17 @@ if __name__ == "__main__":
         prog="Simple CI Test",
         description="Test end-to-end by running the simple pipeline across multiple pool types",
     )
-    parser.add_argument("-g", "--generate", action="store_true")
+    parser.add_argument(
+        "-g",
+        "--generate",
+        action="store_true",
+        help="Generate pickled test data",
+    )
+    parser.add_argument(
+        "-n",
+        "--ncpu",
+        type=int,
+        help="Number of cores to use; use 1 for debugging/profiling",
+    )
     args = parser.parse_args()
-    main(args.generate)
+    main(args.generate, args.ncpu)
