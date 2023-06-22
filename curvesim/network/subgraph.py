@@ -317,6 +317,7 @@ async def pool_snapshot(address, chain, end_ts=None):
 
     """
     r = await _pool_snapshot(address, chain, end_ts)
+    logger.debug(f"Pool snapshot: {r}")
 
     # Flatten
     pool = r.pop("pool")
