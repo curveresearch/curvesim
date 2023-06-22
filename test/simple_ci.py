@@ -5,6 +5,7 @@ Technically these are not end-to-end tests since we don't pull the data,
 so besides the network code there is a lack of coverage around the
 `pool_data` and `price_data` packages.
 """
+import argparse
 import os
 import pickle
 
@@ -14,7 +15,7 @@ import pandas as pd
 from curvesim.pipelines.simple import pipeline as simple_pipeline
 
 
-def main(write=False):  # noqa: C901
+def main(generate=False):
 
     data_dir = os.path.join("test", "data")
     pools = [
@@ -64,7 +65,7 @@ def main(write=False):  # noqa: C901
                 data_dir, f"{pool_address}-simple_results_{key}.pickle"
             )
 
-            if write:
+            if generate:
                 with open(f_name, "wb") as f:
                     pickle.dump(sim_data[key], f)
 
@@ -190,4 +191,10 @@ def compute_R2(sim, stored):
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(
+        prog="Simple CI Test",
+        description="Test end-to-end by running the simple pipeline across multiple pool types",
+    )
+    parser.add_argument("-g", "--generate", action="store_true")
+    args = parser.parse_args()
+    main(args.generate)
