@@ -351,7 +351,7 @@ async def pool_snapshot(address, chain, end_ts=None):
 
     # Basepool
     if r["metapool"]:
-        basepool = await pool_snapshot(r["basePool"], chain)
+        basepool = await pool_snapshot(r["basePool"], chain, end_ts)
     else:
         basepool = None
 
