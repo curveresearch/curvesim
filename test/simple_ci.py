@@ -1,9 +1,6 @@
 """
-Test the entire sim pipeline, starting with canned data.
-
-Technically these are not end-to-end tests since we don't pull the data,
-so besides the network code there is a lack of coverage around the
-`pool_data` and `price_data` packages.
+Test the entire sim pipeline code end-to-end, starting with pulling data
+from the price provider (Coingecko) and the Curve subgraph.
 """
 import argparse
 import os
@@ -14,27 +11,37 @@ import pandas as pd
 
 from curvesim.pipelines.simple import pipeline as simple_pipeline
 
+pools = [
+    # 3CRV
+    {
+        "address": "0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7",
+        "end_timestamp": 1638316800,
+    },
+    # aCRV
+    {
+        "address": "0xdebf20617708857ebe4f679508e7b7863a8a8eee",
+        "end_timestamp": 1622505600,
+    },
+    # # frax3CRV"
+    {
+        "address": "0xd632f22692FaC7611d2AA1C0D552930D43CAEd3B",
+        "end_timestamp": 1643673600,
+    },
+]
+
 
 def main(generate=False, ncpu=None):
+    """
+    Run the simple pipeline across the given pools, pulling pool and
+    market data using the specified timestamp.
+
+    Use `generate` to create and pickle the test data for comparison
+    with the output of future code changes.
+
+    Setting `ncpu` to 1 is useful for debugging and profiling.
+    """
 
     data_dir = os.path.join("test", "data")
-    pools = [
-        # 3CRV
-        {
-            "address": "0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7",
-            "end_timestamp": 1638316800,
-        },
-        # aCRV
-        {
-            "address": "0xdebf20617708857ebe4f679508e7b7863a8a8eee",
-            "end_timestamp": 1622505600,
-        },
-        # # frax3CRV"
-        {
-            "address": "0xd632f22692FaC7611d2AA1C0D552930D43CAEd3B",
-            "end_timestamp": 1643673600,
-        },
-    ]
 
     test_functions = {
         "summary": summary,
