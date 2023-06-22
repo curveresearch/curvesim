@@ -67,7 +67,7 @@
             <a id="nextFileLink" class="nav" href="d_9383505a383436af___init___py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.2.7">coverage.py v7.2.7</a>,
-            created at 2023-06-22 21:11 +0000
+            created at 2023-06-22 21:20 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"/>
@@ -1203,8 +1203,8 @@
     <p class="pln"><span class="n"><a id="t1119" href="#t1119">1119</a></span><span class="t">        <span class="com"># D = D * ((N_COINS - 1) * 10**18 + tmp) / (N_COINS * 10**18)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t1120" href="#t1120">1120</a></span><span class="t">        <span class="com"># line below makes it for 2 coins</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t1121" href="#t1121">1121</a></span><span class="t">        <span class="nam">D</span> <span class="op">=</span> <span class="op">(</span><span class="nam">D</span> <span class="op">+</span> <span class="nam">x</span><span class="op">[</span><span class="num">0</span><span class="op">]</span> <span class="op">*</span> <span class="nam">x</span><span class="op">[</span><span class="num">1</span><span class="op">]</span> <span class="op">//</span> <span class="nam">D</span><span class="op">)</span> <span class="op">//</span> <span class="nam">n_coins</span>&nbsp;</span><span class="r"></span></p>
-    <p class="par run show_par"><span class="n"><a id="t1122" href="#t1122">1122</a></span><span class="t">        <span class="key">if</span> <span class="nam">D</span> <span class="op">></span> <span class="nam">D_prev</span><span class="op">:</span>&nbsp;</span><span class="r"><span class="annotate short">1122&#x202F;&#x219B;&#x202F;1123</span><span class="annotate long">line 1122 didn't jump to line 1123, because the condition on line 1122 was never true</span></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t1123" href="#t1123">1123</a></span><span class="t">            <span class="nam">diff</span> <span class="op">=</span> <span class="nam">D</span> <span class="op">-</span> <span class="nam">D_prev</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t1122" href="#t1122">1122</a></span><span class="t">        <span class="key">if</span> <span class="nam">D</span> <span class="op">></span> <span class="nam">D_prev</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t1123" href="#t1123">1123</a></span><span class="t">            <span class="nam">diff</span> <span class="op">=</span> <span class="nam">D</span> <span class="op">-</span> <span class="nam">D_prev</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t1124" href="#t1124">1124</a></span><span class="t">        <span class="key">else</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t1125" href="#t1125">1125</a></span><span class="t">            <span class="nam">diff</span> <span class="op">=</span> <span class="nam">D_prev</span> <span class="op">-</span> <span class="nam">D</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t1126" href="#t1126">1126</a></span><span class="t">        <span class="key">if</span> <span class="nam">diff</span> <span class="op">&lt;=</span> <span class="num">1</span> <span class="key">or</span> <span class="nam">diff</span> <span class="op">*</span> <span class="num">10</span><span class="op">**</span><span class="num">18</span> <span class="op">&lt;</span> <span class="nam">D</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
@@ -1221,8 +1221,8 @@
     <p class="pln"><span class="n"><a id="t1137" href="#t1137">1137</a></span><span class="t"><span class="str">    """</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t1138" href="#t1138">1138</a></span><span class="t">    <span class="nam">intpow</span><span class="op">:</span> <span class="nam">int</span> <span class="op">=</span> <span class="nam">power</span> <span class="op">//</span> <span class="num">10</span><span class="op">**</span><span class="num">18</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t1139" href="#t1139">1139</a></span><span class="t">    <span class="nam">otherpow</span><span class="op">:</span> <span class="nam">int</span> <span class="op">=</span> <span class="nam">power</span> <span class="op">-</span> <span class="nam">intpow</span> <span class="op">*</span> <span class="num">10</span><span class="op">**</span><span class="num">18</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t1140" href="#t1140">1140</a></span><span class="t">    <span class="key">if</span> <span class="nam">intpow</span> <span class="op">></span> <span class="num">59</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t1141" href="#t1141">1141</a></span><span class="t">        <span class="key">return</span> <span class="num">0</span>&nbsp;</span><span class="r"></span></p>
+    <p class="par run show_par"><span class="n"><a id="t1140" href="#t1140">1140</a></span><span class="t">    <span class="key">if</span> <span class="nam">intpow</span> <span class="op">></span> <span class="num">59</span><span class="op">:</span>&nbsp;</span><span class="r"><span class="annotate short">1140&#x202F;&#x219B;&#x202F;1141</span><span class="annotate long">line 1140 didn't jump to line 1141, because the condition on line 1140 was never true</span></span></p>
+    <p class="mis show_mis"><span class="n"><a id="t1141" href="#t1141">1141</a></span><span class="t">        <span class="key">return</span> <span class="num">0</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t1142" href="#t1142">1142</a></span><span class="t">    <span class="nam">result</span><span class="op">:</span> <span class="nam">int</span> <span class="op">=</span> <span class="num">10</span><span class="op">**</span><span class="num">18</span> <span class="op">//</span> <span class="op">(</span><span class="num">2</span><span class="op">**</span><span class="nam">intpow</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t1143" href="#t1143">1143</a></span><span class="t">    <span class="key">if</span> <span class="nam">otherpow</span> <span class="op">==</span> <span class="num">0</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t1144" href="#t1144">1144</a></span><span class="t">        <span class="key">return</span> <span class="nam">result</span>&nbsp;</span><span class="r"></span></p>
@@ -1278,7 +1278,7 @@
             <a id="nextFileLink" class="nav" href="d_9383505a383436af___init___py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.2.7">coverage.py v7.2.7</a>,
-            created at 2023-06-22 21:11 +0000
+            created at 2023-06-22 21:20 +0000
         </p>
     </div>
 </footer>
