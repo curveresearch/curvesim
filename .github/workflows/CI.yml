@@ -23,7 +23,11 @@ jobs:
         os:
           - ubuntu-latest
           - macos-latest
-          # - windows-latest
+          - windows-latest
+        exclude:
+          # Issue with python build
+          - os: windows-latest
+            py: "3.8"
 
     steps:
       - uses: actions/checkout@v3
@@ -35,6 +39,7 @@ jobs:
           cache: 'pip'
 
       - name: Build and install package
+        shell: bash
         run: |
           pip install --upgrade pip
           pip install build
