@@ -24,6 +24,10 @@ jobs:
           - ubuntu-latest
           - macos-latest
           - windows-latest
+        exclude:
+          # Issue with python build
+          - os: windows-latest
+            py: "3.8"
 
     steps:
       - uses: actions/checkout@v3
