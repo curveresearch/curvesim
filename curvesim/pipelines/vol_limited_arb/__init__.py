@@ -80,11 +80,16 @@ def pipeline(
     data_dir : str, default="data"
         relative path to saved price data folder
 
-    vol_mult : float or numpy.ndarray, default computed from data
+    vol_mult : dict, default computed from data
         Value(s) multiplied by market volume to specify volume limits
         (overrides vol_mode).
 
-        Can be a scalar or vector with values for each pairwise coin combination.
+        dict should map from trade-pair tuples to values, e.g.:
+
+        .. code-block::
+
+            {('DAI', 'USDC'): 0.1, ('DAI', 'USDT'): 0.1, ('USDC', 'USDT'): 0.1}
+
 
     vol_mode : int, default=1
         Modes for limiting trade volume.
@@ -100,7 +105,7 @@ def pipeline(
 
     Returns
     -------
-    dict
+    SimResults object
 
     """
     if test:
