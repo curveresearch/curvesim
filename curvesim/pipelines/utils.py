@@ -66,6 +66,9 @@ def pool_vol_mult(pool_vol, market_vol, n, mode):
         logger.info("Vol_mode=3 only available for meta-pools. Reverting to vol_mode=1")
         vol_mult = [pool_vol / market_vol.sum()] * n
 
+    else:
+        raise ValueError(f"Mode must be integer 1, 2, or 3, not {mode}.")
+
     return vol_mult
 
 
@@ -94,6 +97,9 @@ def metapool_vol_mult(pool_vol, market_vol, n, mode):
             pool_vol_meta.repeat(n[1]) / n[1] / mkt_vol_meta,
             pool_vol_base / mkt_vol_base.sum().repeat(n_base_pairs),
         )
+
+    else:
+        raise ValueError(f"Mode must be integer 1, 2, or 3, not {mode}.")
 
     return vol_mult
 
