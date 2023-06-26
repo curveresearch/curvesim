@@ -12,14 +12,13 @@ __all__ = [
 ]
 
 from copy import deepcopy
-from functools import partial
 
 from altair import Axis, Scale
 from numpy import array, exp, log, timedelta64
 from pandas import DataFrame, concat
 
 from curvesim.pool.sim_interface import SimCurveMetaPool, SimCurvePool, SimCurveRaiPool
-from curvesim.utils import cache, get_pairs
+from curvesim.utils import get_pairs
 from .base import Metric, PoolMetric, PricingMetric, PoolPricingMetric
 
 
@@ -460,21 +459,21 @@ class PriceDepth(PoolMetric):
         return {
             SimCurvePool: {
                 "functions": {
-                    "metrics": self.get_curve_pool_LD,
+                    "metrics": self.get_curve_LD,
                     "summary": ss_summary_fns,
                 },
                 "plot": ss_plot,
             },
             SimCurveMetaPool: {
                 "functions": {
-                    "metrics": self.get_curve_metapool_LD,
+                    "metrics": self.get_curve_LD,
                     "summary": ss_summary_fns,
                 },
                 "plot": ss_plot,
             },
             SimCurveRaiPool: {
                 "functions": {
-                    "metrics": self.get_curve_metapool_LD,
+                    "metrics": self.get_curve_LD,
                     "summary": ss_summary_fns,
                 },
                 "plot": ss_plot,
@@ -485,85 +484,58 @@ class PriceDepth(PoolMetric):
         self._factor = factor
         super().__init__(pool)
 
-    def get_curve_pool_LD(self, pool_state, **kwargs):
-        """
-        Computes liquidity density for each timestamp in an individual run, averaging
-        across all coin pairs. Used for non-meta stableswap pools.
-        """
-        index_combos = self._curve_pool_index_combos
-        return self._get_curve_LD(index_combos, pool_state)
-
-    def get_curve_metapool_LD(self, pool_state, **kwargs):
-        """
-        Computes liquidity density for each timestamp in an individual run, using only
-        top-level coin pairs in a metapool. Used for Curve metapools.
-        """
-        index_combos = self._curve_metapool_index_combos
-        return self._get_curve_LD(index_combos, pool_state)
-
-    def _get_curve_LD(self, index_combos, pool_state):
+    def get_curve_LD(self, pool_state, **kwargs):
         """
         Computes liquidity density for each timestamp in an individual run.
         Used for all Curve pools.
         """
-        get_LD = partial(self._get_curve_LD_by_row, index_combos=index_combos)
-        LD = pool_state.apply(get_LD, axis=1)
+        coin_pairs = get_pairs(
+            self._pool.coin_names
+        )  # for metapool, uses only meta assets
+        LD = pool_state.apply(self._get_curve_LD_by_row, axis=1, coin_pairs=coin_pairs)
         return DataFrame(LD, columns=["liquidity_density"])
 
-    def _get_curve_LD_by_row(self, pool_state_row, index_combos):
+    def _get_curve_LD_by_row(self, pool_state_row, coin_pairs):
         """
         Computes liquidity density for a single row of data (i.e., a single timestamp).
         Used for all Curve pools.
         """
         self.set_pool_state(pool_state_row)
+
         LD = []
-        for i, j in index_combos:
-            ld = self._compute_liquidity_density(i, j)
+        for pair in coin_pairs:
+            ld = self._compute_liquidity_density(*pair)
             LD.append(ld)
         return sum(LD) / len(LD)
-
-    @property
-    @cache
-    def _curve_pool_index_combos(self):
-        """Returns all pairwise combinations of coin indices."""
-        return get_pairs(self._pool.n)
-
-    @property
-    @cache
-    def _curve_metapool_index_combos(self):
-        """
-        Returns pairwise combinations of coin indices in the top level of a metapool.
-
-        Our convention for the basepool LP token index is to use
-        the total number of stablecoins (including basepool).
-        This removes ambiguity as it is one "off the end" and thus
-        either doesn't exist or is the basepool LP token.
-        """
-        pool = self._pool
-        base_idx = list(range(pool.n))
-        base_idx[pool.max_coin] = pool.n_total
-        return get_pairs(base_idx)
 
     def _compute_liquidity_density(self, coin_in, coin_out):
         """
         Computes liquidity density for a single pair of coins.
-
-        Only for top-level liquidity density.  Cannot compare between
-        coins in basepool and primary stablecoin in metapool.
         """
         factor = self._factor
         pool = self._pool
+        post_trade_price = self._post_trade_price
 
         price_pre = pool.price(coin_in, coin_out, use_fee=False)
-        price_post = pool.test_trade(coin_in, coin_out, factor, use_fee=False)
+        price_post = post_trade_price(pool, coin_in, coin_out, factor)
         LD1 = price_pre / ((price_pre - price_post) * factor)
 
         price_pre = pool.price(coin_out, coin_in, use_fee=False)
         # pylint: disable-next=arguments-out-of-order
-        price_post = pool.test_trade(coin_out, coin_in, factor, use_fee=False)
+        price_post = post_trade_price(pool, coin_out, coin_in, factor)
         LD2 = price_pre / ((price_pre - price_post) * factor)
 
         return (LD1 + LD2) / 2
+
+    @staticmethod
+    def _post_trade_price(pool, coin_in, coin_out, factor, use_fee=False):
+        size = pool.coin_balances[coin_in] // factor
+
+        with pool.use_snapshot_context():
+            pool.trade(coin_in, coin_out, size)
+            price = pool.price(coin_in, coin_out, use_fee=use_fee)
+
+        return price
 
 
 class Timestamp(Metric):

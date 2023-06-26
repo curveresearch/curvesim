@@ -32,3 +32,9 @@ class CoinIndicesMixin:
             raise CurvesimValueError("Duplicate coin indices.")
 
         return coin_indices
+
+    @property
+    @abstractmethod
+    def coin_balances(self):
+        """Return dict mapping coin ID to coin balances."""
+        raise NotImplementedError

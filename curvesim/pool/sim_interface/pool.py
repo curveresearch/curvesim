@@ -23,6 +23,12 @@ class SimCurvePool(SimPool, CoinIndicesMixin, CurvePool):
         """Return dict mapping coin ID to index."""
         return {name: i for i, name in enumerate(self.coin_names)}
 
+    @property
+    @override
+    def coin_balances(self):
+        """Return dict mapping coin ID to coin balances."""
+        return dict(zip(self.coin_names, self.balances))
+
     @override
     def price(self, coin_in, coin_out, use_fee=True):
         i, j = self.get_coin_indices(coin_in, coin_out)
@@ -36,22 +42,6 @@ class SimCurvePool(SimPool, CoinIndicesMixin, CurvePool):
         i, j = self.get_coin_indices(coin_in, coin_out)
         amount_out, fee = self.exchange(i, j, amount_in)
         return amount_out, fee
-
-    def test_trade(self, coin_in, coin_out, factor, use_fee=True):
-        """
-        This does the trade but leaves balances unaffected.
-
-        Used to compute liquidity density.
-        """
-        i, j = self.get_coin_indices(coin_in, coin_out)
-
-        size = self.balances[i] // factor
-
-        with self.use_snapshot_context():
-            self.exchange(i, j, size)
-            price = self.dydx(i, j, use_fee=use_fee)
-
-        return price
 
     def get_in_amount(self, coin_in, coin_out, out_balance_perc):
         i, j = self.get_coin_indices(coin_in, coin_out)
