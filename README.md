@@ -12,11 +12,11 @@
 | curvesim/iterators/param\_samplers/\_\_init\_\_.py   |        2 |        0 |        0 |        0 |    100% |           |
 | curvesim/iterators/param\_samplers/grid.py           |       54 |       24 |       26 |        4 |     50% |68-77, 84, 88-98, 102-106 |
 | curvesim/iterators/price\_samplers/\_\_init\_\_.py   |        2 |        0 |        0 |        0 |    100% |           |
-| curvesim/iterators/price\_samplers/price\_volume.py  |       22 |        1 |        4 |        0 |     96% |        74 |
+| curvesim/iterators/price\_samplers/price\_volume.py  |       22 |        1 |        4 |        0 |     96% |        76 |
 | curvesim/logging.py                                  |       45 |        0 |        6 |        1 |     98% |    94->96 |
 | curvesim/metrics/\_\_init\_\_.py                     |        6 |        0 |        2 |        0 |    100% |           |
 | curvesim/metrics/base.py                             |      123 |       11 |       31 |        4 |     90% |146-148, 221, 291-294, 342-343, 368->exit, 369, 371->376 |
-| curvesim/metrics/metrics.py                          |      179 |       23 |       16 |        0 |     84% |133-163, 170-173, 181-190, 193-197 |
+| curvesim/metrics/metrics.py                          |      182 |       23 |       18 |        0 |     84% |146-176, 183-186, 194-203, 206-210 |
 | curvesim/metrics/results/\_\_init\_\_.py             |        3 |        0 |        0 |        0 |    100% |           |
 | curvesim/metrics/results/make\_results.py            |       28 |        0 |       10 |        0 |    100% |           |
 | curvesim/metrics/results/sim\_results.py             |       35 |       12 |       12 |        3 |     55% |62-65, 91-93, 120, 128-131 |
@@ -29,7 +29,7 @@
 | curvesim/network/http.py                             |       39 |        5 |        8 |        1 |     87% |42->45, 49-54 |
 | curvesim/network/subgraph.py                         |      136 |       55 |       48 |        2 |     56% |78, 112-143, 148, 211-227, 439-465, 498-522 |
 | curvesim/network/utils.py                            |       38 |        6 |        8 |        1 |     80% |41-42, 68-71 |
-| curvesim/network/web3.py                             |       70 |        5 |       16 |        5 |     86% |62-63, 139->147, 143-144, 147->152, 176 |
+| curvesim/network/web3.py                             |       70 |        3 |       16 |        4 |     90% |139->147, 143-144, 147->152, 176 |
 | curvesim/overrides/\_\_init\_\_.py                   |        9 |        3 |        4 |        1 |     54% |     40-42 |
 | curvesim/pipelines/\_\_init\_\_.py                   |       21 |        5 |       12 |        1 |     76% |     75-79 |
 | curvesim/pipelines/simple/\_\_init\_\_.py            |       27 |        0 |        4 |        1 |     97% |  111->115 |
@@ -40,10 +40,10 @@
 | curvesim/pipelines/templates/sim\_pool.py            |        7 |        0 |        0 |        0 |    100% |           |
 | curvesim/pipelines/templates/strategy.py             |       19 |        0 |        2 |        0 |    100% |           |
 | curvesim/pipelines/templates/trader.py               |       40 |        4 |       12 |        0 |     81% |20, 35, 39-40 |
-| curvesim/pipelines/utils.py                          |       35 |       27 |       16 |        0 |     16% |40-50, 54-64, 68-93 |
-| curvesim/pipelines/vol\_limited\_arb/\_\_init\_\_.py |       37 |       21 |       10 |        0 |     38% |   106-143 |
-| curvesim/pipelines/vol\_limited\_arb/strategy.py     |       14 |        4 |        0 |        0 |     71% |28-29, 32-33 |
-| curvesim/pipelines/vol\_limited\_arb/trader.py       |       80 |       71 |       30 |        0 |      8% |37-40, 71-140, 168-213 |
+| curvesim/pipelines/utils.py                          |       46 |       36 |       14 |        0 |     17% |40-55, 59-72, 76-104, 108-110 |
+| curvesim/pipelines/vol\_limited\_arb/\_\_init\_\_.py |       37 |       21 |       10 |        0 |     38% |   111-148 |
+| curvesim/pipelines/vol\_limited\_arb/strategy.py     |       18 |        7 |        4 |        0 |     50% |28-29, 32-33, 37-39 |
+| curvesim/pipelines/vol\_limited\_arb/trader.py       |       77 |       68 |       30 |        0 |      8% |37-40, 71-139, 167-210 |
 | curvesim/plot/\_\_init\_\_.py                        |        2 |        0 |        0 |        0 |    100% |           |
 | curvesim/plot/altair/\_\_init\_\_.py                 |        2 |        0 |        0 |        0 |    100% |           |
 | curvesim/plot/altair/chart\_properties.py            |       36 |       26 |       14 |        0 |     20% |8-15, 19-24, 28-33, 37, 41-53 |
@@ -72,7 +72,7 @@
 | curvesim/pool/stableswap/pool.py                     |      198 |        2 |       52 |        2 |     98% |388->400, 407, 567 |
 | curvesim/pool/stableswap/raipool.py                  |       14 |        9 |        2 |        0 |     31% |32, 35-41, 44-46 |
 | curvesim/pool\_data/\_\_init\_\_.py                  |       12 |        3 |        0 |        0 |     75% |     41-44 |
-| curvesim/pool\_data/cache.py                         |       61 |       42 |       14 |        0 |     25% |36-52, 63-64, 70-71, 95-99, 102-118, 144-148, 151-159 |
+| curvesim/pool\_data/cache.py                         |       60 |       42 |       14 |        0 |     24% |34-50, 61-62, 68-69, 93-97, 100-116, 142-146, 149-157 |
 | curvesim/pool\_data/metadata/\_\_init\_\_.py         |       35 |        5 |        6 |        1 |     85% |50, 61-62, 67-68 |
 | curvesim/pool\_data/metadata/base.py                 |       33 |        0 |        0 |        0 |    100% |           |
 | curvesim/pool\_data/metadata/cryptoswap.py           |       25 |        0 |        8 |        0 |    100% |           |
@@ -83,7 +83,7 @@
 | curvesim/sim/\_\_init\_\_.py                         |       38 |       31 |       20 |        0 |     12% |138-151, 155-193 |
 | curvesim/utils.py                                    |       50 |       11 |       21 |        7 |     72% |54, 57, 93, 105-114, 116->exit, 117, 156 |
 | curvesim/version.py                                  |        7 |        0 |        0 |        0 |    100% |           |
-|                                            **TOTAL** | **3398** |  **840** |  **912** |   **93** | **71%** |           |
+|                                            **TOTAL** | **3412** |  **847** |  **916** |   **92** | **71%** |           |
 
 
 ## Setup coverage badge
