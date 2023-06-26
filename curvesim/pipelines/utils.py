@@ -42,7 +42,7 @@ def compute_volume_multipliers(pool_vol, market_vol, n, pool_type, mode=1):
     market_vol_array = array(market_vol)
 
     try:
-        get_vol_mult = pool_functions[pool_type]
+        get_vol_mult = _pool_functions[pool_type]
     except KeyError as e:
         raise TypeError(
             f"Pool type {pool_type} not supported by volume limiter."
@@ -110,4 +110,4 @@ def format_info_str(vol_mult_dict):
     return new_line + new_line.join(info)
 
 
-pool_functions = {CurvePool: pool_vol_mult, CurveMetaPool: metapool_vol_mult}
+_pool_functions = {CurvePool: pool_vol_mult, CurveMetaPool: metapool_vol_mult}
