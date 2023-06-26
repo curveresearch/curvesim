@@ -174,17 +174,15 @@ def get_arb_trades(pool, prices):
 
     trades = []
 
-    for pair in prices.keys():
+    for pair in prices:
         i, j = pair
 
         if pool.price(i, j) - prices[pair] > 0:
             price = prices[pair]
-            coin_in = i
-            coin_out = j
+            coin_in, coin_out = i, j
         elif pool.price(j, i) - 1 / prices[pair] > 0:
             price = 1 / prices[pair]
-            coin_in = j
-            coin_out = i
+            coin_in, coin_out = j, i
         else:
             trades.append((0, pair, prices[pair]))
             continue

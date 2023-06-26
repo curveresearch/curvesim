@@ -38,17 +38,19 @@ def compute_volume_multipliers(pool_vol, market_vol, n, pool_type, mode=1):
 
     """
     pairs, market_vol = zip(*market_vol.items())
+    pool_vol_array = array(pool_vol)
+    market_vol_array = array(market_vol)
 
-    if pool_type is CurvePool:
-        vol_mult = pool_vol_mult(array(pool_vol), array(market_vol), n, mode)
+    try:
+        get_vol_mult = pool_functions[pool_type]
+    except KeyError as e:
+        raise TypeError(
+            f"Pool type {pool_type} not supported by volume limiter."
+        ) from e
 
-    elif pool_type is CurveMetaPool:
-        vol_mult = metapool_vol_mult(array(pool_vol), array(market_vol), n, mode)
-
-    else:
-        raise TypeError(f"Pool type {pool_type} not supported by volume limiter.")
-
+    vol_mult = get_vol_mult(pool_vol_array, market_vol_array, n, mode)
     vol_mult_dict = dict(zip(pairs, vol_mult))
+
     logger.info(f"Volume Multipliers: {format_info_str(vol_mult_dict)}")
     return vol_mult_dict
 
@@ -57,10 +59,10 @@ def pool_vol_mult(pool_vol, market_vol, n, mode):
     if mode == 1:
         vol_mult = [pool_vol / market_vol.sum()] * n
 
-    if mode == 2:
+    elif mode == 2:
         vol_mult = pool_vol.repeat(n) / n / market_vol
 
-    if mode == 3:
+    elif mode == 3:
         logger.info("Vol_mode=3 only available for meta-pools. Reverting to vol_mode=1")
         vol_mult = [pool_vol / market_vol.sum()] * n
 
@@ -100,3 +102,6 @@ def format_info_str(vol_mult_dict):
     info = [f"{base}/{quote}: {mult}" for (base, quote), mult in vol_mult_dict.items()]
     new_line = "\n    "
     return new_line + new_line.join(info)
+
+
+pool_functions = {CurvePool: pool_vol_mult, CurveMetaPool: metapool_vol_mult}
