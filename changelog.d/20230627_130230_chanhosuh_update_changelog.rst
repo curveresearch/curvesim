@@ -5,6 +5,7 @@ Added
 -----
 - Python 3.11 is now officially supported.
 - Advanced custom metrics support (#117).
+- SimPools now support token symbols for trade, price, and balances (#131, #150)
 - CI now tests a matrix of OS and supported Python versions (#134)
 - A simple pipeline was added to enable faster CI tests and serve as an easy example (#132).
 - Integrated SimAssets into SimPools for simpler handling (#131).
