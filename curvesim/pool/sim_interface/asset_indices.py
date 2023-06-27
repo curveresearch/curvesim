@@ -53,8 +53,8 @@ class AssetIndicesMixin:
         indices = []
         for ID in asset_ids:
             if isinstance(ID, str):
-                idx = self._asset_indices[ID]
-            indices.append(idx)
+                ID = self._asset_indices[ID]
+            indices.append(ID)
 
         if len(indices) != len(set(indices)):
             raise CurvesimValueError("Duplicate asset indices.")

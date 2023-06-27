@@ -1,13 +1,13 @@
 """Unit tests for SimStableswapBase"""
 import pytest
 
-from curvesim.pool.sim_interface.coin_indices import CoinIndicesMixin
+from curvesim.pool.sim_interface.asset_indices import AssetIndicesMixin
 from curvesim.utils import override
 
 # pylint: disable=redefined-outer-name
 
 
-class FakeSimPool(CoinIndicesMixin):
+class FakeSimPool(AssetIndicesMixin):
     """
     Fake implementation of a subclass of `CoinIndicesMixin`
     for testing purposes.
@@ -15,8 +15,13 @@ class FakeSimPool(CoinIndicesMixin):
 
     @property
     @override
-    def coin_indices(self):
-        return {"SYM_0": 0, "SYM_1": 1, "SYM_2": 2}
+    def _asset_names(self):
+        return ["SYM_0", "SYM_1", "SYM_2"]
+    
+    @property
+    @override
+    def _balances(self):
+        return [100, 200, 300]
 
 
 @pytest.fixture(scope="function")
@@ -27,8 +32,10 @@ def sim_pool():
 
 def test_coin_indices(sim_pool):
     """Test index conversion and getting"""
-    result = sim_pool.get_coin_indices("SYM_2", "SYM_0")
+    result = sim_pool.get_asset_indices("SYM_2", "SYM_0")
     assert result == [2, 0]
 
-    result = sim_pool.get_coin_indices(1, 2)
+    result = sim_pool.get_asset_indices(1, 2)
     assert result == [1, 2]
+
+    assert sim_pool._asset_balances == {"SYM_0": 100, "SYM_1": 200, "SYM_2": 300}
