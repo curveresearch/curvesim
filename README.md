@@ -37,7 +37,7 @@
 | curvesim/pipelines/simple/trader.py                  |       56 |        4 |       18 |        0 |     95% |   138-144 |
 | curvesim/pipelines/templates/\_\_init\_\_.py         |        5 |        0 |        0 |        0 |    100% |           |
 | curvesim/pipelines/templates/sim\_assets.py          |        8 |        0 |        0 |        0 |    100% |           |
-| curvesim/pipelines/templates/sim\_pool.py            |        7 |        0 |        0 |        0 |    100% |           |
+| curvesim/pipelines/templates/sim\_pool.py            |        6 |        0 |        0 |        0 |    100% |           |
 | curvesim/pipelines/templates/strategy.py             |       19 |        0 |        2 |        0 |    100% |           |
 | curvesim/pipelines/templates/trader.py               |       40 |        4 |       12 |        0 |     81% |20, 35, 39-40 |
 | curvesim/pipelines/utils.py                          |       46 |       36 |       14 |        0 |     17% |40-55, 59-72, 76-104, 108-110 |
@@ -60,12 +60,12 @@
 | curvesim/pool/\_\_init\_\_.py                        |       54 |       31 |       22 |        2 |     33% |106-134, 177-195, 218-231, 241-244 |
 | curvesim/pool/base.py                                |       50 |       21 |       18 |        4 |     49% |29-31, 36-38, 45, 52, 57-59, 66, 71-73, 80, 85-89 |
 | curvesim/pool/cryptoswap/\_\_init\_\_.py             |        2 |        0 |        0 |        0 |    100% |           |
-| curvesim/pool/cryptoswap/pool.py                     |      538 |       70 |      156 |       37 |     83% |153, 158, 161, 163->166, 169-176, 182, 228, 230, 260, 285, 299, 302, 316, 318, 320, 347, 360-361, 374, 388, 396, 469->478, 474, 516->526, 531-532, 536-559, 684->692, 744, 794->793, 804, 818->842, 820-840, 845-848, 1123, 1128, 1141, 1163, 1167, 1187 |
+| curvesim/pool/cryptoswap/pool.py                     |      538 |       69 |      156 |       36 |     83% |153, 158, 161, 163->166, 169-176, 182, 228, 230, 260, 285, 299, 302, 316, 318, 320, 347, 360-361, 374, 388, 396, 469->478, 474, 516->526, 531-532, 536-559, 684->692, 744, 794->793, 804, 818->842, 820-840, 845-848, 1128, 1141, 1163, 1167, 1187 |
 | curvesim/pool/sim\_interface/\_\_init\_\_.py         |        4 |        0 |        0 |        0 |    100% |           |
-| curvesim/pool/sim\_interface/metapool.py             |       81 |        3 |       26 |        3 |     94% |37, 64, 75 |
-| curvesim/pool/sim\_interface/pool.py                 |       36 |        0 |        4 |        0 |    100% |           |
+| curvesim/pool/sim\_interface/coin\_indices.py        |       13 |        1 |        6 |        1 |     89% |        32 |
+| curvesim/pool/sim\_interface/metapool.py             |       91 |        5 |       32 |        5 |     92% |21, 25, 59, 85, 96 |
+| curvesim/pool/sim\_interface/pool.py                 |       45 |        1 |        8 |        1 |     96% |        17 |
 | curvesim/pool/sim\_interface/raipool.py              |       10 |        5 |        0 |        0 |     50% |19-21, 33-34 |
-| curvesim/pool/sim\_interface/simpool.py              |       32 |        3 |       14 |        3 |     87% |32, 36, 61 |
 | curvesim/pool/snapshot.py                            |       55 |        0 |        2 |        0 |    100% |           |
 | curvesim/pool/stableswap/\_\_init\_\_.py             |        4 |        0 |        0 |        0 |    100% |           |
 | curvesim/pool/stableswap/metapool.py                 |      278 |       10 |       82 |        7 |     95% |84, 349, 483->495, 502, 636-638, 670, 755, 776, 833 |
@@ -83,7 +83,7 @@
 | curvesim/sim/\_\_init\_\_.py                         |       38 |       31 |       20 |        0 |     12% |138-151, 155-193 |
 | curvesim/utils.py                                    |       50 |       11 |       21 |        7 |     72% |54, 57, 93, 105-114, 116->exit, 117, 156 |
 | curvesim/version.py                                  |        7 |        0 |        0 |        0 |    100% |           |
-|                                            **TOTAL** | **3412** |  **847** |  **916** |   **92** | **71%** |           |
+|                                            **TOTAL** | **3411** |  **847** |  **918** |   **92** | **71%** |           |
 
 
 ## Setup coverage badge
