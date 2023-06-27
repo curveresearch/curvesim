@@ -121,15 +121,3 @@ class SimPool(ABC):
             SimAssets object that stores the properties of the pool's assets.
         """
         raise NotImplementedError
-
-    @property
-    @abstractmethod
-    def coin_balances(self):
-        """
-        Return a dict mapping coin IDs to their balances in the pool.
-
-        Returns
-        -------
-        dict
-        """
-        raise NotImplementedError
