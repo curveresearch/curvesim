@@ -4,10 +4,10 @@ from curvesim.pipelines.templates.sim_pool import SimPool
 from curvesim.utils import cache, override
 
 from ..stableswap import CurvePool
-from .coin_indices import CoinIndicesMixin
+from .asset_indices import AssetIndicesMixin
 
 
-class SimCurvePool(SimPool, CoinIndicesMixin, CurvePool):
+class SimCurvePool(SimPool, AssetIndicesMixin, CurvePool):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -19,19 +19,19 @@ class SimCurvePool(SimPool, CoinIndicesMixin, CurvePool):
     @property
     @override
     @cache
-    def coin_indices(self):
-        """Return dict mapping coin ID to index."""
-        return {name: i for i, name in enumerate(self.coin_names)}
+    def _asset_names(self):
+        """Return list of asset names."""
+        return self.coin_names
 
     @property
     @override
-    def coin_balances(self):
-        """Return dict mapping coin ID to coin balances."""
-        return dict(zip(self.coin_names, self.balances))
+    def _balances(self):
+        """Return list of asset balances in same order as _asset_names."""
+        return self.balances
 
     @override
     def price(self, coin_in, coin_out, use_fee=True):
-        i, j = self.get_coin_indices(coin_in, coin_out)
+        i, j = self.get_asset_indices(coin_in, coin_out)
         return self.dydx(i, j, use_fee=use_fee)
 
     @override
@@ -39,12 +39,12 @@ class SimCurvePool(SimPool, CoinIndicesMixin, CurvePool):
         """
         Note all quantities are in D units.
         """
-        i, j = self.get_coin_indices(coin_in, coin_out)
+        i, j = self.get_asset_indices(coin_in, coin_out)
         amount_out, fee = self.exchange(i, j, amount_in)
         return amount_out, fee
 
     def get_in_amount(self, coin_in, coin_out, out_balance_perc):
-        i, j = self.get_coin_indices(coin_in, coin_out)
+        i, j = self.get_asset_indices(coin_in, coin_out)
 
         xp = self._xp()
         xp_j = int(xp[j] * out_balance_perc)

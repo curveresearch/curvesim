@@ -519,7 +519,7 @@ class PriceDepth(PoolMetric):
         Computes price after executing a trade of size coin_in balances / factor.
         """
 
-        size = pool.coin_balances[coin_in] // factor
+        size = pool._asset_balances[coin_in] // factor
 
         with pool.use_snapshot_context():
             pool.trade(coin_in, coin_out, size)
