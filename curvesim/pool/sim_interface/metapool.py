@@ -1,13 +1,35 @@
-from curvesim.exceptions import CurvesimValueError
+from curvesim.exceptions import CurvesimValueError, SimPoolError
 from curvesim.pipelines.templates import SimAssets
-from curvesim.pool.sim_interface.simpool import SimStableswapBase
-from curvesim.pool.stableswap.metapool import CurveMetaPool
+from curvesim.pipelines.templates.sim_pool import SimPool
 from curvesim.utils import cache, override
 
+from ..stableswap import CurveMetaPool
+from .coin_indices import CoinIndicesMixin
 
-class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
+
+class SimCurveMetaPool(SimPool, CoinIndicesMixin, CurveMetaPool):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # The rates check has a couple special cases:
+        # 1. For metapools, we need to use the basepool rates
+        #    instead of the virtual price for the basepool.
+        # 2. If `rate_multiplier` is passed as a kwarg, this will
+        #    likely be some price, which we should skip.
+        rates = [self.rate_multiplier] + self.basepool.rates
+        if "rate_multiplier" in kwargs:
+            rates = rates[1:]
+
+        for r in rates:
+            if r != 10**18:
+                raise SimPoolError("SimPool must have 18 decimals for each coin.")
+
+    @property
     @override
-    def _init_coin_indices(self):
+    @cache
+    def coin_indices(self):
+        """Return dict mapping coin ID to index."""
+
         meta_coin_names = self.coin_names[:-1]
         base_coin_names = self.basepool.coin_names
         bp_token_name = self.coin_names[-1]
@@ -51,7 +73,6 @@ class SimCurveMetaPool(SimStableswapBase, CurveMetaPool):
         amount_out, fee = self.exchange_underlying(i, j, amount_in)
         return amount_out, fee
 
-    @override
     def test_trade(self, coin_in, coin_out, factor, use_fee=True):
         """
         Trade between top-level coins but leaves balances affected.
