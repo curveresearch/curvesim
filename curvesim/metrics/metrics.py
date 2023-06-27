@@ -437,48 +437,34 @@ class PriceDepth(PoolMetric):
 
     @property
     def pool_config(self):
-        ss_plot = {
-            "metrics": {
-                "liquidity_density": {
-                    "title": "Liquidity Density",
-                    "style": "time_series",
-                    "resample": "median",
-                    "encoding": {"y": {"title": "Liquidity Density (Daily Median)"}},
-                }
+        ss_config = {
+            "functions": {
+                "metrics": self.get_curve_LD,
+                "summary": {"liquidity_density": ["median", "min"]},
             },
-            "summary": {
-                "liquidity_density": {
-                    "title": "Liquidity Density",
-                    "style": "point_line",
-                }
+            "plot": {
+                "metrics": {
+                    "liquidity_density": {
+                        "title": "Liquidity Density (Daily Median)",
+                        "style": "time_series",
+                        "resample": "median",
+                        "encoding": {
+                            "y": {"title": "Liquidity Density (Daily Median)"}
+                        },
+                    }
+                },
+                "summary": {
+                    "liquidity_density": {
+                        "title": "Liquidity Density",
+                        "style": "point_line",
+                    }
+                },
             },
         }
 
-        ss_summary_fns = {"liquidity_density": ["median", "min"]}
-
-        return {
-            SimCurvePool: {
-                "functions": {
-                    "metrics": self.get_curve_LD,
-                    "summary": ss_summary_fns,
-                },
-                "plot": ss_plot,
-            },
-            SimCurveMetaPool: {
-                "functions": {
-                    "metrics": self.get_curve_LD,
-                    "summary": ss_summary_fns,
-                },
-                "plot": ss_plot,
-            },
-            SimCurveRaiPool: {
-                "functions": {
-                    "metrics": self.get_curve_LD,
-                    "summary": ss_summary_fns,
-                },
-                "plot": ss_plot,
-            },
-        }
+        return dict.fromkeys(
+            [SimCurveMetaPool, SimCurvePool, SimCurveRaiPool], ss_config
+        )
 
     def __init__(self, pool, factor=10**8, **kwargs):
         self._factor = factor
@@ -529,6 +515,10 @@ class PriceDepth(PoolMetric):
 
     @staticmethod
     def _post_trade_price(pool, coin_in, coin_out, factor, use_fee=False):
+        """
+        Computes price after executing a trade of size coin_in balances / factor.
+        """
+
         size = pool.coin_balances[coin_in] // factor
 
         with pool.use_snapshot_context():
