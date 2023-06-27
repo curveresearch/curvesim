@@ -17,7 +17,7 @@ class FakeSimPool(AssetIndicesMixin):
     @override
     def _asset_names(self):
         return ["SYM_0", "SYM_1", "SYM_2"]
-    
+
     @property
     @override
     def _balances(self):
