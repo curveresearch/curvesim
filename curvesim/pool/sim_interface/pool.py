@@ -1,13 +1,26 @@
+from curvesim.exceptions import SimPoolError
+from curvesim.pipelines.templates import SimAssets
+from curvesim.pipelines.templates.sim_pool import SimPool
 from curvesim.utils import cache, override
 
 from ..stableswap import CurvePool
-from .simpool import SimStableswapBase
-from curvesim.pipelines.templates import SimAssets
+from .coin_indices import CoinIndicesMixin
 
 
-class SimCurvePool(SimStableswapBase, CurvePool):
+class SimCurvePool(SimPool, CoinIndicesMixin, CurvePool):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        rates = self.rates  # pylint: disable=no-member
+        for r in rates:
+            if r != 10**18:
+                raise SimPoolError("SimPool must have 18 decimals for each coin.")
+
+    @property
     @override
-    def _init_coin_indices(self):
+    @cache
+    def coin_indices(self):
+        """Return dict mapping coin ID to index."""
         return {name: i for i, name in enumerate(self.coin_names)}
 
     @override
@@ -24,7 +37,6 @@ class SimCurvePool(SimStableswapBase, CurvePool):
         amount_out, fee = self.exchange(i, j, amount_in)
         return amount_out, fee
 
-    @override
     def test_trade(self, coin_in, coin_out, factor, use_fee=True):
         """
         This does the trade but leaves balances unaffected.
