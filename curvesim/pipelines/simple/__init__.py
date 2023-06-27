@@ -2,18 +2,20 @@ import os
 
 from curvesim.iterators.param_samplers import Grid
 from curvesim.iterators.price_samplers import PriceVolume
-from curvesim.metrics import init_metrics, metrics
+from curvesim.metrics import init_metrics
+from curvesim.metrics import metrics as Metrics
 from curvesim.metrics.results import make_results
 from curvesim.pipelines import run_pipeline
 from curvesim.pipelines.simple.strategy import SimpleStrategy
 from curvesim.pool import get_sim_pool
 
 DEFAULT_METRICS = [
-    metrics.Timestamp,
-    metrics.PoolValue,
-    metrics.PoolBalance,
-    metrics.PriceDepth,
-    metrics.ArbMetrics,
+    Metrics.Timestamp,
+    Metrics.PoolValue,
+    Metrics.PoolBalance,
+    Metrics.PriceDepth,
+    Metrics.PoolVolume,
+    Metrics.ArbMetrics,
 ]
 
 DEFAULT_PARAMS = {
