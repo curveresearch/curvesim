@@ -30,12 +30,14 @@ def sim_pool():
     return FakeSimPool()
 
 
-def test_coin_indices(sim_pool):
+def test_asset_indices(sim_pool):
     """Test index conversion and getting"""
     result = sim_pool.get_asset_indices("SYM_2", "SYM_0")
     assert result == [2, 0]
 
     result = sim_pool.get_asset_indices(1, 2)
     assert result == [1, 2]
+
+    assert sim_pool._asset_indices == {"SYM_0": 0, "SYM_1": 1, "SYM_2": 2}
 
     assert sim_pool._asset_balances == {"SYM_0": 100, "SYM_1": 200, "SYM_2": 300}
