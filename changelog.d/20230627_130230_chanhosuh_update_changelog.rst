@@ -17,10 +17,10 @@ Improved
 --------
 - An updated README and the docs, especially for advanced metrics and strategies.
 - Multiple changes to simplify and conform to simulation interfaces.
+- Defensive check for sim pool precisions was added (#126).
 - Refactored SimStableswapBase into a mixin for better modularity (#146).
-- ArbMetric updated for better numerical stability.
+- ArbMetric updated for better numerical stability (#137).
 - Python-native types are now used in price_sampler, pool_data, pipeline (#137).
-- Defensive check for sim pool precisions was added.
 
 
 Fixed
