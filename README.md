@@ -10,7 +10,7 @@
 # Curvesim
 Curvesim simulates Curve pools with optimal arbitrageurs trading against them to determine reasonable risk and reward parameters, such as amplitude (A) and fee, given historical price and volume feeds.
 
-Users can re-use simulation components to simulate custom strategies and generate custom metrics.  Curve-specific objects such as pools enable simpler integration with Curve pools for various analytics purposes.
+Users can re-use simulation components to simulate custom strategies and generate custom metrics.  Pool objects enable simpler integration with Curve pools for both manual and automated analytics usage.
 
 
 #### Dependencies:
@@ -22,7 +22,7 @@ When working on the codebase, to avoid dependency issues it is recommended to us
 
 
 ## Documentation
-Check out the full documentation at https://curvesim.readthedocs.io/
+Check out the full documentation at https://curvesim.readthedocs.io/.  We recommend starting with the "Quickstart" guide.
 
 ## Licensing
 Portions of the codebase are authorized derivatives of code owned by Curve.fi (Swiss Stake GmbH).  These are the vyper snippets used for testing (`test/fixtures/curve`) and the python code derived from them (`curvesim/pool/stableswap` and `curvesim/pool/cryptoswap`); there are copyright notices placed appropriately.  The rest of the codebase has an MIT license.
