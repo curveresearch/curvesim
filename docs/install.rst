@@ -10,8 +10,7 @@ code option.
 
 Python version
 ---------------
-Versions 3.8, 3.9, and 3.10 are officially supported.  Possibly earlier versions and 3.11 will work
-but we make no guarantees!
+Only versions 3.8 to 3.11 are officially supported.  For users with high performance requirements, we recommend 3.11.
 
 
 Virtual environments
@@ -52,8 +51,14 @@ Or, download the `tarball <https://github.com/curveresearch/curvesim/tarball/mai
     $ curl -OL https://github.com/curveresearch/curvesim/tarball/main
     # optionally, zipball is also available (for Windows users).
 
-Once you have a copy of the source, you can embed it in your own Python
-package, or install it into your site-packages easily::
+Once you have a copy of the source::
 
     $ cd curvesim
+
+You can make changes and run its modules and scripts like you would in your own project::
+
+    $ python3 -m test.simple_ci
+
+Or you can install it into your site-packages easily::
+
     $ python3 -m pip install .
