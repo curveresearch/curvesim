@@ -16,7 +16,7 @@
 | curvesim/logging.py                                  |       45 |        0 |        6 |        1 |     98% |    94->96 |
 | curvesim/metrics/\_\_init\_\_.py                     |        6 |        0 |        2 |        0 |    100% |           |
 | curvesim/metrics/base.py                             |      123 |       11 |       31 |        4 |     90% |146-148, 221, 291-294, 342-343, 368->exit, 369, 371->376 |
-| curvesim/metrics/metrics.py                          |      182 |        0 |       18 |        0 |    100% |           |
+| curvesim/metrics/metrics.py                          |      171 |        0 |       20 |        0 |    100% |           |
 | curvesim/metrics/results/\_\_init\_\_.py             |        3 |        0 |        0 |        0 |    100% |           |
 | curvesim/metrics/results/make\_results.py            |       28 |        0 |       10 |        0 |    100% |           |
 | curvesim/metrics/results/sim\_results.py             |       35 |       12 |       12 |        3 |     55% |62-65, 91-93, 120, 128-131 |
@@ -29,7 +29,7 @@
 | curvesim/network/http.py                             |       39 |        5 |        8 |        1 |     87% |42->45, 49-54 |
 | curvesim/network/subgraph.py                         |      136 |       55 |       48 |        2 |     56% |78, 112-143, 148, 211-227, 439-465, 498-522 |
 | curvesim/network/utils.py                            |       38 |        6 |        8 |        1 |     80% |41-42, 68-71 |
-| curvesim/network/web3.py                             |       70 |        5 |       16 |        5 |     86% |62-63, 139->147, 143-144, 147->152, 176 |
+| curvesim/network/web3.py                             |       70 |        3 |       16 |        4 |     90% |139->147, 143-144, 147->152, 176 |
 | curvesim/overrides/\_\_init\_\_.py                   |        9 |        3 |        4 |        1 |     54% |     40-42 |
 | curvesim/pipelines/\_\_init\_\_.py                   |       21 |        5 |       12 |        1 |     76% |     75-79 |
 | curvesim/pipelines/simple/\_\_init\_\_.py            |       28 |        0 |        4 |        1 |     97% |  113->117 |
@@ -62,9 +62,9 @@
 | curvesim/pool/cryptoswap/\_\_init\_\_.py             |        2 |        0 |        0 |        0 |    100% |           |
 | curvesim/pool/cryptoswap/pool.py                     |      538 |       70 |      156 |       37 |     83% |153, 158, 161, 163->166, 169-176, 182, 228, 230, 260, 285, 299, 302, 316, 318, 320, 347, 360-361, 374, 388, 396, 469->478, 474, 516->526, 531-532, 536-559, 684->692, 744, 794->793, 804, 818->842, 820-840, 845-848, 1123, 1128, 1141, 1163, 1167, 1187 |
 | curvesim/pool/sim\_interface/\_\_init\_\_.py         |        4 |        0 |        0 |        0 |    100% |           |
-| curvesim/pool/sim\_interface/coin\_indices.py        |       13 |        1 |        6 |        1 |     89% |        32 |
-| curvesim/pool/sim\_interface/metapool.py             |       91 |        5 |       32 |        5 |     92% |21, 25, 59, 85, 96 |
-| curvesim/pool/sim\_interface/pool.py                 |       45 |        1 |        8 |        1 |     96% |        17 |
+| curvesim/pool/sim\_interface/asset\_indices.py       |       22 |        1 |        8 |        1 |     93% |        60 |
+| curvesim/pool/sim\_interface/metapool.py             |       86 |        4 |       24 |        4 |     93% |21, 25, 93, 96 |
+| curvesim/pool/sim\_interface/pool.py                 |       42 |        1 |        4 |        1 |     96% |        17 |
 | curvesim/pool/sim\_interface/raipool.py              |       10 |        5 |        0 |        0 |     50% |19-21, 33-34 |
 | curvesim/pool/snapshot.py                            |       55 |        0 |        2 |        0 |    100% |           |
 | curvesim/pool/stableswap/\_\_init\_\_.py             |        4 |        0 |        0 |        0 |    100% |           |
@@ -81,9 +81,9 @@
 | curvesim/price\_data/\_\_init\_\_.py                 |       10 |        4 |        6 |        1 |     44% |     51-55 |
 | curvesim/price\_data/sources.py                      |       19 |        8 |        2 |        0 |     52% |     19-30 |
 | curvesim/sim/\_\_init\_\_.py                         |       38 |       31 |       20 |        0 |     12% |138-151, 155-193 |
-| curvesim/utils.py                                    |       50 |       11 |       21 |        7 |     72% |54, 57, 93, 105-114, 116->exit, 117, 156 |
+| curvesim/utils.py                                    |       50 |       12 |       21 |        8 |     69% |54, 57, 93, 105-114, 116->exit, 117, 140, 156 |
 | curvesim/version.py                                  |        7 |        0 |        0 |        0 |    100% |           |
-|                                            **TOTAL** | **3412** |  **827** |  **918** |   **94** | **72%** |           |
+|                                            **TOTAL** | **3402** |  **825** |  **910** |   **93** | **72%** |           |
 
 
 ## Setup coverage badge
