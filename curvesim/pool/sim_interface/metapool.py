@@ -27,7 +27,7 @@ class SimCurveMetaPool(SimPool, AssetIndicesMixin, CurveMetaPool):
     @property
     @override
     @cache
-    def _asset_names(self):
+    def asset_names(self):
         """
         Return list of asset names.
 
@@ -41,8 +41,8 @@ class SimCurveMetaPool(SimPool, AssetIndicesMixin, CurveMetaPool):
 
     @property
     @override
-    def _balances(self):
-        """Return list of asset balances in same order as _asset_names."""
+    def _asset_balances(self):
+        """Return list of asset balances in same order as asset_names."""
         meta_balances = self.balances[:-1]
         base_balances = self.basepool.balances
         bp_token_balances = self.balances[-1]
