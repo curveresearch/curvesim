@@ -19,14 +19,14 @@ class SimCurvePool(SimPool, AssetIndicesMixin, CurvePool):
     @property
     @override
     @cache
-    def _asset_names(self):
+    def asset_names(self):
         """Return list of asset names."""
         return self.coin_names
 
     @property
     @override
-    def _balances(self):
-        """Return list of asset balances in same order as _asset_names."""
+    def _asset_balances(self):
+        """Return list of asset balances in same order as asset_names."""
         return self.balances
 
     @override

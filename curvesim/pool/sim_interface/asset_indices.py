@@ -14,7 +14,7 @@ class AssetIndicesMixin:
 
     @property
     @abstractmethod
-    def _asset_names(self):
+    def asset_names(self):
         """
         Return list of asset names.
 
@@ -24,18 +24,18 @@ class AssetIndicesMixin:
 
     @property
     @abstractmethod
-    def _balances(self):
-        """Return list of asset balances in same order as _asset_names."""
+    def _asset_balances(self):
+        """Return list of asset balances in same order as asset_names."""
         raise NotImplementedError
 
     @property
-    def _asset_balances(self):
+    def asset_balances(self):
         """Return dict mapping asset names to coin balances."""
-        return dict(zip(self._asset_names, self._balances))
+        return dict(zip(self.asset_names, self._asset_balances))
 
     @property
     @cache
-    def _asset_indices(self):
+    def asset_indices(self):
         """
         Return dict mapping asset names to pool index.
 
@@ -43,7 +43,7 @@ class AssetIndicesMixin:
         underlyer indices are preserved, but the basepool LP token is accessible using
         the index pool.n_total.
         """
-        return {name: i for i, name in enumerate(self._asset_names)}
+        return {name: i for i, name in enumerate(self.asset_names)}
 
     def get_asset_indices(self, *asset_ids):
         """
@@ -53,7 +53,7 @@ class AssetIndicesMixin:
         indices = []
         for ID in asset_ids:
             if isinstance(ID, str):
-                ID = self._asset_indices[ID]
+                ID = self.asset_indices[ID]
             indices.append(ID)
 
         if len(indices) != len(set(indices)):

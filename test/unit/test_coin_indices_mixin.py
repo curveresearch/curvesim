@@ -15,12 +15,12 @@ class FakeSimPool(AssetIndicesMixin):
 
     @property
     @override
-    def _asset_names(self):
+    def asset_names(self):
         return ["SYM_0", "SYM_1", "SYM_2"]
 
     @property
     @override
-    def _balances(self):
+    def _asset_balances(self):
         return [100, 200, 300]
 
 
@@ -38,6 +38,6 @@ def test_asset_indices(sim_pool):
     result = sim_pool.get_asset_indices(1, 2)
     assert result == [1, 2]
 
-    assert sim_pool._asset_indices == {"SYM_0": 0, "SYM_1": 1, "SYM_2": 2}
+    assert sim_pool.asset_indices == {"SYM_0": 0, "SYM_1": 1, "SYM_2": 2}
 
-    assert sim_pool._asset_balances == {"SYM_0": 100, "SYM_1": 200, "SYM_2": 300}
+    assert sim_pool.asset_balances == {"SYM_0": 100, "SYM_1": 200, "SYM_2": 300}
