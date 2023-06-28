@@ -4,10 +4,10 @@ from curvesim.pipelines.templates.sim_pool import SimPool
 from curvesim.utils import cache, override
 
 from ..stableswap import CurveMetaPool
-from .coin_indices import CoinIndicesMixin
+from .asset_indices import AssetIndicesMixin
 
 
-class SimCurveMetaPool(SimPool, CoinIndicesMixin, CurveMetaPool):
+class SimCurveMetaPool(SimPool, AssetIndicesMixin, CurveMetaPool):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -27,37 +27,37 @@ class SimCurveMetaPool(SimPool, CoinIndicesMixin, CurveMetaPool):
     @property
     @override
     @cache
-    def coin_indices(self):
-        """Return dict mapping coin ID to index."""
+    def _asset_names(self):
+        """
+        Return list of asset names.
 
+        For metapools, our convention is to place the basepool LP token last.
+        """
         meta_coin_names = self.coin_names[:-1]
         base_coin_names = self.basepool.coin_names
         bp_token_name = self.coin_names[-1]
 
-        # indexing from primary stable, through basepool underlyers,
-        # and then basepool LP token.
-        coin_names = [*meta_coin_names, *base_coin_names, bp_token_name]
-        coin_dict = {name: i for i, name in enumerate(coin_names)}
+        return [*meta_coin_names, *base_coin_names, bp_token_name]
 
-        return coin_dict
+    @property
+    @override
+    def _balances(self):
+        """Return list of asset balances in same order as _asset_names."""
+        meta_balances = self.balances[:-1]
+        base_balances = self.basepool.balances
+        bp_token_balances = self.balances[-1]
+
+        return [*meta_balances, *base_balances, bp_token_balances]
 
     @override
     def price(self, coin_in, coin_out, use_fee=True):
-        i, j = self.get_coin_indices(coin_in, coin_out)
+        i, j = self.get_asset_indices(coin_in, coin_out)
         bp_token_index = self.n_total
 
         if bp_token_index not in (i, j):
             return self.dydx(i, j, use_fee=use_fee)
 
-        if i == bp_token_index:
-            i = self.max_coin
-
-        if j == bp_token_index:
-            j = self.max_coin
-
-        if i == j:
-            raise CurvesimValueError("Duplicate coin indices.")
-
+        i, j = self.get_meta_asset_indices(i, j, bp_token_index)
         xp = self._xp()
         return self._dydx(i, j, xp=xp, use_fee=use_fee)
 
@@ -65,25 +65,22 @@ class SimCurveMetaPool(SimPool, CoinIndicesMixin, CurveMetaPool):
     def trade(self, coin_in, coin_out, amount_in):
         """
         Trade between two coins in a pool.
-        Coins run over basepool underlyers.
 
         Note all quantities are in D units.
         """
-        i, j = self.get_coin_indices(coin_in, coin_out)
-        amount_out, fee = self.exchange_underlying(i, j, amount_in)
-        return amount_out, fee
-
-    def test_trade(self, coin_in, coin_out, factor, use_fee=True):
-        """
-        Trade between top-level coins but leaves balances affected.
-
-        Used to compute liquidity density.
-        """
-        i, j = self.get_coin_indices(coin_in, coin_out)
+        i, j = self.get_asset_indices(coin_in, coin_out)
         bp_token_index = self.n_total
-        if bp_token_index not in (i, j):
-            raise CurvesimValueError("Must be trade with basepool token.")
 
+        if bp_token_index not in (i, j):
+            return self.exchange_underlying(i, j, amount_in)
+
+        i, j = self.get_meta_asset_indices(i, j, bp_token_index)
+        return self.exchange(i, j, amount_in)
+
+    def get_meta_asset_indices(self, i, j, bp_token_index):
+        """
+        Get metapool asset indices from the output of get_coin_indices.
+        """
         max_coin = self.max_coin
 
         if i == bp_token_index:
@@ -95,18 +92,15 @@ class SimCurveMetaPool(SimPool, CoinIndicesMixin, CurveMetaPool):
         if i == j:
             raise CurvesimValueError("Duplicate coin indices.")
 
-        dx = self.balances[i] // factor
+        if i > max_coin or j > max_coin:
+            raise CurvesimValueError(
+                f"Index exceeds max metapool index (Input: {(i,j)}, Max: {max_coin})."
+            )
 
-        with self.use_snapshot_context():
-            self.exchange(i, j, dx)
-
-            xp_post = self._xp()
-            price = self._dydx(i, j, xp_post, use_fee=use_fee)
-
-        return price
+        return i, j
 
     def get_in_amount(self, coin_in, coin_out, out_balance_perc):
-        i, j = self.get_coin_indices(coin_in, coin_out)
+        i, j = self.get_asset_indices(coin_in, coin_out)
 
         max_coin = self.max_coin
 
@@ -137,8 +131,7 @@ class SimCurveMetaPool(SimPool, CoinIndicesMixin, CurveMetaPool):
     @override
     @cache
     def assets(self):
-        max_coin = self.max_coin
-        symbols = self.coin_names[:max_coin] + self.basepool.coin_names
-        addresses = self.coin_addresses[:max_coin] + self.basepool.coin_addresses
+        symbols = self.coin_names[:-1] + self.basepool.coin_names
+        addresses = self.coin_addresses[:-1] + self.basepool.coin_addresses
 
         return SimAssets(symbols, addresses, self.chain)
