@@ -1,6 +1,47 @@
 
 .. _changelog-0.4.0:
 
+0.4.0 — 2023-06-29
+==================
+
+The v0.4.5 milestone incoporated many cleanups and refactorings for improved readability and maintability in preparation for the cryptosim milestone.  We highlight the main ones below.
+
+Removed
+-------
+
+- Unused Nomics wrapper and Coingecko code was removed.
+- Old references to "freq" attribute from price sampler were removed (#118).
+
+Added
+-----
+
+- Python 3.11 is now officially supported.
+- Advanced custom metrics support (#117).
+- SimPools now support token symbols for trade, price, and balances (#131, #150)
+- CI now tests a matrix of OS and supported Python versions (#134)
+- A simple pipeline was added to enable faster CI tests and serve as an easy example (#132).
+- Integrated SimAssets into SimPools for simpler handling (#131).
+- New classes Trade and TradeResult for better simulation results tracking.
+- Support specifying end date when pulling data from Coingecko.
+- Snapshot timestamp is now incorporated into metadata fetch (#133).
+
+Fixed
+-----
+
+- Corrected layer 2 addresses in pool metadata (#130).
+
+Improved
+--------
+
+- An updated README and the docs, especially for advanced metrics and strategies.
+- Multiple changes to simplify and conform to simulation interfaces.
+- Defensive check for sim pool precisions was added (#126).
+- Refactored SimStableswapBase into a mixin for better modularity (#146).
+- ArbMetric updated for better numerical stability (#137).
+- Python-native types are now used in price_sampler, pool_data, pipeline (#137).
+
+.. _changelog-0.4.0:
+
 0.4.0 — 2023-05-19
 ==================
 
