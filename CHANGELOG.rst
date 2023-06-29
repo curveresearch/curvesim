@@ -1,7 +1,7 @@
 
-.. _changelog-0.4.0:
+.. _changelog-0.4.5:
 
-0.4.0 — 2023-06-29
+0.4.5 — 2023-06-29
 ==================
 
 The v0.4.5 milestone incoporated many cleanups and refactorings for improved readability and maintability in preparation for the cryptosim milestone.  We highlight the main ones below.
