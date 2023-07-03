@@ -17,19 +17,29 @@ Adding Custom Simulation
 .. _adding-simulation:
 
 
-A simulation consists of a "pipeline" taking in iterables of pool configurations and "market data".
-For each pool configuration, a "run" consists of applying the strategy to the given configuration
-and stream of market data.  A report of various metrics can then be created from the results of
-all the runs.
+A simulation consists of a **pipeline** taking in iterables of pool configurations
+and market data sampled as a time-series.  For each pool configuration, a **run**
+consists of applying the strategy to the given configuration and stream of market
+data.  A report of various metrics can then be created from the results of all
+runs.
 
-The basic model for a pipeline is demonstrated in the implementation of
-:func:`run_pipeline`.  It takes in a :mod:`param sampler <curvesim.iterators.param_samplers>`, :mod:`price sampler <curvesim.iterators.price_samplers>`, and :class:`strategy <curvesim.pipeline.templates.Strategy>`.  The pipeline iterates over the pool with parameters set from the param sampler; for each set of parameters, the strategy is applied on each time series sample produced by the price sampler.
+To flexiby handle future-use-cases, the pipeline concept has not been formalized into
+a configurable object, but the basic model can be understood in the implementation
+of the helper function :func:`run_pipeline`.  It takes in a
+:mod:`param sampler <curvesim.iterators.param_samplers>`,
+:mod:`price sampler <curvesim.iterators.price_samplers>`,
+and :class:`strategy <curvesim.pipeline.templates.Strategy>`.
+The pipeline iterates over the pool with parameters set from the param sampler; for each
+set of parameters, the strategy is applied on each time series sample produced by the
+price sampler.
 
 Typically you would use :func:`run_pipeline` by creating a function that:
 
-1. takes in pool data such as :class:`~curvesim.pool_data.metadata.PoolMetaDataInterface`, although this can be easily instantiated from a pool address, and any other arguments needed for the other steps
+1. instantiates :class:`~curvesim.pool_data.metadata.PoolMetaDataInterface` from a pool address and chain label
 2. instantiates a param_sampler, price_sampler, and strategy
-3. invokes `run_pipeline`, returning its result metrics
+3. invokes `run_pipeline`, returning result metrics
+
+Other auxiliary args may need to be passed-in to instantiate all necessary objects.
 
 The main pipeline, which was developed for the specific use-case of optimizing Curve pools
 for best reward-risk tradeoff, is the
@@ -37,6 +47,10 @@ for best reward-risk tradeoff, is the
 
 The :mod:`simple pipeline <curvesim.pipelines.simple>` provides an easier starting
 point for creating a custom pipeline.
+
+
+Simple Pipeline
+^^^^^^^^^^^^^^^
 
 
 Adding Custom Metrics
