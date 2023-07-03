@@ -17,14 +17,14 @@ Adding Custom Simulation
 .. _adding-simulation:
 
 
-A simulation consists of a **pipeline** taking in iterables of pool configurations
-and market data sampled as a time-series.  For each pool configuration, a **run**
+A simulation consists of a *pipeline* taking in pool configurations
+and market data sampled as a time-series.  For each pool configuration, a *run*
 consists of applying the strategy to the given configuration and stream of market
 data.  A report of various metrics can then be created from the results of all
 runs.
 
-To flexiby handle future-use-cases, the pipeline concept has not been formalized into
-a configurable object, but the basic model can be understood in the implementation
+To flexibly handle future-use-cases, the pipeline concept has not been formalized into
+a configurable object, but the basic template can be understood in the implementation
 of the helper function :func:`run_pipeline`.  It takes in a
 :mod:`param sampler <curvesim.iterators.param_samplers>`,
 :mod:`price sampler <curvesim.iterators.price_samplers>`,
@@ -36,8 +36,12 @@ price sampler.
 Typically you would use :func:`run_pipeline` by creating a function that:
 
 1. instantiates :class:`~curvesim.pool_data.metadata.PoolMetaDataInterface` from a pool address and chain label
-2. instantiates a param_sampler, price_sampler, and strategy
-3. invokes `run_pipeline`, returning result metrics
+
+2. creates a :class:`~curvesim.pool.sim_interface.SimPool` using the pool data.
+
+3. instantiates a param_sampler, price_sampler, and strategy
+
+4. invokes :func:`run_pipeline`, returning result metrics
 
 Other auxiliary args may need to be passed-in to instantiate all necessary objects.
 
@@ -49,8 +53,52 @@ The :mod:`simple pipeline <curvesim.pipelines.simple>` provides an easier starti
 point for creating a custom pipeline.
 
 
-Simple Pipeline
-^^^^^^^^^^^^^^^
+Understanding the :code:`SimPool` interface
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To setup arbitrage strategies, the :class:`~curvesim.pipelines.templates.SimPool` interface exposes::
+
+1. :code:`price`: *(method)*
+
+2. :code:`trade`: *(method)*
+
+3. :code:`assets`: *(property)*
+
+Given market price(s), any strategy that checks the "price" and then exchanges one
+asset for another can be implemented.  While the name :code:`SimPool` suggests a pool, this object
+can be any type of market or venue where assets are exchanged.
+
+For example, one could implement::
+
+    class CollateralizedDebtPosition(SimPool):
+        """
+        A simple Aave-style collateralized debt position.
+        """
+
+        def price(self, debt_token, collateral_token, use_fee=True):
+            """
+            Returns the effective price for collateral from liquidating
+            the position.
+            """
+
+        def trade(self, debt_token, collateral_token, size):
+            """
+            Liquidate the position by paying `size` amount of the debt.
+            """
+
+        @property
+        def assets(self):
+            """
+            Return a :class:`SimAssets` instance with information on
+            the tradable assets (debt and collateral in this example).
+            """
+
+
+The available implementations wrap a Curve pool into an appropriate :code:`SimPool`, letting
+strategies more flexibly define tradable assets.  Expected use-cases taking advantage
+of these abstractions include trading LP tokens or even baskets of tokens, routing through
+multiple pools, and trading between two competing pools of different types.
+
 
 
 Adding Custom Metrics
