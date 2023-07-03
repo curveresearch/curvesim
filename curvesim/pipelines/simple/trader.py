@@ -1,4 +1,3 @@
-from numpy import array
 from scipy.optimize import root_scalar
 
 from curvesim.logging import get_logger
@@ -28,21 +27,11 @@ class SimpleArbitrageur(Trader):
 
         Returns
         -------
-        trades: List[Tuple]
+        trades : list of :class:`Trade` objects
             List of trades to perform.
 
-            Each trade is a tuple (coin_in, coin_out, size).
-
-            "coin_in": in token
-            "coin_out": out token
-            "size": trade size
-
-        price_errors: numpy.ndarray
-            Post-trade price error between pool price and market price.
-
-        optimizer_result: object
-            Optional object holding any useful debugging information
-            for the arbitraging algorithms
+        additional_data: dict
+            Dict of additional data to be passed to the state log as part of trade_data.
         """
         pool = self.pool
         trades = get_arb_trades(pool, prices)
@@ -64,9 +53,9 @@ class SimpleArbitrageur(Trader):
                     price_error = pool.price(i, j) - price_target
 
         if not best_trade:
-            return [], {"price_errors": array([])}
+            return [], {"price_errors": []}
 
-        return [best_trade], {"price_errors": array([price_error])}
+        return [best_trade], {"price_errors": [price_error]}
 
 
 def get_arb_trades(pool, prices):

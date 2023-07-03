@@ -19,7 +19,8 @@ from pandas import DataFrame, concat
 
 from curvesim.pool.sim_interface import SimCurveMetaPool, SimCurvePool, SimCurveRaiPool
 from curvesim.utils import get_pairs
-from .base import Metric, PoolMetric, PricingMetric, PoolPricingMetric
+
+from .base import Metric, PoolMetric, PoolPricingMetric, PricingMetric
 
 
 class ArbMetrics(PricingMetric):
@@ -89,7 +90,9 @@ class ArbMetrics(PricingMetric):
         prices = DataFrame(price_sample.prices.to_list(), index=price_sample.index)
 
         profits = self._compute_profits(prices, trade_data.trades)
-        price_error = trade_data.price_errors.abs().apply(sum)
+        price_error = trade_data.price_errors.apply(
+            lambda errors: sum(abs(e) for e in errors)
+        )
 
         results = concat([profits, price_error], axis=1)
         results.columns = list(self.config["plot"]["metrics"])
