@@ -53,8 +53,8 @@ The :mod:`simple pipeline <curvesim.pipelines.simple>` provides an easier starti
 point for creating a custom pipeline.
 
 
-Understanding the :code:`SimPool` interface
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The :code:`SimPool` interface
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To setup arbitrage strategies, the :class:`~curvesim.pipelines.templates.SimPool` interface exposes::
 
@@ -98,6 +98,26 @@ The available implementations wrap a Curve pool into an appropriate :code:`SimPo
 strategies more flexibly define tradable assets.  Expected use-cases taking advantage
 of these abstractions include trading LP tokens or even baskets of tokens, routing through
 multiple pools, and trading between two competing pools of different types.
+
+
+The :code:`Strategy` and :code:`Trader` interfaces
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The :class:`~curvesim.pipeline.templates.Strategy` callable is what coordinates the different moving parts of the system::
+
+    def __call__(self, sim_pool, parameters, price_sampler):
+        """
+        Computes and executes trades at each timestep.
+        """
+
+The parameters configure the pool and the :code:`price_sampler` provides market tick data that pushes the pool through a simulation run.
+
+The :code:`Strategy` base class houses an implementation to do this based on customizing an injected :class:`~curvesim.pipelines.templates.Trader`.  The :code:`Trader` class assumes typical logic has a compute step and then a trade execution step, but since only the :code:`process_time_sample` method is invoked in a strategy, this isn't mandatory in your custom implementation.
+
+
+The Param and Price Samplers
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 
 
 
