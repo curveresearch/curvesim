@@ -1,7 +1,14 @@
-"""Simple health check for the package."""
+"""
+Simple health check for the package.
+
+Also provides version info from the command-line.
+"""
+import argparse
+import platform
 import time
 
 from .sim import autosim
+from .version import __version__
 
 
 def hello_world():
@@ -15,5 +22,35 @@ def hello_world():
     return res
 
 
+def _python_info():
+    """
+    Return formatted string for python implementation and version.
+
+    Returns
+    --------
+    str:
+        Implementation name, version, and platform
+    """
+    return "{} {} on {}".format(
+        platform.python_implementation(),
+        platform.python_version(),
+        platform.system(),
+    )
+
+
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        prog="curvesim",
+        description="Simulate Curve pools in Python",
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {__version__}, {_python_info()}",
+    )
+    args = parser.parse_args()
+
+    # `--version` option automatically exits, so we can
+    # just run this.  If other options are added, we'll
+    # need to check args and decide to run or not.
     res = hello_world()
