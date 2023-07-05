@@ -63,7 +63,7 @@ class CurveCryptoPool(Pool):
         fee_gamma: int,
         adjustment_step: int,
         ma_half_time: int,
-        price_scale: int,
+        price_scale: List[int],
         price_oracle=None,
         last_prices=None,
         balances=None,
@@ -101,13 +101,13 @@ class CurveCryptoPool(Pool):
             Minimum step size to adjust the price scale.
         ma_half_time: int
             "Half-life" for exponential moving average of trade prices.
-        price_scale: int
+        price_scale: List[Int]
             Price scale value for the pool.  This is where liquidity is concentrated.
-        price_oracle: int, optional
+        price_oracle: List[Int], optional
             Price oracle value for the pool.  This is the EMA price used to
             adjust the price scale toward.
             Defaults to `price_scale`.
-        last_prices: int, optional
+        last_prices: List[Int], optional
             Last trade price for the pool.
             Defaults to `price_scale`.
         balances: list of int, optional
@@ -149,6 +149,7 @@ class CurveCryptoPool(Pool):
         self.xcp_profit_a = xcp_profit_a  # Full profit at last claim of admin fees
         self.not_adjusted = False
 
+        # TODO: remove this when we're ready to test n=3.
         if n != 2:
             raise CryptoPoolError("Only 2-coin crypto pools are currently supported.")
         self.n = n
@@ -166,9 +167,12 @@ class CurveCryptoPool(Pool):
         if D is not None:
             self.D = D
             if not balances:
+                prices = self._extended_price_scale
+                precisions = self.precisions
+
                 self.balances = [
-                    D // n // precisions[0],
-                    D * PRECISION // (n * self.price_scale) // precisions[1],
+                    D * PRECISION // n * (price) // precision
+                    for price, precision in zip(prices, precisions)
                 ]
         else:
             xp = self._xp()
@@ -183,16 +187,25 @@ class CurveCryptoPool(Pool):
 
         self.virtual_price = 10**18 * xcp // tokens
 
+    @property
+    def _extended_price_scale(self) -> List[int]:
+        """
+        Returns all prices including the price of the numeraire
+        with respect to itself.
+        """
+        return [PRECISION] + self.price_scale
+
     def _xp(self) -> List[int]:
         """
         Calculate the balances in units of `D`, converting using `price_scale`
         so a unit of each token has equal value.
         """
+        prices = self._extended_price_scale
+        precisions = self.precisions
+        balances = self.balances
         return [
             balance * precision * price // PRECISION
-            for balance, precision, price in zip(
-                self.balances, self.precisions, self.price_scale
-            )
+            for balance, precision, price in zip(balances, precisions, prices)
         ]
 
     def _get_xcp(self, D: int) -> int:
@@ -201,10 +214,8 @@ class CurveCryptoPool(Pool):
         equilibrium point.
         """
         n_coins: int = self.n
-        x: List[int] = [
-            D // n_coins,
-            D * PRECISION // (self.price_scale * n_coins),
-        ]
+        prices = self._extended_price_scale
+        x: List[int] = [D * PRECISION // (price * n_coins) for price in prices]
         return _geometric_mean(x, True)
 
     # pylint: disable=too-many-locals,too-many-branches
