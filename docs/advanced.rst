@@ -28,7 +28,7 @@ a configurable object, but the basic template can be understood in the implement
 of the helper function :func:`run_pipeline`.  It takes in a
 :mod:`param sampler <curvesim.iterators.param_samplers>`,
 :mod:`price sampler <curvesim.iterators.price_samplers>`,
-and :class:`strategy <curvesim.pipeline.templates.Strategy>`.
+and :class:`strategy <curvesim.templates.Strategy>`.
 The pipeline iterates over the pool with parameters set from the param sampler; for each
 set of parameters, the strategy is applied on each time series sample produced by the
 price sampler.
@@ -56,7 +56,7 @@ point for creating a custom pipeline.
 The :code:`SimPool` interface
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To setup arbitrage strategies, the :class:`~curvesim.pipelines.templates.SimPool` interface exposes::
+To setup arbitrage strategies, the :class:`~curvesim.templates.SimPool` interface exposes::
 
 1. :code:`price`: *(method)*
 
@@ -103,7 +103,7 @@ multiple pools, and trading between two competing pools of different types.
 The :code:`Strategy` and :code:`Trader` interfaces
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :class:`~curvesim.pipeline.templates.Strategy` callable is what coordinates the different moving parts of the system::
+The :class:`~curvesim.templates.Strategy` callable is what coordinates the different moving parts of the system::
 
     def __call__(self, sim_pool, parameters, price_sampler):
         """
@@ -112,7 +112,7 @@ The :class:`~curvesim.pipeline.templates.Strategy` callable is what coordinates 
 
 The parameters configure the pool and the :code:`price_sampler` provides market tick data that pushes the pool through a simulation run.
 
-The :code:`Strategy` base class houses an implementation to do this based on customizing an injected :class:`~curvesim.pipelines.templates.Trader`.  The :code:`Trader` class assumes typical logic has a compute step and then a trade execution step, but since only the :code:`process_time_sample` method is invoked in a strategy, this isn't mandatory in your custom implementation.
+The :code:`Strategy` base class houses an implementation to do this based on customizing an injected :class:`~curvesim.templates.Trader`.  The :code:`Trader` class assumes typical logic has a compute step and then a trade execution step, but since only the :code:`process_time_sample` method is invoked in a strategy, this isn't mandatory in your custom implementation.
 
 
 
