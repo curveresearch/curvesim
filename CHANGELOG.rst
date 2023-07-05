@@ -4,7 +4,7 @@
 0.4.5 — 2023-06-29
 ==================
 
-The v0.4.5 milestone incoporated many cleanups and refactorings for improved readability and maintability in preparation for the cryptosim milestone.  We highlight the main ones below.
+The v0.4.5 milestone incoporated many cleanups and refactorings for improved readability and maintainability in preparation for the cryptosim milestone.  We highlight the main ones below.
 
 Removed
 -------
