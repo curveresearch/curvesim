@@ -6,7 +6,7 @@ a tool such as `bump2version` should be used.
 """
 import re
 
-__version__ = "0.4.5.a1"
+__version__ = "0.4.5"
 
 
 def parse_version(version):
