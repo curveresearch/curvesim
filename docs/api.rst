@@ -66,11 +66,11 @@ Simulation Pipelines
     :members:
     :exclude-members: wrapped_strategy
 
-.. autoclass:: curvesim.pipelines.templates.Strategy
+.. autoclass:: curvesim.templates.Strategy
     :members:
-.. autoclass:: curvesim.pipelines.templates.Trader
+.. autoclass:: curvesim.templates.Trader
     :members:
-.. autoclass:: curvesim.pipelines.templates.SimPool
+.. autoclass:: curvesim.templates.SimPool
     :members:
 
     Simple arbitrage
@@ -156,14 +156,36 @@ Iterators
     .. automodule:: curvesim.iterators.param_samplers
 
     .. autoclass:: curvesim.iterators.param_samplers.Grid
+        :special-members: __iter__
         :inherited-members:
 
     Price Samplers
     --------------
+
     .. automodule:: curvesim.iterators.price_samplers
 
+    Abstract
+    ^^^^^^^^^
+
+    .. autoclass:: curvesim.templates.samplers.PriceSampler
+        :members:
+        :special-members: __iter__
+
+    .. autoclass:: curvesim.templates.samplers.PriceSample
+        :members:
+        :exclude-members: __init__, __new__
+
+    Concrete
+    ^^^^^^^^^
+
     .. autoclass:: curvesim.iterators.price_samplers.PriceVolume
+        :special-members: __iter__
         :inherited-members:
+
+    .. autoclass:: curvesim.iterators.price_samplers.PriceVolumeSample
+        :members:
+        :exclude-members: __init__, __new__
+
 
 Metrics
 -------

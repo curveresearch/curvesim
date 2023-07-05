@@ -30,4 +30,9 @@ class PriceSampler(ABC):
 
     @abstractmethod
     def __iter__(self) -> PriceSample:
+        """
+        Yields
+        -------
+        class:`PriceSample`
+        """
         raise NotImplementedError
