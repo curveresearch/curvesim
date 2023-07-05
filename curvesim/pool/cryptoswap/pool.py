@@ -188,10 +188,11 @@ class CurveCryptoPool(Pool):
         Calculate the balances in units of `D`, converting using `price_scale`
         so a unit of each token has equal value.
         """
-        precisions = self.precisions
         return [
-            self.balances[0] * precisions[0],
-            self.balances[1] * precisions[1] * self.price_scale // PRECISION,
+            balance * precision * price // PRECISION
+            for balance, precision, price in zip(
+                self.balances, self.precisions, self.price_scale
+            )
         ]
 
     def _get_xcp(self, D: int) -> int:
