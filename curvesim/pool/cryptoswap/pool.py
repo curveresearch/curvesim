@@ -187,6 +187,22 @@ class CurveCryptoPool(Pool):
 
         self.virtual_price = 10**18 * xcp // tokens
 
+    def _xp(self) -> List[int]:
+        """
+        Calculate the balances in units of `D`, converting using `price_scale`
+        so a unit of each token has equal value.
+        """
+        balances = self.balances
+        return self._xp_mem(balances)
+
+    def _xp_mem(self, balances) -> List[int]:
+        prices = self._extended_price_scale
+        precisions = self.precisions
+        return [
+            balance * precision * price // PRECISION
+            for balance, precision, price in zip(balances, precisions, prices)
+        ]
+
     @property
     def _extended_price_scale(self) -> List[int]:
         """
@@ -194,19 +210,6 @@ class CurveCryptoPool(Pool):
         with respect to itself.
         """
         return [PRECISION] + self.price_scale
-
-    def _xp(self) -> List[int]:
-        """
-        Calculate the balances in units of `D`, converting using `price_scale`
-        so a unit of each token has equal value.
-        """
-        prices = self._extended_price_scale
-        precisions = self.precisions
-        balances = self.balances
-        return [
-            balance * precision * price // PRECISION
-            for balance, precision, price in zip(balances, precisions, prices)
-        ]
 
     def _get_xcp(self, D: int) -> int:
         """
@@ -329,6 +332,7 @@ class CurveCryptoPool(Pool):
         if D > 10**15 * 10**18 or D < 10**17:
             raise CurvesimValueError("Unsafe value for D")
 
+        # FIXME: update for general n
         x_j: int = x[1 - i]
         y: int = D**2 // (x_j * n_coins**2)
         K0_i: int = (10**18 * n_coins) * x_j // D
@@ -596,9 +600,7 @@ class CurveCryptoPool(Pool):
 
         xp: List[int] = self.balances.copy()
         xp[i] += dx
-        precisions: List[int] = self.precisions
-        price_scale: int = self.price_scale * precisions[1]
-        xp = [xp[0] * precisions[0], xp[1] * price_scale // PRECISION]
+        xp = self._xp_mem(xp)
 
         A = self.A
         gamma = self.gamma
@@ -607,10 +609,9 @@ class CurveCryptoPool(Pool):
         y: int = self._newton_y(A, gamma, xp, D, j)
         dy: int = xp[j] - y - 1
         xp[j] = y
-        if j > 0:
-            dy = dy * PRECISION // price_scale
-        else:
-            dy = dy // precisions[0]
+        precisions: List[int] = self.precisions
+        price_scale: List[int] = self._extended_price_scale
+        dy = dy * PRECISION // (price_scale[j] * precisions[j])
         dy -= self._fee(xp) * dy // 10**10
 
         return dy
