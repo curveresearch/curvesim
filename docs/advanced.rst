@@ -115,10 +115,6 @@ The parameters configure the pool and the :code:`price_sampler` provides market 
 The :code:`Strategy` base class houses an implementation to do this based on customizing an injected :class:`~curvesim.pipelines.templates.Trader`.  The :code:`Trader` class assumes typical logic has a compute step and then a trade execution step, but since only the :code:`process_time_sample` method is invoked in a strategy, this isn't mandatory in your custom implementation.
 
 
-The Param and Price Samplers
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-
 
 
 Adding Custom Metrics
