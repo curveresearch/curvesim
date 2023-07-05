@@ -1,7 +1,7 @@
 from curvesim.logging import get_logger
 from curvesim.metrics.state_log import StateLog
-from curvesim.pipelines.templates import Strategy
 from curvesim.pipelines.vol_limited_arb.trader import VolumeLimitedArbitrageur
+from curvesim.templates import Strategy
 
 logger = get_logger(__name__)
 

@@ -2,7 +2,7 @@ from numpy import array
 from scipy.optimize import root_scalar
 
 from curvesim.logging import get_logger
-from curvesim.pipelines.templates.trader import Trade, Trader
+from curvesim.templates.trader import Trade, Trader
 
 logger = get_logger(__name__)
 

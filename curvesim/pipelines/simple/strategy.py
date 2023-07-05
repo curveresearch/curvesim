@@ -1,6 +1,6 @@
 from curvesim.logging import get_logger
 from curvesim.metrics.state_log import StateLog
-from curvesim.pipelines.templates import Strategy
+from curvesim.templates import Strategy
 
 from .trader import SimpleArbitrageur
 
