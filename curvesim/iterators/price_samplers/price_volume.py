@@ -2,25 +2,11 @@ from abc import abstractmethod
 from datetime import datetime
 
 from curvesim.logging import get_logger
+from curvesim.pipelines.templates.samplers import PriceSample, PriceSampler
 from curvesim.price_data import get
-from curvesim.utils import dataclass
+from curvesim.utils import dataclass, override
 
 logger = get_logger(__name__)
-
-
-@dataclass(slots=True)
-class PriceSample:
-    """
-    Attributes
-    -----------
-    timestamp : datetime.datetime
-        Timestamp for the current price/volume.
-    prices : dict
-        Price for each pairwise coin combination.
-    """
-
-    timestamp: datetime
-    prices: dict
 
 
 @dataclass(slots=True)
@@ -37,12 +23,6 @@ class PriceVolumeSample(PriceSample):
     """
 
     volumes: dict
-
-
-class PriceSampler:
-    @abstractmethod
-    def __iter__(self) -> PriceSample:
-        raise NotImplementedError
 
 
 class PriceVolume(PriceSampler):
@@ -82,6 +62,7 @@ class PriceVolume(PriceSampler):
         self.prices = prices.set_axis(assets.symbol_pairs, axis="columns")
         self.volumes = volumes.set_axis(assets.symbol_pairs, axis="columns")
 
+    @override
     def __iter__(self) -> PriceVolumeSample:
         """
         Yields
