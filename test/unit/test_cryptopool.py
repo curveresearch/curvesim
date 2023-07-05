@@ -54,7 +54,7 @@ def initialize_pool(vyper_cryptopool):
         adjustment_step=adjustment_step,
         admin_fee=admin_fee,
         ma_half_time=ma_half_time,
-        price_scale=price_scale,
+        price_scale=[price_scale],
         balances=balances,
         D=D,
         tokens=lp_total_supply,
@@ -75,12 +75,12 @@ def initialize_pool(vyper_cryptopool):
 
     price_oracle = vyper_cryptopool.eval("self._price_oracle")
     # pylint: disable-next=protected-access
-    pool._price_oracle = price_oracle
+    pool._price_oracle = [price_oracle]
 
     last_prices = vyper_cryptopool.last_prices()
     last_prices_timestamp = vyper_cryptopool.last_prices_timestamp()
 
-    pool.last_prices = last_prices
+    pool.last_prices = [last_prices]
     pool.last_prices_timestamp = last_prices_timestamp
 
     return pool
@@ -129,8 +129,11 @@ def get_real_balances(virtual_balances, precisions, price_scale):
     Convert from units of D to native token units using the
     given price scale.
     """
-    balances = [x // p for x, p in zip(virtual_balances, precisions)]
-    balances[1] = balances[1] * PRECISION // price_scale
+    prices = [PRECISION, price_scale]
+    balances = [
+        x * PRECISION // (price * precision)
+        for x, price, precision in zip(virtual_balances, prices, precisions)
+    ]
     return balances
 
 
