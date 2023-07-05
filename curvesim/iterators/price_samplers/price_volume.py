@@ -64,7 +64,7 @@ class PriceVolume(PriceSampler):
         """
         Yields
         -------
-        class:`.PriceVolumeSample`
+        class:`PriceVolumeSample`
         """
         for price_row, volume_row in zip(
             self.prices.iterrows(), self.volumes.iterrows()
