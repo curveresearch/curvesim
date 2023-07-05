@@ -195,7 +195,7 @@ def __init__(
 
     # Pack A and gamma:
     # shifted A + gamma
-    A_gamma: uint256 = shift(A, 128)
+    A_gamma: uint256 = A << 128
     A_gamma = A_gamma | gamma
     self.initial_A_gamma = A_gamma
     self.future_A_gamma = A_gamma
@@ -226,7 +226,7 @@ def __init__(
 @view
 def _get_precisions() -> uint256[2]:
     p0: uint256 = self.PRECISIONS
-    p1: uint256 = 10 ** shift(p0, -8)
+    p1: uint256 = 10 ** (p0 >> 8)
     p0 = 10 ** (p0 & 255)
     return [p0, p1]
 
@@ -246,7 +246,7 @@ def _A_gamma() -> uint256[2]:
 
     A_gamma_1: uint256 = self.future_A_gamma
     gamma1: uint256 = A_gamma_1 & (2**128-1)
-    A1: uint256 = shift(A_gamma_1, -128)
+    A1: uint256 = A_gamma_1 >> 128
 
     if block.timestamp < t1:
         # handle ramping up and down of A
@@ -263,7 +263,7 @@ def _A_gamma() -> uint256[2]:
         t0 = block.timestamp - t0
         t2: uint256 = t1 - t0
 
-        A1 = (shift(A_gamma_0, -128) * t2 + A1 * t0) / t1
+        A1 = ((A_gamma_0 >> 128) * t2 + A1 * t0) / t1
         gamma1 = ((A_gamma_0 & 2**128-1) * t2 + gamma1 * t0) / t1
 
     return [A1, gamma1]
@@ -1147,7 +1147,7 @@ def ramp_A_gamma(future_A: uint256, future_gamma: uint256, future_time: uint256)
     assert future_time > block.timestamp + (MIN_RAMP_TIME-1)  # dev: insufficient time
 
     A_gamma: uint256[2] = self._A_gamma()
-    initial_A_gamma: uint256 = shift(A_gamma[0], 128)
+    initial_A_gamma: uint256 = A_gamma[0] << 128
     initial_A_gamma = initial_A_gamma | A_gamma[1]
 
     assert future_A > MIN_A-1
@@ -1166,7 +1166,7 @@ def ramp_A_gamma(future_A: uint256, future_gamma: uint256, future_time: uint256)
     self.initial_A_gamma = initial_A_gamma
     self.initial_A_gamma_time = block.timestamp
 
-    future_A_gamma: uint256 = shift(future_A, 128)
+    future_A_gamma: uint256 = future_A << 128
     future_A_gamma = future_A_gamma | future_gamma
     self.future_A_gamma_time = future_time
     self.future_A_gamma = future_A_gamma
@@ -1179,7 +1179,7 @@ def stop_ramp_A_gamma():
     assert msg.sender == Factory(self.factory).admin()  # dev: only owner
 
     A_gamma: uint256[2] = self._A_gamma()
-    current_A_gamma: uint256 = shift(A_gamma[0], 128)
+    current_A_gamma: uint256 = A_gamma[0] << 128
     current_A_gamma = current_A_gamma | A_gamma[1]
     self.initial_A_gamma = current_A_gamma
     self.future_A_gamma = current_A_gamma
