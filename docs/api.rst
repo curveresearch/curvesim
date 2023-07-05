@@ -66,11 +66,11 @@ Simulation Pipelines
     :members:
     :exclude-members: wrapped_strategy
 
-.. autoclass:: curvesim.pipelines.templates.Strategy
+.. autoclass:: curvesim.templates.Strategy
     :members:
-.. autoclass:: curvesim.pipelines.templates.Trader
+.. autoclass:: curvesim.templates.Trader
     :members:
-.. autoclass:: curvesim.pipelines.templates.SimPool
+.. autoclass:: curvesim.templates.SimPool
     :members:
 
     Simple arbitrage
