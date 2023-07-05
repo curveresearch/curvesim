@@ -1,6 +1,6 @@
 from curvesim.exceptions import CurvesimValueError, SimPoolError
-from curvesim.pipelines.templates import SimAssets
-from curvesim.pipelines.templates.sim_pool import SimPool
+from curvesim.templates import SimAssets
+from curvesim.templates.sim_pool import SimPool
 from curvesim.utils import cache, override
 
 from ..stableswap import CurveMetaPool

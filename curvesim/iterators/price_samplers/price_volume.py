@@ -1,15 +1,28 @@
-from datetime import datetime
-
-from pandas import Series
-
 from curvesim.logging import get_logger
 from curvesim.price_data import get
-from curvesim.utils import dataclass
+from curvesim.templates.samplers import PriceSample, PriceSampler
+from curvesim.utils import dataclass, override
 
 logger = get_logger(__name__)
 
 
-class PriceVolume:
+@dataclass(slots=True)
+class PriceVolumeSample(PriceSample):
+    """
+    Attributes
+    -----------
+    timestamp : datetime.datetime
+        Timestamp for the current price/volume.
+    prices : dict
+        Price for each pairwise coin combination.
+    volumes : dict
+        Volume for each pairwise coin combination.
+    """
+
+    volumes: dict
+
+
+class PriceVolume(PriceSampler):
     """
     An iterator that retrieves price/volume and iterates over timepoints in the data.
     """
@@ -46,25 +59,26 @@ class PriceVolume:
         self.prices = prices.set_axis(assets.symbol_pairs, axis="columns")
         self.volumes = volumes.set_axis(assets.symbol_pairs, axis="columns")
 
-    def __iter__(self):
+    @override
+    def __iter__(self) -> PriceVolumeSample:
         """
         Yields
         -------
-        prices : pandas.Series
-            Prices for each pairwise coin combination.
-
-        volumes : pandas.Series
-            Prices for each pairwise coin combination.
-
-        timestamp : datetime.datetime
-            Timestamp for the current price/volume.
-
+        class:`.PriceVolumeSample`
         """
-        for prices, volumes in zip(self.prices.iterrows(), self.volumes.iterrows()):
-            assert prices[0] == volumes[0], "Price/volume timestamps did not match"
-            yield PriceVolumeSample(
-                prices[0], prices[1].to_dict(), volumes[1].to_dict()
-            )
+        for price_row, volume_row in zip(
+            self.prices.iterrows(), self.volumes.iterrows()
+        ):
+            price_timestamp, prices = price_row
+            volume_timestamp, volumes = volume_row
+            assert (
+                price_timestamp == volume_timestamp
+            ), "Price/volume timestamps don't match"
+
+            prices = prices.to_dict()
+            volumes = volumes.to_dict()
+
+            yield PriceVolumeSample(price_timestamp, prices, volumes)
 
     def total_volumes(self):
         """
@@ -74,10 +88,3 @@ class PriceVolume:
             Total volume for each pairwise coin combination, summed accross timestamps.
         """
         return self.volumes.sum().to_dict()
-
-
-@dataclass(eq=False, slots=True)
-class PriceVolumeSample:
-    timestamp: datetime
-    prices: Series
-    volumes: Series
