@@ -16,7 +16,7 @@
 | curvesim/logging.py                                  |       45 |        0 |        6 |        1 |     98% |    94->96 |
 | curvesim/metrics/\_\_init\_\_.py                     |        6 |        0 |        2 |        0 |    100% |           |
 | curvesim/metrics/base.py                             |      123 |       11 |       31 |        4 |     90% |146-148, 221, 291-294, 342-343, 368->exit, 369, 371->376 |
-| curvesim/metrics/metrics.py                          |      171 |        0 |       20 |        0 |    100% |           |
+| curvesim/metrics/metrics.py                          |      171 |        0 |       22 |        0 |    100% |           |
 | curvesim/metrics/results/\_\_init\_\_.py             |        3 |        0 |        0 |        0 |    100% |           |
 | curvesim/metrics/results/make\_results.py            |       28 |        0 |       10 |        0 |    100% |           |
 | curvesim/metrics/results/sim\_results.py             |       35 |       12 |       12 |        3 |     55% |62-65, 91-93, 120, 128-131 |
@@ -34,11 +34,11 @@
 | curvesim/pipelines/\_\_init\_\_.py                   |       21 |        5 |       12 |        1 |     76% |     75-79 |
 | curvesim/pipelines/simple/\_\_init\_\_.py            |       28 |        0 |        4 |        1 |     97% |  113->117 |
 | curvesim/pipelines/simple/strategy.py                |       10 |        0 |        0 |        0 |    100% |           |
-| curvesim/pipelines/simple/trader.py                  |       56 |        4 |       18 |        0 |     95% |   138-144 |
+| curvesim/pipelines/simple/trader.py                  |       55 |        4 |       18 |        0 |     95% |   127-133 |
 | curvesim/pipelines/utils.py                          |       46 |       36 |       14 |        0 |     17% |40-55, 59-72, 76-104, 108-110 |
 | curvesim/pipelines/vol\_limited\_arb/\_\_init\_\_.py |       37 |       21 |       10 |        0 |     38% |   111-148 |
 | curvesim/pipelines/vol\_limited\_arb/strategy.py     |       18 |        7 |        4 |        0 |     50% |28-29, 32-33, 37-39 |
-| curvesim/pipelines/vol\_limited\_arb/trader.py       |       77 |       68 |       30 |        0 |      8% |37-40, 71-139, 167-210 |
+| curvesim/pipelines/vol\_limited\_arb/trader.py       |       77 |       68 |       30 |        0 |      8% |37-40, 70-136, 164-207 |
 | curvesim/plot/\_\_init\_\_.py                        |        2 |        0 |        0 |        0 |    100% |           |
 | curvesim/plot/altair/\_\_init\_\_.py                 |        2 |        0 |        0 |        0 |    100% |           |
 | curvesim/plot/altair/chart\_properties.py            |       36 |       26 |       14 |        0 |     20% |8-15, 19-24, 28-33, 37, 41-53 |
@@ -84,7 +84,7 @@
 | curvesim/templates/trader.py                         |       40 |        4 |       12 |        0 |     81% |20, 35, 39-40 |
 | curvesim/utils.py                                    |       50 |       12 |       21 |        8 |     69% |54, 57, 93, 105-114, 116->exit, 117, 140, 156 |
 | curvesim/version.py                                  |        7 |        0 |        0 |        0 |    100% |           |
-|                                            **TOTAL** | **3415** |  **827** |  **912** |   **94** | **72%** |           |
+|                                            **TOTAL** | **3414** |  **827** |  **914** |   **94** | **72%** |           |
 
 
 ## Setup coverage badge
