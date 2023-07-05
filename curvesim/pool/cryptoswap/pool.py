@@ -241,29 +241,27 @@ class CurveCryptoPool(Pool):
         if gamma > MAX_GAMMA or gamma < MIN_GAMMA:
             raise CurvesimValueError("Unsafe value for gamma")
 
-        # Initial value of invariant D is that for constant-product invariant
-        x: List[int] = x_unsorted
-        if x[0] < x[1]:
-            x = [x_unsorted[1], x_unsorted[0]]
+        x: List[int] = sorted(x_unsorted, reverse=True)
 
+        # FIXME: extend to n coins
         assert (
             x[0] > 10**9 - 1 and x[0] < 10**15 * 10**18 + 1
         )  # dev: unsafe values x[0]
         assert x[1] * 10**18 // x[0] > 10**14 - 1  # dev: unsafe values x[i] (input)
 
         D: int = n_coins * _geometric_mean(x, False)
-        S: int = x[0] + x[1]
+        S: int = sum(x)
 
         D = mpz(D)
         S = mpz(S)
         for _ in range(255):
             D_prev: int = D
 
-            # K0: int = 10**18
-            # for _x in x:
-            #     K0 = K0 * _x * n_coins / D
             # collapsed for 2 coins
-            K0: int = (10**18 * n_coins**2) * x[0] // D * x[1] // D
+            # K0: int = (10**18 * n_coins**2) * x[0] // D * x[1] // D
+            K0: int = 10**18
+            for _x in x:
+                K0 = K0 * _x * n_coins // D
 
             _g1k0: int = gamma + 10**18
             if _g1k0 > K0:
