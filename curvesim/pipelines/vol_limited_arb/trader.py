@@ -1,4 +1,4 @@
-from numpy import array, isnan
+from numpy import isnan
 from scipy.optimize import least_squares, root_scalar
 
 from curvesim.logging import get_logger
@@ -57,16 +57,15 @@ def multipair_optimal_arbitrage(pool, prices, limits):  # noqa: C901
 
     Returns
     -------
-    trades : list of tuples
+    trades : List[Tuple]
         List of trades to perform.
         Trades are formatted as (coin_i, coin_j, trade_size)
 
-    errors : numpy.ndarray
+    errors : List[Float]
         Post-trade price error between pool price and market price for each token pair.
 
     res : scipy.optimize.OptimizeResult
         Results object from the numerical optimizer.
-
     """
     init_trades = get_arb_trades(pool, prices)
 
@@ -131,9 +130,7 @@ def multipair_optimal_arbitrage(pool, prices, limits):  # noqa: C901
             f"Optarbs args: x0: {sizes}, lo: {lo}, hi: {hi}, prices: {price_targets}",
             exc_info=True,
         )
-        errors = array(
-            post_trade_price_error_multi([0] * len(sizes), price_targets, coins)
-        )
+        errors = post_trade_price_error_multi([0] * len(sizes), price_targets, coins)
         res = []
 
     return trades, errors, res
