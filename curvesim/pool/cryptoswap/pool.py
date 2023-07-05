@@ -660,24 +660,17 @@ class CurveCryptoPool(Pool):
         xp[i] = x0 + dx
         self.balances[i] = xp[i]
 
-        price_scale: int = self.price_scale
-        precisions: List[int] = self.precisions
-
-        xp = [xp[0] * precisions[0], xp[1] * price_scale * precisions[1] // PRECISION]
-
-        prec_i: int = precisions[0]
-        prec_j: int = precisions[1]
-        if i == 1:
-            prec_i = precisions[1]
-            prec_j = precisions[0]
+        xp = self._xp_mem(xp)
 
         dy = xp[j] - self._newton_y(A, gamma, xp, self.D, j)
         xp[j] -= dy
         dy -= 1
 
-        if j > 0:
-            dy = dy * PRECISION // price_scale
-        dy = dy // prec_j
+        price_scale: int = self._extended_price_scale[j]
+        prec_i: int = self.precisions[i]
+        prec_j: int = self.precisions[j]
+
+        dy = dy * PRECISION // (price_scale * prec_j)
 
         fee = self._fee(xp) * dy // 10**10
         dy -= fee
@@ -686,9 +679,7 @@ class CurveCryptoPool(Pool):
 
         self.balances[j] = y
 
-        y *= prec_j
-        if j > 0:
-            y = y * price_scale // PRECISION
+        y *= prec_j * price_scale // PRECISION
         xp[j] = y
 
         # Calculate price
@@ -700,7 +691,7 @@ class CurveCryptoPool(Pool):
             else:  # j == 0
                 p = _dy * 10**18 // _dx
 
-        self._tweak_price(A, gamma, xp, p, 0)
+        # self._tweak_price(A, gamma, xp, p, 0)
 
         return dy, fee
 
