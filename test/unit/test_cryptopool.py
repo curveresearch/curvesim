@@ -659,7 +659,9 @@ def test_get_virtual_price(
 
     expected_virtual_price = vyper_cryptopool.get_virtual_price()
     virtual_price = pool.get_virtual_price()
-    assert virtual_price == expected_virtual_price
+    # negligible discrepancy from using n-coin formula
+    # instead of specialized 2-coin formula
+    assert abs(virtual_price - expected_virtual_price) < 10**5
 
 
 @given(positive_balance, positive_balance)
@@ -681,7 +683,9 @@ def test_calc_token_amount(vyper_cryptopool, x0, x1):
 
     expected_lp_amount = vyper_cryptopool.calc_token_amount(amounts)
     lp_amount = pool.calc_token_amount(amounts)
-    assert lp_amount == expected_lp_amount
+    # negligible discrepancy from using n-coin formula
+    # instead of specialized 2-coin formula
+    assert abs(lp_amount - expected_lp_amount) < 10**7
 
     expected_balances = [vyper_cryptopool.balances(i) for i in range(2)]
     assert pool.balances == expected_balances
