@@ -2,6 +2,7 @@
 Mainly a module to house the `CryptoPool`, a cryptoswap implementation in Python.
 """
 import time
+from math import isqrt
 from typing import List
 
 from gmpy2 import mpz
@@ -427,9 +428,9 @@ class CurveCryptoPool(Pool):
         Also claims admin fees if appropriate (enough profit and price scale
         and oracle is close enough).
         """
-        price_oracle: int = self._price_oracle
-        last_prices: int = self.last_prices
-        price_scale: int = self.price_scale
+        price_oracle: List[int] = self._price_oracle
+        last_prices: List[int] = self.last_prices
+        price_scale: List[int] = self.price_scale
         last_prices_timestamp: int = self.last_prices_timestamp
         block_timestamp: int = self._block_timestamp
         p_new: int = 0
@@ -441,9 +442,10 @@ class CurveCryptoPool(Pool):
             alpha: int = _halfpow(
                 (block_timestamp - last_prices_timestamp) * 10**18 // ma_half_time
             )
-            price_oracle = (
-                last_prices * (10**18 - alpha) + price_oracle * alpha
-            ) // 10**18
+            price_oracle = [
+                (last_p * (10**18 - alpha) + oracle_p * alpha) // 10**18
+                for last_p, oracle_p in zip(last_prices, price_oracle)
+            ]
             self._price_oracle = price_oracle
             self.last_prices_timestamp = block_timestamp
 
@@ -452,7 +454,7 @@ class CurveCryptoPool(Pool):
             # We will need this a few times (35k gas)
             D_unadjusted = self._newton_D(A, gamma, _xp)
 
-        if p_i > 0:
+        if p_i:
             last_prices = p_i
 
         else:
@@ -460,11 +462,12 @@ class CurveCryptoPool(Pool):
             __xp: List[int] = _xp.copy()
             dx_price: int = __xp[0] // 10**6
             __xp[0] += dx_price
-            last_prices = (
-                price_scale
+            last_prices = [
+                price_scale[i - 1]
                 * dx_price
-                // (_xp[1] - self._newton_y(A, gamma, __xp, D_unadjusted, 1))
-            )
+                // (_xp[i] - self._newton_y(A, gamma, __xp, D_unadjusted, i))
+                for i in range(1, n_coins)
+            ]
 
         self.last_prices = last_prices
 
@@ -474,8 +477,8 @@ class CurveCryptoPool(Pool):
 
         # Update profit numbers without price adjustment first
         xp: List[int] = [
-            D_unadjusted // n_coins,
-            D_unadjusted * PRECISION // (n_coins * price_scale),
+            D_unadjusted * PRECISION // (n_coins * price)
+            for price in self._extended_price_scale
         ]
         xcp_profit: int = 10**18
         virtual_price: int = 10**18
@@ -491,8 +494,14 @@ class CurveCryptoPool(Pool):
 
         self.xcp_profit = xcp_profit
 
-        norm: int = price_oracle * 10**18 // price_scale
-        norm = abs(norm - 10**18)
+        norm: int = 0
+        ratio: int = 0
+        for k in range(n_coins - 1):
+            ratio = price_oracle * 10**18 // price_scale
+            ratio = abs(ratio - 10**18)
+            norm += ratio**2
+        norm = isqrt(norm)
+
         adjustment_step: int = max(self.adjustment_step, norm // 5)
 
         needs_adjustment: bool = self.not_adjusted
@@ -690,8 +699,9 @@ class CurveCryptoPool(Pool):
                 p = _dx * 10**18 // _dy
             else:  # j == 0
                 p = _dy * 10**18 // _dx
+            p = [PRECISION, p]
 
-        # self._tweak_price(A, gamma, xp, p, 0)
+        self._tweak_price(A, gamma, xp, p, 0)
 
         return dy, fee
 
@@ -1027,9 +1037,7 @@ class CurveCryptoPool(Pool):
         """
         Returns an LP token price approximating behavior as a constant-product AMM.
         """
-        return (
-            2 * self.virtual_price * _sqrt_int(self.internal_price_oracle()) // 10**18
-        )
+        return 2 * self.virtual_price * isqrt(self.internal_price_oracle()) // 10**18
 
     def internal_price_oracle(self) -> int:
         """
