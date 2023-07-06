@@ -1,6 +1,6 @@
 from curvesim.logging import get_logger
 from curvesim.price_data import get
-from curvesim.templates.samplers import PriceSample, PriceSampler
+from curvesim.templates.price_sampler import PriceSample, PriceSampler
 from curvesim.utils import dataclass, override
 
 logger = get_logger(__name__)

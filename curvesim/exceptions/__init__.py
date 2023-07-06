@@ -61,3 +61,7 @@ class NetworkError(CurvesimException):
 
 class SimPoolError(CurvesimException):
     """Error in a SimPool operation."""
+
+
+class ParameterSamplerError(CurvesimException):
+    """Error using a parameter sampler."""

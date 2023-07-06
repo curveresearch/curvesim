@@ -1,109 +1,72 @@
-from copy import deepcopy
+from abc import abstractmethod
 from itertools import product
 
+from curvesim.templates import SequentialParameterSampler
+from .mixins import (
+    PoolAttributeMixin,
+    MetaPoolAttributeMixin,
+    CurvePoolMixin,
+    CurveCryptoPoolMixin,
+)
 
-class Grid:
+
+class GridBase(SequentialParameterSampler):
     """
     Iterates over a "grid" of all possible combinations of the input parameters.
     """
 
-    def __init__(self, pool, variable_params, fixed_params=None):
+    def make_parameter_sequence(self, variable_params):
         """
+        Returns a list of dicts for each possible combination of the input parameters.
+
         Parameters
         ----------
-        pool : pool object
-            The "template" pool that will have its parameters modified.
-
         variable_params: dict
             Pool parameters to vary across simulations.
 
-            keys: pool parameters, values: iterables of ints
+            Keys: pool parameters, Values: iterable of values
 
-            Basepool parameters can be included with a "basepool" key.
-
-            Example
-            -------
-            .. code-block ::
-
-                {"A": [100, 1000], "basepool": {fee: [10**6, 4*10**6]}}
-
-        fixed_params : dict, optional
-            Pool parameters set before all simulations.
-            keys: pool parameters, values: ints
-
-        """
-        self.pool_template = pool
-        self.set_attributes(self.pool_template, fixed_params)
-        self.param_grid = self.param_product(variable_params)
-
-    def __iter__(self):
-        """
-        Yields
+        Returns
         -------
-        pool : pool object
-            A pool object with the current variable parameters set.
-
-        params : dict
-            A dictionary of the pool parameters set on this iteration.
-
+        List(dict)
+            A list of dicts defining the parameters for each iteration.
         """
-        for params in self.param_grid:
-            pool = deepcopy(self.pool_template)
-            self.set_attributes(pool, params)
-            yield pool, params
 
-    @staticmethod
-    def param_product(p_dict):
-        p_dict = p_dict.copy()
-        basepool = p_dict.pop("basepool", None)
+        keys, values = zip(*variable_params.items())
 
-        keys = p_dict.keys()
-        vals = p_dict.values()
+        sequence = []
+        for instance in product(*values):
+            sequence.append(dict(zip(keys, instance)))
 
-        grid = []
-        for instance in product(*vals):
-            grid.append(dict(zip(keys, instance)))
+        return sequence
 
-        if basepool:
-            base_keys = basepool.keys()
-            base_vals = basepool.values()
-            meta_grid = grid
-            grid = []
+    @abstractmethod
+    def set_attributes(self, pool, attribute_dict):
+        """
+        Sets the pool attributes defined in attribute_dict.
 
-            for meta_params in meta_grid:
-                for instance in product(*base_vals):
-                    base_params = dict(zip(base_keys, instance))
-                    meta_params.update({"basepool": base_params})
-                    grid.append(meta_params.copy())
+        Should support setting parameters with setattr(pool) and/or specialized setters
+        defined in the attribute_setters property.
+        """
+        raise NotImplementedError
 
-        return grid
+    @property
+    def attribute_setters(self):
+        """
+        Returns a dict mapping attributes to a setter function.
 
-    @staticmethod
-    def set_attributes(pool, attribute_dict):
-        if attribute_dict is None:
-            return
+        Used to set attributes that require more computation than simple setattr().
+        """
+        return {}
 
-        for key, value in attribute_dict.items():
-            if key == "basepool":
-                items = attribute_dict["basepool"].items()
-                for base_key, base_value in items:
-                    if base_key == "D":
-                        p = pool.basepool.rates[:]
-                        n = pool.basepool.n
-                        D = base_value
-                        x = [D // n * 10**18 // _p for _p in p]
-                        pool.basepool.balances = x
 
-                    else:
-                        setattr(pool.basepool, base_key, base_value)
+class CurvePoolGrid(PoolAttributeMixin, CurvePoolMixin, GridBase):
+    pass
 
-            else:
-                if key == "D":
-                    p = pool.rates[:]
-                    n = pool.n
-                    D = value
-                    x = [D // n * 10**18 // _p for _p in p]
-                    pool.balances = x
 
-                else:
-                    setattr(pool, key, value)
+class CurveMetaPoolGrid(MetaPoolAttributeMixin, CurvePoolMixin, GridBase):
+    pass
+
+
+class CurveCryptoPoolGrid(PoolAttributeMixin, CurveCryptoPoolMixin, GridBase):
+    pass
