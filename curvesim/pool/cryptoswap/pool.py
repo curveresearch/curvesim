@@ -796,11 +796,8 @@ class CurveCryptoPool(Pool):
             self.balances[i] = bal
         xx = xp.copy()
 
-        precisions: List[int] = self.precisions
-
-        price_scale: int = self.price_scale * precisions[1]
-        xp = [xp[0] * precisions[0], xp[1] * price_scale // PRECISION]
-        xp_old = [xp_old[0] * precisions[0], xp_old[1] * price_scale // PRECISION]
+        xp = self._xp_mem(xp)
+        xp_old = self._xp_mem(xp_old)
 
         for i in range(n_coins):
             if amounts[i] > 0:
@@ -826,32 +823,34 @@ class CurveCryptoPool(Pool):
             # p_i * (dx_i - dtoken / token_supply * xx_i)
             # = sum{k!=i}(p_k * (dtoken / token_supply * xx_k - dx_k))
             # (simplified for 2 coins)
-            p: int = 0
-            if d_token > 10**5:
-                if amounts[0] == 0 or amounts[1] == 0:
-                    S: int = 0
-                    precision: int = 0
-                    ix: int = 0
-                    if amounts[0] == 0:
-                        S = xx[0] * precisions[0]
-                        precision = precisions[1]
-                        ix = 1
-                    else:
-                        S = xx[1] * precisions[1]
-                        precision = precisions[0]
-                    S = S * d_token // token_supply
-                    p = (
-                        S
-                        * PRECISION
-                        // (
-                            amounts[ix] * precision
-                            - d_token * xx[ix] * precision // token_supply
-                        )
-                    )
-                    if ix == 0:
-                        p = (10**18) ** 2 // p
+            p: List[int] = [0] * (n_coins - 1)
+            # FIXME: extend to n coins
+            # if d_token > 10**5:
+            #     if amounts[0] == 0 or amounts[1] == 0:
+            #         precisions: List[int] = self.precisions
+            #         S: int = 0
+            #         precision: int = 0
+            #         ix: int = 0
+            #         if amounts[0] == 0:
+            #             S = xx[0] * precisions[0]
+            #             precision = precisions[1]
+            #             ix = 1
+            #         else:
+            #             S = xx[1] * precisions[1]
+            #             precision = precisions[0]
+            #         S = S * d_token // token_supply
+            #         p = (
+            #             S
+            #             * PRECISION
+            #             // (
+            #                 amounts[ix] * precision
+            #                 - d_token * xx[ix] * precision // token_supply
+            #             )
+            #         )
+            #         if ix == 0:
+            #             p = (10**18) ** 2 // p
 
-            self._tweak_price(A, gamma, xp, p, D)
+            # self._tweak_price(A, gamma, xp, p, D)
 
         else:
             self.D = D
