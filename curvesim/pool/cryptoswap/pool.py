@@ -197,11 +197,13 @@ class CurveCryptoPool(Pool):
         return self._xp_mem(balances)
 
     def _xp_mem(self, balances) -> List[int]:
-        prices = self._extended_price_scale
         precisions = self.precisions
-        return [
+        price_scale = self.price_scale
+        return [balances[0] * precisions[0]] + [
             balance * precision * price // PRECISION
-            for balance, precision, price in zip(balances, precisions, prices)
+            for balance, precision, price in zip(
+                balances[1:], precisions[1:], price_scale
+            )
         ]
 
     @property
@@ -218,8 +220,10 @@ class CurveCryptoPool(Pool):
         equilibrium point.
         """
         n_coins: int = self.n
-        prices = self._extended_price_scale
-        x: List[int] = [D * PRECISION // (price * n_coins) for price in prices]
+        price_scale: List[int] = self.price_scale
+        x = [D // n_coins] + [
+            D * PRECISION // (price * n_coins) for price in price_scale
+        ]
         return _geometric_mean(x, True)
 
     # pylint: disable=too-many-locals,too-many-branches
