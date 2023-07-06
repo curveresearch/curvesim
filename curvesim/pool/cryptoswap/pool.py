@@ -639,16 +639,11 @@ class CurveCryptoPool(Pool):
         """
         n_coins: int = self.n
         fee_gamma: int = self.fee_gamma
-        f: int = xp[0] + xp[1]  # sum
-        f = (
-            fee_gamma
-            * 10**18
-            // (
-                fee_gamma
-                + 10**18
-                - (10**18 * n_coins**n_coins) * xp[0] // f * xp[1] // f
-            )
-        )
+        _sum_xp: int = sum(xp)
+        K = 10**18 * n_coins**n_coins
+        for _x in xp:
+            K *= xp // _sum_xp
+        f = fee_gamma * 10**18 // (fee_gamma + 10**18 - K)
         return (self.mid_fee * f + self.out_fee * (10**18 - f)) // 10**18
 
     def _exchange(
