@@ -431,13 +431,14 @@ class CurveCryptoPool(Pool):
         price_oracle: List[int] = self._price_oracle
         last_prices: List[int] = self.last_prices
         price_scale: List[int] = self.price_scale
+        ext_price_scale: List[int] = self._extended_price_scale
         last_prices_timestamp: int = self.last_prices_timestamp
         block_timestamp: int = self._block_timestamp
-        new_prices: int = 0
         n_coins: int = self.n
 
+        # Update EMA price oracle for a new block.  Happens once per block.
+        # EMA uses price of the last trade and oracle price in previous block.
         if last_prices_timestamp < block_timestamp:
-            # MA update required
             ma_half_time: int = self.ma_half_time
             alpha: int = _halfpow(
                 (block_timestamp - last_prices_timestamp) * 10**18 // ma_half_time
@@ -451,7 +452,6 @@ class CurveCryptoPool(Pool):
 
         D_unadjusted: int = new_D  # Withdrawal methods know new D already
         if new_D == 0:
-            # We will need this a few times (35k gas)
             D_unadjusted = self._newton_D(A, gamma, _xp)
 
         if p_i:
@@ -477,8 +477,7 @@ class CurveCryptoPool(Pool):
 
         # Update profit numbers without price adjustment first
         xp: List[int] = [
-            D_unadjusted * PRECISION // (n_coins * price)
-            for price in self._extended_price_scale
+            D_unadjusted * PRECISION // (n_coins * price) for price in ext_price_scale
         ]
         xcp_profit: int = 10**18
         virtual_price: int = 10**18
@@ -526,7 +525,6 @@ class CurveCryptoPool(Pool):
                 for p, p_oracle in zip(price_scale, price_oracle)
             ]
             ext_new_prices = [PRECISION] + new_prices
-            ext_price_scale = self._extended_price_scale
 
             # Calculate balances*prices
             xp = [_xp[0], _xp[1] * new_prices // price_scale]
