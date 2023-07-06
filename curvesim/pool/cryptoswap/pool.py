@@ -642,7 +642,7 @@ class CurveCryptoPool(Pool):
         _sum_xp: int = sum(xp)
         K = 10**18 * n_coins**n_coins
         for _x in xp:
-            K *= xp // _sum_xp
+            K *= _x // _sum_xp
         f = fee_gamma * 10**18 // (fee_gamma + 10**18 - K)
         return (self.mid_fee * f + self.out_fee * (10**18 - f)) // 10**18
 
