@@ -532,7 +532,6 @@ class CurveCryptoPool(Pool):
             ext_new_prices = [PRECISION] + new_prices
 
             # Calculate balances*prices
-            xp = [_xp[0], _xp[1] * new_prices // price_scale]
             xp = [
                 balance * p_new // p
                 for balance, p, p_new in zip(_xp, ext_price_scale, ext_new_prices)
