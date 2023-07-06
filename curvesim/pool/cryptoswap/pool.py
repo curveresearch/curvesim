@@ -873,16 +873,9 @@ class CurveCryptoPool(Pool):
         n_coins: int = self.n
         # fee = sum(amounts_i - avg(amounts)) * fee' / sum(amounts)
         fee: int = self._fee(xp) * n_coins // (4 * (n_coins - 1))
-        S: int = 0
-        for _x in amounts:
-            S += _x
+        S: int = sum(amounts)
         avg: int = S // n_coins
-        Sdiff: int = 0
-        for _x in amounts:
-            if _x > avg:
-                Sdiff += _x - avg
-            else:
-                Sdiff += avg - _x
+        Sdiff: int = sum(abs(_x - avg) for _x in amounts)
         return fee * Sdiff // S + NOISE_FEE
 
     def remove_liquidity(
