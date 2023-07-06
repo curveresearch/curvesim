@@ -644,11 +644,23 @@ class CurveCryptoPool(Pool):
         """
         n_coins: int = self.n
         fee_gamma: int = self.fee_gamma
-        _sum_xp: int = sum(xp)
-        K = 10**18 * n_coins**n_coins
-        for _x in xp:
-            K *= _x // _sum_xp
-        f = fee_gamma * 10**18 // (fee_gamma + 10**18 - K)
+        if n_coins == 2:
+            f: int = xp[0] + xp[1]
+            f = (
+                fee_gamma
+                * 10**18
+                // (
+                    fee_gamma
+                    + 10**18
+                    - (10**18 * n_coins**n_coins) * xp[0] // f * xp[1] // f
+                )
+            )
+        else:
+            _sum_xp: int = sum(xp)
+            K = 10**18 * n_coins**n_coins
+            for _x in xp:
+                K *= _x // _sum_xp
+            f = fee_gamma * 10**18 // (fee_gamma + 10**18 - K)
         return (self.mid_fee * f + self.out_fee * (10**18 - f)) // 10**18
 
     def _exchange(
@@ -989,9 +1001,14 @@ class CurveCryptoPool(Pool):
         dD: int = token_amount * D // token_supply
         D -= dD - (fee * dD // (2 * 10**10) + 1)
         y: int = self._newton_y(A, gamma, xp, D, i)
-        dy: int = (
-            (xp[i] - y) * PRECISION // (precisions[i] * self._extended_price_scale[i])
-        )
+        if i == 0:
+            dy: int = (xp[i] - y) // precisions[i]
+        else:
+            dy: int = (
+                (xp[i] - y)
+                * PRECISION
+                // (precisions[i] * self._extended_price_scale[i])
+            )
         xp[i] = y
 
         # FIXME: update for n coins
