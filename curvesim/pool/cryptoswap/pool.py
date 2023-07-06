@@ -504,7 +504,7 @@ class CurveCryptoPool(Pool):
             ratio = price_oracle[k] * 10**18 // price_scale[k]
             ratio = abs(ratio - 10**18)
             norm += ratio**2
-        norm = isqrt(norm)
+        norm = _sqrt_int(norm)
 
         adjustment_step: int = max(self.adjustment_step, norm // 5)
 
@@ -1054,7 +1054,17 @@ class CurveCryptoPool(Pool):
         """
         Returns an LP token price approximating behavior as a constant-product AMM.
         """
-        return 2 * self.virtual_price * isqrt(self.internal_price_oracle()) // 10**18
+        if self.n == 2:
+            price_oracle = self.internal_price_oracle()[0]
+            return 2 * self.virtual_price * _sqrt_int(price_oracle) // 10**18
+        elif self.n == 3:
+            # TODO: find/implement integer cube root function
+            price_oracle = self.internal_price_oracle()
+            return (
+                3 * self.virtual_price * icbrt(price_oracle[0] * price_oracle[1])
+            ) // 10**24
+        else:
+            raise CalculationError("LP price calc doesn't support more than 3 coins")
 
     def internal_price_oracle(self) -> List[int]:
         """
