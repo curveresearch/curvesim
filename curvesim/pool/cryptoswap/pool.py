@@ -1122,6 +1122,7 @@ def _geometric_mean(unsorted_x: List[int], sort: bool) -> int:
         D_prev: int = D
         # line below makes it for 2 coins
         # D = (D + x[0] * x[1] // D) // n_coins
+        # n coin version
         tmp: int = 10**18
         for _x in x:
             tmp = tmp * _x // D
