@@ -970,13 +970,7 @@ class CurveCryptoPool(Pool):
         D0: int = 0
         precisions: List[int] = self.precisions
 
-        price_scale_i: int = self.price_scale * precisions[1]
-        xp: List[int] = [
-            xx[0] * precisions[0],
-            xx[1] * price_scale_i // PRECISION,
-        ]
-        if i == 0:
-            price_scale_i = PRECISION * precisions[0]
+        xp: List[int] = self._xp_mem(xx)
 
         if update_D:
             D0 = self._newton_D(A, gamma, xp)
@@ -990,9 +984,12 @@ class CurveCryptoPool(Pool):
         dD: int = token_amount * D // token_supply
         D -= dD - (fee * dD // (2 * 10**10) + 1)
         y: int = self._newton_y(A, gamma, xp, D, i)
-        dy: int = (xp[i] - y) * PRECISION // price_scale_i
+        dy: int = (
+            (xp[i] - y) * PRECISION // (precisions[i] * self._extended_price_scale[i])
+        )
         xp[i] = y
 
+        # FIXME: update for n coins
         # Price calc
         p: int = 0
         if calc_price and dy > 10**5 and token_amount > 10**5:
