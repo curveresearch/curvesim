@@ -797,31 +797,26 @@ class CurveCryptoPool(Pool):
         gamma = self.gamma
         n_coins: int = self.n
 
-        xp: List[int] = self.balances.copy()
-        amountsp: List[int] = [0] * n_coins
-        xx: List[int] = [0] * n_coins
-        d_token: int = 0
-        d_token_fee: int = 0
-        old_D: int = 0
-
-        xp_old: List[int] = xp.copy()
+        xp_old: List[int] = self.balances.copy()
 
         for i in range(n_coins):
-            bal: int = xp[i] + amounts[i]
-            xp[i] = bal
-            self.balances[i] = bal
-        xx = xp.copy()
+            self.balances[i] += amounts[i]
+
+        xp: List[int] = self.balances.copy()
+        xx: List[int] = xp.copy()
 
         xp = self._xp_mem(xp)
         xp_old = self._xp_mem(xp_old)
 
+        amountsp: List[int] = [0] * n_coins
         for i in range(n_coins):
             if amounts[i] > 0:
                 amountsp[i] = xp[i] - xp_old[i]
 
-        old_D = self.D
+        old_D: int = self.D
         D: int = self._newton_D(A, gamma, xp)
 
+        d_token: int = 0
         token_supply: int = self.tokens
         if old_D > 0:
             d_token = token_supply * D // old_D - token_supply
@@ -829,6 +824,7 @@ class CurveCryptoPool(Pool):
             d_token = self._get_xcp(D)  # making initial virtual price equal to 1
         assert d_token > 0  # dev: nothing minted
 
+        d_token_fee: int = 0
         if old_D > 0:
             d_token_fee = self._calc_token_fee(amountsp, xp) * d_token // 10**10 + 1
             d_token -= d_token_fee
