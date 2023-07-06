@@ -1038,7 +1038,7 @@ class CurveCryptoPool(Pool):
         """
         return 2 * self.virtual_price * isqrt(self.internal_price_oracle()) // 10**18
 
-    def internal_price_oracle(self) -> int:
+    def internal_price_oracle(self) -> List[int]:
         """
         Return the value of the EMA price oracle.
         """
@@ -1052,11 +1052,14 @@ class CurveCryptoPool(Pool):
             alpha: int = _halfpow(
                 (block_timestamp - last_prices_timestamp) * 10**18 // ma_half_time
             )
-            return (last_prices * (10**18 - alpha) + price_oracle * alpha) // 10**18
+            return [
+                (last_p * (10**18 - alpha) + oracle_p * alpha) // 10**18
+                for last_p, oracle_p in zip(last_prices, price_oracle)
+            ]
 
         return price_oracle
 
-    def price_oracle(self) -> int:
+    def price_oracle(self) -> List[int]:
         """
         Return the value of the EMA price oracle.
 
@@ -1086,18 +1089,13 @@ class CurveCryptoPool(Pool):
             Amount of LP tokens minted.
         """
         token_supply: int = self.tokens
-        precisions: List[int] = self.precisions
-        price_scale: int = self.price_scale * precisions[1]
         A = self.A
         gamma = self.gamma
         xp: List[int] = self._xp()
-        amountsp: List[int] = [
-            amounts[0] * precisions[0],
-            amounts[1] * price_scale // PRECISION,
-        ]
+        amountsp = self._xp_mem(amounts)
         D0: int = self.D
-        xp[0] += amountsp[0]
-        xp[1] += amountsp[1]
+        for i, a in enumerate(amountsp):
+            xp[i] += a
         D: int = self._newton_D(A, gamma, xp)
         d_token: int = token_supply * D // D0 - token_supply
         d_token -= self._calc_token_fee(amountsp, xp) * d_token // 10**10 + 1
