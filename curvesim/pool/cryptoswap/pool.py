@@ -433,7 +433,7 @@ class CurveCryptoPool(Pool):
         price_scale: List[int] = self.price_scale
         last_prices_timestamp: int = self.last_prices_timestamp
         block_timestamp: int = self._block_timestamp
-        p_new: int = 0
+        new_prices: int = 0
         n_coins: int = self.n
 
         if last_prices_timestamp < block_timestamp:
@@ -497,7 +497,7 @@ class CurveCryptoPool(Pool):
         norm: int = 0
         ratio: int = 0
         for k in range(n_coins - 1):
-            ratio = price_oracle * 10**18 // price_scale
+            ratio = price_oracle[k] * 10**18 // price_scale[k]
             ratio = abs(ratio - 10**18)
             norm += ratio**2
         norm = isqrt(norm)
@@ -521,16 +521,23 @@ class CurveCryptoPool(Pool):
             self.not_adjusted = True
 
         if needs_adjustment and norm > adjustment_step and old_virtual_price > 0:
-            p_new = (
-                price_scale * (norm - adjustment_step) + adjustment_step * price_oracle
-            ) // norm
+            new_prices = [
+                (p * (norm - adjustment_step) + adjustment_step * p_oracle) // norm
+                for p, p_oracle in zip(price_scale, price_oracle)
+            ]
+            ext_new_prices = [PRECISION] + new_prices
+            ext_price_scale = self._extended_price_scale
 
             # Calculate balances*prices
-            xp = [_xp[0], _xp[1] * p_new // price_scale]
+            xp = [_xp[0], _xp[1] * new_prices // price_scale]
+            xp = [
+                balance * p_new // p
+                for balance, p, p_new in zip(_xp, ext_price_scale, ext_new_prices)
+            ]
 
             # Calculate "extended constant product" invariant xCP and virtual price
             D: int = self._newton_D(A, gamma, xp)
-            xp = [D // n_coins, D * PRECISION // (n_coins * p_new)]
+            xp = [D * PRECISION // (n_coins * p_new) for p_new in ext_new_prices]
             new_virtual_price = 10**18 * _geometric_mean(xp, True) // total_supply
 
             # Proceed if we've got enough profit:
@@ -539,7 +546,7 @@ class CurveCryptoPool(Pool):
             if (new_virtual_price > 10**18) and (
                 2 * new_virtual_price - 10**18 > xcp_profit
             ):
-                self.price_scale = p_new
+                self.price_scale = new_prices
                 self.D = D
                 self.virtual_price = new_virtual_price
                 return
