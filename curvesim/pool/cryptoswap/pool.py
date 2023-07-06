@@ -866,7 +866,7 @@ class CurveCryptoPool(Pool):
             #         if ix == 0:
             #             p = (10**18) ** 2 // p
 
-            # self._tweak_price(A, gamma, xp, p, D)
+            self._tweak_price(A, gamma, xp, p, D)
 
         else:
             self.D = D
