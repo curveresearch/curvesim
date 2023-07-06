@@ -265,11 +265,12 @@ class CurveCryptoPool(Pool):
         for _ in range(255):
             D_prev: int = D
 
-            # collapsed for 2 coins
-            # K0: int = (10**18 * n_coins**2) * x[0] // D * x[1] // D
-            K0: int = 10**18
-            for _x in x:
-                K0 = K0 * _x * n_coins // D
+            if n_coins == 2:
+                K0: int = (10**18 * n_coins**2) * x[0] // D * x[1] // D
+            else:
+                K0: int = 10**18
+                for _x in x:
+                    K0 = K0 * _x * n_coins // D
 
             _g1k0: int = gamma + 10**18
             if _g1k0 > K0:
@@ -1121,13 +1122,13 @@ def _geometric_mean(unsorted_x: List[int], sort: bool) -> int:
     diff: int = 0
     for _ in range(255):
         D_prev: int = D
-        # line below makes it for 2 coins
-        # D = (D + x[0] * x[1] // D) // n_coins
-        # n coin version
-        tmp: int = 10**18
-        for _x in x:
-            tmp = tmp * _x // D
-        D = D * ((n_coins - 1) * 10**18 + tmp) // (n_coins * 10**18)
+        if n_coins == 2:
+            D = (D + x[0] * x[1] // D) // n_coins
+        else:
+            tmp: int = 10**18
+            for _x in x:
+                tmp = tmp * _x // D
+            D = D * ((n_coins - 1) * 10**18 + tmp) // (n_coins * 10**18)
         diff = abs(D_prev - D)
         if diff <= 1 or diff * 10**18 < D:
             return int(D)
