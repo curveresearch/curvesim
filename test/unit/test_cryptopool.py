@@ -129,11 +129,9 @@ def get_real_balances(virtual_balances, precisions, price_scale):
     Convert from units of D to native token units using the
     given price scale.
     """
-    prices = [PRECISION, price_scale]
-    balances = [
-        x * PRECISION // (price * precision)
-        for x, price, precision in zip(virtual_balances, prices, precisions)
-    ]
+    assert len(virtual_balances) == 2
+    balances = [x // p for x, p in zip(virtual_balances, precisions)]
+    balances[1] = balances[1] * PRECISION // price_scale
     return balances
 
 
