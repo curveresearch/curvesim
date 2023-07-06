@@ -1115,23 +1115,20 @@ def _geometric_mean(unsorted_x: List[int], sort: bool) -> int:
     """
     n_coins: int = len(unsorted_x)
     x: List[int] = unsorted_x
-    if sort and x[0] < x[1]:
-        x = [unsorted_x[1], unsorted_x[0]]
+    if sort:
+        x = sorted(unsorted_x, reverse=True)
 
     D: int = mpz(x[0])
     diff: int = 0
     for _ in range(255):
         D_prev: int = D
-        # tmp: uint256 = 10**18
-        # for _x in x:
-        #     tmp = tmp * _x / D
-        # D = D * ((N_COINS - 1) * 10**18 + tmp) / (N_COINS * 10**18)
         # line below makes it for 2 coins
-        D = (D + x[0] * x[1] // D) // n_coins
-        if D > D_prev:
-            diff = D - D_prev
-        else:
-            diff = D_prev - D
+        # D = (D + x[0] * x[1] // D) // n_coins
+        tmp: int = 10**18
+        for _x in x:
+            tmp = tmp * _x // D
+        D = D * ((n_coins - 1) * 10**18 + tmp) // (n_coins * 10**18)
+        diff = abs(D_prev - D)
         if diff <= 1 or diff * 10**18 < D:
             return int(D)
     raise CalculationError("Did not converge")
