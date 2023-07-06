@@ -798,20 +798,15 @@ class CurveCryptoPool(Pool):
         n_coins: int = self.n
 
         xp_old: List[int] = self.balances.copy()
+        xp_old = self._xp_mem(xp_old)
 
         for i in range(n_coins):
             self.balances[i] += amounts[i]
 
         xp: List[int] = self.balances.copy()
-        xx: List[int] = xp.copy()
-
+        # xx: List[int] = xp.copy()
         xp = self._xp_mem(xp)
-        xp_old = self._xp_mem(xp_old)
-
-        amountsp: List[int] = [0] * n_coins
-        for i in range(n_coins):
-            if amounts[i] > 0:
-                amountsp[i] = xp[i] - xp_old[i]
+        amountsp: List[int] = [xp[i] - xp_old[i] for i in range(n_coins)]
 
         old_D: int = self.D
         D: int = self._newton_D(A, gamma, xp)
