@@ -155,9 +155,31 @@ Iterators
     ------------------
     .. automodule:: curvesim.iterators.param_samplers
 
+    Abstract
+    ^^^^^^^^^
+    .. autoclass:: curvesim.templates.param_samplers.ParameterSampler
+        :members:
+        :special-members: __iter__
+
+    .. autoclass:: curvesim.templates.param_samplers.SequentialParameterSampler
+        :special-members: __iter__
+        :inherited-members:
+
+    Concrete
+    ^^^^^^^^^
     .. autoclass:: curvesim.iterators.param_samplers.Grid
         :special-members: __iter__
         :inherited-members:
+
+    .. autoclass:: curvesim.iterators.param_samplers.CurvePoolGrid
+        :exclude-members: __new__
+
+    .. autoclass:: curvesim.iterators.param_samplers.CurveMetaPoolGrid
+        :exclude-members: __new__
+
+    .. autoclass:: curvesim.iterators.param_samplers.CurveCryptoPoolGrid
+        :exclude-members: __new__
+
 
     Price Samplers
     --------------
@@ -167,11 +189,11 @@ Iterators
     Abstract
     ^^^^^^^^^
 
-    .. autoclass:: curvesim.templates.samplers.PriceSampler
+    .. autoclass:: curvesim.templates.price_samplers.PriceSampler
         :members:
         :special-members: __iter__
 
-    .. autoclass:: curvesim.templates.samplers.PriceSample
+    .. autoclass:: curvesim.templates.price_samplers.PriceSample
         :members:
         :exclude-members: __init__, __new__
 

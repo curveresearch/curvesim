@@ -30,8 +30,8 @@ class ParameterSampler(ABC):
         """
         Sets the pool attributes defined in attribute_dict.
 
-        Supports setting attributes with setattr(pool, key, value) or specialized
-        setters defined in the 'setters' property:
+        Supports setting attributes with :python:`setattr(pool, key, value)` or
+        specialized setters defined in the 'setters' property:
         :python:`self.setters[key](pool, value)`
 
         For metapools, basepool parameters can be referenced by appending "_base" to
@@ -76,8 +76,8 @@ class ParameterSampler(ABC):
         """
         Sets a single pool attribute.
 
-        Supports setting attributes with setattr(pool, attr, value) or specialized
-        setters defined in the 'setters' property:
+        Supports setting attributes with :python:`setattr(pool, attr, value)` or
+        specialized setters defined in the 'setters' property:
         :python:`self.setters[attr](pool, value)`
 
         Parameters
@@ -109,6 +109,10 @@ class ParameterSampler(ABC):
 
 
 class SequentialParameterSampler(ParameterSampler):
+    """
+    Parameter sampler that yields pools using a fixed sequence of parameters.
+    """
+
     def __init__(self, pool, variable_params, fixed_params=None):
         """
         Parameters
@@ -119,21 +123,18 @@ class SequentialParameterSampler(ParameterSampler):
         variable_params: dict
             Pool parameters to vary across simulations.
 
-            Keys: pool parameters, Values: iterable of values
-
-            For metapools, basepool parameters can be referenced by appending "_base" to
-            an attribute's name.
+            Keys are parameter names and values are iterables of values. For metapools,
+            basepool parameters can be referenced by appending "_base" to an attribute
+            name.
 
             Example
-            -------
+            --------
             .. code-block ::
 
-                {"A": [100, 1000], "basepool": {fee: [10**6, 4*10**6]}}
+                {"A": [100, 1000], "fee_base": [10**6, 4*10**6]}
 
         fixed_params : dict, optional
             Pool parameters set before all simulations.
-
-            Keys: pool parameters, Values: single values
 
         """
         self.pool_template = deepcopy(pool)
@@ -144,7 +145,7 @@ class SequentialParameterSampler(ParameterSampler):
         """
         Yields
         -------
-        pool : pool object
+        pool : :class:`~curvesim.templates.SimPool`
             A pool object with the current variable parameters set.
 
         params : dict
@@ -175,5 +176,9 @@ class SequentialParameterSampler(ParameterSampler):
 
 
 class DynamicParameterSampler(ParameterSampler):
+    """
+    Parameter sampler that selects parameters dynamically based on simulation results.
+    """
+
     def __init__(self):
         raise NotImplementedError

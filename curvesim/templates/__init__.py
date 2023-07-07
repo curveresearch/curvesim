@@ -15,8 +15,8 @@ __all__ = [
     "PriceSampler",
 ]
 
-from .param_sampler import DynamicParameterSampler, SequentialParameterSampler
-from .price_sampler import PriceSample, PriceSampler
+from .param_samplers import DynamicParameterSampler, SequentialParameterSampler
+from .price_samplers import PriceSample, PriceSampler
 from .sim_assets import SimAssets
 from .sim_pool import SimPool
 from .strategy import Strategy

@@ -1,9 +1,17 @@
 """
-Iterators that generate pools with updated parameters per simulation run.
+Iterators that generate pools with updated parameters for each simulation run.
 """
 
+__all__ = [
+    "Grid",
+    "CurvePoolGrid",
+    "CurveMetaPoolGrid",
+    "CurveCryptoPoolGrid",
+    "get_param_sampler",
+]
+
 from curvesim.pool.sim_interface import SimCurvePool, SimCurveRaiPool, SimCurveMetaPool
-from .grid import CurvePoolGrid, CurveMetaPoolGrid
+from .grid import Grid, CurvePoolGrid, CurveMetaPoolGrid, CurveCryptoPoolGrid
 
 
 pool_param_sampler_map = {

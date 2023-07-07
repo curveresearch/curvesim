@@ -37,12 +37,24 @@ class Grid(SequentialParameterSampler):
 
 
 class CurvePoolGrid(Grid, CurvePoolMixin):
+    """
+    :class:`Grid` parameter sampler specialized for Curve pools.
+    """
+
     pass
 
 
 class CurveMetaPoolGrid(Grid, CurveMetaPoolMixin):
+    """
+    :class:`Grid` parameter sampler specialized for Curve meta-pools.
+    """
+
     pass
 
 
 class CurveCryptoPoolGrid(Grid, CurveCryptoPoolMixin):
+    """
+    :class:`Grid` parameter sampler specialized for Curve meta-pools.
+    """
+
     pass
