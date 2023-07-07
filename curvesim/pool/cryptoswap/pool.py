@@ -167,12 +167,12 @@ class CurveCryptoPool(Pool):
         if D is not None:
             self.D = D
             if not balances:
-                prices = self._extended_price_scale
+                price_scale = self.price_scale
                 precisions = self.precisions
 
-                self.balances = [
-                    D * PRECISION // n * (price) // precision
-                    for price, precision in zip(prices, precisions)
+                self.balances = [D // n] + [
+                    D * PRECISION // (p * n) // prec
+                    for p, prec in zip(price_scale, precisions[1:])
                 ]
         else:
             xp = self._xp()
@@ -204,14 +204,6 @@ class CurveCryptoPool(Pool):
                 balances[1:], precisions[1:], price_scale
             )
         ]
-
-    @property
-    def _extended_price_scale(self) -> List[int]:
-        """
-        Returns all prices including the price of the numeraire
-        with respect to itself.
-        """
-        return [PRECISION] + self.price_scale
 
     def _get_xcp(self, D: int) -> int:
         """
@@ -633,8 +625,11 @@ class CurveCryptoPool(Pool):
         dy: int = xp[j] - y - 1
         xp[j] = y
         precisions: List[int] = self.precisions
-        price_scale: List[int] = self._extended_price_scale
-        dy = dy * PRECISION // (price_scale[j] * precisions[j])
+        price_scale: List[int] = self.price_scale
+        if j > 0:
+            dy = dy * PRECISION // (price_scale[j - 1] * precisions[j])
+        else:
+            dy = dy // precisions[0]
         dy -= self._fee(xp) * dy // 10**10
 
         return dy
@@ -697,11 +692,13 @@ class CurveCryptoPool(Pool):
         xp[j] -= dy
         dy -= 1
 
-        price_scale: int = self._extended_price_scale[j]
+        price_scale: int = self.price_scale[j - 1]
         prec_i: int = self.precisions[i]
         prec_j: int = self.precisions[j]
 
-        dy = dy * PRECISION // (price_scale * prec_j)
+        if j > 0:
+            dy = dy * PRECISION // (price_scale)
+        dy = dy // prec_j
 
         fee = self._fee(xp) * dy // 10**10
         dy -= fee
@@ -710,7 +707,9 @@ class CurveCryptoPool(Pool):
 
         self.balances[j] = y
 
-        y *= prec_j * price_scale // PRECISION
+        y *= prec_j
+        if j > 0:
+            y = y * price_scale // PRECISION
         xp[j] = y
 
         # Calculate price
@@ -1000,9 +999,7 @@ class CurveCryptoPool(Pool):
             dy: int = (xp[i] - y) // precisions[i]
         else:
             dy: int = (
-                (xp[i] - y)
-                * PRECISION
-                // (precisions[i] * self._extended_price_scale[i])
+                (xp[i] - y) * PRECISION // (precisions[i] * self.price_scale[i - 1])
             )
         xp[i] = y
 
