@@ -436,7 +436,6 @@ class CurveCryptoPool(Pool):
         price_oracle: List[int] = self._price_oracle
         last_prices: List[int] = self.last_prices
         price_scale: List[int] = self.price_scale
-        ext_price_scale: List[int] = self._extended_price_scale
         last_prices_timestamp: int = self.last_prices_timestamp
         block_timestamp: int = self._block_timestamp
         n_coins: int = self.n
@@ -459,7 +458,7 @@ class CurveCryptoPool(Pool):
         if new_D == 0:
             D_unadjusted = self._newton_D(A, gamma, _xp)
 
-        if p_i:
+        if p_i > 0:
             # Save the last price
             if i > 0:
                 last_prices[i - 1] = p_i
@@ -467,7 +466,6 @@ class CurveCryptoPool(Pool):
                 # If 0th price changed - change all prices instead
                 for k in range(n_coins - 1):
                     last_prices[k] = last_prices[k] * 10**18 // p_i
-
         else:
             # calculate real prices
             __xp: List[int] = _xp.copy()
@@ -476,7 +474,7 @@ class CurveCryptoPool(Pool):
             last_prices = [
                 price_scale[i - 1]
                 * dx_price
-                // (_xp[i] - self._newton_y(A, gamma, __xp, D_unadjusted, i))
+                // (__xp[i] - self._newton_y(A, gamma, __xp, D_unadjusted, i))
                 for i in range(1, n_coins)
             ]
 
@@ -487,8 +485,8 @@ class CurveCryptoPool(Pool):
         old_virtual_price: int = self.virtual_price
 
         # Update profit numbers without price adjustment first
-        xp: List[int] = [
-            D_unadjusted * PRECISION // (n_coins * price) for price in ext_price_scale
+        xp: List[int] = [D_unadjusted // n_coins] + [
+            D_unadjusted * PRECISION // (n_coins * price) for price in price_scale
         ]
         xcp_profit: int = 10**18
         virtual_price: int = 10**18
@@ -535,17 +533,18 @@ class CurveCryptoPool(Pool):
                 (p * (norm - adjustment_step) + adjustment_step * p_oracle) // norm
                 for p, p_oracle in zip(price_scale, price_oracle)
             ]
-            ext_new_prices = [PRECISION] + new_prices
 
             # Calculate balances*prices
-            xp = [
+            xp = [_xp[0]] + [
                 balance * p_new // p
-                for balance, p, p_new in zip(_xp, ext_price_scale, ext_new_prices)
+                for balance, p, p_new in zip(_xp[1:], price_scale, new_prices)
             ]
 
             # Calculate "extended constant product" invariant xCP and virtual price
             D: int = self._newton_D(A, gamma, xp)
-            xp = [D * PRECISION // (n_coins * p_new) for p_new in ext_new_prices]
+            xp = [D // n_coins] + [
+                D * PRECISION // (n_coins * p_new) for p_new in new_prices
+            ]
             new_virtual_price = 10**18 * _geometric_mean(xp, True) // total_supply
 
             # Proceed if we've got enough profit:
