@@ -191,11 +191,35 @@ class CurveCryptoPool(Pool):
         """
         Calculate the balances in units of `D`, converting using `price_scale`
         so a unit of each token has equal value.
+
+        Returns
+        --------
+        List[int]
+            The pool balances in units of `D`.
+
+        Note
+        -----
+        This intentionally always return a new copy of the balances.
         """
         balances = self.balances
         return self._xp_mem(balances)
 
     def _xp_mem(self, balances) -> List[int]:
+        """
+        Parameters
+        ----------
+        balances: List[int]
+            The pool balances in native token units.
+
+        Returns
+        --------
+        List[int]
+            The pool balances in units of `D`.
+
+        Note
+        -----
+        This intentionally always return a new copy of the balances.
+        """
         precisions = self.precisions
         price_scale = self.price_scale
         return [balances[0] * precisions[0]] + [
