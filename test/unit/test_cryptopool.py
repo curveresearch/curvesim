@@ -377,7 +377,8 @@ def test_tweak_price(
 
     old_oracle = pool._price_oracle
 
-    pool._tweak_price(A, gamma, xp, last_price, 0)  # pylint: disable=protected-access
+    # pylint: disable=protected-access
+    pool._tweak_price(A, gamma, xp, 1, last_price, 0)
     vyper_cryptopool.eval(f"self.tweak_price({A_gamma}, {xp}, {last_price}, 0)")
 
     assert pool.price_scale == [vyper_cryptopool.price_scale()]
@@ -397,7 +398,7 @@ def test_tweak_price(
     old_scale = pool.price_scale
     old_virtual_price = pool.virtual_price
 
-    pool._tweak_price(A, gamma, xp, last_price, 0)  # pylint: disable=protected-access
+    pool._tweak_price(A, gamma, xp, 1, last_price, 0)
     vyper_cryptopool.eval(f"self.tweak_price({A_gamma}, {xp}, {last_price}, 0)")
 
     # check the pools are the same
@@ -425,7 +426,7 @@ def test_tweak_price(
     xp[0] = xp[0] + pool.allowed_extra_profit // 10
 
     # omitting price will calculate the spot price in `tweak_price`
-    pool._tweak_price(A, gamma, xp, 0, 0)
+    pool._tweak_price(A, gamma, xp, 1, 0, 0)
     vyper_cryptopool.eval(f"self.tweak_price({A_gamma}, {xp}, 0, 0)")
 
     assert pool.price_scale == [vyper_cryptopool.price_scale()]
@@ -444,7 +445,7 @@ def test_tweak_price(
     xp[0] = xp[0] * 115 // 100
 
     # omitting price will calculate the spot price in `tweak_price`
-    pool._tweak_price(A, gamma, xp, 0, 0)
+    pool._tweak_price(A, gamma, xp, 1, 0, 0)
     vyper_cryptopool.eval(f"self.tweak_price({A_gamma}, {xp}, 0, 0)")
 
     assert pool.price_scale == [vyper_cryptopool.price_scale()]

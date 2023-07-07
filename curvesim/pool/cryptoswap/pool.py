@@ -2,7 +2,6 @@
 Mainly a module to house the `CryptoPool`, a cryptoswap implementation in Python.
 """
 import time
-from math import isqrt
 from typing import List
 
 from gmpy2 import mpz
@@ -421,6 +420,7 @@ class CurveCryptoPool(Pool):
         A: int,
         gamma: int,
         _xp: List[int],
+        i: int,
         p_i: int,
         new_D: int,
     ):
@@ -460,7 +460,13 @@ class CurveCryptoPool(Pool):
             D_unadjusted = self._newton_D(A, gamma, _xp)
 
         if p_i:
-            last_prices = p_i
+            # Save the last price
+            if i > 0:
+                last_prices[i - 1] = p_i
+            else:
+                # If 0th price changed - change all prices instead
+                for k in range(n_coins - 1):
+                    last_prices[k] = last_prices[k] * 10**18 // p_i
 
         else:
             # calculate real prices
@@ -677,6 +683,7 @@ class CurveCryptoPool(Pool):
         A = self.A
         gamma = self.gamma
         xp: List[int] = self.balances.copy()
+        ix: int = j
         p: int = 0
         dy: int = 0
 
@@ -711,13 +718,15 @@ class CurveCryptoPool(Pool):
         if dx > 10**5 and dy > 10**5:
             _dx: int = dx * prec_i
             _dy: int = dy * prec_j
-            if i == 0:
+            if i != 0 and j != 0:
+                p = self.last_prices[i - 1] * _dx // _dy
+            elif i == 0:
                 p = _dx * 10**18 // _dy
             else:  # j == 0
                 p = _dy * 10**18 // _dx
-            p = [PRECISION, p]
+                ix = i
 
-        self._tweak_price(A, gamma, xp, p, 0)
+        self._tweak_price(A, gamma, xp, ix, p, 0)
 
         return dy, fee
 
@@ -797,15 +806,12 @@ class CurveCryptoPool(Pool):
         gamma = self.gamma
         n_coins: int = self.n
 
-        xp_old: List[int] = self.balances.copy()
-        xp_old = self._xp_mem(xp_old)
+        xp_old: List[int] = self._xp_mem(self.balances)
 
         for i in range(n_coins):
             self.balances[i] += amounts[i]
 
-        xp: List[int] = self.balances.copy()
-        # xx: List[int] = xp.copy()
-        xp = self._xp_mem(xp)
+        xp: List[int] = self._xp_mem(self.balances)
         amountsp: List[int] = [xp[i] - xp_old[i] for i in range(n_coins)]
 
         old_D: int = self.D
@@ -816,7 +822,8 @@ class CurveCryptoPool(Pool):
         if old_D > 0:
             d_token = token_supply * D // old_D - token_supply
         else:
-            d_token = self._get_xcp(D)  # making initial virtual price equal to 1
+            # sets initial virtual price to 1
+            d_token = self._get_xcp(D)
         assert d_token > 0  # dev: nothing minted
 
         d_token_fee: int = 0
@@ -829,35 +836,41 @@ class CurveCryptoPool(Pool):
             # Calculate price:
             # p_i * (dx_i - dtoken / token_supply * xx_i)
             # = sum{k!=i}(p_k * (dtoken / token_supply * xx_k - dx_k))
-            # (simplified for 2 coins)
-            p: List[int] = [0] * (n_coins - 1)
-            # FIXME: extend to n coins
-            # if d_token > 10**5:
-            #     if amounts[0] == 0 or amounts[1] == 0:
-            #         precisions: List[int] = self.precisions
-            #         S: int = 0
-            #         precision: int = 0
-            #         ix: int = 0
-            #         if amounts[0] == 0:
-            #             S = xx[0] * precisions[0]
-            #             precision = precisions[1]
-            #             ix = 1
-            #         else:
-            #             S = xx[1] * precisions[1]
-            #             precision = precisions[0]
-            #         S = S * d_token // token_supply
-            #         p = (
-            #             S
-            #             * PRECISION
-            #             // (
-            #                 amounts[ix] * precision
-            #                 - d_token * xx[ix] * precision // token_supply
-            #             )
-            #         )
-            #         if ix == 0:
-            #             p = (10**18) ** 2 // p
+            # only ix is nonzero
+            p: int = 0
+            ix: int = -1
+            if d_token > 10**5:
+                nonzero_indices = [i for i, a in enumerate(amounts) if a != 0]
+                if len(nonzero_indices) == 1:
+                    # not reached in current tests, which never have nonzero amounts
+                    precisions: List[int] = self.precisions
+                    last_prices: List[int] = self.last_prices
+                    balances: List[int] = self.balances
 
-            self._tweak_price(A, gamma, xp, p, D)
+                    ix = amounts.index(0)
+                    S: int = 0
+                    for i in range(n_coins):
+                        if i != ix:
+                            if i == 0:
+                                S += self.balances[i] * precisions[i]
+                            else:
+                                S += (
+                                    balances[i]
+                                    * last_prices[i - 1]
+                                    * precisions[i]
+                                    // PRECISION
+                                )
+                    S = S * d_token // token_supply
+                    p = (
+                        S
+                        * PRECISION
+                        // (
+                            amounts[ix] * precisions[ix]
+                            - d_token * balances[ix] * precisions[ix] // token_supply
+                        )
+                    )
+
+            self._tweak_price(A, gamma, xp, ix, p, D)
 
         else:
             self.D = D
@@ -949,7 +962,7 @@ class CurveCryptoPool(Pool):
         self.balances[i] -= dy
         self.tokens -= token_amount
 
-        self._tweak_price(A, gamma, xp, p, D)
+        self._tweak_price(A, gamma, xp, i, p, D)
 
         return dy
 
