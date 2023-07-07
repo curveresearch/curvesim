@@ -2,6 +2,7 @@
 Mainly a module to house the `CryptoPool`, a cryptoswap implementation in Python.
 """
 import time
+from math import isqrt
 from typing import List
 
 from gmpy2 import mpz
@@ -318,14 +319,9 @@ class CurveCryptoPool(Pool):
             else:
                 D = (D_minus - D_plus) // 2
 
-            diff: int = 0
-            if D > D_prev:
-                diff = D - D_prev
-            else:
-                diff = D_prev - D
-            if diff * 10**14 < max(
-                10**16, D
-            ):  # Could reduce precision for gas efficiency here
+            diff = abs(D - D_prev)
+            # Could reduce precision for gas efficiency here
+            if diff * 10**14 < max(10**16, D):
                 # Test that we are safe with the next newton_y
                 for _x in x:
                     frac: int = _x * 10**18 // D
@@ -488,10 +484,10 @@ class CurveCryptoPool(Pool):
             dx_price: int = __xp[0] // 10**6
             __xp[0] += dx_price
             last_prices = [
-                price_scale[i - 1]
+                price_scale[k - 1]
                 * dx_price
-                // (__xp[i] - self._newton_y(A, gamma, __xp, D_unadjusted, i))
-                for i in range(1, n_coins)
+                // (__xp[k] - self._newton_y(A, gamma, __xp, D_unadjusted, k))
+                for k in range(1, n_coins)
             ]
 
         self.last_prices = last_prices
@@ -524,7 +520,7 @@ class CurveCryptoPool(Pool):
             ratio = price_oracle[k] * 10**18 // price_scale[k]
             ratio = abs(ratio - 10**18)
             norm += ratio**2
-        norm = _sqrt_int(norm)
+        norm = isqrt(norm)
 
         adjustment_step: int = max(self.adjustment_step, norm // 5)
 
