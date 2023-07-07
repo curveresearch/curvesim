@@ -1,16 +1,10 @@
-from abc import abstractmethod
 from itertools import product
 
 from curvesim.templates import SequentialParameterSampler
-from .mixins import (
-    PoolAttributeMixin,
-    MetaPoolAttributeMixin,
-    CurvePoolMixin,
-    CurveCryptoPoolMixin,
-)
+from .pool_mixins import CurvePoolMixin, CurveMetaPoolMixin, CurveCryptoPoolMixin
 
 
-class GridBase(SequentialParameterSampler):
+class Grid(SequentialParameterSampler):
     """
     Iterates over a "grid" of all possible combinations of the input parameters.
     """
@@ -35,38 +29,20 @@ class GridBase(SequentialParameterSampler):
         keys, values = zip(*variable_params.items())
 
         sequence = []
-        for instance in product(*values):
-            sequence.append(dict(zip(keys, instance)))
+        for vals in product(*values):
+            params = dict(zip(keys, vals))
+            sequence.append(params)
 
         return sequence
 
-    @abstractmethod
-    def set_attributes(self, pool, attribute_dict):
-        """
-        Sets the pool attributes defined in attribute_dict.
 
-        Should support setting parameters with setattr(pool) and/or specialized setters
-        defined in the attribute_setters property.
-        """
-        raise NotImplementedError
-
-    @property
-    def attribute_setters(self):
-        """
-        Returns a dict mapping attributes to a setter function.
-
-        Used to set attributes that require more computation than simple setattr().
-        """
-        return {}
-
-
-class CurvePoolGrid(PoolAttributeMixin, CurvePoolMixin, GridBase):
+class CurvePoolGrid(Grid, CurvePoolMixin):
     pass
 
 
-class CurveMetaPoolGrid(MetaPoolAttributeMixin, CurvePoolMixin, GridBase):
+class CurveMetaPoolGrid(Grid, CurveMetaPoolMixin):
     pass
 
 
-class CurveCryptoPoolGrid(PoolAttributeMixin, CurveCryptoPoolMixin, GridBase):
+class CurveCryptoPoolGrid(Grid, CurveCryptoPoolMixin):
     pass

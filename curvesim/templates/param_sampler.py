@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from copy import deepcopy
 
+from curvesim.exceptions import ParameterSamplerError
 from curvesim.logging import get_logger
 
 logger = get_logger(__name__)
@@ -16,19 +17,25 @@ class ParameterSampler(ABC):
         """
         Yields
         -------
-        pool : pool object
+        pool : :class:`~curvesim.templates.SimPool`
             A pool object with the current variable parameters set.
 
         params : dict
-            A dictionary of the pool parameters set on this iteration.
+            A dictionary of the pool parameters set on the current iteration.
 
         """
         raise NotImplementedError
 
-    @abstractmethod
-    def set_attributes(self, pool, attribute_dict):
+    def set_pool_attributes(self, pool, attribute_dict):
         """
-        Sets attributes on a pool.
+        Sets the pool attributes defined in attribute_dict.
+
+        Supports setting attributes with setattr(pool, key, value) or specialized
+        setters defined in the 'setters' property:
+        :python:`self.setters[key](pool, value)`
+
+        For metapools, basepool parameters can be referenced by appending "_base" to
+        an attribute's name.
 
         Parameters
         ----------
@@ -38,7 +45,67 @@ class ParameterSampler(ABC):
         attribute_dict : dict
             A dict mapping attribute names to values.
         """
-        raise NotImplementedError
+
+        if attribute_dict is None:
+            return
+
+        for attribute, value in attribute_dict.items():
+            if attribute.endswith("_base"):
+                args = (pool.basepool, attribute[:-5])
+
+            else:
+                args = (pool, attribute)
+
+            self._set_pool_attribute(*args, value)
+
+    @property
+    def setters(self):
+        """
+        A dict mapping attributes to setter functions.
+
+        Used to set attributes that require more computation than simple setattr().
+        Typically defined in pool-specific mixin. Defaults to empty dict.
+
+        Returns
+        -------
+        dict
+        """
+        return {}
+
+    def _set_pool_attribute(self, pool, attr, value):
+        """
+        Sets a single pool attribute.
+
+        Supports setting attributes with setattr(pool, attr, value) or specialized
+        setters defined in the 'setters' property:
+        :python:`self.setters[attr](pool, value)`
+
+        Parameters
+        ----------
+        pool : :class:`~curvesim.templates.SimPool`
+            The pool object to be modified.
+
+        attr : str
+            The attribute to be set.
+
+        value :
+            The value to be set for the attribute.
+        """
+
+        if attr in self.setters:
+            self.setters[attr](pool, value)
+
+        elif hasattr(pool, attr):
+            setattr(pool, attr, value)
+
+        else:
+            pool_class = pool.__class__.__name__
+            sampler_class = self.__class__.__name__
+
+            raise ParameterSamplerError(
+                f"'{pool_class}' has no attribute '{attr}',"
+                f"and '{attr}' not found in '{sampler_class}.setters'."
+            )
 
 
 class SequentialParameterSampler(ParameterSampler):
@@ -46,7 +113,7 @@ class SequentialParameterSampler(ParameterSampler):
         """
         Parameters
         ----------
-        pool : pool object
+        pool : :class:`~curvesim.templates.SimPool`
             The "template" pool that will have its parameters modified.
 
         variable_params: dict
@@ -54,15 +121,14 @@ class SequentialParameterSampler(ParameterSampler):
 
             Keys: pool parameters, Values: iterable of values
 
-            For metapools, using the (see :class:`MetaPoolAttributesMixin`) allows
-            basepool attributes to be referenced by appending "_base" to a parameter
-            name.
+            For metapools, basepool parameters can be referenced by appending "_base" to
+            an attribute's name.
 
             Example
             -------
             .. code-block ::
 
-                {"A": [100, 1000], "fee_base": [10**6, 4*10**6]}
+                {"A": [100, 1000], "basepool": {fee: [10**6, 4*10**6]}}
 
         fixed_params : dict, optional
             Pool parameters set before all simulations.
@@ -71,7 +137,7 @@ class SequentialParameterSampler(ParameterSampler):
 
         """
         self.pool_template = deepcopy(pool)
-        self.set_attributes(self.pool_template, fixed_params)
+        self.set_pool_attributes(self.pool_template, fixed_params)
         self.parameter_sequence = self.make_parameter_sequence(variable_params)
 
     def __iter__(self):
@@ -87,7 +153,7 @@ class SequentialParameterSampler(ParameterSampler):
         """
         for params in self.parameter_sequence:
             pool = deepcopy(self.pool_template)
-            self.set_attributes(pool, params)
+            self.set_pool_attributes(pool, params)
             yield pool, params
 
     @abstractmethod
@@ -106,21 +172,6 @@ class SequentialParameterSampler(ParameterSampler):
             A list of dicts defining the parameters for each iteration.
         """
         return NotImplementedError
-
-    @abstractmethod
-    def set_attributes(self, pool, attribute_dict):
-        """
-        Sets attributes on a pool.
-
-        Parameters
-        ----------
-        pool : :class:`~curvesim.templates.SimPool`
-            The pool object to be modified.
-
-        attribute_dict : dict
-            A dict mapping attribute names to values.
-        """
-        raise NotImplementedError
 
 
 class DynamicParameterSampler(ParameterSampler):
