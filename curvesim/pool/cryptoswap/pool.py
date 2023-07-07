@@ -406,11 +406,7 @@ class CurveCryptoPool(Pool):
             else:
                 y = y_plus - y_minus
 
-            diff: int = 0
-            if y > y_prev:
-                diff = y - y_prev
-            else:
-                diff = y_prev - y
+            diff: int = abs(y - y_prev)
             if diff < max(convergence_limit, y // 10**14):
                 frac: int = y * 10**18 // D
                 assert 10**16 <= frac <= 10**20  # dev: unsafe value for y
@@ -861,30 +857,27 @@ class CurveCryptoPool(Pool):
                 nonzero_indices = [i for i, a in enumerate(amounts) if a != 0]
                 if len(nonzero_indices) == 1:
                     # not reached in current tests, which never have nonzero amounts
-                    precisions: List[int] = self.precisions
+                    prec: List[int] = self.precisions
                     last_prices: List[int] = self.last_prices
                     balances: List[int] = self.balances
 
                     ix = amounts.index(0)
                     S: int = 0
                     for i in range(n_coins):
-                        if i != ix:
-                            if i == 0:
-                                S += self.balances[i] * precisions[i]
-                            else:
-                                S += (
-                                    balances[i]
-                                    * last_prices[i - 1]
-                                    * precisions[i]
-                                    // PRECISION
-                                )
+                        if i == ix:
+                            continue
+
+                        if i == 0:
+                            S += balances[i] * prec[i]
+                        else:
+                            S += balances[i] * prec[i] * last_prices[i - 1] // PRECISION
                     S = S * d_token // token_supply
                     p = (
                         S
                         * PRECISION
                         // (
-                            amounts[ix] * precisions[ix]
-                            - d_token * balances[ix] * precisions[ix] // token_supply
+                            amounts[ix] * prec[ix]
+                            - d_token * balances[ix] * prec[ix] // token_supply
                         )
                     )
 
