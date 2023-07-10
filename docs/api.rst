@@ -171,15 +171,18 @@ Iterators
         :special-members: __iter__
         :inherited-members:
 
-    .. autoclass:: curvesim.iterators.param_samplers.CurvePoolGrid
-        :exclude-members: __new__
+    .. class:: curvesim.iterators.param_samplers.CurvePoolGrid
 
-    .. autoclass:: curvesim.iterators.param_samplers.CurveMetaPoolGrid
-        :exclude-members: __new__
+        :class:`Grid` parameter sampler specialized for Curve pools.
 
-    .. autoclass:: curvesim.iterators.param_samplers.CurveCryptoPoolGrid
-        :exclude-members: __new__
 
+    .. class:: curvesim.iterators.param_samplers.CurveMetaPoolGrid
+
+        :class:`Grid` parameter sampler specialized for Curve meta-pools.
+
+    .. class:: curvesim.iterators.param_samplers.CurveCryptoPoolGrid
+
+        :class:`Grid` parameter sampler specialized for Curve crypto pools.
 
     Price Samplers
     --------------

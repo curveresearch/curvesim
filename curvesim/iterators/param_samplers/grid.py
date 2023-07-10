@@ -54,7 +54,7 @@ class CurveMetaPoolGrid(Grid, CurveMetaPoolMixin):
 
 class CurveCryptoPoolGrid(Grid, CurveCryptoPoolMixin):
     """
-    :class:`Grid` parameter sampler specialized for Curve meta-pools.
+    :class:`Grid` parameter sampler specialized for Curve crypto pools.
     """
 
     pass
