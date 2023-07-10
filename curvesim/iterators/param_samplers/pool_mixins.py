@@ -5,7 +5,7 @@ class CurvePoolMixin:
     """
 
     @property
-    def attribute_setters(self):
+    def setters(self):
         return {"D": stableswap_D_to_balances}
 
 
@@ -16,7 +16,7 @@ class CurveMetaPoolMixin:
     """
 
     @property
-    def attribute_setters(self):
+    def setters(self):
         return {"D": stableswap_D_to_balances}
 
 
@@ -27,11 +27,27 @@ class CurveCryptoPoolMixin:
     """
 
     @property
-    def attribute_setters(self):
-        return {}
+    def setters(self):
+        return {"D": cryptoswap_D_to_balances}
 
 
 def stableswap_D_to_balances(pool, D):
-    rates = pool.rates[:]
+    rates = pool.rates
     n = pool.n
-    pool.balances = [D // n * 10**18 // p for p in rates]
+    pool.balances = [D // n * 10**18 // r for r in rates]
+
+
+def cryptoswap_D_to_balances(pool, D):
+    n = pool.n
+    price_scale = pool.price_scale
+    precisions = pool.precisions
+
+    if n==2:
+        price_scale = [price_scale]
+    
+    balances = [D // n // precisions[0]]
+    divisors = zip(price_scale, precisions[1:])
+    balances += [D * 10**18 // (n * price) // prec for price, prec in divisors]
+
+    pool.balances = balances
+
