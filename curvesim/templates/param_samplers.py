@@ -175,9 +175,9 @@ class SequentialParameterSampler(ParameterSampler):
         return NotImplementedError
 
 
-class DynamicParameterSampler(ParameterSampler):
+class AdaptiveParameterSampler(ParameterSampler):
     """
-    Parameter sampler that selects parameters dynamically based on simulation results.
+    Parameter sampler that selects parameters adaptively based on simulation results.
     """
 
     def __init__(self):
