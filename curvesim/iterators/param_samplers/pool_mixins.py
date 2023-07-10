@@ -42,12 +42,11 @@ def cryptoswap_D_to_balances(pool, D):
     price_scale = pool.price_scale
     precisions = pool.precisions
 
-    if n==2:
+    if n == 2:
         price_scale = [price_scale]
-    
+
     balances = [D // n // precisions[0]]
     divisors = zip(price_scale, precisions[1:])
     balances += [D * 10**18 // (n * price) // prec for price, prec in divisors]
 
     pool.balances = balances
-
