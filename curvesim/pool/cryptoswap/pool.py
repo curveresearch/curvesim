@@ -1077,12 +1077,12 @@ class CurveCryptoPool(Pool):
         if self.n == 2:
             price_oracle = self.internal_price_oracle()[0]
             return 2 * self.virtual_price * _sqrt_int(price_oracle) // 10**18
-        elif self.n == 3:
-            # TODO: find/implement integer cube root function
-            price_oracle = self.internal_price_oracle()
-            return (
-                3 * self.virtual_price * icbrt(price_oracle[0] * price_oracle[1])
-            ) // 10**24
+        # TODO: find/implement integer cube root function
+        # elif self.n == 3:
+        #     price_oracle = self.internal_price_oracle()
+        #     return (
+        #         3 * self.virtual_price * icbrt(price_oracle[0] * price_oracle[1])
+        #     ) // 10**24
         else:
             raise CalculationError("LP price calc doesn't support more than 3 coins")
 
