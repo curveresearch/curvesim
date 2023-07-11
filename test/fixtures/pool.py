@@ -194,3 +194,133 @@ def vyper_cryptopool(_vyper_cryptopool):
     """
     with boa.env.anchor():
         yield _vyper_cryptopool
+
+
+def unpack_3_uint64s(packed_nums):
+    mask = 2**64 - 1
+    return [
+        (packed_nums >> 128) & mask,
+        (packed_nums >> 64) & mask,
+        packed_nums & mask,
+    ]
+
+
+def pack_3_uint64s(nums):
+    return (nums[0] << 128) | (nums[1] << 64) | nums[0]
+
+
+@pytest.fixture(scope="session")
+def _vyper_tricrypto():
+    """
+    Initialize vyper fixture for crypto pool
+    using default volatile pair settings
+    """
+    trycrypto_ng_filepath = os.path.join(_curve_dir, "tricrypto_ng.vy")
+    tricrypto_math_filepath = os.path.join(_curve_dir, "tricrypto_math.vy")
+    coins = [FAKE_ADDRESS] * 3
+
+    # settings based on TricryptoUSDT pool
+    # https://etherscan.io/address/0xf5f5b97624542d72a9e06f04804bf81baa15e2b4
+
+    A = 1707629
+    gamma = 11809167828997
+    packed_A_gamma = (A << 128) | gamma
+
+    # unpacked_precisioins = [1000000000000, 10000000000, 1]
+    packed_precisions = 1000000000000 << 64
+    packed_precisions = (packed_precisions | 10000000000) << 64
+    packed_precisions = packed_precisions | 1
+
+    mid_fee = 3000000
+    out_fee = 30000000
+    fee_gamma = 500000000000000
+    packed_fee_params = mid_fee << 64
+    packed_fee_params = (packed_fee_params | out_fee) << 64
+    packed_fee_params = packed_fee_params | fee_gamma
+
+    allowed_extra_profit = 2000000000000
+    adjustment_step = 490000000000000
+    ma_half_time = 865
+    packed_rebalancing_params = allowed_extra_profit << 64
+    packed_rebalancing_params = (packed_rebalancing_params | adjustment_step) << 64
+    packed_rebalancing_params = packed_rebalancing_params | ma_half_time
+
+    # initial_prices = [27990000000000000000000, 1913000000000000000000]
+    packed_prices = 27990000000000000000000 << 128
+    packed_prices = packed_prices | 1913000000000000000000
+
+    lp_total_supply = 48065547789519566267205
+
+    _name = "TricryptoUSDT"
+    _symbol = "crvUSDTWBTCWETH"
+    _salt = bytes.fromhex(
+        "B90B4B3B1043EAF7E27EF307E5FD67AF029117766661203412EDAB9E18E8F6B3"
+    )
+    _weth = FAKE_ADDRESS
+    _math = boa.load(tricrypto_math_filepath)
+
+    tricrypto = boa.load(
+        trycrypto_ng_filepath,
+        _name,
+        _symbol,
+        coins,
+        _math.address,
+        _weth,
+        _salt,
+        packed_precisions,
+        packed_A_gamma,
+        packed_fee_params,
+        packed_rebalancing_params,
+        packed_prices,
+    )
+    """
+    name :
+    TricryptoUSDT
+    symbol :
+    crvUSDTWBTCWETH
+    weth :
+    0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2
+    coins :
+    0xdAC17F958D2ee523a2206206994597C13D831ec7
+    0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599
+    0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2
+    math :
+    0xcBFf3004a20dBfE2731543AA38599A526e0fD6eE
+    salt :
+    B90B4B3B1043EAF7E27EF307E5FD67AF029117766661203412EDAB9E18E8F6B3
+    packed_precisions :
+    340282366920938463463559074872505306972160000000001
+    packed_A_gamma :
+    581076037942835227425498917514114728328226821
+    packed_fee_params :
+    1020847100762815390943526144507091182848000000
+    packed_rebalancing_params :
+    680564733841876935965653810981216714752000000000865
+    packed_prices :
+    650960167919755280605435624016972588543318000000000000000000
+    """
+
+    balances = [18386308767126, 61223608587, 9871001227205921365272]
+
+    tricrypto.eval(f"self.balances={balances}")
+    D = 55717274378036684304794218
+    virtual_price = 1000226985205412532
+    tricrypto.eval(f"self.D={D}")
+    tricrypto.eval(f"self.virtual_price={virtual_price}")
+    xcp_profit = 1000443675707397362
+    xcp_profit_a = 1000434201209345893
+    tricrypto.eval(f"self.xcp_profit={xcp_profit}")
+    tricrypto.eval(f"self.xcp_profit_a={xcp_profit_a}")
+    tricrypto.eval(f"self.totalSupply={lp_total_supply}")
+
+    return tricrypto
+
+
+@pytest.fixture(scope="function")
+def vyper_tricrypto(_vyper_tricrypto):
+    """
+    Function-scope fixture using titanoboa's snapshotting
+    feature to avoid expensive loading.
+    """
+    with boa.env.anchor():
+        yield _vyper_tricrypto
