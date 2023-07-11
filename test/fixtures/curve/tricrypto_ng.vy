@@ -959,6 +959,8 @@ def _exchange(
     # ---------------------- Do Transfers in and out -------------------------
 
     ########################## TRANSFER IN <-------
+    # sim: comment-out unneeded transfer logic
+    # -----------------------------------------
     # self._transfer_in(
     #     coins[i], dx, dy, mvalue,
     #     callbacker, callback_sig,  # <-------- Callback method is called here.
@@ -966,6 +968,8 @@ def _exchange(
     # )
 
     ########################## -------> TRANSFER OUT
+    # sim: comment-out unneeded transfer logic
+    # -----------------------------------------
     # self._transfer_out(coins[j], dy, use_eth, receiver)
 
     # ------ Tweak price_scale with good initial guess for newton_D ----------
