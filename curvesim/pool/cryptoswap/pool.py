@@ -364,12 +364,17 @@ class CurveCryptoPool(Pool):
         x_sorted = sorted(x_sorted, reverse=True)  # From high to low
 
         convergence_limit: int = max(max(x_sorted[0] // 10**14, D // 10**14), 100)
-        for j in range(2, n_coins + 1):
-            _x: int = x_sorted[n_coins - j]
-            y = y * D // (_x * n_coins)  # Small _x first
-            S_i += _x
-        for j in range(n_coins - 1):
-            K0_i = K0_i * x_sorted[j] * n_coins // D  # Large _x first
+        if n_coins == 2:
+            S_i: int = x[1 - i]
+            y: int = D**2 // (S_i * n_coins**2)
+            K0_i: int = (10**18 * n_coins) * S_i // D
+        else:
+            for j in range(2, n_coins + 1):
+                _x: int = x_sorted[n_coins - j]
+                y = y * D // (_x * n_coins)  # Small _x first
+                S_i += _x
+            for j in range(n_coins - 1):
+                K0_i = K0_i * x_sorted[j] * n_coins // D  # Large _x first
 
         y = mpz(y)
         K0_i = mpz(K0_i)
