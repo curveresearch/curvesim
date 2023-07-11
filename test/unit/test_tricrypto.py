@@ -197,38 +197,23 @@ price = st.integers(min_value=10**12, max_value=10**25)
 @given(
     st.integers(min_value=1, max_value=300),
     st.integers(min_value=0, max_value=2),
+    st.integers(min_value=0, max_value=2),
 )
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
-    max_examples=5,
+    max_examples=10,
     deadline=None,
 )
-def test_exchange(vyper_tricrypto, dx_perc, i):
+def test_exchange(vyper_tricrypto, dx_perc, i, j):
     """Test `exchange` against vyper implementation."""
-    j = randint(0, 2)
-    assume(j != i)
+    assume(i != j)
 
     pool = initialize_pool(vyper_tricrypto)
     dx = pool.balances[i] * dx_perc // 100
 
-    MATH = get_math(vyper_tricrypto)
-    A = vyper_tricrypto.A()
-    gamma = vyper_tricrypto.gamma()
-    xp = pool.balances.copy()
-    xp[i] += dx
-    precisions = vyper_tricrypto.precisions()
-    price_scale = [vyper_tricrypto.price_scale(i) for i in range(2)]
-    xp = [x * prec for x, prec in zip(xp, precisions)]
-    xp[1] = xp[1] * price_scale[0] // PRECISION
-    xp[2] = xp[2] * price_scale[1] // PRECISION
-    D = MATH.newton_D(A, gamma, xp)
-    y, _ = MATH.get_y(A, gamma, xp, D, j)
-    expected_dy = xp[j] - y
-
     expected_dy = vyper_tricrypto.exchange(i, j, dx, 0)
     dy, _ = pool.exchange(i, j, dx)
-
     assert dy == expected_dy
 
-    expected_balances = [vyper_tricrypto.balances(i) for i in range(2)]
+    expected_balances = [vyper_tricrypto.balances(i) for i in range(3)]
     assert pool.balances == expected_balances
