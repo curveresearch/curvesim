@@ -4,22 +4,13 @@ Unit tests for CurveCryptoPool for n = 3
 Tests are against the tricrypto-ng contract.
 """
 import os
-from random import randint
 
 import boa
 from hypothesis import HealthCheck, assume, given, settings
 from hypothesis import strategies as st
 
 from curvesim.pool import CurveCryptoPool
-from curvesim.pool.cryptoswap.pool import (
-    A_MULTIPLIER,
-    MAX_GAMMA,
-    MIN_GAMMA,
-    PRECISION,
-    _geometric_mean,
-    _halfpow,
-    _sqrt_int,
-)
+from curvesim.pool.cryptoswap.pool import A_MULTIPLIER, MAX_GAMMA, MIN_GAMMA, PRECISION
 
 N_COINS = 3
 MIN_A = N_COINS**N_COINS * A_MULTIPLIER // 10
