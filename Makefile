@@ -99,7 +99,7 @@ flake8:
 pylint:
 	@echo "$(REVERSE)Running$(RESET) $(BOLD)pylint$(RESET)..."
 	@echo ""
-	@./check_pylint_score.py curvesim test
+	@./check_pylint_score.py curvesim
 	@echo ""
 	@echo "pylint passed ⚙️"
 
