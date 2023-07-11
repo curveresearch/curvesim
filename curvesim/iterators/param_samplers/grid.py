@@ -27,6 +27,7 @@ class Grid(SequentialParameterSampler):
         """
 
         keys, values = zip(*variable_params.items())
+        self._validate_attributes(self.pool_template, keys)
 
         sequence = []
         for vals in product(*values):
@@ -36,7 +37,7 @@ class Grid(SequentialParameterSampler):
         return sequence
 
 
-class CurvePoolGrid(Grid, CurvePoolMixin):
+class CurvePoolGrid(CurvePoolMixin, Grid):
     """
     :class:`Grid` parameter sampler specialized for Curve pools.
     """
@@ -44,7 +45,7 @@ class CurvePoolGrid(Grid, CurvePoolMixin):
     pass
 
 
-class CurveMetaPoolGrid(Grid, CurveMetaPoolMixin):
+class CurveMetaPoolGrid(CurveMetaPoolMixin, Grid):
     """
     :class:`Grid` parameter sampler specialized for Curve meta-pools.
     """
@@ -52,7 +53,7 @@ class CurveMetaPoolGrid(Grid, CurveMetaPoolMixin):
     pass
 
 
-class CurveCryptoPoolGrid(Grid, CurveCryptoPoolMixin):
+class CurveCryptoPoolGrid(CurveCryptoPoolMixin, Grid):
     """
     :class:`Grid` parameter sampler specialized for Curve crypto pools.
     """

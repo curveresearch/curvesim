@@ -45,18 +45,13 @@ class ParameterSampler(ABC):
         attribute_dict : dict
             A dict mapping attribute names to values.
         """
-
         if attribute_dict is None:
             return
 
+        self._validate_attributes(pool, attribute_dict)
+
         for attribute, value in attribute_dict.items():
-            if attribute.endswith("_base"):
-                args = (pool.basepool, attribute[:-5])
-
-            else:
-                args = (pool, attribute)
-
-            self._set_pool_attribute(*args, value)
+            self._set_pool_attribute(pool, attribute, value)
 
     @property
     def setters(self):
@@ -65,6 +60,9 @@ class ParameterSampler(ABC):
 
         Used to set attributes that require more computation than simple setattr().
         Typically defined in pool-specific mixin. Defaults to empty dict.
+
+        For metapools, basepool parameters can be referenced by appending "_base" to
+        an attribute's name.
 
         Returns
         -------
@@ -80,6 +78,9 @@ class ParameterSampler(ABC):
         specialized setters defined in the 'setters' property:
         :python:`self.setters[attr](pool, value)`
 
+        For metapools, basepool parameters can be referenced by appending "_base" to
+        an attribute's name.
+
         Parameters
         ----------
         pool : :class:`~curvesim.templates.SimPool`
@@ -91,21 +92,64 @@ class ParameterSampler(ABC):
         value :
             The value to be set for the attribute.
         """
-
         if attr in self.setters:
             self.setters[attr](pool, value)
 
-        elif hasattr(pool, attr):
-            setattr(pool, attr, value)
-
         else:
+            pool_attr = parse_pool_attribute(pool, attr)
+            setattr(*pool_attr, value)
+
+    def _validate_attributes(self, pool, attributes):
+        """
+        Raises error if attributes are not present in self.setters or pool attributes.
+
+        Parameters
+        ----------
+        pool : :class:`~curvesim.templates.SimPool`
+            The pool object to be modified.
+
+        attributes : Iterable[str]
+            Iterable of attribute names.
+
+        Raises
+        ------
+        ParameterSamplerError
+
+        """
+        missing = []
+        for attribute in attributes:
+            pool_attr = parse_pool_attribute(pool, attribute)
+
+            if attribute not in self.setters and not hasattr(*pool_attr):
+                missing.append(attribute)
+
+        if missing:
             pool_class = pool.__class__.__name__
-            sampler_class = self.__class__.__name__
+            self_class = self.__class__.__name__
 
             raise ParameterSamplerError(
-                f"'{pool_class}' has no attribute '{attr}',"
-                f"and '{attr}' not found in '{sampler_class}.setters'."
+                f"Input parameters not found in '{self_class}.setters' "
+                f"or '{pool_class}' attributes: {missing}"
             )
+
+
+def parse_pool_attribute(pool, attribute):
+    """
+    Helper function to route "_base" attributes to basepool if necessary.
+    """
+    if attribute.endswith("_base"):
+
+        if not hasattr(pool, "basepool"):
+            pool_class = pool.__class__.__name__
+
+            raise ParameterSamplerError(
+                f"Could not set pool parameter '{attribute}'; "
+                f"'{pool_class}' has no basepool."
+            )
+
+        return pool.basepool, attribute[:-5]
+
+    return pool, attribute
 
 
 class SequentialParameterSampler(ParameterSampler):
@@ -150,7 +194,6 @@ class SequentialParameterSampler(ParameterSampler):
 
         params : dict
             A dictionary of the pool parameters set on this iteration.
-
         """
         for params in self.parameter_sequence:
             pool = deepcopy(self.pool_template)
