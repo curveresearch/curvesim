@@ -150,9 +150,10 @@ class CurveCryptoPool(Pool):
         self.xcp_profit_a = xcp_profit_a  # Full profit at last claim of admin fees
         self.not_adjusted = False
 
-        # TODO: remove this when we're ready to test n=3.
-        if n != 2:
-            raise CryptoPoolError("Only 2-coin crypto pools are currently supported.")
+        if n != 2 and n != 3:
+            raise CryptoPoolError(
+                "Only 2 or 3-coin crypto pools are currently supported."
+            )
         self.n = n
         self.precisions = precisions
 
@@ -340,27 +341,35 @@ class CurveCryptoPool(Pool):
         n_coins: int = len(x)
 
         # Safety checks
-        min_A = n_coins**n_coins * A_MULTIPLIER // 10
-        max_A = n_coins**n_coins * A_MULTIPLIER * 100000
-        if ANN > max_A or ANN < min_A:
-            raise CurvesimValueError("Unsafe value for A")
-        if gamma > MAX_GAMMA or gamma < MIN_GAMMA:
-            raise CurvesimValueError("Unsafe value for gamma")
-        if D > 10**15 * 10**18 or D < 10**17:
-            raise CurvesimValueError("Unsafe value for D")
-
-        # FIXME: update for general n
-        x_j: int = x[1 - i]
-        y: int = D**2 // (x_j * n_coins**2)
-        K0_i: int = (10**18 * n_coins) * x_j // D
-        # S_i = x_j
-
-        # frac = x_j * 1e18 / D => frac = K0_i / N_COINS
+        MIN_A = n_coins**n_coins * A_MULTIPLIER // 10
+        MAX_A = n_coins**n_coins * A_MULTIPLIER * 100000
+        assert ANN > MIN_A - 1 and ANN < MAX_A + 1  # dev: unsafe values A
         assert (
-            10**16 * n_coins <= K0_i <= 10**20 * n_coins
-        )  # dev: unsafe values x[i]
+            gamma > MIN_GAMMA - 1 and gamma < MAX_GAMMA + 1
+        )  # dev: unsafe values gamma
+        assert D > 10**17 - 1 and D < 10**15 * 10**18 + 1  # dev: unsafe values D
+        for k in range(n_coins):
+            if k != i:
+                frac: int = x[k] * 10**18 // D
+                assert (frac > 10**16 - 1) and (
+                    frac < 10**20 + 1
+                )  # dev: unsafe values x[i]
 
-        convergence_limit: int = max(max(x_j // 10**14, D // 10**14), 100)
+        y: int = D // n_coins
+        K0_i: int = 10**18
+        S_i: int = 0
+
+        x_sorted: List[int] = x
+        x_sorted[i] = 0
+        x_sorted = sorted(x_sorted, reverse=True)  # From high to low
+
+        convergence_limit: int = max(max(x_sorted[0] // 10**14, D // 10**14), 100)
+        for j in range(2, n_coins + 1):
+            _x: int = x_sorted[n_coins - j]
+            y = y * D // (_x * n_coins)  # Small _x first
+            S_i += _x
+        for j in range(n_coins - 1):
+            K0_i = K0_i * x_sorted[j] * n_coins // D  # Large _x first
 
         y = mpz(y)
         K0_i = mpz(K0_i)
@@ -369,7 +378,7 @@ class CurveCryptoPool(Pool):
             y_prev: int = y
 
             K0: int = K0_i * y * n_coins // D
-            S: int = x_j + y
+            S: int = S_i + y
 
             _g1k0: int = gamma + 10**18
             if _g1k0 > K0:
