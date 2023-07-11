@@ -170,7 +170,7 @@ def update_cached_values(vyper_tricrypto):
     xp = vyper_tricrypto.eval("self.xp()")
     xp = list(xp)  # boa doesn't like its own tuple wrapper
     MATH = get_math(vyper_tricrypto)
-    D = MATH.newton_D(A, gamma, xp)
+    D = MATH.newton_D(A, gamma, xp)  # pylint: disable=no-member
     vyper_tricrypto.eval(f"self.D={D}")
     total_supply = vyper_tricrypto.totalSupply()
     vyper_tricrypto.eval(

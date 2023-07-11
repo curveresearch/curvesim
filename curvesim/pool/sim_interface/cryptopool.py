@@ -30,7 +30,7 @@ class SimCurveCryptoPool(SimPool, AssetIndicesMixin, CurveCryptoPool):
         if i == j:
             raise CurvesimValueError("Duplicate coin indices.")
 
-        xp = self._xp()
+        # xp = self._xp()
         # return self._dydx(i, j, xp=xp, use_fee=use_fee)
         raise NotImplementedError("Need to implement!")
 

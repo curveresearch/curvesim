@@ -333,7 +333,13 @@ class CurveCryptoPool(Pool):
         raise CalculationError("Did not converge")
 
     @staticmethod
-    def _newton_y(ANN: int, gamma: int, x: List[int], D: int, i: int) -> int:
+    def _newton_y(  # noqa: complexity: 11
+        ANN: int,
+        gamma: int,
+        x: List[int],
+        D: int,
+        i: int,
+    ) -> int:
         """
         Calculating x[i] given other balances x[0..n_coins-1] and invariant D
         ANN = A * N**N
