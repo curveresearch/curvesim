@@ -209,6 +209,10 @@ def pack_3_uint64s(nums):
     return (nums[0] << 128) | (nums[1] << 64) | nums[0]
 
 
+def pack_prices(prices):
+    return (prices[1] << 128) | prices[0]
+
+
 @pytest.fixture(scope="session")
 def _vyper_tricrypto():
     """
@@ -225,11 +229,13 @@ def _vyper_tricrypto():
     A = 1707629
     gamma = 11809167828997
     packed_A_gamma = (A << 128) | gamma
+    assert packed_A_gamma == 581076037942835227425498917514114728328226821
 
     # unpacked_precisioins = [1000000000000, 10000000000, 1]
     packed_precisions = 1000000000000 << 64
     packed_precisions = (packed_precisions | 10000000000) << 64
     packed_precisions = packed_precisions | 1
+    assert packed_precisions == 340282366920938463463559074872505306972160000000001
 
     mid_fee = 3000000
     out_fee = 30000000
@@ -244,13 +250,16 @@ def _vyper_tricrypto():
     packed_rebalancing_params = allowed_extra_profit << 64
     packed_rebalancing_params = (packed_rebalancing_params | adjustment_step) << 64
     packed_rebalancing_params = packed_rebalancing_params | ma_half_time
+    assert (
+        packed_rebalancing_params == 680564733841876935965653810981216714752000000000865
+    )
 
-    # initial_prices = [27990000000000000000000, 1913000000000000000000]
+    # use current price scale as initial prices to match the balances
     # packing is in reverse order
-    packed_prices = 1913000000000000000000 << 128
-    packed_prices = packed_prices | 27990000000000000000000
-
-    lp_total_supply = 48065547789519566267205
+    # 30468634274925745130207
+    # 1877445901676407991006
+    packed_prices = 1877445901676407991006 << 128
+    packed_prices = packed_prices | 30468634274925745130207
 
     _name = "TricryptoUSDT"
     _symbol = "crvUSDTWBTCWETH"
@@ -301,18 +310,34 @@ def _vyper_tricrypto():
     650960167919755280605435624016972588543318000000000000000000
     """
 
-    balances = [18386308767126, 61223608587, 9871001227205921365272]
-
+    balances = [18418434882428, 60547327748, 9914993293693631287774]
     tricrypto.eval(f"self.balances={balances}")
-    D = 55717274378036684304794218
-    virtual_price = 1000226985205412532
+
+    D = 55481143937271477730517113
     tricrypto.eval(f"self.D={D}")
+
+    virtual_price = 1000225178597346879
     tricrypto.eval(f"self.virtual_price={virtual_price}")
-    xcp_profit = 1000443675707397362
-    xcp_profit_a = 1000434201209345893
+
+    xcp_profit = 1000448625854298803
     tricrypto.eval(f"self.xcp_profit={xcp_profit}")
+
+    xcp_profit_a = 1000440033249679801
     tricrypto.eval(f"self.xcp_profit_a={xcp_profit_a}")
+
+    lp_total_supply = 47986553926751950746367
     tricrypto.eval(f"self.totalSupply={lp_total_supply}")
+
+    price_oracle = [30435581307494178154980, 1870286625867949317551]
+    price_oracle_packed = pack_prices(price_oracle)
+    tricrypto.eval(f"self.price_oracle_packed={price_oracle_packed}")
+
+    last_prices = [30453123431671769818574, 1871140849377954208512]
+    last_prices_packed = pack_prices(last_prices)
+    tricrypto.eval(f"self.last_prices_packed={last_prices_packed}")
+
+    last_prices_timestamp = 1689085619
+    tricrypto.eval(f"self.last_prices_timestamp={last_prices_timestamp}")
 
     return tricrypto
 
