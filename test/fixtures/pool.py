@@ -246,8 +246,9 @@ def _vyper_tricrypto():
     packed_rebalancing_params = packed_rebalancing_params | ma_half_time
 
     # initial_prices = [27990000000000000000000, 1913000000000000000000]
-    packed_prices = 27990000000000000000000 << 128
-    packed_prices = packed_prices | 1913000000000000000000
+    # packing is in reverse order
+    packed_prices = 1913000000000000000000 << 128
+    packed_prices = packed_prices | 27990000000000000000000
 
     lp_total_supply = 48065547789519566267205
 
