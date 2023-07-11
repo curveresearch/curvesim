@@ -210,7 +210,6 @@ def test_exchange(vyper_tricrypto, dx_perc, i):
 
     pool = initialize_pool(vyper_tricrypto)
     dx = pool.balances[i] * dx_perc // 100
-    dx = 10000
 
     MATH = get_math(vyper_tricrypto)
     A = vyper_tricrypto.A()
@@ -226,7 +225,7 @@ def test_exchange(vyper_tricrypto, dx_perc, i):
     y, _ = MATH.get_y(A, gamma, xp, D, j)
     expected_dy = xp[j] - y
 
-    # expected_dy = vyper_tricrypto.exchange(i, j, dx, 0)
+    expected_dy = vyper_tricrypto.exchange(i, j, dx, 0)
     dy, _ = pool.exchange(i, j, dx)
 
     assert dy == expected_dy
