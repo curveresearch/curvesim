@@ -359,7 +359,7 @@ class CurveCryptoPool(Pool):
         K0_i: int = 10**18
         S_i: int = 0
 
-        x_sorted: List[int] = x
+        x_sorted: List[int] = x.copy()
         x_sorted[i] = 0
         x_sorted = sorted(x_sorted, reverse=True)  # From high to low
 
