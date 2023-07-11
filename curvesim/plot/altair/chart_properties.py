@@ -1,3 +1,21 @@
+"""
+This module provides functionality for creating and manipulating chart properties.
+
+It contains utility functions for creating keyword arguments for a chart, updating
+and initializing properties, and handling property-specific behaviors. These
+functions support nested properties and allow for different behaviors based on
+property keys.
+
+The key functions in this module are:
+
+- make_chart_kwargs: Create the keyword arguments for a chart by updating a default
+  dictionary with values from override dictionaries.
+- update_properties: Update properties in a dictionary, supporting nested properties.
+- concat_properties: Concatenate values to a property in a dictionary.
+- ignore_property: Ignore a property during an update operation.
+- init_properties: Initialize the properties of a dictionary using a mapping of
+  classes.
+"""
 from copy import deepcopy
 from functools import partial
 
@@ -5,6 +23,23 @@ from altair import Color, MarkDef, X, Y
 
 
 def make_chart_kwargs(default, override_dicts):
+    """
+    Create the keyword arguments for a chart by updating a default dictionary with
+    values from a list of override dictionaries.
+
+    Parameters
+    ----------
+    default : dict
+        The default keyword arguments for the chart.
+    override_dicts : list
+        A list of dictionaries containing overrides for the default
+        keyword arguments.
+
+    Returns
+    -------
+    dict
+        A dictionary containing the keyword arguments for the chart.
+    """
     chart_kwargs = deepcopy(default)
 
     for d in override_dicts:
@@ -16,6 +51,25 @@ def make_chart_kwargs(default, override_dicts):
 
 
 def update_properties(prop_dict, key, val, depth=0, count=0):
+    """
+    Update properties in a dictionary. If the current depth matches the target depth
+    (or the count), the value is updated directly. Otherwise, the function is called
+    recursively on nested dictionaries.
+
+    Parameters
+    ----------
+    prop_dict : dict
+        The dictionary of properties to update.
+    key : str
+        The key of the property to update.
+    val : any
+        The new value for the property.
+    depth : int, optional
+        The target depth for the update. Defaults to 0.
+    count : int, optional
+        The current depth of the update. Defaults to 0.
+    """
+
     if depth in [0, count]:
         prop_dict[key] = val
     else:
@@ -25,6 +79,19 @@ def update_properties(prop_dict, key, val, depth=0, count=0):
 
 
 def concat_properties(prop_dict, key, val):
+    """
+    Concatenate values to a property in a dictionary. If the value is a list, extend
+    the property with it. Otherwise, append the value to the property.
+
+    Parameters
+    ----------
+    prop_dict : dict
+        The dictionary of properties to update.
+    key : str
+        The key of the property to update.
+    val : any
+        The value to concatenate to the property.
+    """
     prop_dict.setdefault(key, [])
 
     if isinstance(val, list):
@@ -34,10 +101,44 @@ def concat_properties(prop_dict, key, val):
 
 
 def ignore_property(prop_dict, key, val):  # pylint: disable=unused-argument
-    pass
+    """
+    Ignore a property during an update operation. This function does nothing and is
+    intended to be used as a placeholder in UPDATE_RULES where certain properties
+    should be ignored.
+
+    Parameters
+    ----------
+    prop_dict : dict
+        The dictionary of properties to update.
+    key : str
+        The key of the property to ignore.
+    val : any
+        The value of the property to ignore.
+    """
 
 
 def init_properties(prop_dict, classes=None):
+    """
+    Initialize the properties of a dictionary using a mapping of classes. If a
+    property's key is present in the classes dictionary, its value is replaced
+    with an instance of the corresponding class, initialized with the value as
+    keyword arguments.
+
+    Parameters
+    ----------
+    prop_dict : dict
+        The dictionary of properties to initialize.
+    classes : dict, optional
+        A dictionary mapping keys to classes. If a key in prop_dict matches a
+        key in classes, the value in prop_dict is replaced with an instance of
+        the corresponding class. Defaults to PROPERTY_CLASSES.
+
+    Returns
+    -------
+    dict
+        The dictionary of properties, with values replaced with class instances
+        where applicable.
+    """
     classes = classes or PROPERTY_CLASSES
     for key, val in prop_dict.items():
         try:

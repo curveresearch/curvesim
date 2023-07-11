@@ -1,14 +1,55 @@
-from altair import Scale, Chart, data_transformers
+"""
+This module provides functionality for creating Altair charts with custom styles.
+
+It contains utility functions for creating charts and default chart properties. It
+uses styles defined in the .styles module and allows custom configuration of chart 
+properties.
+
+The key functions in this module are:
+
+- make_chart: Create an interactive chart with custom properties and styles.
+- make_defaults: Create default properties for a chart.
+
+The data_transformers.disable_max_rows() call at the top of the module disables the 
+maximum row limit for Altair charts.
+"""
+from altair import Chart, Scale, data_transformers
 
 from curvesim.exceptions import PlotError
+
 from .chart_properties import make_chart_kwargs
 from .styles import STYLES
-
 
 data_transformers.disable_max_rows()
 
 
 def make_chart(config, x=None, y=None, color=None, **kwargs):
+    """
+    Create an interactive chart with custom properties and styles.
+
+    Parameters
+    ----------
+    config : dict
+        The configuration dictionary for the chart. Must contain a 'style' key.
+    x : str or dict, optional
+        The x-axis property. Can be a shorthand string or a dictionary of alt.X kwargs.
+    y : str or dict, optional
+        The y-axis property. Can be a shorthand string or a dictionary of alt.Y kwargs.
+    color : str or dict, optional
+        The color property. Can be a shorthand string or a dictionary of alt.Color kwargs.
+    **kwargs
+        Additional keyword arguments are added to the chart configuration.
+
+    Returns
+    -------
+    altair.Chart
+        The created chart.
+
+    Raises
+    ------
+    PlotError
+        If no style is found in the config or if the style is not found in STYLES.
+    """
     title = config.get("title", "")
 
     try:
@@ -27,6 +68,30 @@ def make_chart(config, x=None, y=None, color=None, **kwargs):
 
 
 def make_defaults(title, x, y, color):
+    """
+    Create default properties for a chart.
+
+    Parameters
+    ----------
+    title : str
+        The title of the chart.
+    x : str or dict, optional
+        The x-axis property. Can be a shorthand string or a dictionary of alt.X kwargs.
+    y : str or dict, optional
+        The y-axis property. Can be a shorthand string or a dictionary of alt.Y kwargs.
+    color : str or dict, optional
+        The color property. Can be a shorthand string or a dictionary of alt.Color kwargs.
+
+    Returns
+    -------
+    dict
+        The default properties for a chart.
+
+    Raises
+    ------
+    PlotError
+        If x, y, or color is not a string (shorthand) or a dictionary (altair kwargs).
+    """
     defaults = {
         "title": title,
         "encoding": {
