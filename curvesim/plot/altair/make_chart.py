@@ -2,7 +2,7 @@
 This module provides functionality for creating Altair charts with custom styles.
 
 It contains utility functions for creating charts and default chart properties. It
-uses styles defined in the .styles module and allows custom configuration of chart 
+uses styles defined in the .styles module and allows custom configuration of chart
 properties.
 
 The key functions in this module are:
@@ -10,7 +10,7 @@ The key functions in this module are:
 - make_chart: Create an interactive chart with custom properties and styles.
 - make_defaults: Create default properties for a chart.
 
-The data_transformers.disable_max_rows() call at the top of the module disables the 
+The data_transformers.disable_max_rows() call at the top of the module disables the
 maximum row limit for Altair charts.
 """
 from altair import Chart, Scale, data_transformers

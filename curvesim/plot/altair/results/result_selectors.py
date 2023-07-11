@@ -1,8 +1,8 @@
 """
-This module provides functionality for creating result selectors for an Altair 
+This module provides functionality for creating result selectors for an Altair
 chart.
 
-It contains utility functions for creating axis selectors, parameter filters, 
+It contains utility functions for creating axis selectors, parameter filters,
 selector charts and result selectors.
 
 The key functions in this module are:
