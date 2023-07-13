@@ -206,7 +206,7 @@ class CurveCryptoPool(Pool):
         precisions = self.precisions
         n = self.n
 
-        return [D // n] + [
+        return [D // n // precisions[0]] + [
             D * PRECISION // (p * n) // prec
             for p, prec in zip(price_scale, precisions[1:])
         ]
