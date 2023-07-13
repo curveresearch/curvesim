@@ -1,12 +1,15 @@
+import pytest
+
 from hypothesis import given, settings
 from hypothesis import strategies as st
 from pandas import DataFrame
 
 from itertools import product
 
+from curvesim.exceptions import ParameterSamplerError
+from curvesim.iterators.param_samplers import get_param_sampler, pool_param_sampler_map
 from curvesim.pool.sim_interface import SimCurvePool, SimCurveRaiPool, SimCurveMetaPool
 
-from curvesim.iterators.param_samplers import get_param_sampler, pool_param_sampler_map
 
 # Strategies
 PARAM_STRATS = {
@@ -23,7 +26,7 @@ def make_parameter_strats(*parameters):
     """Returns param_subset_strats for variable_params and fixed_params arguments."""
     return (
         param_subset_strat(parameters, val_to_list=True),
-        param_subset_strat(parameters),
+        param_subset_strat(parameters, min_size=0),
     )
 
 
@@ -60,6 +63,7 @@ def to_list_strat(strategy, min_size=2, max_size=20):
 
 # Tests
 def test_get_param_sampler():
+    """Test class mapping and initializing using get_param_sampler()."""
     # TODO: add CryptoPool
 
     test_pools = POOLS.values()
@@ -70,6 +74,19 @@ def test_get_param_sampler():
             param_sampler = get_param_sampler(sampler_type, pool, *args)
             expected_class = pool_param_sampler_map[sampler_type][type(pool)]
             assert isinstance(param_sampler, expected_class)
+
+
+def test_param_sampler_exceptions():
+    """Test exceptions for invalid parameter names."""
+    pool = POOLS["sim_curve_pool"]
+
+    # Not a pool param
+    with pytest.raises(ParameterSamplerError):
+        get_param_sampler("grid", pool, {"not_a_param": [20, 30]})
+
+    # Basepool param when no basepool
+    with pytest.raises(ParameterSamplerError):
+        get_param_sampler("grid", pool, {"A_base": [10, 100]})
 
 
 @given(*make_parameter_strats("A", "D", "fee"))
