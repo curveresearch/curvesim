@@ -184,7 +184,7 @@ class CurveCryptoPool(Pool):
                 # If user passes both `D` and `balances`, it's possible
                 # they may be inconsistent; however we allow this for
                 # unanticipated use-cases.
-                logger.warning(
+                logger.debug(
                     "Both `D` and `balances` were passed into `__init__`. "
                     "Inconsistent values may create issues."
                 )
