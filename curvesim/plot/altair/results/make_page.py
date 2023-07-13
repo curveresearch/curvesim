@@ -5,20 +5,6 @@ simulation results.
 It contains utility functions for creating data dictionaries, pages, subplots,
 and layered or single charts. It uses selectors to control chart properties and
 apply tooltips.
-
-The key functions in this module are:
-
-- make_page_from_results: Creates an interactive Altair chart from simulation
-  results.
-- make_data_dict: Prepares the data from the results for chart creation.
-- make_page: Creates an interactive Altair chart page with multiple subplots.
-- get_metric_data: Retrieves the relevant data for a specific metric.
-- make_subplot: Creates a subplot for a specific metric.
-- make_single_chart: Creates a single chart for a specific metric.
-- make_layered_chart: Creates a layered chart for multiple submetrics of a metric.
-
-The data_transformers.disable_max_rows() call at the top of the module disables the
-maximum row limit for Altair charts.
 """
 from altair import concat, data_transformers, layer, value, vconcat
 

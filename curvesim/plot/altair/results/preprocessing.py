@@ -3,14 +3,6 @@ This module provides functionality for preprocessing data for chart creation.
 
 It contains utility functions for downsampling and preprocessing data, resampling data,
 converting data to histograms, and creating histograms.
-
-The key functions in this module are:
-
-- preprocess_data: Preprocesses data for chart creation, with an option to downsample.
-- downsample_data: Downscales the data according to provided configurations and factors.
-- resample_data: Resamples the data based on the provided factors and resampling functions.
-- to_histograms: Converts the data to histograms.
-- make_histogram: Creates a histogram from the data.
 """
 from pandas import Grouper, Series, concat
 

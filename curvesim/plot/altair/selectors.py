@@ -4,14 +4,6 @@ Altair and pandas.
 
 It contains utility functions for creating selector charts, initializing selectors,
 manipulating opacity of selections, and conditionally applying properties.
-
-The key functions in this module are:
-
-- make_selector: Create an interactive selector chart and a selector.
-- get_initial_selection: Get the initial selection value based on provided options and
-  an index or "all".
-- make_selector_chart: Create the selector chart.
-- if_selected: Apply a property if a selection is active.
 """
 from altair import Axis, Chart, Color, Scale, condition, selection_point, value
 from pandas import DataFrame
@@ -32,7 +24,7 @@ def make_selector(
     sel_idx=None,
 ):
     """
-    Create an interactive selector chart and a selector.
+    Create an interactive selector chart and an Altair selection object.
 
     Parameters
     ----------
@@ -57,7 +49,7 @@ def make_selector(
     altair.Chart
         The created selector chart.
     altair.Selection
-        The created selector.
+        The created selection object.
 
     Raises
     ------
@@ -79,7 +71,7 @@ def make_selector(
 
 def get_initial_selection(field, options, sel_idx):
     """
-    Get the initial selection value based on provided options and an index or 'all'.
+    Get the initial selection value based on provided options and an index.
 
     Parameters
     ----------

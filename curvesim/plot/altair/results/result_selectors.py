@@ -4,13 +4,6 @@ chart.
 
 It contains utility functions for creating axis selectors, parameter filters,
 selector charts and result selectors.
-
-The key functions in this module are:
-
-- make_result_selectors: Creates result selectors for an Altair chart.
-- make_axis_selectors: Creates axis selectors.
-- make_parameter_filters: Creates parameter filters.
-- format_selector_charts: Formats selector charts for display.
 """
 
 from altair import CalculateTransform, Color, FilterTransform, Scale, concat, hconcat
@@ -32,7 +25,8 @@ def make_result_selectors(factors, dynamic_axes):
     Returns
     -------
     dict
-        The result selectors and the charts to display them.
+        Keyword arguments to add selections to metric charts and chart objects to
+        display the selectors.
     """
     dynamic_axes = dict(list(dynamic_axes.items())[: len(factors)])
 
@@ -59,7 +53,7 @@ def make_axis_selectors(factors, dynamic_axes):
     Parameters
     ----------
     factors : dict
-        The factors to create selectors for.
+        The factors to use as selector options.
     dynamic_axes : dict
         The dynamic axes to create selectors for.
 
@@ -90,7 +84,7 @@ def make_parameter_filters(factors, dynamic_axes):
     factors : dict
         The factors to create selectors for.
     dynamic_axes : dict
-        The dynamic axes to create selectors for.
+        The dynamic axes for a chart page. Used to determine initial selections.
 
     Returns
     -------
@@ -121,8 +115,9 @@ def _make_axis_selector(axis, options, sel_idx):
         The axis to create a selector for.
     options : list
         The options for the selector.
-    sel_idx : int
-        The index of the initial selection.
+    sel_idx : int or 'all'
+        The initial selection index. If an integer, select that option. If 'all',
+        select all options.
 
     Returns
     -------
@@ -152,8 +147,9 @@ def _make_parameter_filter(factor, options, sel_idx):
         The factor to create a filter for.
     options : list
         The options for the filter.
-    sel_idx : int
-        The index of the initial selection.
+    sel_idx : int or 'all'
+        The initial selection index. If an integer, select that option. If 'all',
+        select all options.
 
     Returns
     -------

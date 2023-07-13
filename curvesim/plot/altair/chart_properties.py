@@ -2,19 +2,7 @@
 This module provides functionality for creating and manipulating chart properties.
 
 It contains utility functions for creating keyword arguments for a chart, updating
-and initializing properties, and handling property-specific behaviors. These
-functions support nested properties and allow for different behaviors based on
-property keys.
-
-The key functions in this module are:
-
-- make_chart_kwargs: Create the keyword arguments for a chart by updating a default
-  dictionary with values from override dictionaries.
-- update_properties: Update properties in a dictionary, supporting nested properties.
-- concat_properties: Concatenate values to a property in a dictionary.
-- ignore_property: Ignore a property during an update operation.
-- init_properties: Initialize the properties of a dictionary using a mapping of
-  classes.
+and initializing chart properties, and handling property-specific behaviors.
 """
 from copy import deepcopy
 from functools import partial
@@ -32,8 +20,8 @@ def make_chart_kwargs(default, override_dicts):
     default : dict
         The default keyword arguments for the chart.
     override_dicts : list
-        A list of dictionaries containing overrides for the default
-        keyword arguments.
+        A list of dictionaries containing addtional keyword arguments and/or overrides
+        for the default keyword arguments.
 
     Returns
     -------
@@ -52,9 +40,9 @@ def make_chart_kwargs(default, override_dicts):
 
 def update_properties(prop_dict, key, val, depth=0, count=0):
     """
-    Update properties in a dictionary. If the current depth matches the target depth
-    (or the count), the value is updated directly. Otherwise, the function is called
-    recursively on nested dictionaries.
+    Update properties in a dictionary. If the current depth matches the target depth,
+    the value is updated directly. Otherwise, the function is called recursively on
+    nested dictionaries.
 
     Parameters
     ----------
