@@ -36,7 +36,11 @@ def initialize_pool(vyper_cryptopool):
     admin_fee = vyper_cryptopool.admin_fee()
     ma_half_time = vyper_cryptopool.ma_half_time()
     price_scale = vyper_cryptopool.price_scale()
+    price_oracle = vyper_cryptopool.eval("self._price_oracle")
+    last_prices = vyper_cryptopool.last_prices()
+    last_prices_timestamp = vyper_cryptopool.last_prices_timestamp()
     balances = [vyper_cryptopool.balances(i) for i in range(n_coins)]
+    # Use the cached `D`. See warning for `virtual_price` below
     D = vyper_cryptopool.D()
     lp_total_supply = vyper_cryptopool.totalSupply()
     xcp_profit = vyper_cryptopool.xcp_profit()
@@ -55,6 +59,9 @@ def initialize_pool(vyper_cryptopool):
         admin_fee=admin_fee,
         ma_half_time=ma_half_time,
         price_scale=[price_scale],
+        price_oracle=[price_oracle],
+        last_prices=[last_prices],
+        last_prices_timestamp=last_prices_timestamp,
         balances=balances,
         D=D,
         tokens=lp_total_supply,
@@ -65,23 +72,30 @@ def initialize_pool(vyper_cryptopool):
     assert pool.A == vyper_cryptopool.A()
     assert pool.gamma == vyper_cryptopool.gamma()
     assert pool.balances == balances
+    assert pool.price_scale == [price_scale]
+    assert pool.price_oracle == [price_oracle]
+    assert pool.last_prices == [last_prices]
+    assert pool.last_prices_timestamp == last_prices_timestamp
     assert pool.D == vyper_cryptopool.D()
     assert pool.tokens == lp_total_supply
     assert pool.xcp_profit == xcp_profit
     assert pool.xcp_profit_a == xcp_profit_a
 
+    # WARNING: both `virtual_price` and `D` are cached values
+    # so depending on the test, may not be updated to be
+    # consistent with the rest of the pool state.
+    #
+    # Allowing this simplifies testing since we can avoid
+    # coupling tests of basic functionality with the tests
+    # for the complex newton calculations.
+    #
+    # We think it makes sense the initialized pool should
+    # at least match the vyper pool (inconsistencies and all).
+    # When full consistency is required, the `update_cached_values`
+    # helper function should be utilized before calling
+    # `initialize_pool`.
     virtual_price = vyper_cryptopool.virtual_price()
     pool.virtual_price = virtual_price
-
-    price_oracle = vyper_cryptopool.eval("self._price_oracle")
-    # pylint: disable-next=protected-access
-    pool._price_oracle = [price_oracle]
-
-    last_prices = vyper_cryptopool.last_prices()
-    last_prices_timestamp = vyper_cryptopool.last_prices_timestamp()
-
-    pool.last_prices = [last_prices]
-    pool.last_prices_timestamp = last_prices_timestamp
 
     return pool
 
