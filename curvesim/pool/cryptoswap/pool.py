@@ -8,7 +8,10 @@ from typing import List
 from gmpy2 import mpz
 
 from curvesim.exceptions import CalculationError, CryptoPoolError, CurvesimValueError
+from curvesim.logging import get_logger
 from curvesim.pool.base import Pool
+
+logger = get_logger(__name__)
 
 NOISE_FEE = 10**5  # 0.1 bps
 
@@ -150,7 +153,7 @@ class CurveCryptoPool(Pool):
         self.xcp_profit_a = xcp_profit_a  # Full profit at last claim of admin fees
         self.not_adjusted = False
 
-        if n != 2 and n != 3:
+        if n not in [2, 3]:
             raise CryptoPoolError(
                 "Only 2 or 3-coin crypto pools are currently supported."
             )
@@ -163,19 +166,24 @@ class CurveCryptoPool(Pool):
         if balances is None and D is None:
             raise ValueError("Must provide at least one of `balances` or `D`.")
 
+        # All state variables needed for balance conversions or "newton"
+        # calculations should have been set by this point.
+
         if balances:
             self.balances = balances
 
         if D is not None:
             self.D = D
             if not balances:
-                price_scale = self.price_scale
-                precisions = self.precisions
-
-                self.balances = [D // n] + [
-                    D * PRECISION // (p * n) // prec
-                    for p, prec in zip(price_scale, precisions[1:])
-                ]
+                self.balances = self._convert_D_to_balances(D)
+            else:
+                # If user passes both `D` and `balances`, it's possible
+                # they may be inconsistent; however we allow this for
+                # unanticipated use-cases.
+                logger.warning(
+                    "Both `D` and `balances` were passed into `__init__`. "
+                    "Inconsistent values may create issues."
+                )
         else:
             xp = self._xp()
             D = self._newton_D(A, gamma, xp)
@@ -188,6 +196,16 @@ class CurveCryptoPool(Pool):
             self.tokens = xcp
 
         self.virtual_price = 10**18 * xcp // tokens
+
+    def _convert_D_to_balances(self, D):
+        price_scale = self.price_scale
+        precisions = self.precisions
+        n = self.n
+
+        return [D // n] + [
+            D * PRECISION // (p * n) // prec
+            for p, prec in zip(price_scale, precisions[1:])
+        ]
 
     def _xp(self) -> List[int]:
         """
