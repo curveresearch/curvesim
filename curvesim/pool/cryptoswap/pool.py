@@ -70,6 +70,7 @@ class CurveCryptoPool(Pool):
         price_scale: List[int],
         price_oracle=None,
         last_prices=None,
+        last_prices_timestamp=None,
         balances=None,
         D=None,
         tokens=None,
@@ -114,6 +115,9 @@ class CurveCryptoPool(Pool):
         last_prices: List[Int], optional
             Last trade price for the pool.
             Defaults to `price_scale`.
+        last_prices_timestamp: int, optional
+            Timestamp for last operation altering pool price.
+            Defaults to unix timestamp.
         balances: list of int, optional
             Coin balances in native token units;
             either `balances` or `D` is required
@@ -147,7 +151,7 @@ class CurveCryptoPool(Pool):
         self.ma_half_time = ma_half_time
 
         self._block_timestamp = _get_unix_timestamp()
-        self.last_prices_timestamp = self._block_timestamp
+        self.last_prices_timestamp = last_prices_timestamp or self._block_timestamp
 
         self.xcp_profit = xcp_profit
         self.xcp_profit_a = xcp_profit_a  # Full profit at last claim of admin fees
