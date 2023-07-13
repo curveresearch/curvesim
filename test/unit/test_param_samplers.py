@@ -8,45 +8,53 @@ from curvesim.pool.sim_interface import SimCurvePool, SimCurveRaiPool, SimCurveM
 
 from curvesim.iterators.param_samplers import get_param_sampler, pool_param_sampler_map
 
-# Template pools
-meta_kwargs = {
-    "A": 250,
-    "D": 4000000 * 10**18,
-    "n": 2,
-    "admin_fee": 5 * 10**9,
-    "basepool": SimCurvePool(A=250, D=1000000 * 10**18, n=2, admin_fee=5 * 10**9),
-}
-redemption_prices = DataFrame([1, 2, 3], columns=["price"])
-
-sim_curve_pool = SimCurvePool(A=250, D=1000000 * 10**18, n=2, admin_fee=5 * 10**9)
-sim_curve_meta_pool = SimCurveMetaPool(**meta_kwargs)
-sim_curve_rai_pool = SimCurveRaiPool(**meta_kwargs, redemption_prices=redemption_prices)
-
-
 # Strategies
+PARAM_STRATS = {
+    "A": st.integers(min_value=10, max_value=3000),
+    "D": st.integers(min_value=10**24, max_value=10**28),
+    "fee": st.integers(min_value=10**10, max_value=10**11),
+    "A_base": st.integers(min_value=10, max_value=3000),
+    "D_base": st.integers(min_value=10**24, max_value=10**28),
+    "fee_base": st.integers(min_value=10**10, max_value=10**11),
+}
+
+
 def make_parameter_strats(*parameters):
-    integer = st.integers(min_value=100, max_value=10000)
-
-    parameter_strats = (
-        make_dict_strat(parameters, integer, val_to_list=True),
-        make_dict_strat(parameters, integer),
+    """Returns param_subset_strats for variable_params and fixed_params arguments."""
+    return (
+        param_subset_strat(parameters, val_to_list=True),
+        param_subset_strat(parameters),
     )
-    return parameter_strats
 
 
-def make_dict_strat(keys, value_strat, val_to_list=False, min_size=1, max_size=None):
-    """Generates list strategy from input strategy"""
-    max_size = max_size or len(keys)
-    key_strat = st.sampled_from(keys)
+@st.composite
+def param_subset_strat(draw, parameters, min_size=1, max_size=None, val_to_list=False):
+    """
+    Generates a dict including a subset of the provided parameters. This simulates
+    user inputs to the parameter sampler (i.e., variable_params, fixed_params).
 
-    if val_to_list:
-        value_strat = to_list_strat(value_strat)
+    Parameter values are taken from PARAM_STRATS. If val_to_list is True, generates a
+    list of values for each parameter (i.e., in the format of variable_params).
+    """
+    max_size = max_size or len(parameters)
 
-    return st.dictionaries(key_strat, value_strat, min_size=min_size, max_size=max_size)
+    key_strat = to_list_strat(
+        st.sampled_from(parameters), min_size=min_size, max_size=max_size
+    )
+
+    keys = draw(key_strat)
+    dict_subset = {}
+    for key in keys:
+        val_strat = PARAM_STRATS[key]
+        if val_to_list:
+            val_strat = to_list_strat(val_strat)
+        dict_subset[key] = draw(val_strat)
+
+    return dict_subset
 
 
 def to_list_strat(strategy, min_size=2, max_size=20):
-    """Generates list strategy from input strategy"""
+    """Makes list strategy from input strategy"""
     return st.lists(strategy, min_size=min_size, max_size=max_size, unique=True)
 
 
@@ -54,7 +62,7 @@ def to_list_strat(strategy, min_size=2, max_size=20):
 def test_get_param_sampler():
     # TODO: add CryptoPool
 
-    test_pools = [sim_curve_pool, sim_curve_meta_pool, sim_curve_rai_pool]
+    test_pools = POOLS.values()
     test_args = [({"A": [10, 100, 1000]}, {"D": 10**26})] * 3  # stableswap args
 
     for sampler_type in pool_param_sampler_map:
@@ -67,28 +75,32 @@ def test_get_param_sampler():
 @given(*make_parameter_strats("A", "D", "fee"))
 @settings(max_examples=5, deadline=None)
 def test_grid_curve_pool(variable_params, fixed_params):
-    _test_grid(sim_curve_pool, variable_params, fixed_params)
+    _test_grid("sim_curve_pool", variable_params, fixed_params)
 
 
 @given(*make_parameter_strats("A", "D", "fee", "A_base", "D_base", "fee_base"))
 @settings(max_examples=5, deadline=None)
 def test_grid_curve_meta_pool(variable_params, fixed_params):
-    _test_grid(sim_curve_meta_pool, variable_params, fixed_params)
+    _test_grid("sim_curve_meta_pool", variable_params, fixed_params)
 
 
 @given(*make_parameter_strats("A", "D", "fee", "A_base", "D_base", "fee_base"))
 @settings(max_examples=5, deadline=None)
 def test_grid_curve_rai_pool(variable_params, fixed_params):
-    _test_grid(sim_curve_rai_pool, variable_params, fixed_params)
+    _test_grid("sim_curve_rai_pool", variable_params, fixed_params)
 
 
-# Test helper functions
-def _test_grid(pool, variable_params, fixed_params):
+# TODO: add cryptopool
+
+
+# Helper functions for tests
+def _test_grid(pool_type, variable_params, fixed_params):
+    pool = POOLS[pool_type]
     param_sampler = get_param_sampler("grid", pool, variable_params, fixed_params)
     assert pool != param_sampler.pool_template  # ensure deepcopy
 
     _test_pool_params(param_sampler.pool_template, fixed_params)
-    _test_variable_params(param_sampler, variable_params)
+    _test_grid_variable_params(param_sampler, variable_params)
 
 
 def _test_pool_params(pool, params):
@@ -96,12 +108,12 @@ def _test_pool_params(pool, params):
         _pool, _key = parse_pool_attribute(pool, key)
 
         if _key == "D":
-            assert abs(_pool.D() - val) < 15
+            assert abs(_pool.D() - val) < 2
         else:
             assert getattr(_pool, _key) == val
 
 
-def _test_variable_params(param_sampler, variable_params):
+def _test_grid_variable_params(param_sampler, variable_params):
     keys, values = zip(*variable_params.items())
     expected_sequence = []
     for vals in product(*values):
@@ -126,11 +138,29 @@ def parse_pool_attribute(pool, attribute):
     return pool, attribute
 
 
-# def test_grid
-# -make_parameter_sequence
-# -set_pool_attributes/_set_pool_attribute(
-# -setters
+# Pools
+basepool = SimCurvePool(A=250, D=1000000 * 10**18, n=2, admin_fee=5 * 10**9)
 
 
-# def test_
-# CurvePoolMixin, CurveMetaPoolMixin, CurveCryptoPoolMixin
+def fixed_virtual_price():
+    return 10**18
+
+
+basepool.get_virtual_price = fixed_virtual_price
+
+meta_kwargs = {
+    "A": 250,
+    "D": 4000000 * 10**18,
+    "n": 2,
+    "admin_fee": 5 * 10**9,
+    "basepool": basepool,
+}
+rp = DataFrame([1, 2, 3], columns=["price"])
+
+POOLS = {
+    "sim_curve_pool": SimCurvePool(
+        A=250, D=1000000 * 10**18, n=2, admin_fee=5 * 10**9
+    ),
+    "sim_curve_meta_pool": SimCurveMetaPool(**meta_kwargs),
+    "sim_curve_rai_pool": SimCurveRaiPool(**meta_kwargs, redemption_prices=rp),
+}
