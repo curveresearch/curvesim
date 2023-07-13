@@ -58,6 +58,9 @@ def initialize_pool(vyper_tricrypto):
     ma_half_time = vyper_tricrypto.ma_time()
 
     price_scale = [vyper_tricrypto.price_scale(i) for i in range(2)]
+    price_oracle = [vyper_tricrypto.price_oracle(i) for i in range(2)]
+    last_prices = [vyper_tricrypto.last_prices(i) for i in range(2)]
+    last_prices_timestamp = vyper_tricrypto.last_prices_timestamp()
     balances = [vyper_tricrypto.balances(i) for i in range(n_coins)]
     D = vyper_tricrypto.D()
     lp_total_supply = vyper_tricrypto.totalSupply()
@@ -77,6 +80,9 @@ def initialize_pool(vyper_tricrypto):
         admin_fee=admin_fee,
         ma_half_time=ma_half_time,
         price_scale=price_scale,
+        price_oracle=price_oracle,
+        last_prices=last_prices,
+        last_prices_timestamp=last_prices_timestamp,
         balances=balances,
         D=D,
         tokens=lp_total_supply,
@@ -94,16 +100,6 @@ def initialize_pool(vyper_tricrypto):
 
     virtual_price = vyper_tricrypto.virtual_price()
     pool.virtual_price = virtual_price
-
-    price_oracle = [vyper_tricrypto.price_oracle(i) for i in range(2)]
-    # pylint: disable-next=protected-access
-    pool._price_oracle = price_oracle
-
-    last_prices = [vyper_tricrypto.last_prices(i) for i in range(2)]
-    last_prices_timestamp = vyper_tricrypto.last_prices_timestamp()
-
-    pool.last_prices = last_prices
-    pool.last_prices_timestamp = last_prices_timestamp
 
     return pool
 
