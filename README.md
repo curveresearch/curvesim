@@ -29,7 +29,7 @@
 | curvesim/network/http.py                             |       39 |        5 |        8 |        1 |     87% |42->45, 49-54 |
 | curvesim/network/subgraph.py                         |      136 |       55 |       48 |        2 |     56% |78, 112-143, 148, 211-227, 439-465, 498-522 |
 | curvesim/network/utils.py                            |       38 |        6 |        8 |        1 |     80% |41-42, 68-71 |
-| curvesim/network/web3.py                             |       70 |        3 |       16 |        4 |     90% |139->147, 143-144, 147->152, 176 |
+| curvesim/network/web3.py                             |       70 |        5 |       16 |        5 |     86% |62-63, 139->147, 143-144, 147->152, 176 |
 | curvesim/overrides/\_\_init\_\_.py                   |        9 |        3 |        4 |        1 |     54% |     40-42 |
 | curvesim/pipelines/\_\_init\_\_.py                   |       21 |        5 |       12 |        1 |     76% |     75-79 |
 | curvesim/pipelines/simple/\_\_init\_\_.py            |       28 |        0 |        4 |        1 |     97% |  113->117 |
@@ -41,21 +41,21 @@
 | curvesim/pipelines/vol\_limited\_arb/trader.py       |       77 |       68 |       30 |        0 |      8% |37-40, 70-136, 164-207 |
 | curvesim/plot/\_\_init\_\_.py                        |        2 |        0 |        0 |        0 |    100% |           |
 | curvesim/plot/altair/\_\_init\_\_.py                 |        2 |        0 |        0 |        0 |    100% |           |
-| curvesim/plot/altair/chart\_properties.py            |       36 |       26 |       14 |        0 |     20% |8-15, 19-24, 28-33, 37, 41-53 |
-| curvesim/plot/altair/make\_chart.py                  |       30 |       23 |       10 |        0 |     18% |12-26, 30-53 |
+| curvesim/plot/altair/chart\_properties.py            |       35 |       25 |       14 |        0 |     20% |31-38, 61-66, 83-88, 130-142 |
+| curvesim/plot/altair/make\_chart.py                  |       30 |       23 |       10 |        0 |     18% |45-59, 87-110 |
 | curvesim/plot/altair/results/\_\_init\_\_.py         |        0 |        0 |        0 |        0 |    100% |           |
-| curvesim/plot/altair/results/make\_page.py           |       59 |       45 |       16 |        0 |     19% |13-19, 23-25, 29-38, 42-56, 60-65, 69-72, 76-88 |
-| curvesim/plot/altair/results/preprocessing.py        |       35 |       28 |       10 |        0 |     16% |7-10, 14-33, 37-39, 43, 47-54 |
+| curvesim/plot/altair/results/make\_page.py           |       59 |       45 |       16 |        0 |     19% |40-46, 71-73, 98-107, 126-140, 165-170, 195-198, 223-235 |
+| curvesim/plot/altair/results/preprocessing.py        |       35 |       28 |       10 |        0 |     16% |32-35, 61-80, 101-103, 122, 141-148 |
 | curvesim/plot/altair/results/result\_plotter.py      |       25 |       14 |        0 |        0 |     44% |15-17, 25-30, 38-43, 53 |
-| curvesim/plot/altair/results/result\_selectors.py    |       40 |       32 |        6 |        0 |     17% |14-26, 33-43, 47-58, 62-72, 76-86, 90-92 |
-| curvesim/plot/altair/results/tooltip.py              |       10 |        8 |        4 |        0 |     14% |      5-15 |
-| curvesim/plot/altair/selectors.py                    |       32 |       24 |       10 |        0 |     19% |18-28, 32-44, 48-68, 72 |
+| curvesim/plot/altair/results/result\_selectors.py    |       40 |       32 |        6 |        0 |     17% |31-43, 65-75, 94-105, 127-137, 159-169, 188-190 |
+| curvesim/plot/altair/results/tooltip.py              |       10 |        8 |        4 |        0 |     14% |      6-16 |
+| curvesim/plot/altair/selectors.py                    |       32 |       24 |       10 |        0 |     19% |59-69, 97-109, 134-154, 179 |
 | curvesim/plot/altair/styles.py                       |        2 |        0 |        0 |        0 |    100% |           |
 | curvesim/plot/result\_plotter.py                     |       16 |        9 |        8 |        0 |     29% |     53-63 |
 | curvesim/pool/\_\_init\_\_.py                        |       54 |       31 |       22 |        2 |     33% |106-134, 177-195, 218-231, 241-244 |
 | curvesim/pool/base.py                                |       50 |       21 |       18 |        4 |     49% |29-31, 36-38, 45, 52, 57-59, 66, 71-73, 80, 85-89 |
 | curvesim/pool/cryptoswap/\_\_init\_\_.py             |        2 |        0 |        0 |        0 |    100% |           |
-| curvesim/pool/cryptoswap/pool.py                     |      538 |       69 |      156 |       36 |     83% |153, 158, 161, 163->166, 169-176, 182, 228, 230, 260, 285, 299, 302, 316, 318, 320, 347, 360-361, 374, 388, 396, 469->478, 474, 516->526, 531-532, 536-559, 684->692, 744, 794->793, 804, 818->842, 820-840, 845-848, 1128, 1141, 1163, 1167, 1187 |
+| curvesim/pool/cryptoswap/pool.py                     |      538 |       70 |      156 |       37 |     83% |153, 158, 161, 163->166, 169-176, 182, 228, 230, 260, 285, 299, 302, 316, 318, 320, 347, 360-361, 374, 388, 396, 469->478, 474, 516->526, 531-532, 536-559, 684->692, 744, 794->793, 804, 818->842, 820-840, 845-848, 1123, 1128, 1141, 1163, 1167, 1187 |
 | curvesim/pool/sim\_interface/\_\_init\_\_.py         |        4 |        0 |        0 |        0 |    100% |           |
 | curvesim/pool/sim\_interface/asset\_indices.py       |       22 |        1 |        8 |        1 |     93% |        60 |
 | curvesim/pool/sim\_interface/metapool.py             |       86 |        4 |       24 |        4 |     93% |21, 25, 93, 96 |
@@ -84,7 +84,7 @@
 | curvesim/templates/trader.py                         |       40 |        4 |       12 |        0 |     81% |20, 35, 39-40 |
 | curvesim/utils.py                                    |       50 |       12 |       21 |        8 |     69% |54, 57, 93, 105-114, 116->exit, 117, 140, 156 |
 | curvesim/version.py                                  |        7 |        0 |        0 |        0 |    100% |           |
-|                                            **TOTAL** | **3414** |  **824** |  **914** |   **92** | **72%** |           |
+|                                            **TOTAL** | **3413** |  **826** |  **914** |   **94** | **72%** |           |
 
 
 ## Setup coverage badge
