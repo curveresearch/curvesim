@@ -279,18 +279,17 @@ class CurveCryptoPool(Pool):
         # Safety checks
         min_A = n_coins**n_coins * A_MULTIPLIER // 10
         max_A = n_coins**n_coins * A_MULTIPLIER * 100000
-        if ANN > max_A or ANN < min_A:
+        if not min_A <= ANN <= max_A:
             raise CurvesimValueError("Unsafe value for A")
-        if gamma > MAX_GAMMA or gamma < MIN_GAMMA:
+        if not MIN_GAMMA <= gamma <= MAX_GAMMA:
             raise CurvesimValueError("Unsafe value for gamma")
 
         x: List[int] = sorted(x_unsorted, reverse=True)
 
-        # FIXME: extend to n coins
-        assert (
-            x[0] > 10**9 - 1 and x[0] < 10**15 * 10**18 + 1
-        )  # dev: unsafe values x[0]
-        assert x[1] * 10**18 // x[0] > 10**14 - 1  # dev: unsafe values x[i] (input)
+        assert 10**9 <= x[0] <= 10**15 * 10**18
+        for i in range(1, n_coins):
+            frac: int = x[i] * 10**18 // x[0]
+            assert frac >= 10**11
 
         D: int = n_coins * _geometric_mean(x, False)
         S: int = sum(x)
@@ -307,11 +306,7 @@ class CurveCryptoPool(Pool):
                 for _x in x:
                     K0 = K0 * _x * n_coins // D
 
-            _g1k0: int = gamma + 10**18
-            if _g1k0 > K0:
-                _g1k0 = _g1k0 - K0 + 1
-            else:
-                _g1k0 = K0 - _g1k0 + 1
+            _g1k0: int = abs(gamma + 10**18 - K0) + 1
 
             # D / (A * N**N) * _g1k0**2 / gamma**2
             mul1: int = (
@@ -367,17 +362,15 @@ class CurveCryptoPool(Pool):
         # Safety checks
         MIN_A = n_coins**n_coins * A_MULTIPLIER // 10
         MAX_A = n_coins**n_coins * A_MULTIPLIER * 100000
-        assert ANN > MIN_A - 1 and ANN < MAX_A + 1  # dev: unsafe values A
-        assert (
-            gamma > MIN_GAMMA - 1 and gamma < MAX_GAMMA + 1
-        )  # dev: unsafe values gamma
-        assert D > 10**17 - 1 and D < 10**15 * 10**18 + 1  # dev: unsafe values D
+        if not MIN_A <= ANN <= MAX_A:
+            raise CurvesimValueError("Unsafe value for A")
+        if not MIN_GAMMA <= gamma <= MAX_GAMMA:
+            raise CurvesimValueError("Unsafe value for gamma")
+        assert 10**17 <= D <= 10**15 * 10**18
         for k in range(n_coins):
             if k != i:
                 frac: int = x[k] * 10**18 // D
-                assert (frac > 10**16 - 1) and (
-                    frac < 10**20 + 1
-                )  # dev: unsafe values x[i]
+                assert 10**16 <= frac <= 10**20
 
         y: int = D // n_coins
         K0_i: int = 10**18
@@ -409,11 +402,7 @@ class CurveCryptoPool(Pool):
             K0: int = K0_i * y * n_coins // D
             S: int = S_i + y
 
-            _g1k0: int = gamma + 10**18
-            if _g1k0 > K0:
-                _g1k0 = _g1k0 - K0 + 1
-            else:
-                _g1k0 = K0 - _g1k0 + 1
+            _g1k0: int = abs(gamma + 10**18 - K0) + 1
 
             # D / (A * N**N) * _g1k0**2 / gamma**2
             mul1: int = (
