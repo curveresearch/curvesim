@@ -230,41 +230,60 @@ def test_exchange(vyper_tricrypto, dx_perc, i, j):
     assert abs(pool.balances[2] - expected_balances[2]) < tols[2]
 
 
+_num_iter = 10
+
+
 @given(
-    st.integers(min_value=1, max_value=300),
+    st.lists(
+        st.integers(min_value=1, max_value=20000),
+        min_size=_num_iter,
+        max_size=_num_iter,
+    ),
     st.lists(
         st.tuples(
             st.integers(min_value=0, max_value=2),
             st.integers(min_value=0, max_value=2),
         ).filter(lambda x: x[0] != x[1]),
-        min_size=3,
-        max_size=3,
+        min_size=_num_iter,
+        max_size=_num_iter,
     ),
 )
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
-    max_examples=10,
+    max_examples=_num_iter,
     deadline=None,
 )
-def test_multiple_exchange_with_repeg(vyper_tricrypto, dx_perc, indices_list):
+def test_multiple_exchange_with_repeg(vyper_tricrypto, dx_perc_list, indices_list):
     """Test `exchange` against vyper implementation."""
-    i, j = indices_list.pop()
 
     tols = [1, 1, 1e9]
-
     pool = initialize_pool(vyper_tricrypto)
-    dx = pool.balances[i] * dx_perc // 100
+    old_price_scale = None
 
-    expected_dy = vyper_tricrypto.exchange(i, j, dx, 0)
-    dy, _ = pool.exchange(i, j, dx)
-    # assert dy == expected_dy
-    assert abs(dy - expected_dy) < tols[j]
+    for indices, dx_perc in zip(indices_list, dx_perc_list):
+        i, j = indices
+        dx = pool.balances[i] * dx_perc // 10000  # dx_perc in bps
 
-    expected_balances = [vyper_tricrypto.balances(i) for i in range(3)]
-    # assert pool.balances == expected_balances
-    assert abs(pool.balances[0] - expected_balances[0]) < tols[0]
-    assert abs(pool.balances[1] - expected_balances[1]) < tols[1]
-    assert abs(pool.balances[2] - expected_balances[2]) < tols[2]
+        expected_dy = vyper_tricrypto.exchange(i, j, dx, 0)
+        dy, _ = pool.exchange(i, j, dx)
+        assert abs(dy - expected_dy) < tols[j]
 
-    expected_price_oracle = [vyper_tricrypto.price_oracle(i) for i in range(2)]
-    assert pool.price_oracle() == expected_price_oracle
+        expected_balances = [vyper_tricrypto.balances(i) for i in range(3)]
+        assert abs(pool.balances[0] - expected_balances[0]) < tols[0]
+        assert abs(pool.balances[1] - expected_balances[1]) < tols[1]
+        assert abs(pool.balances[2] - expected_balances[2]) < tols[2]
+
+        assert pool.last_prices == [vyper_tricrypto.last_prices(i) for i in range(2)]
+        assert pool.last_prices_timestamp == vyper_tricrypto.last_prices_timestamp
+
+        expected_price_oracle = [vyper_tricrypto.price_oracle(i) for i in range(2)]
+        expected_price_scale = [vyper_tricrypto.price_scale(i) for i in range(2)]
+        assert pool.price_oracle() == expected_price_oracle
+        assert pool.price_scale == expected_price_scale
+
+        # price scale updated
+        if old_price_scale and dx_perc > 500:
+            assert old_price_scale != pool.price_scale
+            print(old_price_scale, pool.price_scale)
+
+        old_price_scale = expected_price_scale
