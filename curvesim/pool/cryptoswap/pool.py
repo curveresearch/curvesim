@@ -1299,8 +1299,8 @@ def get_p(
         - (K0**2 // 10**36 * (2 * gamma + 3 * 10**18) // 10**18)
     )
 
-    # NNAG2 = N**N * A * gamma**2
-    NNAG2: int = N**N * A * gamma**2 // A_MULTIPLIER
+    # NNAG2 = A * gamma**2
+    NNAG2: int = A * gamma**2 // A_MULTIPLIER
 
     # denominator = (GK0 + NNAG2 * x / D * K0 / 10**36)
     denominator: int = GK0 + NNAG2 * xp[0] // D * K0 // 10**36
