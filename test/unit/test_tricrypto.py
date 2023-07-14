@@ -57,11 +57,12 @@ def initialize_pool(vyper_tricrypto):
     adjustment_step = vyper_tricrypto.adjustment_step()
     ma_half_time = vyper_tricrypto.ma_time()
 
-    price_scale = [vyper_tricrypto.price_scale(i) for i in range(2)]
-    price_oracle = [vyper_tricrypto.price_oracle(i) for i in range(2)]
-    last_prices = [vyper_tricrypto.last_prices(i) for i in range(2)]
+    price_scale = [vyper_tricrypto.price_scale(i) for i in range(n_coins - 1)]
+    price_oracle = [vyper_tricrypto.price_oracle(i) for i in range(n_coins - 1)]
+    last_prices = [vyper_tricrypto.last_prices(i) for i in range(n_coins - 1)]
     last_prices_timestamp = vyper_tricrypto.last_prices_timestamp()
     balances = [vyper_tricrypto.balances(i) for i in range(n_coins)]
+    # Use the cached `D`. See warning for `virtual_price` below
     D = vyper_tricrypto.D()
     lp_total_supply = vyper_tricrypto.totalSupply()
     xcp_profit = vyper_tricrypto.xcp_profit()
@@ -93,11 +94,28 @@ def initialize_pool(vyper_tricrypto):
     assert pool.A == vyper_tricrypto.A()
     assert pool.gamma == vyper_tricrypto.gamma()
     assert pool.balances == balances
+    assert pool.price_scale == price_scale
+    assert pool._price_oracle == price_oracle  # pylint: disable=protected-access
+    assert pool.last_prices == last_prices
+    assert pool.last_prices_timestamp == last_prices_timestamp
     assert pool.D == vyper_tricrypto.D()
     assert pool.tokens == lp_total_supply
     assert pool.xcp_profit == xcp_profit
     assert pool.xcp_profit_a == xcp_profit_a
 
+    # WARNING: both `virtual_price` and `D` are cached values
+    # so depending on the test, may not be updated to be
+    # consistent with the rest of the pool state.
+    #
+    # Allowing this simplifies testing since we can avoid
+    # coupling tests of basic functionality with the tests
+    # for the complex newton calculations.
+    #
+    # We think it makes sense the initialized pool should
+    # at least match the vyper pool (inconsistencies and all).
+    # When full consistency is required, the `update_cached_values`
+    # helper function should be utilized before calling
+    # `initialize_pool`.
     virtual_price = vyper_tricrypto.virtual_price()
     pool.virtual_price = virtual_price
 
