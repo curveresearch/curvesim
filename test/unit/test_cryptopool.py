@@ -73,7 +73,7 @@ def initialize_pool(vyper_cryptopool):
     assert pool.gamma == vyper_cryptopool.gamma()
     assert pool.balances == balances
     assert pool.price_scale == [price_scale]
-    assert pool.price_oracle == [price_oracle]
+    assert pool._price_oracle == [price_oracle]
     assert pool.last_prices == [last_prices]
     assert pool.last_prices_timestamp == last_prices_timestamp
     assert pool.D == vyper_cryptopool.D()
