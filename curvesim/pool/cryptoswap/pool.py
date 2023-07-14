@@ -506,16 +506,23 @@ class CurveCryptoPool(Pool):
                 for k in range(n_coins - 1):
                     last_prices[k] = last_prices[k] * 10**18 // p_i
         else:
-            # calculate real prices
-            __xp: List[int] = _xp.copy()
-            dx_price: int = __xp[0] // 10**6
-            __xp[0] += dx_price
-            last_prices = [
-                price_scale[k - 1]
-                * dx_price
-                // (__xp[k] - self._newton_y(A, gamma, __xp, D_unadjusted, k))
-                for k in range(1, n_coins)
-            ]
+            if n_coins == 2:
+                # calculate real prices
+                __xp: List[int] = _xp.copy()
+                dx_price: int = __xp[0] // 10**6
+                __xp[0] += dx_price
+                last_prices = [
+                    price_scale[k - 1]
+                    * dx_price
+                    // (__xp[k] - self._newton_y(A, gamma, __xp, D_unadjusted, k))
+                    for k in range(1, n_coins)
+                ]
+            else:
+                last_prices = get_p(_xp, D_unadjusted, A, gamma)
+                last_prices = [
+                    last_p * p // 10**18
+                    for last_p, p in zip(last_prices, price_scale)
+                ]
 
         self.last_prices = last_prices
 
