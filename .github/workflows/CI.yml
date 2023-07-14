@@ -28,6 +28,9 @@ jobs:
           # Issue with python build
           - os: windows-latest
             py: "3.8"
+          # Intermittent CI test failures
+          - os: windows-latest
+            py: "3.11"
 
     steps:
       - uses: actions/checkout@v3
