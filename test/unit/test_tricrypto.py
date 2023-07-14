@@ -10,7 +10,13 @@ from hypothesis import HealthCheck, assume, given, settings
 from hypothesis import strategies as st
 
 from curvesim.pool import CurveCryptoPool
-from curvesim.pool.cryptoswap.pool import A_MULTIPLIER, MAX_GAMMA, MIN_GAMMA, PRECISION
+from curvesim.pool.cryptoswap.pool import (
+    A_MULTIPLIER,
+    MAX_GAMMA,
+    MIN_GAMMA,
+    PRECISION,
+    get_p,
+)
 
 N_COINS = 3
 MIN_A = N_COINS**N_COINS * A_MULTIPLIER // 10
@@ -287,3 +293,34 @@ def test_multiple_exchange_with_repeg(vyper_tricrypto, dx_perc_list, indices_lis
             print(old_price_scale, pool.price_scale)
 
         old_price_scale = expected_price_scale
+
+
+@given(
+    amplification_coefficient,
+    gamma_coefficient,
+    positive_balance,
+    positive_balance,
+    positive_balance,
+)
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=5,
+    deadline=None,
+)
+def test_get_p(vyper_tricrypto, A, gamma, x0, x1, x2):
+    """Test `get_p` calculation against vyper implementation."""
+
+    xp = [x0, x1, x2]
+    assume(0.02 < xp[0] / xp[1] < 50)
+    assume(0.02 < xp[1] / xp[2] < 50)
+    assume(0.02 < xp[0] / xp[2] < 50)
+
+    MATH = get_math(vyper_tricrypto)
+    # pylint: disable=no-member
+    D = MATH.newton_D(A, gamma, xp)
+
+    A_gamma = [A, gamma]
+    expected_p = MATH.get_p(xp, D, A_gamma)
+    p = get_p(xp, D, A, gamma)
+
+    assert p == expected_p
