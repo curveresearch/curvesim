@@ -39,12 +39,12 @@ Curve Pools
    :members:
 
 
-.. Pool Plots
-.. ----------
-.. 
-.. .. _poolviewersapi:
-.. 
-.. .. autofunction:: curvesim.bonding_curve
+Pool Plots
+----------
+
+.. _poolviewersapi:
+
+.. autofunction:: curvesim.bonding_curve
 .. .. autofunction:: curvesim.order_book
 
 
