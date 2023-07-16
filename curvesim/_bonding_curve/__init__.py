@@ -1,6 +1,7 @@
 """
-Contains bonding_curve function for computing and optionally plotting a pool's
-bonding curve and current reserves.
+Contains the bonding_curve function, which computes a pool's bonding
+curve and current reserves for each pair of coins and optionally
+plots the curves using Matplotlib.
 """
 from itertools import combinations
 
@@ -17,25 +18,24 @@ def bonding_curve(pool, *, truncate=0.0005, resolution=1000, plot=False):
     Parameters
     ----------
     pool : CurvePool or CurveMetaPool
-        A pool object to compute the bonding curve for.
+        The pool object for which the bonding curve is computed.
 
-    truncate : float, default=0.0001
-        Determines where to truncate the bonding curve (i.e., D*truncate).
+    truncate : float, optional (default=0.0005)
+        Determines where to truncate the bonding curve. The truncation point is given
+        by D*truncate, where D is the total supply of tokens in the pool.
 
-    resolution : int, default=1000
-        Number of points along the bonding curve to compute.
+    resolution : int, optional (default=1000)
+        The number of points to compute along the bonding curve.
 
-    plot : bool, default=True
-        If true, plots the bonding curve using Matplotlib.
+    plot : bool, optional (default=False)
+        Plots the bonding curves using Matplotlib.
 
     Returns
     -------
-    xs : list of lists
-        Lists of reserves for the first coin in each combination of token pairs
-
-    ys : list of lists
-        Lists of reserves for the second coin in each combination of token pairs
-
+    pair_to_curve : dict
+        Dictionary with coin index pairs as keys and lists of corresponding reserves
+        as values. Each list of reserves is a list of pairs, where each pair consists
+        of the reserves for the first and second coin of the corresponding pair.
     """
 
     if isinstance(pool, CurveMetaPool):
