@@ -10,7 +10,7 @@ from numpy import linspace
 from curvesim.pool import CurveMetaPool
 
 
-def bonding_curve(pool, *, truncate=0.0005, resolution=1000, show=True):
+def bonding_curve(pool, *, truncate=0.0005, resolution=1000, plot=False):
     """
     Computes and optionally plots a pool's bonding curve and current reserves.
 
@@ -25,8 +25,8 @@ def bonding_curve(pool, *, truncate=0.0005, resolution=1000, show=True):
     resolution : int, default=1000
         Number of points along the bonding curve to compute.
 
-    show : bool, default=True
-        If true, plots the bonding curve.
+    plot : bool, default=True
+        If true, plots the bonding curve using Matplotlib.
 
     Returns
     -------
@@ -48,43 +48,38 @@ def bonding_curve(pool, *, truncate=0.0005, resolution=1000, show=True):
     except (AttributeError, KeyError):
         labels = [f"Coin {str(label)}" for label in range(pool.n)]
 
-    if show:
-        _, axs = plt.subplots(1, len(combos), constrained_layout=True)
-
     D = pool.D()
     xp = pool._xp()  # pylint: disable=protected-access
 
-    xs_out = []
-    ys_out = []
-    for n, combo in enumerate(combos):
-        i, j = combo
-
+    pair_to_curve = {}
+    for (i, j) in combos:
         truncated_D = int(D * truncate)
-        xs_n = linspace(
-            truncated_D, pool.get_y(j, i, truncated_D, xp), resolution
-        ).round()
+        x_max = pool.get_y(j, i, truncated_D, xp)
+        xs = linspace(truncated_D, x_max, resolution).round()
 
-        ys_n = []
-        for x in xs_n:
-            ys_n.append(pool.get_y(i, j, int(x), xp))
+        curve = []
+        for x in xs:
+            y = pool.get_y(i, j, int(x), xp)
+            curve.append((x, y))
+        curve = [(x / 10**18, y / 10**18) for x, y in curve]
+        pair_to_curve[(i, j)] = curve
 
-        xs_n = [x / 10**18 for x in xs_n]
-        ys_n = [y / 10**18 for y in ys_n]
-        xs_out.append(xs_n)
-        ys_out.append(ys_n)
+    if plot:
+        n = len(combos)
+        _, axs = plt.subplots(1, n, constrained_layout=True)
+        if n == 1:
+            axs = [axs]
 
-        if show:
-            if len(combos) == 1:
-                ax = axs
-            else:
-                ax = axs[n]
+        for pair, ax in zip(combos, axs):
+            curve = pair_to_curve[pair]
+            xs, ys = zip(*curve)
+            ax.plot(xs, ys, color="black")
 
-            ax.plot(xs_n, ys_n, color="black")
+            i, j = pair
             ax.scatter(xp[i] / 10**18, xp[j] / 10**18, s=40, color="black")
             ax.set_xlabel(labels[i])
             ax.set_ylabel(labels[j])
 
-    if show:
         plt.show()
 
-    return xs_out, ys_out
+    return pair_to_curve
