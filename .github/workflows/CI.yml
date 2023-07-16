@@ -44,10 +44,10 @@ jobs:
       - name: Build and install package
         shell: bash
         run: |
-          pip install --upgrade pip
-          pip install build
+          python3 -m pip install --upgrade pip
+          python3 -m pip install build
           python3 -m build
-          pip install dist/curvesim*.whl
+          python3 -m pip install dist/curvesim*.whl
           # ensure tests hit installed package
           rm -r curvesim
 
