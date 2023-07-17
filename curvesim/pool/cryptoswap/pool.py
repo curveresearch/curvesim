@@ -7,7 +7,7 @@ from typing import List
 
 from gmpy2 import mpz
 
-from curvesim.exceptions import CalculationError, CryptoPoolError
+from curvesim.exceptions import CalculationError, CryptoPoolError, CurvesimValueError
 from curvesim.logging import get_logger
 from curvesim.pool.base import Pool
 
@@ -265,12 +265,7 @@ class CurveCryptoPool(Pool):
         x = [D // n_coins] + [
             D * PRECISION // (price * n_coins) for price in price_scale
         ]
-        if n_coins == 2:
-            return factory_2_coin.geometric_mean(x, True)
-        elif n_coins == 3:
-            return tricrypto_ng.geometric_mean(x, True)
-        else:
-            raise CalculationError("`_get_xcp` doesn't support more than 3 coins")
+        return _geometric_mean(x)
 
     def _increment_timestamp(self, blocks=1, timestamp=None):
         """Update the internal clock used to mimic the block timestamp."""
@@ -372,7 +367,7 @@ class CurveCryptoPool(Pool):
         virtual_price: int = 10**18
 
         if old_virtual_price > 0:
-            xcp: int = _geometric_mean(xp, True)
+            xcp: int = _geometric_mean(xp)
             virtual_price = 10**18 * xcp // total_supply
 
             if virtual_price < old_virtual_price:
@@ -425,7 +420,7 @@ class CurveCryptoPool(Pool):
             xp = [D // n_coins] + [
                 D * PRECISION // (n_coins * p_new) for p_new in new_prices
             ]
-            new_virtual_price = 10**18 * _geometric_mean(xp, True) // total_supply
+            new_virtual_price = 10**18 * _geometric_mean(xp) // total_supply
 
             # Proceed if we've got enough profit:
             #   new_virtual_price > 10**18
@@ -575,7 +570,11 @@ class CurveCryptoPool(Pool):
 
         xp = self._xp_mem(xp)
 
-        dy = xp[j] - factory_2_coin.newton_y(A, gamma, xp, self.D, j)
+        if len(xp) == 2:
+            y_out = [factory_2_coin.newton_y(A, gamma, xp, self.D, j), 0]
+        else:
+            y_out = tricrypto_ng.get_y(A, gamma, xp, self.D, j)
+        dy = xp[j] - y_out[0]
         xp[j] -= dy
         dy -= 1
 
@@ -600,6 +599,7 @@ class CurveCryptoPool(Pool):
         xp[j] = y
 
         p: int = 0
+        K0_prev: int = 0
         if self.n == 2:
             # Calculate price
             if dx > 10**5 and dy > 10**5:
@@ -612,8 +612,10 @@ class CurveCryptoPool(Pool):
                 else:  # j == 0
                     p = _dy * 10**18 // _dx
                     ix = i
+        else:
+            K0_prev = y_out[1]
 
-        self._tweak_price(A, gamma, xp, ix, p, 0)
+        self._tweak_price(A, gamma, xp, ix, p, K0_prev)
 
         return dy, fee
 
@@ -1014,30 +1016,17 @@ def _get_unix_timestamp():
     return int(time.time())
 
 
-def _geometric_mean(unsorted_x: List[int], sort: bool) -> int:
+def _geometric_mean(unsorted_x: List[int]) -> int:
     """
     (x[0] * x[1] * ...) ** (1/N)
     """
-    n_coins: int = len(unsorted_x)
-    x: List[int] = unsorted_x
-    if sort:
-        x = sorted(unsorted_x, reverse=True)
-
-    D: int = mpz(x[0])
-    diff: int = 0
-    for _ in range(255):
-        D_prev: int = D
-        if n_coins == 2:
-            D = (D + x[0] * x[1] // D) // n_coins
-        else:
-            tmp: int = 10**18
-            for _x in x:
-                tmp = tmp * _x // D
-            D = D * ((n_coins - 1) * 10**18 + tmp) // (n_coins * 10**18)
-        diff = abs(D_prev - D)
-        if diff <= 1 or diff * 10**18 < D:
-            return int(D)
-    raise CalculationError("Did not converge")
+    n_coins = len(unsorted_x)
+    if n_coins == 2:
+        return factory_2_coin.geometric_mean(unsorted_x, True)
+    elif n_coins == 3:
+        return tricrypto_ng.geometric_mean(unsorted_x)
+    else:
+        raise CurvesimValueError("More than 3 coins is not supported.")
 
 
 def _halfpow(power: int) -> int:
