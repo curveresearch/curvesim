@@ -4,6 +4,7 @@ from hypothesis import HealthCheck, assume, given, settings
 from hypothesis import strategies as st
 
 from curvesim.pool import CurveCryptoPool
+from curvesim.pool.cryptoswap.calcs import factory_2_coin
 from curvesim.pool.cryptoswap.pool import (
     A_MULTIPLIER,
     MAX_GAMMA,
@@ -275,9 +276,7 @@ def test_newton_D(vyper_cryptopool, A, gamma, x0, x1):
     assume(0.02 < xp[0] / xp[1] < 50)
 
     expected_D = vyper_cryptopool.eval(f"self.newton_D({A}, {gamma}, {xp})")
-
-    # pylint: disable=protected-access
-    D = CurveCryptoPool._newton_D(A, gamma, xp)
+    D = factory_2_coin.newton_D(A, gamma, xp)
 
     assert D == expected_D
 
@@ -308,8 +307,7 @@ def test_newton_y(vyper_cryptopool, A, gamma, x0, x1, i, delta_perc):
         f"self.newton_y({A}, {gamma}, {xp}, {D_changed}, {i})"
     )
 
-    # pylint: disable=protected-access
-    y = CurveCryptoPool._newton_y(A, gamma, xp, D_changed, i)
+    y = factory_2_coin.newton_y(A, gamma, xp, D_changed, i)
 
     assert y == expected_y
 
@@ -321,7 +319,7 @@ def test_newton_y(vyper_cryptopool, A, gamma, x0, x1, i, delta_perc):
         f"self.newton_y({A}, {gamma}, {xp_changed}, {D}, {i})"
     )
 
-    y = CurveCryptoPool._newton_y(A, gamma, xp_changed, D, i)
+    y = factory_2_coin.newton_y(A, gamma, xp_changed, D, i)
 
     assert y == expected_y
 
