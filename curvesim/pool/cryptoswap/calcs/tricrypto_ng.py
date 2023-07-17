@@ -244,7 +244,7 @@ def _cbrt(x: int) -> int:
     elif x >= 115792089237316195423570985008687907853269:
         xx = x * 10**18
     else:
-        xx = x * 10 * 36
+        xx = x * 10**36
 
     log2x: int = _snekmate_log_2(xx, False)
 
