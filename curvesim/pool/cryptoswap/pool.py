@@ -352,7 +352,7 @@ class CurveCryptoPool(Pool):
                     for k in range(1, n_coins)
                 ]
             else:
-                last_prices = get_p(_xp, D_unadjusted, A, gamma)
+                last_prices = tricrypto_ng.get_p(_xp, D_unadjusted, A, gamma)
                 last_prices = [
                     last_p * p // 10**18
                     for last_p, p in zip(last_prices, price_scale)
