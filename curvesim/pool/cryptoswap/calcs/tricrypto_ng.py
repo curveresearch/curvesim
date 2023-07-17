@@ -149,7 +149,7 @@ def get_y(ANN: int, gamma: int, x: List[int], D: int, i: int) -> int[2]:
     second_cbrt: int = 0
     if delta1 > 0:
         # convert(self._cbrt(convert((delta1 + sqrt_val), uint256)/2), int256)
-        second_cbrt = _cbrt(delta1 + sqrt_val // 2)
+        second_cbrt = _cbrt((delta1 + sqrt_val) // 2)
     else:
         second_cbrt = -_cbrt(-(delta1 - sqrt_val) // 2)
 
