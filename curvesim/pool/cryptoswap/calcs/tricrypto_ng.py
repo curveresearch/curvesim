@@ -217,7 +217,7 @@ def newton_D(
     """
     x: List[int] = sorted(x_unsorted, reverse=True)
     N_COINS = len(x)
-    assert x[0] < max_value(int) / 10**18 * N_COINS**N_COINS  # dev: out of limits
+    assert x[0] < (2**256 - 1) // 10**18 * N_COINS**N_COINS  # dev: out of limits
     assert x[0] > 0  # dev: empty pool
 
     # Safe to do unsafe add since we checked largest x's bounds previously
@@ -227,24 +227,14 @@ def newton_D(
     if K0_prev == 0:
         # Geometric mean of 3 numbers cannot be larger than the largest number
         # so the following is safe to do:
-        D = N_COINS * geometric_mean(x)
+        D = N_COINS * geometric_mean(x, False)
     else:
         if S > 10**36:
-            D = self._cbrt(
-                unsafe_div(unsafe_div(x[0] * x[1], 10**36) * x[2], K0_prev)
-                * 27
-                * 10**12
-            )
+            D = _cbrt(x[0] * x[1] // 10**36 * x[2] // K0_prev * 27 * 10**12)
         elif S > 10**24:
-            D = self._cbrt(
-                unsafe_div(unsafe_div(x[0] * x[1], 10**24) * x[2], K0_prev)
-                * 27
-                * 10**6
-            )
+            D = _cbrt(x[0] * x[1] // 10**24 * x[2] // K0_prev * 27 * 10**6)
         else:
-            D = self._cbrt(
-                unsafe_div(unsafe_div(x[0] * x[1], 10**18) * x[2], K0_prev) * 27
-            )
+            D = _cbrt(x[0] * x[1] // 10**18 * x[2] // K0_prev * 27)
 
         # D not zero here if K0_prev > 0, and we checked if x[0] is gt 0.
 
@@ -266,74 +256,37 @@ def newton_D(
         D_prev = D
 
         # K0 = 10**18 * x[0] * N_COINS / D * x[1] * N_COINS / D * x[2] * N_COINS / D
-        K0 = unsafe_div(
-            unsafe_mul(
-                unsafe_mul(
-                    unsafe_div(
-                        unsafe_mul(
-                            unsafe_mul(
-                                unsafe_div(
-                                    unsafe_mul(unsafe_mul(10**18, x[0]), N_COINS),
-                                    D,
-                                ),
-                                x[1],
-                            ),
-                            N_COINS,
-                        ),
-                        D,
-                    ),
-                    x[2],
-                ),
-                N_COINS,
-            ),
-            D,
-        )  # <-------- We can convert the entire expression using unsafe math.
+        K0 = 10**18 * x[0] * N_COINS // D * x[1] * N_COINS // D * x[2] * N_COINS // D
+        # <-------- We can convert the entire expression using unsafe math.
         #   since x_i is not too far from D, so overflow is not expected. Also
         #      D > 0, since we proved that already. unsafe_div is safe. K0 > 0
         #        since we can safely assume that D < 10**18 * x[0]. K0 is also
         #                            in the range of 10**18 (it's a property).
 
-        _g1k0 = unsafe_add(gamma, 10**18)  # <--------- safe to do unsafe_add.
+        _g1k0 = gamma + 10**18  # <--------- safe to do unsafe_add.
 
-        if _g1k0 > K0:  #       The following operations can safely be unsafe.
-            _g1k0 = unsafe_add(unsafe_sub(_g1k0, K0), 1)
-        else:
-            _g1k0 = unsafe_add(unsafe_sub(K0, _g1k0), 1)
+        # The following operations can safely be unsafe.
+        _g1k0: int = abs(_g1k0 - K0) + 1
 
         # D / (A * N**N) * _g1k0**2 / gamma**2
         # mul1 = 10**18 * D / gamma * _g1k0 / gamma * _g1k0 * A_MULTIPLIER / ANN
-        mul1 = unsafe_div(
-            unsafe_mul(
-                unsafe_mul(
-                    unsafe_div(
-                        unsafe_mul(unsafe_div(unsafe_mul(10**18, D), gamma), _g1k0),
-                        gamma,
-                    ),
-                    _g1k0,
-                ),
-                A_MULTIPLIER,
-            ),
-            ANN,
-        )  # <------ Since D > 0, gamma is small, _g1k0 is small, the rest are
+        mul1 = 10**18 * D // gamma * _g1k0 // gamma * _g1k0 * A_MULTIPLIER // ANN
+        # <------ Since D > 0, gamma is small, _g1k0 is small, the rest are
         #        non-zero and small constants, and D has a cap in this method,
         #                    we can safely convert everything to unsafe maths.
 
         # 2*N*K0 / _g1k0
         # mul2 = (2 * 10**18) * N_COINS * K0 / _g1k0
-        mul2 = unsafe_div(
-            unsafe_mul(2 * 10**18 * N_COINS, K0), _g1k0
-        )  # <--------------- K0 is approximately around D, which has a cap of
+        mul2 = 2 * 10**18 * N_COINS * K0 // _g1k0
+        # <--------------- K0 is approximately around D, which has a cap of
         #      10**15 * 10**18 + 1, since we get that in get_y which is called
         #    with newton_D. _g1k0 > 0, so the entire expression can be unsafe.
 
         # neg_fprime: int = (S + S * mul2 / 10**18) + mul1 * N_COINS / K0 - mul2 * D / 10**18
-        neg_fprime = unsafe_sub(
-            unsafe_add(
-                unsafe_add(S, unsafe_div(unsafe_mul(S, mul2), 10**18)),
-                unsafe_div(unsafe_mul(mul1, N_COINS), K0),
-            ),
-            unsafe_div(unsafe_mul(mul2, D), 10**18),
-        )  # <--- mul1 is a big number but not huge: safe to unsafely multiply
+        neg_fprime = (
+            (S + S * mul2 // 10**18) + mul1 * N_COINS // K0 - mul2 * D // 10**18
+        )
+        # <--- mul1 is a big number but not huge: safe to unsafely multiply
         # with N_coins. neg_fprime > 0 if this expression executes.
         # mul2 is in the range of 10**18, since K0 is in that range, S * mul2
         # is safe. The first three sums can be done using unsafe math safely
@@ -342,55 +295,36 @@ def newton_D(
 
         # D -= f / fprime
         # D * (neg_fprime + S) / neg_fprime
-        D_plus = unsafe_div(D * unsafe_add(neg_fprime, S), neg_fprime)
+        D_plus = D * (neg_fprime + S) // neg_fprime
 
         # D*D / neg_fprime
-        D_minus = unsafe_div(D * D, neg_fprime)
+        D_minus = D * D // neg_fprime
 
         # Since we know K0 > 0, and neg_fprime > 0, several unsafe operations
         # are possible in the following. Also, (10**18 - K0) is safe to mul.
         # So the only expressions we keep safe are (D_minus + ...) and (D * ...)
         if 10**18 > K0:
             # D_minus += D * (mul1 / neg_fprime) / 10**18 * (10**18 - K0) / K0
-            D_minus += unsafe_div(
-                unsafe_mul(
-                    unsafe_div(D * unsafe_div(mul1, neg_fprime), 10**18),
-                    unsafe_sub(10**18, K0),
-                ),
-                K0,
-            )
+            D_minus += D * (mul1 // neg_fprime) // 10**18 * (10**18 - K0) // K0
         else:
             # D_minus -= D * (mul1 / neg_fprime) / 10**18 * (K0 - 10**18) / K0
-            D_minus -= unsafe_div(
-                unsafe_mul(
-                    unsafe_div(D * unsafe_div(mul1, neg_fprime), 10**18),
-                    unsafe_sub(K0, 10**18),
-                ),
-                K0,
-            )
+            D_minus -= (D * mul1 // neg_fprime // 10**18 * (K0 - 10**18)) // K0
 
         if D_plus > D_minus:
-            D = unsafe_sub(D_plus, D_minus)  # <--------- Safe since we check.
+            D = D_plus - D_minus  # <--------- Safe since we check.
         else:
-            D = unsafe_div(unsafe_sub(D_minus, D_plus), 2)
+            D = (D_minus - D_plus) // 2
 
-        if D > D_prev:
-            diff = unsafe_sub(D, D_prev)
-        else:
-            diff = unsafe_sub(D_prev, D)
-
+        diff = abs(D - D_prev)
         # Could reduce precision for gas efficiency here:
-        if unsafe_mul(diff, 10**14) < max(10**16, D):
-
+        if diff * 10**14 < max(10**16, D):
             # Test that we are safe with the next get_y
             for _x in x:
-                frac = unsafe_div(unsafe_mul(_x, 10**18), D)
-                assert (
-                    frac >= 10**16 - 1 and frac < 10**20 + 1
-                ), "Unsafe values x[i]"
-
+                frac: int = (_x * 10**18) // D
+                assert 10**16 <= frac <= 10**20, "Unsafe values x[i]"
             return D
-    raise "Did not converge"
+
+    raise CalculationError("Did not converge")
 
 
 def _cbrt(x: int) -> int:
