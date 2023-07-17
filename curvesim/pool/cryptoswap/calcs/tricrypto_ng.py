@@ -13,7 +13,7 @@ logger = get_logger(__name__)
 NOISE_FEE = 10**5  # 0.1 bps
 
 MIN_GAMMA = 10**10
-MAX_GAMMA = 2 * 10**16
+MAX_GAMMA = 5 * 10**16
 
 EXP_PRECISION = 10**10
 
@@ -21,8 +21,8 @@ PRECISION = 10**18  # The precision to convert to
 A_MULTIPLIER = 10000
 
 N_COINS = 3
-MIN_A = N_COINS**N_COINS * A_MULTIPLIER // 10
-MAX_A = N_COINS**N_COINS * A_MULTIPLIER * 100000
+MIN_A: int = N_COINS**N_COINS * A_MULTIPLIER // 100
+MAX_A: int = N_COINS**N_COINS * A_MULTIPLIER * 1000
 
 
 def get_y(ANN: int, gamma: int, x: List[int], D: int, i: int) -> int[2]:
