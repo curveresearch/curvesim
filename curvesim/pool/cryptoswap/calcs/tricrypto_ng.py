@@ -20,6 +20,250 @@ EXP_PRECISION = 10**10
 PRECISION = 10**18  # The precision to convert to
 A_MULTIPLIER = 10000
 
+N_COINS = 3
+MIN_A = N_COINS**N_COINS * A_MULTIPLIER // 10
+MAX_A = N_COINS**N_COINS * A_MULTIPLIER * 100000
+
+
+def get_y(ANN: int, gamma: int, x: List[int], D: int, i: int) -> int[2]:
+    """
+    @notice Calculate x[i] given other balances x[0..N_COINS-1] and invariant D.
+    @dev ANN = A * N**N.
+    @param _ANN AMM.A() value.
+    @param _gamma AMM.gamma() value.
+    @param x Balances multiplied by prices and precisions of all coins.
+    @param _D Invariant.
+    @param i Index of coin to calculate y.
+    """
+
+    # Safety checks
+    assert ANN > MIN_A - 1 and ANN < MAX_A + 1  # dev: unsafe values A
+    assert gamma > MIN_GAMMA - 1 and gamma < MAX_GAMMA + 1  # dev: unsafe values gamma
+    assert D > 10**17 - 1 and D < 10**15 * 10**18 + 1  # dev: unsafe values D
+
+    frac: int = 0
+    for k in range(3):
+        if k != i:
+            frac = x[k] * 10**18 // D
+            assert frac > 10**16 - 1 and frac < 10**20 + 1, "Unsafe values x[i]"
+            # if above conditions are met, x[k] > 0
+
+    j: int = 0
+    k: int = 0
+    if i == 0:
+        j = 1
+        k = 2
+    elif i == 1:
+        j = 0
+        k = 2
+    elif i == 2:
+        j = 0
+        k = 1
+
+    x_j: int = x[j]
+    x_k: int = x[k]
+    gamma2: int = gamma**2
+
+    a: int = 10**36 // 27
+
+    # 10**36/9 + 2*10**18*gamma/27 - D**2/x_j*gamma**2*ANN/27**2/convert(A_MULTIPLIER, int256)/x_k
+    b: int = (
+        10**36 // 9
+        + 2 * 10**18 * gamma // 27
+        - D**2 // x_j * gamma2 * ANN // 27**2 // A_MULTIPLIER // x_k
+    )
+    # <------- The first two expressions can be unsafe, and unsafely added.
+
+    # 10**36/9 + gamma*(gamma + 4*10**18)/27 + gamma**2*(x_j+x_k-D)/D*ANN/27/convert(A_MULTIPLIER, int256)
+    c: int = (
+        10**36 // 9
+        + gamma * (gamma + 4 * 10**18) // 27
+        + gamma2 * (x_j + x_k - D) // D * ANN // 27 // A_MULTIPLIER
+    )
+    # <--------- Same as above with the first two expressions. In the third
+    #   expression, x_j + x_k will not overflow since we know their range from
+    #                                              previous assert statements.
+
+    # (10**18 + gamma)**2/27
+    d: int = (10**18 + gamma) ** 2 // 27
+
+    # abs(3*a*c/b - b)
+    d0: int = abs(3 * a * c // b - b)  # <------------ a is smol.
+
+    divider: int = 0
+    if d0 > 10**48:
+        divider = 10**30
+    elif d0 > 10**44:
+        divider = 10**26
+    elif d0 > 10**40:
+        divider = 10**22
+    elif d0 > 10**36:
+        divider = 10**18
+    elif d0 > 10**32:
+        divider = 10**14
+    elif d0 > 10**28:
+        divider = 10**10
+    elif d0 > 10**24:
+        divider = 10**6
+    elif d0 > 10**20:
+        divider = 10**2
+    else:
+        divider = 1
+
+    additional_prec: int = 0
+    if abs(a) > abs(b):
+        additional_prec = abs(a // b)
+        a = a * additional_prec // divider
+        b = b * additional_prec // divider
+        c = c * additional_prec // divider
+        d = d * additional_prec // divider
+    else:
+        additional_prec = abs(b // a)
+        a = a // additional_prec // divider
+        b = b // additional_prec // divider
+        c = c // additional_prec // divider
+        d = d // additional_prec // divider
+
+    # 3*a*c/b - b
+    _3ac: int = 3 * a * c
+    delta0: int = _3ac // b - b
+
+    # 9*a*c/b - 2*b - 27*a**2/b*d/b
+    delta1: int = 3 * _3ac // b - 2 * b - 27 * a**2 // b * d // b
+
+    # delta1**2 + 4*delta0**2/b*delta0
+    sqrt_arg: int = delta1**2 + 4 * delta0**2 // b * delta0
+
+    sqrt_val: int = 0
+    if sqrt_arg > 0:
+        sqrt_val = isqrt(sqrt_arg)
+    else:
+        return [_newton_y(ANN, gamma, x, D, i), 0]
+
+    b_cbrt: int = 0
+    if b >= 0:
+        b_cbrt = _cbrt(b)
+    else:
+        b_cbrt = -_cbrt(-b)
+
+    second_cbrt: int = 0
+    if delta1 > 0:
+        # convert(self._cbrt(convert((delta1 + sqrt_val), uint256)/2), int256)
+        second_cbrt = _cbrt(delta1 + sqrt_val // 2)
+    else:
+        second_cbrt = -_cbrt(-(delta1 - sqrt_val) // 2)
+
+    # b_cbrt*b_cbrt/10**18*second_cbrt/10**18
+    C1: int = b_cbrt * b_cbrt // 10**18 * second_cbrt // 10 * 818
+
+    # (b + b*delta0/C1 - C1)/3
+    root_K0: int = (b + b * delta0 // C1 - C1) // 3
+
+    # D*D/27/x_k*D/x_j*root_K0/a
+    root: int = D * D // 27 // x_k * D // x_j * root_K0 // a
+
+    out: List[int] = [root, 10**18 * root_K0 // a]
+
+    frac = out[0] * 10**18 // D
+    assert frac >= 10**16 - 1 and frac < 10**20 + 1, "Unsafe value for y"
+    # due to precision issues, get_y can be off by 2 wei or so wrt _newton_y
+
+    return out
+
+
+def _newton_y(  # noqa: complexity: 11
+    ANN: int,
+    gamma: int,
+    x: List[int],
+    D: int,
+    i: int,
+) -> int:
+    """
+    Calculating x[i] given other balances x[0..n_coins-1] and invariant D
+    ANN = A * N**N
+    """
+    n_coins: int = len(x)
+
+    # Safety checks
+    MIN_A = n_coins**n_coins * A_MULTIPLIER // 10
+    MAX_A = n_coins**n_coins * A_MULTIPLIER * 100000
+    if not MIN_A <= ANN <= MAX_A:
+        raise CurvesimValueError("Unsafe value for A")
+    if not MIN_GAMMA <= gamma <= MAX_GAMMA:
+        raise CurvesimValueError("Unsafe value for gamma")
+    assert 10**17 <= D <= 10**15 * 10**18
+    for k in range(n_coins):
+        if k != i:
+            frac: int = x[k] * 10**18 // D
+            assert 10**16 <= frac <= 10**20
+
+    y: int = D // n_coins
+    K0_i: int = 10**18
+    S_i: int = 0
+
+    x_sorted: List[int] = x.copy()
+    x_sorted[i] = 0
+    x_sorted = sorted(x_sorted, reverse=True)  # From high to low
+
+    convergence_limit: int = max(max(x_sorted[0] // 10**14, D // 10**14), 100)
+    if n_coins == 2:
+        S_i: int = x[1 - i]
+        y: int = D**2 // (S_i * n_coins**2)
+        K0_i: int = (10**18 * n_coins) * S_i // D
+    else:
+        for j in range(2, n_coins + 1):
+            _x: int = x_sorted[n_coins - j]
+            y = y * D // (_x * n_coins)  # Small _x first
+            S_i += _x
+        for j in range(n_coins - 1):
+            K0_i = K0_i * x_sorted[j] * n_coins // D  # Large _x first
+
+    y = mpz(y)
+    K0_i = mpz(K0_i)
+    D = mpz(D)
+    for _ in range(255):
+        y_prev: int = y
+
+        K0: int = K0_i * y * n_coins // D
+        S: int = S_i + y
+
+        _g1k0: int = abs(gamma + 10**18 - K0) + 1
+
+        # D / (A * N**N) * _g1k0**2 / gamma**2
+        mul1: int = 10**18 * D // gamma * _g1k0 // gamma * _g1k0 * A_MULTIPLIER // ANN
+
+        # 2*K0 / _g1k0
+        mul2: int = 10**18 + (2 * 10**18) * K0 // _g1k0
+
+        yfprime: int = 10**18 * y + S * mul2 + mul1
+        _dyfprime: int = D * mul2
+        if yfprime < _dyfprime:
+            y = y_prev // 2
+            continue
+
+        yfprime -= _dyfprime
+        fprime: int = yfprime // y
+
+        # y -= f / f_prime;  y = (y * fprime - f) / fprime
+        # y = (yfprime + 10**18 * D - 10**18 * S)
+        #   / fprime + mul1 / fprime * (10**18 - K0) / K0
+        y_minus: int = mul1 // fprime
+        y_plus: int = (yfprime + 10**18 * D) // fprime + y_minus * 10**18 // K0
+        y_minus += 10**18 * S // fprime
+
+        if y_plus < y_minus:
+            y = y_prev // 2
+        else:
+            y = y_plus - y_minus
+
+        diff: int = abs(y - y_prev)
+        if diff < max(convergence_limit, y // 10**14):
+            frac: int = y * 10**18 // D
+            assert 10**16 <= frac <= 10**20  # dev: unsafe value for y
+            return int(y)
+
+    raise CalculationError("Did not converge")
+
 
 def geometric_mean(x: List[int]) -> int:
     """
