@@ -118,7 +118,7 @@ def get_p(
 
 
 # pylint: disable=too-many-locals,too-many-branches
-def newton_D(  # noqa: complexity: 13
+def old_newton_D(  # noqa: complexity: 13
     ANN: int,
     gamma: int,
     x_unsorted: List[int],

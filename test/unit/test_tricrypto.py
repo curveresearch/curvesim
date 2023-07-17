@@ -302,6 +302,34 @@ def test_multiple_exchange_with_repeg(vyper_tricrypto, dx_perc_list, indices_lis
     max_examples=5,
     deadline=None,
 )
+def test_newton_D(vyper_tricrypto, A, gamma, x0, x1, x2):
+    """Test D calculation against vyper implementation."""
+
+    xp = [x0, x1, x2]
+    assume(0.02 < xp[0] / xp[1] < 50)
+    assume(0.02 < xp[1] / xp[2] < 50)
+    assume(0.02 < xp[0] / xp[2] < 50)
+
+    MATH = get_math(vyper_tricrypto)
+    # pylint: disable=no-member
+    expected_D = MATH.newton_D(A, gamma, xp)
+    D = tricrypto_ng.newton_D(A, gamma, xp)
+
+    assert D == expected_D
+
+
+@given(
+    amplification_coefficient,
+    gamma_coefficient,
+    positive_balance,
+    positive_balance,
+    positive_balance,
+)
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=5,
+    deadline=None,
+)
 def test_get_p(vyper_tricrypto, A, gamma, x0, x1, x2):
     """Test `get_p` calculation against vyper implementation."""
 
