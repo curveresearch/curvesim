@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from copy import deepcopy
 
 from curvesim.exceptions import ParameterSamplerError
 from curvesim.logging import get_logger
@@ -150,78 +149,3 @@ def parse_pool_attribute(pool, attribute):
         return pool.basepool, attribute[:-5]
 
     return pool, attribute
-
-
-class SequentialParameterSampler(ParameterSampler):
-    """
-    Parameter sampler that yields pools using a fixed sequence of parameters.
-    """
-
-    def __init__(self, pool, variable_params, fixed_params=None):
-        """
-        Parameters
-        ----------
-        pool : :class:`~curvesim.templates.SimPool`
-            The "template" pool that will have its parameters modified.
-
-        variable_params: dict
-            Pool parameters to vary across simulations.
-
-            Keys are parameter names and values are iterables of values. For metapools,
-            basepool parameters can be referenced by appending "_base" to an attribute
-            name.
-
-            Example
-            --------
-            .. code-block ::
-
-                {"A": [100, 1000], "fee_base": [10**6, 4*10**6]}
-
-        fixed_params : dict, optional
-            Pool parameters set before all simulations.
-
-        """
-        self.pool_template = deepcopy(pool)
-        self.set_pool_attributes(self.pool_template, fixed_params)
-        self.parameter_sequence = self.make_parameter_sequence(variable_params)
-
-    def __iter__(self):
-        """
-        Yields
-        -------
-        pool : :class:`~curvesim.templates.SimPool`
-            A pool object with the current variable parameters set.
-
-        params : dict
-            A dictionary of the pool parameters set on this iteration.
-        """
-        for params in self.parameter_sequence:
-            pool = deepcopy(self.pool_template)
-            self.set_pool_attributes(pool, params)
-            yield pool, params
-
-    @abstractmethod
-    def make_parameter_sequence(self, variable_params):
-        """
-        Returns a list of dicts defining the parameters to be set on each iteration.
-
-        Parameters
-        ----------
-        variable_params
-            Pool parameters to vary across simulations. Typically a dict.
-
-        Returns
-        -------
-        List(dict)
-            A list of dicts defining the parameters for each iteration.
-        """
-        return NotImplementedError
-
-
-class AdaptiveParameterSampler(ParameterSampler):
-    """
-    Parameter sampler that selects parameters adaptively based on simulation results.
-    """
-
-    def __init__(self):
-        raise NotImplementedError

@@ -1,8 +1,15 @@
+from curvesim.pool.sim_interface import SimCurvePool, SimCurveMetaPool
+
+
 class CurvePoolMixin:
     """
     Parameter sampler mixin for Curve stableswap pools.
     Defines special attribute setters.
     """
+
+    @property
+    def _pool_type(self):
+        return SimCurvePool
 
     @property
     def setters(self):
@@ -16,6 +23,10 @@ class CurveMetaPoolMixin:
     """
 
     @property
+    def _pool_type(self):
+        return SimCurveMetaPool
+
+    @property
     def setters(self):
         return {"D": stableswap_D_to_balances, "D_base": stableswap_D_base_to_balances}
 
@@ -25,6 +36,10 @@ class CurveCryptoPoolMixin:
     Parameter sampler mixin for Curve cryptoswap pools.
     Defines special attribute setters.
     """
+
+    @property
+    def _pool_type(self):
+        raise NotImplementedError
 
     @property
     def setters(self):

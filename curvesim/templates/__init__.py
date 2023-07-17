@@ -9,13 +9,12 @@ __all__ = [
     "SimPool",
     "Trade",
     "TradeResult",
-    "AdaptiveParameterSampler",
-    "SequentialParameterSampler",
+    "ParameterSampler",
     "PriceSample",
     "PriceSampler",
 ]
 
-from .param_samplers import AdaptiveParameterSampler, SequentialParameterSampler
+from .param_samplers import ParameterSampler
 from .price_samplers import PriceSample, PriceSampler
 from .sim_assets import SimAssets
 from .sim_pool import SimPool

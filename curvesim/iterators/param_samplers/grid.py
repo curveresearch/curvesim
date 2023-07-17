@@ -1,13 +1,63 @@
+from abc import abstractmethod
+from copy import deepcopy
 from itertools import product
 
-from curvesim.templates import SequentialParameterSampler
+from curvesim.exceptions import ParameterSamplerError
+from curvesim.pool.sim_interface import SimCurvePool, SimCurveRaiPool, SimCurveMetaPool
+from curvesim.templates import ParameterSampler
 from .pool_mixins import CurvePoolMixin, CurveMetaPoolMixin, CurveCryptoPoolMixin
 
 
-class Grid(SequentialParameterSampler):
+class GridBase(ParameterSampler):
     """
+    Abstract base class for grid parameter sampler.
+
     Iterates over a "grid" of all possible combinations of the input parameters.
     """
+
+    def __init__(self, pool, variable_params, fixed_params=None):
+        """
+        Parameters
+        ----------
+        pool : :class:`~curvesim.templates.SimPool`
+            The "template" pool that will have its parameters modified.
+
+        variable_params: dict
+            Pool parameters to vary across simulations.
+
+            Keys are parameter names and values are iterables of values. For metapools,
+            basepool parameters can be referenced by appending "_base" to an attribute
+            name.
+
+            Example
+            --------
+            .. code-block ::
+
+                {"A": [100, 1000], "fee_base": [10**6, 4*10**6]}
+
+        fixed_params : dict, optional
+            Pool parameters set before all simulations.
+
+        """
+        self._validate_pool_type(pool)
+        self.pool_template = deepcopy(pool)
+        self.set_pool_attributes(self.pool_template, fixed_params)
+        self.parameter_sequence = self.make_parameter_sequence(variable_params)
+
+    def __iter__(self):
+        """
+        Yields
+        -------
+        pool : :class:`~curvesim.templates.SimPool`
+            A pool object with the current variable parameters set.
+
+        params : dict
+            A dictionary of the pool parameters set on this iteration.
+        """
+        for params in self.parameter_sequence:
+            pool = deepcopy(self.pool_template)
+            self.set_pool_attributes(pool, params)
+            yield pool, params
 
     def make_parameter_sequence(self, variable_params):
         """
@@ -36,26 +86,98 @@ class Grid(SequentialParameterSampler):
 
         return sequence
 
+    def _validate_pool_type(self, pool):
+        """Validates that the input pool is an instance of self._pool_type."""
+        if not isinstance(pool, self._pool_type):
+            input_class = pool.__class__.__name__
+            expected_class = self._pool_type.__name__
+            self_class = self.__class__.__name__
 
-class CurvePoolGrid(CurvePoolMixin, Grid):
+            raise ParameterSamplerError(
+                f"Parameter sampler '{self_class}' only supports pool type "
+                f"'{expected_class}'; recieved '{input_class}'."
+            )
+
+    @property
+    @abstractmethod
+    def _pool_type(self):
+        """The expected pool type for a Grid subclass."""
+        raise NotImplementedError
+
+
+class CurvePoolGrid(CurvePoolMixin, GridBase):
     """
     :class:`Grid` parameter sampler specialized for Curve pools.
     """
 
-    pass
 
-
-class CurveMetaPoolGrid(CurveMetaPoolMixin, Grid):
+class CurveMetaPoolGrid(CurveMetaPoolMixin, GridBase):
     """
     :class:`Grid` parameter sampler specialized for Curve meta-pools.
     """
 
-    pass
 
-
-class CurveCryptoPoolGrid(CurveCryptoPoolMixin, Grid):
+class CurveCryptoPoolGrid(CurveCryptoPoolMixin, GridBase):
     """
     :class:`Grid` parameter sampler specialized for Curve crypto pools.
     """
 
-    pass
+
+class Grid(object):
+    """
+    Iterates over a "grid" of all possible combinations of the input parameters.
+
+    This class functions as a factory for pool-specific subclasses.
+    """
+
+    pool_map = {
+        SimCurvePool: CurvePoolGrid,
+        SimCurveRaiPool: CurveMetaPoolGrid,
+        SimCurveMetaPool: CurveMetaPoolGrid,
+        # SimCurveCryptoPool: CurveCryptoPoolGrid
+    }
+
+    def __new__(cls, pool, variable_params, fixed_params=None, pool_map=None):
+        """
+        Parameters
+        ----------
+        pool : :class:`~curvesim.templates.SimPool`
+            The "template" pool that will have its parameters modified.
+
+        variable_params: dict
+            Pool parameters to vary across simulations.
+
+            Keys are parameter names and values are iterables of values. For metapools,
+            basepool parameters can be referenced by appending "_base" to an attribute
+            name.
+
+            Example
+            --------
+            .. code-block ::
+
+                {"A": [100, 1000], "fee_base": [10**6, 4*10**6]}
+
+        fixed_params : dict, optional
+            Pool parameters set before all simulations.
+
+        pool_map : dict
+            A mapping between pool types and Grid subclasses. Overrides Grid.pool_map.
+
+        Returns
+        -------
+            :class:`.GridBase` subclass
+
+        """
+        pool_map = pool_map or cls.pool_map
+
+        try:
+            pool_type = type(pool)
+            grid_subclass = pool_map[pool_type]
+
+        except KeyError as e:
+            pool_type_name = pool_type.__name__
+            raise ParameterSamplerError(
+                f"No subclass for pool type `{pool_type_name}` found in Grid pool map."
+            ) from e
+
+        return grid_subclass(pool, variable_params, fixed_params)
