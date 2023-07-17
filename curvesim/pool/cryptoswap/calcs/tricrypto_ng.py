@@ -25,7 +25,7 @@ MIN_A: int = N_COINS**N_COINS * A_MULTIPLIER // 100
 MAX_A: int = N_COINS**N_COINS * A_MULTIPLIER * 1000
 
 
-def get_y(ANN: int, gamma: int, x: List[int], D: int, i: int) -> int[2]:
+def get_y(ANN: int, gamma: int, x: List[int], D: int, i: int) -> List[int]:
     """
     @notice Calculate x[i] given other balances x[0..N_COINS-1] and invariant D.
     @dev ANN = A * N**N.
