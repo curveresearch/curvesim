@@ -7,9 +7,11 @@ from typing import List
 
 from gmpy2 import mpz
 
-from curvesim.exceptions import CalculationError, CryptoPoolError, CurvesimValueError
+from curvesim.exceptions import CalculationError, CryptoPoolError
 from curvesim.logging import get_logger
 from curvesim.pool.base import Pool
+
+from .calcs import factory_2_coin, tricrypto_ng
 
 logger = get_logger(__name__)
 
@@ -190,7 +192,7 @@ class CurveCryptoPool(Pool):
                 )
         else:
             xp = self._xp()
-            D = self._newton_D(A, gamma, xp)
+            D = factory_2_coin.newton_D(A, gamma, xp)
             self.D = D
 
         xcp = self._get_xcp(D)
@@ -263,187 +265,12 @@ class CurveCryptoPool(Pool):
         x = [D // n_coins] + [
             D * PRECISION // (price * n_coins) for price in price_scale
         ]
-        return _geometric_mean(x, True)
-
-    # pylint: disable=too-many-locals,too-many-branches
-    @staticmethod
-    def _newton_D(  # noqa: complexity: 13
-        ANN: int,
-        gamma: int,
-        x_unsorted: List[int],
-    ) -> List[int]:
-        """
-        Finding the `D` invariant using Newton's method.
-
-        ANN is A * N**N from the whitepaper multiplied by the
-        factor A_MULTIPLIER.
-        """
-        n_coins: int = len(x_unsorted)
-
-        # Safety checks
-        min_A = n_coins**n_coins * A_MULTIPLIER // 10
-        max_A = n_coins**n_coins * A_MULTIPLIER * 100000
-        if not min_A <= ANN <= max_A:
-            raise CurvesimValueError("Unsafe value for A")
-        if not MIN_GAMMA <= gamma <= MAX_GAMMA:
-            raise CurvesimValueError("Unsafe value for gamma")
-
-        x: List[int] = sorted(x_unsorted, reverse=True)
-
-        assert 10**9 <= x[0] <= 10**15 * 10**18
-        for i in range(1, n_coins):
-            frac: int = x[i] * 10**18 // x[0]
-            assert frac >= 10**11
-
-        D: int = n_coins * _geometric_mean(x, False)
-        S: int = sum(x)
-
-        D = mpz(D)
-        S = mpz(S)
-        for _ in range(255):
-            D_prev: int = D
-
-            if n_coins == 2:
-                K0: int = (10**18 * n_coins**2) * x[0] // D * x[1] // D
-            else:
-                K0: int = 10**18
-                for _x in x:
-                    K0 = K0 * _x * n_coins // D
-
-            _g1k0: int = abs(gamma + 10**18 - K0) + 1
-
-            # D / (A * N**N) * _g1k0**2 / gamma**2
-            mul1: int = (
-                10**18 * D // gamma * _g1k0 // gamma * _g1k0 * A_MULTIPLIER // ANN
-            )
-
-            # 2*N*K0 / _g1k0
-            mul2: int = (2 * 10**18) * n_coins * K0 // _g1k0
-
-            neg_fprime: int = (
-                (S + S * mul2 // 10**18) + mul1 * n_coins // K0 - mul2 * D // 10**18
-            )
-
-            # D -= f / fprime
-            D_plus: int = D * (neg_fprime + S) // neg_fprime
-            D_minus: int = D * D // neg_fprime
-            if 10**18 > K0:
-                D_minus += D * (mul1 // neg_fprime) // 10**18 * (10**18 - K0) // K0
-            else:
-                D_minus -= D * (mul1 // neg_fprime) // 10**18 * (K0 - 10**18) // K0
-
-            if D_plus > D_minus:
-                D = D_plus - D_minus
-            else:
-                D = (D_minus - D_plus) // 2
-
-            diff = abs(D - D_prev)
-            # Could reduce precision for gas efficiency here
-            if diff * 10**14 < max(10**16, D):
-                # Test that we are safe with the next newton_y
-                for _x in x:
-                    frac: int = _x * 10**18 // D
-                    if frac < 10**16 or frac > 10**20:
-                        raise CalculationError("Unsafe value for x[i]")
-                return int(D)
-
-        raise CalculationError("Did not converge")
-
-    @staticmethod
-    def _newton_y(  # noqa: complexity: 11
-        ANN: int,
-        gamma: int,
-        x: List[int],
-        D: int,
-        i: int,
-    ) -> int:
-        """
-        Calculating x[i] given other balances x[0..n_coins-1] and invariant D
-        ANN = A * N**N
-        """
-        n_coins: int = len(x)
-
-        # Safety checks
-        MIN_A = n_coins**n_coins * A_MULTIPLIER // 10
-        MAX_A = n_coins**n_coins * A_MULTIPLIER * 100000
-        if not MIN_A <= ANN <= MAX_A:
-            raise CurvesimValueError("Unsafe value for A")
-        if not MIN_GAMMA <= gamma <= MAX_GAMMA:
-            raise CurvesimValueError("Unsafe value for gamma")
-        assert 10**17 <= D <= 10**15 * 10**18
-        for k in range(n_coins):
-            if k != i:
-                frac: int = x[k] * 10**18 // D
-                assert 10**16 <= frac <= 10**20
-
-        y: int = D // n_coins
-        K0_i: int = 10**18
-        S_i: int = 0
-
-        x_sorted: List[int] = x.copy()
-        x_sorted[i] = 0
-        x_sorted = sorted(x_sorted, reverse=True)  # From high to low
-
-        convergence_limit: int = max(max(x_sorted[0] // 10**14, D // 10**14), 100)
         if n_coins == 2:
-            S_i: int = x[1 - i]
-            y: int = D**2 // (S_i * n_coins**2)
-            K0_i: int = (10**18 * n_coins) * S_i // D
+            return factory_2_coin.geometric_mean(x, True)
+        elif n_coins == 3:
+            return tricrypto_ng.geometric_mean(x, True)
         else:
-            for j in range(2, n_coins + 1):
-                _x: int = x_sorted[n_coins - j]
-                y = y * D // (_x * n_coins)  # Small _x first
-                S_i += _x
-            for j in range(n_coins - 1):
-                K0_i = K0_i * x_sorted[j] * n_coins // D  # Large _x first
-
-        y = mpz(y)
-        K0_i = mpz(K0_i)
-        D = mpz(D)
-        for _ in range(255):
-            y_prev: int = y
-
-            K0: int = K0_i * y * n_coins // D
-            S: int = S_i + y
-
-            _g1k0: int = abs(gamma + 10**18 - K0) + 1
-
-            # D / (A * N**N) * _g1k0**2 / gamma**2
-            mul1: int = (
-                10**18 * D // gamma * _g1k0 // gamma * _g1k0 * A_MULTIPLIER // ANN
-            )
-
-            # 2*K0 / _g1k0
-            mul2: int = 10**18 + (2 * 10**18) * K0 // _g1k0
-
-            yfprime: int = 10**18 * y + S * mul2 + mul1
-            _dyfprime: int = D * mul2
-            if yfprime < _dyfprime:
-                y = y_prev // 2
-                continue
-
-            yfprime -= _dyfprime
-            fprime: int = yfprime // y
-
-            # y -= f / f_prime;  y = (y * fprime - f) / fprime
-            # y = (yfprime + 10**18 * D - 10**18 * S)
-            #   / fprime + mul1 / fprime * (10**18 - K0) / K0
-            y_minus: int = mul1 // fprime
-            y_plus: int = (yfprime + 10**18 * D) // fprime + y_minus * 10**18 // K0
-            y_minus += 10**18 * S // fprime
-
-            if y_plus < y_minus:
-                y = y_prev // 2
-            else:
-                y = y_plus - y_minus
-
-            diff: int = abs(y - y_prev)
-            if diff < max(convergence_limit, y // 10**14):
-                frac: int = y * 10**18 // D
-                assert 10**16 <= frac <= 10**20  # dev: unsafe value for y
-                return int(y)
-
-        raise CalculationError("Did not converge")
+            raise CalculationError("`_get_xcp` doesn't support more than 3 coins")
 
     def _increment_timestamp(self, blocks=1, timestamp=None):
         """Update the internal clock used to mimic the block timestamp."""
@@ -495,7 +322,11 @@ class CurveCryptoPool(Pool):
 
         D_unadjusted: int = new_D  # Withdrawal methods know new D already
         if new_D == 0:
-            D_unadjusted = self._newton_D(A, gamma, _xp)
+            D_unadjusted = factory_2_coin.newton_D(A, gamma, _xp)
+            if n_coins == 2:
+                D_unadjusted = factory_2_coin.newton_D(A, gamma, _xp)
+            elif n_coins == 3:
+                D_unadjusted = tricrypto_ng.newton_D(A, gamma, _xp)
 
         if p_i > 0:
             # Save the last price
@@ -514,7 +345,10 @@ class CurveCryptoPool(Pool):
                 last_prices = [
                     price_scale[k - 1]
                     * dx_price
-                    // (__xp[k] - self._newton_y(A, gamma, __xp, D_unadjusted, k))
+                    // (
+                        __xp[k]
+                        - factory_2_coin.newton_y(A, gamma, __xp, D_unadjusted, k)
+                    )
                     for k in range(1, n_coins)
                 ]
             else:
@@ -587,7 +421,7 @@ class CurveCryptoPool(Pool):
             ]
 
             # Calculate "extended constant product" invariant xCP and virtual price
-            D: int = self._newton_D(A, gamma, xp)
+            D: int = factory_2_coin.newton_D(A, gamma, xp)
             xp = [D // n_coins] + [
                 D * PRECISION // (n_coins * p_new) for p_new in new_prices
             ]
@@ -634,7 +468,7 @@ class CurveCryptoPool(Pool):
         gamma = self.gamma
         totalSupply = self.tokens
 
-        D: int = self._newton_D(A, gamma, self._xp())
+        D: int = factory_2_coin.newton_D(A, gamma, self._xp())
         self.D = D
         self.virtual_price = 10**18 * self._get_xcp(D) // totalSupply
 
@@ -675,7 +509,7 @@ class CurveCryptoPool(Pool):
         gamma = self.gamma
         D: int = self.D
 
-        y: int = self._newton_y(A, gamma, xp, D, j)
+        y: int = factory_2_coin.newton_y(A, gamma, xp, D, j)
         dy: int = xp[j] - y - 1
         xp[j] = y
         precisions: List[int] = self.precisions
@@ -741,7 +575,7 @@ class CurveCryptoPool(Pool):
 
         xp = self._xp_mem(xp)
 
-        dy = xp[j] - self._newton_y(A, gamma, xp, self.D, j)
+        dy = xp[j] - factory_2_coin.newton_y(A, gamma, xp, self.D, j)
         xp[j] -= dy
         dy -= 1
 
@@ -868,7 +702,7 @@ class CurveCryptoPool(Pool):
         amountsp: List[int] = [xp[i] - xp_old[i] for i in range(n_coins)]
 
         old_D: int = self.D
-        D: int = self._newton_D(A, gamma, xp)
+        D: int = factory_2_coin.newton_D(A, gamma, xp)
 
         d_token: int = 0
         token_supply: int = self.tokens
@@ -1036,7 +870,7 @@ class CurveCryptoPool(Pool):
         xp: List[int] = self._xp_mem(xx)
 
         if update_D:
-            D0 = self._newton_D(A, gamma, xp)
+            D0 = factory_2_coin.newton_D(A, gamma, xp)
         else:
             D0 = self.D
 
@@ -1046,7 +880,7 @@ class CurveCryptoPool(Pool):
         fee: int = self._fee(xp)
         dD: int = token_amount * D // token_supply
         D -= dD - (fee * dD // (2 * 10**10) + 1)
-        y: int = self._newton_y(A, gamma, xp, D, i)
+        y: int = factory_2_coin.newton_y(A, gamma, xp, D, i)
         if i == 0:
             dy: int = (xp[i] - y) // precisions[i]
         else:
@@ -1169,7 +1003,7 @@ class CurveCryptoPool(Pool):
         D0: int = self.D
         for i, a in enumerate(amountsp):
             xp[i] += a
-        D: int = self._newton_D(A, gamma, xp)
+        D: int = factory_2_coin.newton_D(A, gamma, xp)
         d_token: int = token_supply * D // D0 - token_supply
         d_token -= self._calc_token_fee(amountsp, xp) * d_token // 10**10 + 1
         return d_token
