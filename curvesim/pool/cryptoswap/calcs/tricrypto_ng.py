@@ -21,27 +21,18 @@ PRECISION = 10**18  # The precision to convert to
 A_MULTIPLIER = 10000
 
 
-def geometric_mean(unsorted_x: List[int], sort: bool) -> int:
+def geometric_mean(x: List[int]) -> int:
     """
-    (x[0] * x[1] * ...) ** (1/N)
-    """
-    n_coins: int = len(unsorted_x)
-    x: List[int] = unsorted_x
-    if sort:
-        x = sorted(unsorted_x, reverse=True)
+    The geometric mean for 3 integers:
 
-    D: int = mpz(x[0])
-    diff: int = 0
-    for _ in range(255):
-        D_prev: int = D
-        tmp: int = 10**18
-        for _x in x:
-            tmp = tmp * _x // D
-        D = D * ((n_coins - 1) * 10**18 + tmp) // (n_coins * 10**18)
-        diff = abs(D_prev - D)
-        if diff <= 1 or diff * 10**18 < D:
-            return int(D)
-    raise CalculationError("Did not converge")
+    (x[0] * x[1] * x[2]) ** (1/3)
+    """
+    prod: int = x[0] * x[1] // 10**18 * x[2] // 10**18
+
+    if prod == 0:
+        return 0
+
+    return _cbrt(prod)
 
 
 def lp_price(virtual_price, price_oracle) -> int:
@@ -117,88 +108,6 @@ def get_p(
     ]
 
 
-# pylint: disable=too-many-locals,too-many-branches
-def old_newton_D(  # noqa: complexity: 13
-    ANN: int,
-    gamma: int,
-    x_unsorted: List[int],
-) -> List[int]:
-    """
-    Finding the `D` invariant using Newton's method.
-
-    ANN is A * N**N from the whitepaper multiplied by the
-    factor A_MULTIPLIER.
-    """
-    n_coins: int = len(x_unsorted)
-
-    # Safety checks
-    min_A = n_coins**n_coins * A_MULTIPLIER // 10
-    max_A = n_coins**n_coins * A_MULTIPLIER * 100000
-    if not min_A <= ANN <= max_A:
-        raise CurvesimValueError("Unsafe value for A")
-    if not MIN_GAMMA <= gamma <= MAX_GAMMA:
-        raise CurvesimValueError("Unsafe value for gamma")
-
-    x: List[int] = sorted(x_unsorted, reverse=True)
-
-    assert 10**9 <= x[0] <= 10**15 * 10**18
-    for i in range(1, n_coins):
-        frac: int = x[i] * 10**18 // x[0]
-        assert frac >= 10**11
-
-    D: int = n_coins * geometric_mean(x, False)
-    S: int = sum(x)
-
-    D = mpz(D)
-    S = mpz(S)
-    for _ in range(255):
-        D_prev: int = D
-
-        if n_coins == 2:
-            K0: int = (10**18 * n_coins**2) * x[0] // D * x[1] // D
-        else:
-            K0: int = 10**18
-            for _x in x:
-                K0 = K0 * _x * n_coins // D
-
-        _g1k0: int = abs(gamma + 10**18 - K0) + 1
-
-        # D / (A * N**N) * _g1k0**2 / gamma**2
-        mul1: int = 10**18 * D // gamma * _g1k0 // gamma * _g1k0 * A_MULTIPLIER // ANN
-
-        # 2*N*K0 / _g1k0
-        mul2: int = (2 * 10**18) * n_coins * K0 // _g1k0
-
-        neg_fprime: int = (
-            (S + S * mul2 // 10**18) + mul1 * n_coins // K0 - mul2 * D // 10**18
-        )
-
-        # D -= f / fprime
-        D_plus: int = D * (neg_fprime + S) // neg_fprime
-        D_minus: int = D * D // neg_fprime
-        if 10**18 > K0:
-            D_minus += D * (mul1 // neg_fprime) // 10**18 * (10**18 - K0) // K0
-        else:
-            D_minus -= D * (mul1 // neg_fprime) // 10**18 * (K0 - 10**18) // K0
-
-        if D_plus > D_minus:
-            D = D_plus - D_minus
-        else:
-            D = (D_minus - D_plus) // 2
-
-        diff = abs(D - D_prev)
-        # Could reduce precision for gas efficiency here
-        if diff * 10**14 < max(10**16, D):
-            # Test that we are safe with the next newton_y
-            for _x in x:
-                frac: int = _x * 10**18 // D
-                if frac < 10**16 or frac > 10**20:
-                    raise CalculationError("Unsafe value for x[i]")
-            return int(D)
-
-    raise CalculationError("Did not converge")
-
-
 def newton_D(
     ANN: int,
     gamma: int,
@@ -227,7 +136,7 @@ def newton_D(
     if K0_prev == 0:
         # Geometric mean of 3 numbers cannot be larger than the largest number
         # so the following is safe to do:
-        D = N_COINS * geometric_mean(x, False)
+        D = N_COINS * geometric_mean(x)
     else:
         if S > 10**36:
             D = _cbrt(x[0] * x[1] // 10**36 * x[2] // K0_prev * 27 * 10**12)
