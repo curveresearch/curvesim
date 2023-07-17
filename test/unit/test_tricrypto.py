@@ -10,13 +10,8 @@ from hypothesis import HealthCheck, assume, given, settings
 from hypothesis import strategies as st
 
 from curvesim.pool import CurveCryptoPool
-from curvesim.pool.cryptoswap.pool import (
-    A_MULTIPLIER,
-    MAX_GAMMA,
-    MIN_GAMMA,
-    PRECISION,
-    get_p,
-)
+from curvesim.pool.cryptoswap.calcs import tricrypto_ng
+from curvesim.pool.cryptoswap.pool import A_MULTIPLIER, MAX_GAMMA, MIN_GAMMA, PRECISION
 
 N_COINS = 3
 MIN_A = N_COINS**N_COINS * A_MULTIPLIER // 10
@@ -321,6 +316,6 @@ def test_get_p(vyper_tricrypto, A, gamma, x0, x1, x2):
 
     A_gamma = [A, gamma]
     expected_p = MATH.get_p(xp, D, A_gamma)
-    p = get_p(xp, D, A, gamma)
+    p = tricrypto_ng.get_p(xp, D, A, gamma)
 
     assert p == expected_p
