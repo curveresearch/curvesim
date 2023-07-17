@@ -11,11 +11,15 @@ from hypothesis import strategies as st
 
 from curvesim.pool import CurveCryptoPool
 from curvesim.pool.cryptoswap.calcs import tricrypto_ng
-from curvesim.pool.cryptoswap.pool import A_MULTIPLIER, MAX_GAMMA, MIN_GAMMA, PRECISION
-
-N_COINS = 3
-MIN_A = N_COINS**N_COINS * A_MULTIPLIER // 10
-MAX_A = N_COINS**N_COINS * A_MULTIPLIER * 100000
+from curvesim.pool.cryptoswap.calcs.tricrypto_ng import (
+    A_MULTIPLIER,
+    MAX_A,
+    MAX_GAMMA,
+    MIN_A,
+    MIN_GAMMA,
+    N_COINS,
+    PRECISION,
+)
 
 
 def get_math(tricrypto):
