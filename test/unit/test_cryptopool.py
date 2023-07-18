@@ -5,12 +5,12 @@ from hypothesis import strategies as st
 
 from curvesim.pool import CurveCryptoPool
 from curvesim.pool.cryptoswap.calcs import factory_2_coin
+from curvesim.pool.cryptoswap.calcs.factory_2_coin import geometric_mean
 from curvesim.pool.cryptoswap.pool import (
     A_MULTIPLIER,
     MAX_GAMMA,
     MIN_GAMMA,
     PRECISION,
-    _geometric_mean,
     _halfpow,
     _sqrt_int,
 )
@@ -211,7 +211,7 @@ def test_geometric_mean(vyper_cryptopool, x0, x1, sort_flag):
 
     xp = [x0, x1]
     expected_result = vyper_cryptopool.eval(f"self.geometric_mean({xp}, {sort_flag})")
-    result = _geometric_mean(xp, sort_flag)
+    result = geometric_mean(xp, sort_flag)
 
     assert result == expected_result
 
