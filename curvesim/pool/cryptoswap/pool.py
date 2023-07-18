@@ -284,6 +284,7 @@ class CurveCryptoPool(Pool):
         i: int,
         p_i: int,
         new_D: int,
+        K0_prev: int = 0,
     ):
         """
         Applies several kinds of updates:
@@ -317,11 +318,12 @@ class CurveCryptoPool(Pool):
 
         D_unadjusted: int = new_D  # Withdrawal methods know new D already
         if new_D == 0:
-            D_unadjusted = factory_2_coin.newton_D(A, gamma, _xp)
             if n_coins == 2:
                 D_unadjusted = factory_2_coin.newton_D(A, gamma, _xp)
             elif n_coins == 3:
-                D_unadjusted = tricrypto_ng.newton_D(A, gamma, _xp)
+                D_unadjusted = tricrypto_ng.newton_D(A, gamma, _xp, K0_prev)
+            else:
+                raise CalculationError("")
 
         if p_i > 0:
             # Save the last price
@@ -615,7 +617,7 @@ class CurveCryptoPool(Pool):
         else:
             K0_prev = y_out[1]
 
-        self._tweak_price(A, gamma, xp, ix, p, K0_prev)
+        self._tweak_price(A, gamma, xp, ix, p, 0, K0_prev)
 
         return dy, fee
 
