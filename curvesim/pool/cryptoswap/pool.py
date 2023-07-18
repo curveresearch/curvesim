@@ -418,7 +418,10 @@ class CurveCryptoPool(Pool):
             ]
 
             # Calculate "extended constant product" invariant xCP and virtual price
-            D: int = factory_2_coin.newton_D(A, gamma, xp)
+            if n_coins == 2:
+                D: int = factory_2_coin.newton_D(A, gamma, xp)
+            else:
+                D: int = tricrypto_ng.newton_D(A, gamma, xp)
             xp = [D // n_coins] + [
                 D * PRECISION // (n_coins * p_new) for p_new in new_prices
             ]
