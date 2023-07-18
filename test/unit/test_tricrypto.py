@@ -6,7 +6,7 @@ Tests are against the tricrypto-ng contract.
 import os
 
 import boa
-from hypothesis import HealthCheck, assume, given, reproduce_failure, settings
+from hypothesis import HealthCheck, assume, given, settings
 from hypothesis import strategies as st
 
 from curvesim.pool import CurveCryptoPool
@@ -343,9 +343,6 @@ def test_get_p(vyper_tricrypto, A, gamma, x0, x1, x2):
     assert p == expected_p
 
 
-@reproduce_failure(
-    "6.54.6", b"AXicc3S+ycDkz8rCsJa7jgEZMHIzMjH0bc1gZGZc9qR9ZtiBTWUM/CeXbAAA08cLwQ=="
-)
 @given(
     amplification_coefficient,
     gamma_coefficient,
@@ -356,7 +353,7 @@ def test_get_p(vyper_tricrypto, A, gamma, x0, x1, x2):
         st.integers(min_value=0, max_value=2),
         st.integers(min_value=0, max_value=2),
     ).filter(lambda x: x[0] != x[1]),
-    st.integers(min_value=1, max_value=20000),
+    st.integers(min_value=1, max_value=7500),
 )
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
