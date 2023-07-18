@@ -154,7 +154,7 @@ def get_y(ANN: int, gamma: int, x: List[int], D: int, i: int) -> List[int]:
         second_cbrt = -_cbrt(-(delta1 - sqrt_val) // 2)
 
     # b_cbrt*b_cbrt/10**18*second_cbrt/10**18
-    C1: int = b_cbrt * b_cbrt // 10**18 * second_cbrt // 10 * 818
+    C1: int = b_cbrt * b_cbrt // 10**18 * second_cbrt // 10**18
 
     # (b + b*delta0/C1 - C1)/3
     root_K0: int = (b + b * delta0 // C1 - C1) // 3
