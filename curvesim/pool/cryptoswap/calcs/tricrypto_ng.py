@@ -1,12 +1,10 @@
-import time
 from math import isqrt
 from typing import List
 
 from gmpy2 import mpz
 
-from curvesim.exceptions import CalculationError, CryptoPoolError, CurvesimValueError
+from curvesim.exceptions import CalculationError, CurvesimValueError
 from curvesim.logging import get_logger
-from curvesim.pool.base import Pool
 
 logger = get_logger(__name__)
 
@@ -25,7 +23,13 @@ MIN_A: int = N_COINS**N_COINS * A_MULTIPLIER // 100
 MAX_A: int = N_COINS**N_COINS * A_MULTIPLIER * 1000
 
 
-def get_y(ANN: int, gamma: int, x: List[int], D: int, i: int) -> List[int]:
+def get_y(  # noqa: complexity: 18
+    ANN: int,
+    gamma: int,
+    x: List[int],
+    D: int,
+    i: int,
+) -> List[int]:
     """
     @notice Calculate x[i] given other balances x[0..N_COINS-1] and invariant D.
     @dev ANN = A * N**N.

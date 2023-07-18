@@ -12,12 +12,10 @@ from hypothesis import strategies as st
 from curvesim.pool import CurveCryptoPool
 from curvesim.pool.cryptoswap.calcs import tricrypto_ng
 from curvesim.pool.cryptoswap.calcs.tricrypto_ng import (
-    A_MULTIPLIER,
     MAX_A,
     MAX_GAMMA,
     MIN_A,
     MIN_GAMMA,
-    N_COINS,
     PRECISION,
 )
 

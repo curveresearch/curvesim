@@ -1,21 +1,16 @@
-import time
-from math import isqrt
 from typing import List
 
 from gmpy2 import mpz
 
-from curvesim.exceptions import CalculationError, CryptoPoolError, CurvesimValueError
+from curvesim.exceptions import CalculationError, CurvesimValueError
 from curvesim.logging import get_logger
-from curvesim.pool.base import Pool
 
 logger = get_logger(__name__)
 
-NOISE_FEE = 10**5  # 0.1 bps
 
 MIN_GAMMA = 10**10
 MAX_GAMMA = 2 * 10**16
 
-EXP_PRECISION = 10**10
 
 PRECISION = 10**18  # The precision to convert to
 A_MULTIPLIER = 10000
