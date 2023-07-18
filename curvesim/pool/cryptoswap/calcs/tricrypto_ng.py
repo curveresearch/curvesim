@@ -80,6 +80,7 @@ def get_y(ANN: int, gamma: int, x: List[int], D: int, i: int) -> List[int]:
         + gamma * (gamma + 4 * 10**18) // 27
         + gamma2 * (x_j + x_k - D) // D * ANN // 27 // A_MULTIPLIER
     )
+    # XXX: `c` can sometimes be less by 1 wei compared to tricrypto-ng contract.  Why?
     # <--------- Same as above with the first two expressions. In the third
     #   expression, x_j + x_k will not overflow since we know their range from
     #                                              previous assert statements.
@@ -405,7 +406,6 @@ def newton_D(
     frac: int = 0
 
     for i in range(255):
-
         D_prev = D
 
         # K0 = 10**18 * x[0] * N_COINS / D * x[1] * N_COINS / D * x[2] * N_COINS / D
