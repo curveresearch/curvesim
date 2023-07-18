@@ -16,14 +16,8 @@ from .calcs import factory_2_coin, tricrypto_ng
 logger = get_logger(__name__)
 
 NOISE_FEE = 10**5  # 0.1 bps
-
-MIN_GAMMA = 10**10
-MAX_GAMMA = 2 * 10**16
-
 EXP_PRECISION = 10**10
-
 PRECISION = 10**18  # The precision to convert to
-A_MULTIPLIER = 10000
 
 
 # pylint: disable-next=too-many-instance-attributes
@@ -376,7 +370,6 @@ class CurveCryptoPool(Pool):
         self.xcp_profit = xcp_profit
 
         if virtual_price * 2 - 10**18 > xcp_profit + 2 * self.allowed_extra_profit:
-
             norm: int = 0
             ratio: int = 0
             for k in range(n_coins - 1):

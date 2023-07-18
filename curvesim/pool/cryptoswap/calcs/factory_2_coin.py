@@ -15,6 +15,10 @@ MAX_GAMMA = 2 * 10**16
 PRECISION = 10**18  # The precision to convert to
 A_MULTIPLIER = 10000
 
+N_COINS = 2
+MIN_A = N_COINS**N_COINS * A_MULTIPLIER // 10
+MAX_A = N_COINS**N_COINS * A_MULTIPLIER * 100000
+
 
 def geometric_mean(unsorted_x: List[int], sort: bool) -> int:
     """
@@ -173,9 +177,7 @@ def newton_D(  # noqa: complexity: 13
     n_coins: int = len(x_unsorted)
 
     # Safety checks
-    min_A = n_coins**n_coins * A_MULTIPLIER // 10
-    max_A = n_coins**n_coins * A_MULTIPLIER * 100000
-    if not min_A <= ANN <= max_A:
+    if not MIN_A <= ANN <= MAX_A:
         raise CurvesimValueError("Unsafe value for A")
     if not MIN_GAMMA <= gamma <= MAX_GAMMA:
         raise CurvesimValueError("Unsafe value for gamma")
