@@ -76,7 +76,7 @@ def param_subset_strat(draw, parameters, min_size=1, max_size=None, val_to_list=
     for key in key_subset:
         val_strat = parameters[key]
         if val_to_list:
-            val_strat = to_list_strat(val_strat)
+            val_strat = to_list_strat(val_strat, max_size=4)
         dict_subset[key] = draw(val_strat)
 
     return dict_subset
