@@ -724,7 +724,6 @@ _num_iter = 10
 def test_multiple_exchange_with_repeg(vyper_cryptopool, dx_perc_list, indices_list):
     """Test `exchange` against vyper implementation."""
 
-    tols = [1e9, 1]
     pool = initialize_pool(vyper_cryptopool)
 
     for indices, dx_perc in zip(indices_list, dx_perc_list):
@@ -733,11 +732,11 @@ def test_multiple_exchange_with_repeg(vyper_cryptopool, dx_perc_list, indices_li
 
         expected_dy = vyper_cryptopool.exchange(i, j, dx, 0)
         dy, _ = pool.exchange(i, j, dx)
-        assert abs(dy - expected_dy) < tols[j]
+        assert dy == expected_dy
 
         expected_balances = [vyper_cryptopool.balances(i) for i in range(2)]
-        assert abs(pool.balances[0] - expected_balances[0]) < tols[0]
-        assert abs(pool.balances[1] - expected_balances[1]) < tols[1]
+        assert pool.balances[0] == expected_balances[0]
+        assert pool.balances[1] == expected_balances[1]
 
         assert pool.last_prices == [vyper_cryptopool.last_prices()]
         # assert pool.last_prices_timestamp == vyper_cryptopool.last_prices_timestamp()
