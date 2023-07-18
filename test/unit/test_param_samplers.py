@@ -140,10 +140,12 @@ def test_ParameterizedPoolIterator_unmapped_pool_exception():
     """
 
     class DummyPool:
-        pass
+        def __init__(self):
+            for attr in "ab":
+                setattr(self, attr, None)
 
     pool = DummyPool()
-    variable_params = {"a": 1, "b": 2}
+    variable_params = {"a": [1, 2], "b": [3, 4]}
 
     with pytest.raises(ParameterSamplerError):
         ParameterizedPoolIterator(pool, variable_params)
