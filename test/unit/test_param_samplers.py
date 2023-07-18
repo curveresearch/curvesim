@@ -7,12 +7,15 @@ from pandas import DataFrame
 from itertools import product
 
 from curvesim.exceptions import ParameterSamplerError
-from curvesim.iterators.param_samplers import get_param_sampler, pool_param_sampler_map
+from curvesim.iterators.param_samplers import Grid
 from curvesim.pool.sim_interface import SimCurvePool, SimCurveRaiPool, SimCurveMetaPool
+from curvesim.iterators.param_samplers.grid import CurveCryptoPoolGrid  # Remove
+from curvesim.pool.cryptoswap import CurveCryptoPool  # Remove
 
+SimCurveCryptoPool = CurveCryptoPool  # Remove
 
 # Strategies
-PARAM_STRATS = {
+POOL_PARAMS = {
     "A": st.integers(min_value=10, max_value=3000),
     "D": st.integers(min_value=10**24, max_value=10**28),
     "fee": st.integers(min_value=10**10, max_value=10**11),
@@ -20,6 +23,37 @@ PARAM_STRATS = {
     "D_base": st.integers(min_value=10**24, max_value=10**28),
     "fee_base": st.integers(min_value=10**10, max_value=10**11),
 }
+
+METAPOOL_PARAMS = {
+    "A": st.integers(min_value=10, max_value=3000),
+    "D": st.integers(min_value=10**24, max_value=10**28),
+    "fee": st.integers(min_value=10**10, max_value=10**11),
+    "A_base": st.integers(min_value=10, max_value=3000),
+    "D_base": st.integers(min_value=10**24, max_value=10**28),
+    "fee_base": st.integers(min_value=10**10, max_value=10**11),
+}
+
+
+CRYPTYOSWAP_PARAMS = {
+    "A": 400000,
+    "gamma": 72500000000000,
+    "n": 2,
+    "precisions": [1, 1],
+    "mid_fee": 26000000,
+    "out_fee": 45000000,
+    "allowed_extra_profit": 2000000000000,
+    "fee_gamma": 230000000000000,
+    "adjustment_step": 146000000000000,
+    "admin_fee": 5000000000,
+    "ma_half_time": 600,
+    "price_scale": 1550997347493624157,
+    "balances": [20477317313816545807568241, 13270936465339000000000000],
+    "tokens": 1550997347493624157,
+    "xcp_profit": 1052829794354693246,
+    "xcp_profit_a": 1052785575319598710,
+}
+
+#add D
 
 
 def make_parameter_strats(*parameters):
@@ -36,19 +70,19 @@ def param_subset_strat(draw, parameters, min_size=1, max_size=None, val_to_list=
     Generates a dict including a subset of the provided parameters. This simulates
     user inputs to the parameter sampler (i.e., variable_params, fixed_params).
 
-    Parameter values are taken from PARAM_STRATS. If val_to_list is True, generates a
+    Parameter values are taken from param_strats. If val_to_list is True, generates a
     list of values for each parameter (i.e., in the format of variable_params).
     """
     max_size = max_size or len(parameters)
 
     key_strat = to_list_strat(
-        st.sampled_from(parameters), min_size=min_size, max_size=max_size
+        st.sampled_from(parameters.keys()), min_size=min_size, max_size=max_size
     )
 
     keys = draw(key_strat)
     dict_subset = {}
     for key in keys:
-        val_strat = PARAM_STRATS[key]
+        val_strat = parameters[key]
         if val_to_list:
             val_strat = to_list_strat(val_strat)
         dict_subset[key] = draw(val_strat)
@@ -61,59 +95,130 @@ def to_list_strat(strategy, min_size=2, max_size=20):
     return st.lists(strategy, min_size=min_size, max_size=max_size, unique=True)
 
 
-# Tests
-def test_get_param_sampler():
-    """Test class mapping and initializing using get_param_sampler()."""
-    # TODO: add CryptoPool
-
-    test_pools = POOLS.values()
-    test_args = [({"A": [10, 100, 1000]}, {"D": 10**26})] * 3  # stableswap args
-
-    for sampler_type in pool_param_sampler_map:
-        for pool, args in zip(test_pools, test_args):
-            param_sampler = get_param_sampler(sampler_type, pool, *args)
-            expected_class = pool_param_sampler_map[sampler_type][type(pool)]
-            assert isinstance(param_sampler, expected_class)
-
-
-def test_param_sampler_exceptions():
-    """Test exceptions for invalid parameter names."""
-    pool = POOLS["sim_curve_pool"]
+# General Tests
+def test_invalid_parameter_exceptions():
+    """
+    Test exceptions for invalid parameter names. If fails,
+    ParameterSampler._validate_attributes is malfunctioning.
+    """
+    pool = POOLS[SimCurvePool]
 
     # Not a pool param
     with pytest.raises(ParameterSamplerError):
-        get_param_sampler("grid", pool, {"not_a_param": [20, 30]})
+        Grid(pool, {"not_a_param": [20, 30]})
 
     # Basepool param when no basepool
     with pytest.raises(ParameterSamplerError):
-        get_param_sampler("grid", pool, {"A_base": [10, 100]})
+        Grid(pool, {"A_base": [10, 100]})
 
 
-@given(*make_parameter_strats("A", "D", "fee"))
+# Grid Tests
+def test_grid_subclass_mapping():
+    """
+    Test Grid subclass mapping and instantiation. If fails, Grid.__new__ or subclass
+    instantiation is failing.
+    """
+
+    class DummyPool:
+        pass
+
+    class DummyParamSampler:
+        def __init__(self, pool, variable_params, fixed_params):
+            self.pool_template = pool
+            self.variable_params = variable_params
+            self.fixed_params = fixed_params
+
+    mapping = {DummyPool: DummyParamSampler}
+    pool = DummyPool()
+    variable_params = {"a": 1, "b": 2}
+    fixed_params = {"c": 3, "d": 4}
+
+    param_sampler = Grid(pool, variable_params, fixed_params, pool_map=mapping)
+
+    assert isinstance(param_sampler, DummyParamSampler)
+    assert isinstance(param_sampler.pool_template, DummyPool)
+    assert param_sampler.variable_params == variable_params
+    assert param_sampler.fixed_params == fixed_params
+
+
+def test_grid_unmapped_pool_exception():
+    """
+    Test Grid exception for unmapped pool type. If fails, Grid.__new__ is not
+    interacting with Grid.pool_map correctly.
+    """
+
+    class DummyPool:
+        pass
+
+    pool = DummyPool()
+    variable_params = {"a": 1, "b": 2}
+
+    with pytest.raises(ParameterSamplerError):
+        Grid(pool, variable_params)
+
+
+def test_grid_wrong_pool_exception():
+    """
+    Test Grid subclass exceptions when instantiated with wrong pool type. If fails,
+    GridBase._validate_pool_type or a subclass's _pool_type property is malfunctioning.
+    """
+
+    class DummyPool:
+        pass
+
+    pool = DummyPool()
+    variable_params = {"a": 1, "b": 2}
+
+    for subclass in Grid.pool_map.values():
+        mapping = {DummyPool: subclass}
+
+        with pytest.raises(ParameterSamplerError):
+            Grid(pool, variable_params, pool_map=mapping)
+
+
+@given(*make_parameter_strats(POOL_PARAMS))
 @settings(max_examples=5, deadline=None)
 def test_grid_curve_pool(variable_params, fixed_params):
-    _test_grid("sim_curve_pool", variable_params, fixed_params)
+    """Tests full instantiation of CurvePoolGrid from SimCurvePool."""
+    _test_grid(SimCurvePool, variable_params, fixed_params)
 
 
-@given(*make_parameter_strats("A", "D", "fee", "A_base", "D_base", "fee_base"))
+@given(*make_parameter_strats(METAPOOL_PARAMS))
 @settings(max_examples=5, deadline=None)
 def test_grid_curve_meta_pool(variable_params, fixed_params):
-    _test_grid("sim_curve_meta_pool", variable_params, fixed_params)
+    """Tests full instantiation of CurveMetaPoolGrid from SimCurveMetaPool."""
+    _test_grid(SimCurveMetaPool, variable_params, fixed_params)
 
 
-@given(*make_parameter_strats("A", "D", "fee", "A_base", "D_base", "fee_base"))
+@given(*make_parameter_strats(METAPOOL_PARAMS))
 @settings(max_examples=5, deadline=None)
 def test_grid_curve_rai_pool(variable_params, fixed_params):
-    _test_grid("sim_curve_rai_pool", variable_params, fixed_params)
+    """Tests full instantiation of CurveMetaPoolGrid from SimCurveRaiPool."""
+    _test_grid(SimCurveRaiPool, variable_params, fixed_params)
 
 
-# TODO: add cryptopool
+# @given(*make_parameter_strats(CRYPTOPOOL_PARAMS))
+# @settings(max_examples=5, deadline=None)
+# def test_grid_curve_crypto_pool(variable_params, fixed_params):
+#     """Tests full instantiation of CurveCryptoPoolGrid from SimCurveCryptoPool."""
+#     CurveCryptoPoolGrid._pool_type = SimCurveCryptoPool  # remove when SimPool ready
+#     pool_map = {SimCurveCryptoPool: CurveCryptoPoolGrid}  # remove when SimPool ready
+#     _test_grid(SimCurveCryptoPool, variable_params, fixed_params, pool_map=pool_map)
 
 
 # Helper functions for tests
-def _test_grid(pool_type, variable_params, fixed_params):
+def _test_grid(pool_type, variable_params, fixed_params, pool_map=None):
+    """
+    Tests correct instantiation of a Grid subclass, including correct class and
+    parameters/attributes.
+    """
     pool = POOLS[pool_type]
-    param_sampler = get_param_sampler("grid", pool, variable_params, fixed_params)
+    param_sampler = Grid(pool, variable_params, fixed_params, pool_map)
+
+    pool_to_sampler = pool_map or Grid.pool_map
+    expected_type = pool_to_sampler[pool_type]
+
+    assert isinstance(param_sampler, expected_type)
     assert pool != param_sampler.pool_template  # ensure deepcopy
 
     _test_pool_params(param_sampler.pool_template, fixed_params)
@@ -121,6 +226,9 @@ def _test_grid(pool_type, variable_params, fixed_params):
 
 
 def _test_pool_params(pool, params):
+    """
+    Tests that pool attributes match those defined in the params dict.
+    """
     for key, val in params.items():
         _pool, _key = parse_pool_attribute(pool, key)
 
@@ -131,6 +239,9 @@ def _test_pool_params(pool, params):
 
 
 def _test_grid_variable_params(param_sampler, variable_params):
+    """
+    Tests that Grid.parameter_sequence is generated and applied to pool on each iter.
+    """
     keys, values = zip(*variable_params.items())
     expected_sequence = []
     for vals in product(*values):
@@ -174,10 +285,28 @@ meta_kwargs = {
 }
 rp = DataFrame([1, 2, 3], columns=["price"])
 
+crypto_kwargs = {
+    "A": 400000,
+    "gamma": 72500000000000,
+    "n": 2,
+    "precisions": [1, 1],
+    "mid_fee": 26000000,
+    "out_fee": 45000000,
+    "allowed_extra_profit": 2000000000000,
+    "fee_gamma": 230000000000000,
+    "adjustment_step": 146000000000000,
+    "admin_fee": 5000000000,
+    "ma_half_time": 600,
+    "price_scale": 1550997347493624157,
+    "balances": [20477317313816545807568241, 13270936465339000000000000],
+    "tokens": 1550997347493624157,
+    "xcp_profit": 1052829794354693246,
+    "xcp_profit_a": 1052785575319598710,
+}
+
 POOLS = {
-    "sim_curve_pool": SimCurvePool(
-        A=250, D=1000000 * 10**18, n=2, admin_fee=5 * 10**9
-    ),
-    "sim_curve_meta_pool": SimCurveMetaPool(**meta_kwargs),
-    "sim_curve_rai_pool": SimCurveRaiPool(**meta_kwargs, redemption_prices=rp),
+    SimCurvePool: SimCurvePool(A=250, D=1000000 * 10**18, n=2, admin_fee=5 * 10**9),
+    SimCurveMetaPool: SimCurveMetaPool(**meta_kwargs),
+    SimCurveRaiPool: SimCurveRaiPool(**meta_kwargs, redemption_prices=rp),
+    SimCurveCryptoPool: SimCurveCryptoPool(**crypto_kwargs),
 }
