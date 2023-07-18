@@ -696,3 +696,53 @@ def test_calc_token_amount(vyper_cryptopool, x0, x1):
 
     expected_balances = [vyper_cryptopool.balances(i) for i in range(2)]
     assert pool.balances == expected_balances
+
+
+_num_iter = 10
+
+
+@given(
+    st.lists(
+        st.integers(min_value=1, max_value=5000),
+        min_size=_num_iter,
+        max_size=_num_iter,
+    ),
+    st.lists(
+        st.tuples(
+            st.integers(min_value=0, max_value=1),
+            st.integers(min_value=0, max_value=1),
+        ).filter(lambda x: x[0] != x[1]),
+        min_size=_num_iter,
+        max_size=_num_iter,
+    ),
+)
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=5,
+    deadline=None,
+)
+def test_multiple_exchange_with_repeg(vyper_cryptopool, dx_perc_list, indices_list):
+    """Test `exchange` against vyper implementation."""
+
+    tols = [1e9, 1]
+    pool = initialize_pool(vyper_cryptopool)
+
+    for indices, dx_perc in zip(indices_list, dx_perc_list):
+        i, j = indices
+        dx = pool.balances[i] * dx_perc // 10000  # dx_perc in bps
+
+        expected_dy = vyper_cryptopool.exchange(i, j, dx, 0)
+        dy, _ = pool.exchange(i, j, dx)
+        assert abs(dy - expected_dy) < tols[j]
+
+        expected_balances = [vyper_cryptopool.balances(i) for i in range(2)]
+        assert abs(pool.balances[0] - expected_balances[0]) < tols[0]
+        assert abs(pool.balances[1] - expected_balances[1]) < tols[1]
+
+        assert pool.last_prices == [vyper_cryptopool.last_prices()]
+        # assert pool.last_prices_timestamp == vyper_cryptopool.last_prices_timestamp()
+
+        expected_price_oracle = [vyper_cryptopool.price_oracle()]
+        expected_price_scale = [vyper_cryptopool.price_scale()]
+        assert pool.price_oracle() == expected_price_oracle
+        assert pool.price_scale == expected_price_scale
