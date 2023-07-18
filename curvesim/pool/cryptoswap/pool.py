@@ -319,12 +319,7 @@ class CurveCryptoPool(Pool):
 
         D_unadjusted: int = new_D  # Withdrawal methods know new D already
         if new_D == 0:
-            if n_coins == 2:
-                D_unadjusted = factory_2_coin.newton_D(A, gamma, _xp)
-            elif n_coins == 3:
-                D_unadjusted = tricrypto_ng.newton_D(A, gamma, _xp, K0_prev)
-            else:
-                raise CalculationError("")
+            D_unadjusted = _newton_D(A, gamma, _xp, K0_prev)
 
         if p_i > 0:
             # Save the last price
@@ -404,10 +399,7 @@ class CurveCryptoPool(Pool):
                 ]
 
                 # Calculate "extended constant product" invariant xCP and virtual price
-                if n_coins == 2:
-                    D: int = factory_2_coin.newton_D(A, gamma, xp)
-                else:
-                    D: int = tricrypto_ng.newton_D(A, gamma, xp)
+                D: int = _newton_D(A, gamma, xp)
                 xp = [D // n_coins] + [
                     D * PRECISION // (n_coins * p_new) for p_new in new_prices
                 ]
@@ -556,10 +548,7 @@ class CurveCryptoPool(Pool):
 
         xp = self._xp_mem(xp)
 
-        if len(xp) == 2:
-            y_out = [factory_2_coin.newton_y(A, gamma, xp, self.D, j), 0]
-        else:
-            y_out = tricrypto_ng.get_y(A, gamma, xp, self.D, j)
+        y_out = _get_y(A, gamma, xp, self.D, j)
         dy = xp[j] - y_out[0]
         xp[j] -= dy
         dy -= 1
@@ -1013,6 +1002,37 @@ def _geometric_mean(unsorted_x: List[int]) -> int:
         return tricrypto_ng.geometric_mean(unsorted_x)
     else:
         raise CurvesimValueError("More than 3 coins is not supported.")
+
+
+def _newton_D(A: int, gamma: int, xp: List[int], K0_prev: int = 0) -> int:
+    """
+    Compute D using using specific approaches depending on
+    the number of coins.
+
+    For 3 coins, we actually use Halley's method and allow a
+    starting value.
+    """
+    n_coins = len(xp)
+    if n_coins == 2:
+        D = factory_2_coin.newton_D(A, gamma, xp)
+    elif n_coins == 3:
+        D = tricrypto_ng.newton_D(A, gamma, xp, K0_prev)
+    else:
+        raise CurvesimValueError("More than 3 coins is not supported.")
+
+    return D
+
+
+def _get_y(A: int, gamma: int, xp: List[int], D: int, j: int) -> List[int]:
+    n_coins = len(xp)
+    if n_coins == 2:
+        y_out = [factory_2_coin.newton_y(A, gamma, xp, D, j), 0]
+    elif n_coins == 3:
+        y_out = tricrypto_ng.get_y(A, gamma, xp, D, j)
+    else:
+        raise CurvesimValueError("More than 3 coins is not supported.")
+
+    return y_out
 
 
 def _halfpow(power: int) -> int:
