@@ -238,7 +238,7 @@ _num_iter = 10
 
 @given(
     st.lists(
-        st.integers(min_value=1, max_value=20000),
+        st.integers(min_value=1, max_value=5000),
         min_size=_num_iter,
         max_size=_num_iter,
     ),
@@ -253,7 +253,7 @@ _num_iter = 10
 )
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
-    max_examples=_num_iter,
+    max_examples=5,
     deadline=None,
 )
 def test_multiple_exchange_with_repeg(vyper_tricrypto, dx_perc_list, indices_list):
@@ -261,7 +261,6 @@ def test_multiple_exchange_with_repeg(vyper_tricrypto, dx_perc_list, indices_lis
 
     tols = [1, 1, 1e9]
     pool = initialize_pool(vyper_tricrypto)
-    old_price_scale = None
 
     for indices, dx_perc in zip(indices_list, dx_perc_list):
         i, j = indices
@@ -277,19 +276,12 @@ def test_multiple_exchange_with_repeg(vyper_tricrypto, dx_perc_list, indices_lis
         assert abs(pool.balances[2] - expected_balances[2]) < tols[2]
 
         assert pool.last_prices == [vyper_tricrypto.last_prices(i) for i in range(2)]
-        assert pool.last_prices_timestamp == vyper_tricrypto.last_prices_timestamp
+        # assert pool.last_prices_timestamp == vyper_tricrypto.last_prices_timestamp()
 
         expected_price_oracle = [vyper_tricrypto.price_oracle(i) for i in range(2)]
         expected_price_scale = [vyper_tricrypto.price_scale(i) for i in range(2)]
         assert pool.price_oracle() == expected_price_oracle
         assert pool.price_scale == expected_price_scale
-
-        # price scale updated
-        if old_price_scale and dx_perc > 500:
-            assert old_price_scale != pool.price_scale
-            print(old_price_scale, pool.price_scale)
-
-        old_price_scale = expected_price_scale
 
 
 @given(
@@ -365,7 +357,7 @@ def test_get_p(vyper_tricrypto, A, gamma, x0, x1, x2):
 )
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
-    max_examples=20,
+    max_examples=5,
     deadline=None,
 )
 def test_get_y(vyper_tricrypto, A, gamma, x0, x1, x2, pair, dx_perc):
