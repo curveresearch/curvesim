@@ -295,6 +295,7 @@ class CurveCryptoPool(Pool):
         Also claims admin fees if appropriate (enough profit and price scale
         and oracle is close enough).
         """
+
         price_oracle: List[int] = self._price_oracle
         last_prices: List[int] = self.last_prices
         price_scale: List[int] = self.price_scale
@@ -379,74 +380,54 @@ class CurveCryptoPool(Pool):
 
         self.xcp_profit = xcp_profit
 
-        norm: int = 0
-        ratio: int = 0
-        for k in range(n_coins - 1):
-            ratio = price_oracle[k] * 10**18 // price_scale[k]
-            ratio = abs(ratio - 10**18)
-            norm += ratio**2
-        norm = isqrt(norm)
+        if virtual_price * 2 - 10**18 > xcp_profit + 2 * self.allowed_extra_profit:
 
-        adjustment_step: int = max(self.adjustment_step, norm // 5)
+            norm: int = 0
+            ratio: int = 0
+            for k in range(n_coins - 1):
+                ratio = price_oracle[k] * 10**18 // price_scale[k]
+                ratio = abs(ratio - 10**18)
+                norm += ratio**2
+            norm = isqrt(norm)
+            adjustment_step: int = max(self.adjustment_step, norm // 5)
 
-        needs_adjustment: bool = self.not_adjusted
-        # if not needs_adjustment and
-        # (virtual_price-10**18 > (xcp_profit-10**18)/2 + self.allowed_extra_profit):
-        # (re-arranged for gas efficiency)
-        if (
-            not needs_adjustment
-            and (
-                virtual_price * 2 - 10**18
-                > xcp_profit + 2 * self.allowed_extra_profit
-            )
-            and (norm > adjustment_step)
-            and (old_virtual_price > 0)
-        ):
-            needs_adjustment = True
-            self.not_adjusted = True
+            if norm > adjustment_step:
+                new_prices = [
+                    (p * (norm - adjustment_step) + adjustment_step * p_oracle) // norm
+                    for p, p_oracle in zip(price_scale, price_oracle)
+                ]
 
-        if needs_adjustment and norm > adjustment_step and old_virtual_price > 0:
-            new_prices = [
-                (p * (norm - adjustment_step) + adjustment_step * p_oracle) // norm
-                for p, p_oracle in zip(price_scale, price_oracle)
-            ]
+                # Calculate balances*prices
+                xp = [_xp[0]] + [
+                    balance * p_new // p
+                    for balance, p, p_new in zip(_xp[1:], price_scale, new_prices)
+                ]
 
-            # Calculate balances*prices
-            xp = [_xp[0]] + [
-                balance * p_new // p
-                for balance, p, p_new in zip(_xp[1:], price_scale, new_prices)
-            ]
+                # Calculate "extended constant product" invariant xCP and virtual price
+                if n_coins == 2:
+                    D: int = factory_2_coin.newton_D(A, gamma, xp)
+                else:
+                    D: int = tricrypto_ng.newton_D(A, gamma, xp)
+                xp = [D // n_coins] + [
+                    D * PRECISION // (n_coins * p_new) for p_new in new_prices
+                ]
+                new_virtual_price = 10**18 * _geometric_mean(xp) // total_supply
 
-            # Calculate "extended constant product" invariant xCP and virtual price
-            if n_coins == 2:
-                D: int = factory_2_coin.newton_D(A, gamma, xp)
-            else:
-                D: int = tricrypto_ng.newton_D(A, gamma, xp)
-            xp = [D // n_coins] + [
-                D * PRECISION // (n_coins * p_new) for p_new in new_prices
-            ]
-            new_virtual_price = 10**18 * _geometric_mean(xp) // total_supply
-
-            # Proceed if we've got enough profit:
-            #   new_virtual_price > 10**18
-            #   new_virtual_price - 10**18 > (xcp_profit - 10**18) / 2
-            if (new_virtual_price > 10**18) and (
-                2 * new_virtual_price - 10**18 > xcp_profit
-            ):
-                self.price_scale = new_prices
-                self.D = D
-                self.virtual_price = new_virtual_price
-                return
+                # Proceed if we've got enough profit:
+                #   new_virtual_price > 10**18
+                #   new_virtual_price - 10**18 > (xcp_profit - 10**18) / 2
+                if (new_virtual_price > 10**18) and (
+                    2 * new_virtual_price - 10**18 > xcp_profit
+                ):
+                    self.price_scale = new_prices
+                    self.D = D
+                    self.virtual_price = new_virtual_price
+                    return
 
         # If we are here, the price_scale adjustment did not happen
         # Still need to update the profit counter and D
         self.D = D_unadjusted
         self.virtual_price = virtual_price
-
-        # norm appeared < adjustment_step after
-        if needs_adjustment:
-            self.not_adjusted = False
-            self._claim_admin_fees()
 
     def _claim_admin_fees(self):
         # no gulping logic needed for the python code
