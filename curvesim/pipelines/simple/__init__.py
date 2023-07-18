@@ -114,6 +114,7 @@ def pipeline(
         variable_params = TEST_PARAMS
         fixed_params = {}
 
+    # pylint: disable-next=abstract-class-instantiated
     param_sampler = ParameterizedPoolIterator(pool, variable_params, fixed_params)
 
     _metrics = init_metrics(DEFAULT_METRICS, pool=pool)

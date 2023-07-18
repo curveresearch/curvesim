@@ -123,6 +123,7 @@ def pipeline(
 
     pool = get_sim_pool(pool_metadata, pool_data_cache=pool_data_cache)
 
+    # pylint: disable-next=abstract-class-instantiated
     param_sampler = ParameterizedPoolIterator(pool, variable_params, fixed_params)
     price_sampler = PriceVolume(
         pool.assets, days=days, data_dir=data_dir, src=src, end=end
