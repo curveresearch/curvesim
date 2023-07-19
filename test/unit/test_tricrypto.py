@@ -209,7 +209,7 @@ price = st.integers(min_value=10**12, max_value=10**25)
 )
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
-    max_examples=10,
+    max_examples=50,
     deadline=None,
 )
 def test_exchange(vyper_tricrypto, dx_perc, i, j):
@@ -223,14 +223,14 @@ def test_exchange(vyper_tricrypto, dx_perc, i, j):
 
     expected_dy = vyper_tricrypto.exchange(i, j, dx, 0)
     dy, _ = pool.exchange(i, j, dx)
-    # assert dy == expected_dy
-    assert abs(dy - expected_dy) < tols[j]
+    assert dy == expected_dy
+    # assert abs(dy - expected_dy) < tols[j]
 
     expected_balances = [vyper_tricrypto.balances(i) for i in range(3)]
-    # assert pool.balances == expected_balances
-    assert abs(pool.balances[0] - expected_balances[0]) < tols[0]
-    assert abs(pool.balances[1] - expected_balances[1]) < tols[1]
-    assert abs(pool.balances[2] - expected_balances[2]) < tols[2]
+    assert pool.balances == expected_balances
+    # assert abs(pool.balances[0] - expected_balances[0]) < tols[0]
+    # assert abs(pool.balances[1] - expected_balances[1]) < tols[1]
+    # assert abs(pool.balances[2] - expected_balances[2]) < tols[2]
 
 
 _num_iter = 10
@@ -258,7 +258,7 @@ _num_iter = 10
 )
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
-    max_examples=5,
+    max_examples=10,
     deadline=None,
 )
 def test_multiple_exchange_with_repeg(
@@ -280,12 +280,14 @@ def test_multiple_exchange_with_repeg(
 
         expected_dy = vyper_tricrypto.exchange(i, j, dx, 0)
         dy, _ = pool.exchange(i, j, dx)
-        assert abs(dy - expected_dy) < tols[j]
+        assert dy == expected_dy
+        # assert abs(dy - expected_dy) < tols[j]
 
         expected_balances = [vyper_tricrypto.balances(i) for i in range(3)]
-        assert abs(pool.balances[0] - expected_balances[0]) < tols[0]
-        assert abs(pool.balances[1] - expected_balances[1]) < tols[1]
-        assert abs(pool.balances[2] - expected_balances[2]) < tols[2]
+        assert pool.balances == expected_balances
+        # assert abs(pool.balances[0] - expected_balances[0]) < tols[0]
+        # assert abs(pool.balances[1] - expected_balances[1]) < tols[1]
+        # assert abs(pool.balances[2] - expected_balances[2]) < tols[2]
 
         assert pool.last_prices == [vyper_tricrypto.last_prices(i) for i in range(2)]
         assert pool.last_prices_timestamp == vyper_tricrypto.last_prices_timestamp()
