@@ -144,14 +144,21 @@ def _vyper_cryptopool(_cryptopool_lp_token):
 
     balances = [20477317313816545807568241, 13270936465339]
     cryptopool.eval(f"self.balances={balances}")
+
     D = 41060496962103963853877954
-    virtual_price = 1026434015737186294
     cryptopool.eval(f"self.D={D}")
+
+    virtual_price = 1026434015737186294
     cryptopool.eval(f"self.virtual_price={virtual_price}")
+
     xcp_profit = 1052829794354693246
-    xcp_profit_a = 1052785575319598710
     cryptopool.eval(f"self.xcp_profit={xcp_profit}")
+
+    xcp_profit_a = 1052785575319598710
     cryptopool.eval(f"self.xcp_profit_a={xcp_profit_a}")
+
+    last_prices_timestamp = 1689085619
+    cryptopool.eval(f"self.last_prices_timestamp={last_prices_timestamp}")
 
     return cryptopool
 
