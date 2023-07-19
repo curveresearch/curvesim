@@ -711,18 +711,27 @@ _num_iter = 10
         min_size=_num_iter,
         max_size=_num_iter,
     ),
+    st.lists(
+        st.integers(min_value=0, max_value=86400),
+        min_size=_num_iter,
+        max_size=_num_iter,
+    ),
 )
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
     max_examples=5,
     deadline=None,
 )
-def test_multiple_exchange_with_repeg(vyper_cryptopool, dx_perc_list, indices_list):
+def test_multiple_exchange_with_repeg(
+    vyper_cryptopool, dx_perc_list, indices_list, time_delta_list
+):
     """Test `exchange` against vyper implementation."""
 
     pool = initialize_pool(vyper_cryptopool)
 
-    for indices, dx_perc in zip(indices_list, dx_perc_list):
+    for indices, dx_perc, time_delta in zip(
+        indices_list, dx_perc_list, time_delta_list
+    ):
         vm_timestamp = boa.env.vm.state.timestamp
         pool._block_timestamp = vm_timestamp
 
@@ -744,3 +753,5 @@ def test_multiple_exchange_with_repeg(vyper_cryptopool, dx_perc_list, indices_li
         expected_price_scale = [vyper_cryptopool.price_scale()]
         assert pool.price_oracle() == expected_price_oracle
         assert pool.price_scale == expected_price_scale
+
+        boa.env.time_travel(time_delta)

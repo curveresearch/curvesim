@@ -250,19 +250,28 @@ _num_iter = 10
         min_size=_num_iter,
         max_size=_num_iter,
     ),
+    st.lists(
+        st.integers(min_value=0, max_value=86400),
+        min_size=_num_iter,
+        max_size=_num_iter,
+    ),
 )
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
     max_examples=5,
     deadline=None,
 )
-def test_multiple_exchange_with_repeg(vyper_tricrypto, dx_perc_list, indices_list):
+def test_multiple_exchange_with_repeg(
+    vyper_tricrypto, dx_perc_list, indices_list, time_delta_list
+):
     """Test `exchange` against vyper implementation."""
 
     tols = [1, 1, 1e9]
     pool = initialize_pool(vyper_tricrypto)
 
-    for indices, dx_perc in zip(indices_list, dx_perc_list):
+    for indices, dx_perc, time_delta in zip(
+        indices_list, dx_perc_list, time_delta_list
+    ):
         vm_timestamp = boa.env.vm.state.timestamp
         pool._block_timestamp = vm_timestamp
 
@@ -285,6 +294,8 @@ def test_multiple_exchange_with_repeg(vyper_tricrypto, dx_perc_list, indices_lis
         expected_price_scale = [vyper_tricrypto.price_scale(i) for i in range(2)]
         assert pool.price_oracle() == expected_price_oracle
         assert pool.price_scale == expected_price_scale
+
+        boa.env.time_travel(time_delta)
 
 
 @given(
