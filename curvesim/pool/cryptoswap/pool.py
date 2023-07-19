@@ -1042,7 +1042,7 @@ def _alpha(ma_half_time, block_timestamp, last_prices_timestamp, n_coins):
     elif n_coins == 3:
         ma_half_time = 865
         alpha: int = tricrypto_ng.wad_exp(
-            -1 * (block_timestamp - last_prices_timestamp) * 10**18 // ma_half_time
+            -1 * ((block_timestamp - last_prices_timestamp) * 10**18 // ma_half_time)
         )
     else:
         raise CurvesimValueError("More than 3 coins is not supported.")
