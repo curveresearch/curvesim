@@ -263,6 +263,9 @@ def test_multiple_exchange_with_repeg(vyper_tricrypto, dx_perc_list, indices_lis
     pool = initialize_pool(vyper_tricrypto)
 
     for indices, dx_perc in zip(indices_list, dx_perc_list):
+        vm_timestamp = boa.env.vm.state.timestamp
+        pool._block_timestamp = vm_timestamp
+
         i, j = indices
         dx = pool.balances[i] * dx_perc // 10000  # dx_perc in bps
 
@@ -276,7 +279,7 @@ def test_multiple_exchange_with_repeg(vyper_tricrypto, dx_perc_list, indices_lis
         assert abs(pool.balances[2] - expected_balances[2]) < tols[2]
 
         assert pool.last_prices == [vyper_tricrypto.last_prices(i) for i in range(2)]
-        # assert pool.last_prices_timestamp == vyper_tricrypto.last_prices_timestamp()
+        assert pool.last_prices_timestamp == vyper_tricrypto.last_prices_timestamp()
 
         expected_price_oracle = [vyper_tricrypto.price_oracle(i) for i in range(2)]
         expected_price_scale = [vyper_tricrypto.price_scale(i) for i in range(2)]
