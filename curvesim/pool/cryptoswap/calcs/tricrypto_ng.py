@@ -597,7 +597,6 @@ def wad_exp(x: int) -> int:
          by pcaversaccio (Snekmate), distributed under the AGPL-3.0 license.
          https://github.com/pcaversaccio/snekmate
     """
-    print(x)
     value: int = x
 
     # If the result is `< 0.5`, we return zero. This happens when we have the following:

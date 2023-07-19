@@ -2,7 +2,7 @@
 Mainly a module to house the `CryptoPool`, a cryptoswap implementation in Python.
 """
 import time
-from math import isqrt
+from math import ceil, isqrt
 from typing import List
 
 from gmpy2 import mpz
@@ -301,12 +301,9 @@ class CurveCryptoPool(Pool):
         # EMA uses price of the last trade and oracle price in previous block.
         if last_prices_timestamp < block_timestamp:
             ma_half_time: int = self.ma_half_time
-            print("python")
-            print(ma_half_time)
             alpha: int = _alpha(
                 ma_half_time, block_timestamp, last_prices_timestamp, n_coins
             )
-            print(alpha)
             if n_coins == 2:
                 price_oracle = [
                     (last_p * (10**18 - alpha) + oracle_p * alpha) // 10**18
@@ -323,7 +320,6 @@ class CurveCryptoPool(Pool):
                 ]
             else:
                 raise CalculationError("More than 3 coins is not supported.")
-            print(price_oracle)
             self._price_oracle = price_oracle
             self.last_prices_timestamp = block_timestamp
 
@@ -1050,7 +1046,13 @@ def _alpha(ma_half_time, block_timestamp, last_prices_timestamp, n_coins):
             (block_timestamp - last_prices_timestamp) * 10**18 // ma_half_time
         )
     elif n_coins == 3:
-        ma_half_time = 865
+        # tricrypto-ng stores the ma half-time divided by ln(2), so we have to
+        # take the real half-time and divide by ln(2) to use in the alpha calc.
+        #
+        # Note ln(2) = 0.693147... but the approx actually used is 694 / 1000.
+        #
+        # CAUTION: neeed to be wary of off-by-one errors from integer division.
+        ma_half_time = ceil(ma_half_time * 1000 / 694)
         alpha: int = tricrypto_ng.wad_exp(
             -1 * ((block_timestamp - last_prices_timestamp) * 10**18 // ma_half_time)
         )
