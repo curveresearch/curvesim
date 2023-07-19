@@ -302,17 +302,27 @@ class CurveCryptoPool(Pool):
         if last_prices_timestamp < block_timestamp:
             ma_half_time: int = self.ma_half_time
             print("python")
-            print(block_timestamp)
-            print(last_prices_timestamp)
             print(ma_half_time)
             alpha: int = _alpha(
                 ma_half_time, block_timestamp, last_prices_timestamp, n_coins
             )
             print(alpha)
-            price_oracle = [
-                (last_p * (10**18 - alpha) + oracle_p * alpha) // 10**18
-                for last_p, oracle_p in zip(last_prices, price_oracle)
-            ]
+            if n_coins == 2:
+                price_oracle = [
+                    (last_p * (10**18 - alpha) + oracle_p * alpha) // 10**18
+                    for last_p, oracle_p in zip(last_prices, price_oracle)
+                ]
+            elif n_coins == 3:
+                # Cap state price that goes into the EMA with 2*price_scale.
+                price_oracle = [
+                    (min(last_p, 2 * p) * (10**18 - alpha) + oracle_p * alpha)
+                    // 10**18
+                    for last_p, oracle_p, p in zip(
+                        last_prices, price_oracle, price_scale
+                    )
+                ]
+            else:
+                raise CalculationError("More than 3 coins is not supported.")
             print(price_oracle)
             self._price_oracle = price_oracle
             self.last_prices_timestamp = block_timestamp
