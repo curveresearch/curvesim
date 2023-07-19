@@ -39,7 +39,7 @@ class CurveCryptoPoolMixin:
 
     @property
     def _pool_type(self):
-        raise NotImplementedError
+        return  # SimCurveCryptoPool
 
     @property
     def setters(self):

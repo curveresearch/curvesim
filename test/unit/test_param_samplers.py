@@ -12,12 +12,6 @@ from curvesim.iterators.param_samplers.parameterized_pool_iterator import (
     DEFAULT_POOL_MAP,
 )
 from curvesim.pool.sim_interface import SimCurvePool, SimCurveRaiPool, SimCurveMetaPool
-from curvesim.iterators.param_samplers.parameterized_pool_iterator import (
-    ParameterizedCurveCryptoPoolIterator,
-)  # Remove
-from curvesim.pool.cryptoswap import CurveCryptoPool  # Remove
-
-SimCurveCryptoPool = CurveCryptoPool  # Remove
 
 # Strategies
 POOL_PARAMS = {
@@ -191,19 +185,12 @@ def test_ParameterizedPoolIterator_curve_rai_pool(variable_params, fixed_params)
     _test_ParameterizedPoolIterator(SimCurveRaiPool, variable_params, fixed_params)
 
 
+@pytest.mark.skip(reason="Requires SimCurveCryptoPool")
 @given(*make_parameter_strats(CRYPTOPOOL_PARAMS))
 @settings(max_examples=5, deadline=None)
 def test_ParameterizedPoolIterator_curve_crypto_pool(variable_params, fixed_params):
     """Tests full instantiation of ParameterizedCurveCryptoPoolIteratorfrom SimCurveCryptoPool."""
-    ParameterizedCurveCryptoPoolIterator._pool_type = (
-        SimCurveCryptoPool  # remove when SimPool ready
-    )
-    pool_map = {
-        SimCurveCryptoPool: ParameterizedCurveCryptoPoolIterator
-    }  # remove when SimPool ready
-    _test_ParameterizedPoolIterator(
-        SimCurveCryptoPool, variable_params, fixed_params, pool_map=pool_map
-    )
+    # _test_ParameterizedPoolIterator(SimCurveCryptoPool, variable_params, fixed_params)
 
 
 # Helper functions for tests
@@ -319,5 +306,5 @@ POOLS = {
     SimCurvePool: SimCurvePool(A=250, D=1000000 * 10**18, n=2, admin_fee=5 * 10**9),
     SimCurveMetaPool: SimCurveMetaPool(**meta_kwargs),
     SimCurveRaiPool: SimCurveRaiPool(**meta_kwargs, redemption_prices=rp),
-    SimCurveCryptoPool: SimCurveCryptoPool(**crypto_kwargs),
+    # SimCurveCryptoPool: SimCurveCryptoPool(**crypto_kwargs),
 }
