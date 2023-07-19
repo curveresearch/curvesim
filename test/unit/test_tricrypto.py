@@ -393,3 +393,18 @@ def test_get_y(vyper_tricrypto, A, gamma, x0, x1, x2, pair, dx_perc):
     y_out = tricrypto_ng.get_y(A, gamma, xp, D, j)
 
     assert abs(y_out[0] - expected_y_out[0]) < 1e6
+
+
+@given(st.integers(min_value=-42139678854452767551, max_value=135305999368893231589))
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=5,
+    deadline=None,
+)
+def test_wad_exp(vyper_tricrypto, x):
+    """Test the snekmate wad exp calc"""
+    MATH = get_math(vyper_tricrypto)
+    # pylint: disable=no-member
+    expected_result = MATH.wad_exp(x)
+    result = tricrypto_ng.wad_exp(x)
+    assert result == expected_result

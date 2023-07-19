@@ -598,7 +598,6 @@ def wad_exp(x: int) -> int:
          https://github.com/pcaversaccio/snekmate
     """
     value: int = x
-    print(x)
 
     # If the result is `< 0.5`, we return zero. This happens when we have the following:
     # "x <= floor(log(0.5e18) * 1e18) ~ -42e18".
@@ -632,14 +631,13 @@ def wad_exp(x: int) -> int:
 
     # We leave `p` in the "2 ** 192" base so that we do not have to scale it up
     # again for the division.
-    print(value)
     q: int = (
         ((value - 2855989394907223263936484059900) * value) >> 96
     ) + 50020603652535783019961831881945
     q = ((q * value) >> 96) - 533845033583426703283633433725380
-    q = ((q * value) >> 96) - 3604857256930695427073651918091429
+    q = ((q * value) >> 96) + 3604857256930695427073651918091429
     q = ((q * value) >> 96) - 14423608567350463180887372962807573
-    q = ((q * value) >> 96) - 26449188498355588339934803723976023
+    q = ((q * value) >> 96) + 26449188498355588339934803723976023
 
     # The polynomial `q` has no zeros in the range because all its roots are complex.
     # No scaling is required, as `p` is already "2 ** 96" too large. Also,
