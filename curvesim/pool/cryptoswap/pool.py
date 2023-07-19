@@ -301,13 +301,19 @@ class CurveCryptoPool(Pool):
         # EMA uses price of the last trade and oracle price in previous block.
         if last_prices_timestamp < block_timestamp:
             ma_half_time: int = self.ma_half_time
-            alpha: int = _halfpow(
-                (block_timestamp - last_prices_timestamp) * 10**18 // ma_half_time
+            print("python")
+            print(block_timestamp)
+            print(last_prices_timestamp)
+            print(ma_half_time)
+            alpha: int = _alpha(
+                ma_half_time, block_timestamp, last_prices_timestamp, n_coins
             )
+            print(alpha)
             price_oracle = [
                 (last_p * (10**18 - alpha) + oracle_p * alpha) // 10**18
                 for last_p, oracle_p in zip(last_prices, price_oracle)
             ]
+            print(price_oracle)
             self._price_oracle = price_oracle
             self.last_prices_timestamp = block_timestamp
 
@@ -1026,6 +1032,21 @@ def _get_y(A: int, gamma: int, xp: List[int], D: int, j: int) -> List[int]:
         raise CurvesimValueError("More than 3 coins is not supported.")
 
     return y_out
+
+
+def _alpha(ma_half_time, block_timestamp, last_prices_timestamp, n_coins):
+    if n_coins == 2:
+        alpha: int = _halfpow(
+            (block_timestamp - last_prices_timestamp) * 10**18 // ma_half_time
+        )
+    elif n_coins == 3:
+        alpha: int = tricrypto_ng.wad_exp(
+            (block_timestamp - last_prices_timestamp) * 10**18 // ma_half_time
+        )
+    else:
+        raise CurvesimValueError("More than 3 coins is not supported.")
+
+    return alpha
 
 
 def _halfpow(power: int) -> int:
