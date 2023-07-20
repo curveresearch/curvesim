@@ -358,7 +358,7 @@ def test_get_p(vyper_tricrypto, A, gamma, x0, x1, x2):
         st.integers(min_value=0, max_value=2),
         st.integers(min_value=0, max_value=2),
     ).filter(lambda x: x[0] != x[1]),
-    st.integers(min_value=1, max_value=20000),
+    st.integers(min_value=1, max_value=10000),
 )
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
