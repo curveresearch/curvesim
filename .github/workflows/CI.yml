@@ -94,7 +94,8 @@ jobs:
 
       - name: Unit tests
         run: |
-          coverage run -m pytest
+          # coverage run -m pytest
+          pytest --cov -n auto --cov-report=
 
       - name: End-to-end tests
         run: |
@@ -111,7 +112,7 @@ jobs:
         run: |
           # combine coverage results from the previous steps
           # and checks if score decreased since last CI run
-          coverage combine
+          coverage combine --append
           BADGE_JSON=`cat ${{ steps.covbadge.outputs.file }}`
           COVERAGE_SCORE=$(python3 -c "import json; score=json.loads('${BADGE_JSON}')['message'].rstrip('%'); print(score)")
           coverage report --fail-under="${COVERAGE_SCORE:-0}"

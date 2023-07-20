@@ -105,9 +105,9 @@ pylint:
 
 .PHONY: coverage
 coverage:
-	coverage run -m pytest
+	pytest --cov -n auto --cov-report=
 	coverage run -m test.simple_ci
-	coverage combine
+	coverage combine --append
 	coverage report
 
 .PHONY: coverage_html
