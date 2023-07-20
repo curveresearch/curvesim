@@ -39,17 +39,16 @@ def get_y(  # noqa: complexity: 18
     @param _D Invariant.
     @param i Index of coin to calculate y.
     """
-
     # Safety checks
-    assert ANN > MIN_A - 1 and ANN < MAX_A + 1  # dev: unsafe values A
-    assert gamma > MIN_GAMMA - 1 and gamma < MAX_GAMMA + 1  # dev: unsafe values gamma
-    assert D > 10**17 - 1 and D < 10**15 * 10**18 + 1  # dev: unsafe values D
+    assert MIN_A <= ANN <= MAX_A
+    assert MIN_GAMMA <= gamma <= MAX_GAMMA
+    assert 10**17 <= D <= 10**15 * 10**18
 
     frac: int = 0
     for k in range(3):
         if k != i:
             frac = x[k] * 10**18 // D
-            assert frac > 10**16 - 1 and frac < 10**20 + 1, "Unsafe values x[i]"
+            assert 10**16 <= frac <= 10**20, "Unsafe values x[i]"
             # if above conditions are met, x[k] > 0
 
     j: int = 0
@@ -71,13 +70,17 @@ def get_y(  # noqa: complexity: 18
 
     a: int = 10**36 // 27
 
-    # 10**36/9 + 2*10**18*gamma/27 - D**2/x_j*gamma**2*ANN/27**2/convert(A_MULTIPLIER, int256)/x_k
+    # 10**36/9 + 2*10**18*gamma/27
+    #   - D**2/x_j*gamma**2*ANN/27**2/convert(A_MULTIPLIER, int256)/x_k
     b: int = (
         10**36 // 9
         + 2 * 10**18 * gamma // 27
         - D**2 // x_j * gamma2 * ANN // 27**2 // A_MULTIPLIER // x_k
     )
-    # <------- The first two expressions can be unsafe, and unsafely added.
+
+    # Vyper does signed integer division, rounding towards zero, so we need
+    # to track the sign of b, to flip signs before and after python integer
+    # division.
     b_is_neg = b < 0
 
     # 10**36/9 + gamma*(gamma + 4*10**18)/27
@@ -92,9 +95,6 @@ def get_y(  # noqa: complexity: 18
     else:
         _c: int = gamma2 * _c_neg // D * ANN // 27 // A_MULTIPLIER
     c += _c
-    # <--------- Same as above with the first two expressions. In the third
-    #   expression, x_j + x_k will not overflow since we know their range from
-    #                                              previous assert statements.
 
     # (10**18 + gamma)**2/27
     d: int = (10**18 + gamma) ** 2 // 27
@@ -173,7 +173,6 @@ def get_y(  # noqa: complexity: 18
 
     second_cbrt: int = 0
     if delta1 > 0:
-        # convert(self._cbrt(convert((delta1 + sqrt_val), uint256)/2), int256)
         second_cbrt = _cbrt((delta1 + sqrt_val) // 2)
     else:
         second_cbrt = -_cbrt(-(delta1 - sqrt_val) // 2)
@@ -196,13 +195,14 @@ def get_y(  # noqa: complexity: 18
     out: List[int] = [int(root), int(10**18 * root_K0 // a)]
 
     frac = out[0] * 10**18 // D
-    assert frac >= 10**16 - 1 and frac < 10**20 + 1, "Unsafe value for y"
+    assert 10**16 <= frac <= 10**20, "Unsafe value for y"
     # due to precision issues, get_y can be off by 2 wei or so wrt _newton_y
 
     return out
 
 
 def sign(x):
+    """Return +/-1 depending on sign of number.  0 is positive."""
     return -1 if x < 0 else 1
 
 
@@ -220,8 +220,6 @@ def _newton_y(  # noqa: complexity: 11
     n_coins: int = len(x)
 
     # Safety checks
-    MIN_A = n_coins**n_coins * A_MULTIPLIER // 10
-    MAX_A = n_coins**n_coins * A_MULTIPLIER * 100000
     if not MIN_A <= ANN <= MAX_A:
         raise CurvesimValueError("Unsafe value for A")
     if not MIN_GAMMA <= gamma <= MAX_GAMMA:
@@ -404,11 +402,9 @@ def newton_D(
            to zero (no apriori)
     """
     x: List[int] = sorted(x_unsorted, reverse=True)
-    N_COINS = len(x)
-    assert x[0] < (2**256 - 1) // 10**18 * N_COINS**N_COINS  # dev: out of limits
-    assert x[0] > 0  # dev: empty pool
+    assert x[0] < (2**256 - 1) // 10**18 * N_COINS**N_COINS
+    assert x[0] > 0
 
-    # Safe to do unsafe add since we checked largest x's bounds previously
     S: int = sum(x)
     D: int = 0
 
