@@ -185,7 +185,10 @@ def get_y(  # noqa: complexity: 18
         C1: int = b_cbrt * b_cbrt // 10**18 * second_cbrt // 10**18
 
     # (b + b*delta0/C1 - C1)/3
-    root_K0: int = (b + b * delta0 // C1 - C1) // 3
+    if sign(b * delta0) != sign(C1):
+        root_K0: int = (b + -(b * delta0 // -C1) - C1) // 3
+    else:
+        root_K0: int = (b + b * delta0 // C1 - C1) // 3
 
     # D*D/27/x_k*D/x_j*root_K0/a
     root: int = D * D // 27 // x_k * D // x_j * root_K0 // a
@@ -197,6 +200,10 @@ def get_y(  # noqa: complexity: 18
     # due to precision issues, get_y can be off by 2 wei or so wrt _newton_y
 
     return out
+
+
+def sign(x):
+    return -1 if x < 0 else 1
 
 
 def _newton_y(  # noqa: complexity: 11
