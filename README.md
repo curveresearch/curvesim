@@ -30,7 +30,7 @@
 | curvesim/network/http.py                                            |       39 |        5 |        8 |        1 |     87% |42->45, 49-54 |
 | curvesim/network/subgraph.py                                        |      136 |       55 |       48 |        2 |     56% |78, 112-143, 148, 211-227, 439-465, 498-522 |
 | curvesim/network/utils.py                                           |       38 |        6 |        8 |        1 |     80% |41-42, 68-71 |
-| curvesim/network/web3.py                                            |       70 |        3 |       16 |        4 |     90% |139->147, 143-144, 147->152, 176 |
+| curvesim/network/web3.py                                            |       70 |        5 |       16 |        5 |     86% |62-63, 139->147, 143-144, 147->152, 176 |
 | curvesim/overrides/\_\_init\_\_.py                                  |        9 |        3 |        4 |        1 |     54% |     40-42 |
 | curvesim/pipelines/\_\_init\_\_.py                                  |       21 |        5 |       12 |        1 |     76% |     75-79 |
 | curvesim/pipelines/simple/\_\_init\_\_.py                           |       28 |        0 |        4 |        1 |     97% |  113->118 |
@@ -86,7 +86,7 @@
 | curvesim/templates/trader.py                                        |       40 |        4 |       12 |        0 |     81% |20, 35, 39-40 |
 | curvesim/utils.py                                                   |       50 |       12 |       21 |        8 |     69% |54, 57, 93, 105-114, 116->exit, 117, 140, 156 |
 | curvesim/version.py                                                 |        7 |        0 |        0 |        0 |    100% |           |
-|                                                           **TOTAL** | **3478** |  **799** |  **913** |   **89** | **73%** |           |
+|                                                           **TOTAL** | **3478** |  **801** |  **913** |   **90** | **73%** |           |
 
 
 ## Setup coverage badge
