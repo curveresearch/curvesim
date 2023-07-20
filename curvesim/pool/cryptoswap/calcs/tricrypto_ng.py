@@ -78,6 +78,7 @@ def get_y(  # noqa: complexity: 18
         - D**2 // x_j * gamma2 * ANN // 27**2 // A_MULTIPLIER // x_k
     )
     # <------- The first two expressions can be unsafe, and unsafely added.
+    b_is_neg = b < 0
 
     # 10**36/9 + gamma*(gamma + 4*10**18)/27
     #   + gamma**2*(x_j+x_k-D)/D*ANN/27/convert(A_MULTIPLIER, int256)
@@ -122,6 +123,8 @@ def get_y(  # noqa: complexity: 18
         divider = 1
 
     additional_prec: int = 0
+    if b_is_neg:
+        b *= -1
     if abs(a) > abs(b):
         additional_prec = abs(a // b)
         a = a * additional_prec // divider
@@ -134,16 +137,27 @@ def get_y(  # noqa: complexity: 18
         b = b // additional_prec // divider
         c = c // additional_prec // divider
         d = d // additional_prec // divider
+    if b_is_neg:
+        b *= -1
 
     # 3*a*c/b - b
     _3ac: int = 3 * a * c
-    delta0: int = _3ac // b - b
+    if b_is_neg:
+        delta0: int = -(_3ac // -b) - b
+    else:
+        delta0: int = _3ac // b - b
 
     # 9*a*c/b - 2*b - 27*a**2/b*d/b
-    delta1: int = 3 * _3ac // b - 2 * b - 27 * a**2 // b * d // b
+    if b_is_neg:
+        delta1: int = -(3 * _3ac // -b) - 2 * b - 27 * a**2 // -b * d // -b
+    else:
+        delta1: int = 3 * _3ac // b - 2 * b - 27 * a**2 // b * d // b
 
     # delta1**2 + 4*delta0**2/b*delta0
-    sqrt_arg: int = delta1**2 + 4 * delta0**2 // b * delta0
+    if b_is_neg:
+        sqrt_arg: int = delta1**2 + 4 * -(delta0**2 // -b * delta0)
+    else:
+        sqrt_arg: int = delta1**2 + 4 * delta0**2 // b * delta0
 
     sqrt_val: int = 0
     if sqrt_arg > 0:
@@ -165,7 +179,10 @@ def get_y(  # noqa: complexity: 18
         second_cbrt = -_cbrt(-(delta1 - sqrt_val) // 2)
 
     # b_cbrt*b_cbrt/10**18*second_cbrt/10**18
-    C1: int = b_cbrt * b_cbrt // 10**18 * second_cbrt // 10**18
+    if second_cbrt < 0:
+        C1: int = -(b_cbrt * b_cbrt // 10**18 * -second_cbrt // 10**18)
+    else:
+        C1: int = b_cbrt * b_cbrt // 10**18 * second_cbrt // 10**18
 
     # (b + b*delta0/C1 - C1)/3
     root_K0: int = (b + b * delta0 // C1 - C1) // 3
