@@ -1,6 +1,6 @@
 import os
 
-from curvesim.iterators.param_samplers import Grid
+from curvesim.iterators.param_samplers import ParameterizedPoolIterator
 from curvesim.iterators.price_samplers import PriceVolume
 from curvesim.metrics import init_metrics
 from curvesim.metrics import metrics as Metrics
@@ -114,7 +114,8 @@ def pipeline(
         variable_params = TEST_PARAMS
         fixed_params = {}
 
-    param_sampler = Grid(pool, variable_params, fixed_params=fixed_params)
+    # pylint: disable-next=abstract-class-instantiated
+    param_sampler = ParameterizedPoolIterator(pool, variable_params, fixed_params)
 
     _metrics = init_metrics(DEFAULT_METRICS, pool=pool)
     strategy = SimpleStrategy(_metrics)

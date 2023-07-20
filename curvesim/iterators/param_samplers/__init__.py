@@ -1,7 +1,7 @@
 """
-Iterators that generate pools with updated parameters per tick.
+Iterators that generate pools with updated parameters for each simulation run.
 """
 
-__all__ = ["Grid"]
+__all__ = ["ParameterizedPoolIterator"]
 
-from .grid import Grid
+from .parameterized_pool_iterator import ParameterizedPoolIterator

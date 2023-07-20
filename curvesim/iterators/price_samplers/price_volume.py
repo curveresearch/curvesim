@@ -1,6 +1,6 @@
 from curvesim.logging import get_logger
 from curvesim.price_data import get
-from curvesim.templates.samplers import PriceSample, PriceSampler
+from curvesim.templates.price_samplers import PriceSample, PriceSampler
 from curvesim.utils import dataclass, override
 
 logger = get_logger(__name__)
@@ -64,7 +64,7 @@ class PriceVolume(PriceSampler):
         """
         Yields
         -------
-        class:`PriceVolumeSample`
+        :class:`PriceVolumeSample`
         """
         for price_row, volume_row in zip(
             self.prices.iterrows(), self.volumes.iterrows()

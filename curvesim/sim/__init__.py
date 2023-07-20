@@ -153,7 +153,7 @@ def autosim(
 
 def _parse_arguments(**kwargs):
     pool_args = ["A", "D", "x", "p", "fee", "fee_mul", "tokens", "admin_fee"]
-    basepool_args = [arg + "_base" for arg in pool_args[:-1]]
+    pool_args += [arg + "_base" for arg in pool_args[:-1]]
 
     variable_params = {}
     fixed_params = {}
@@ -166,25 +166,14 @@ def _parse_arguments(**kwargs):
 
         if key in pool_args:
             if isinstance(val, int):
-                fixed_params.update({key: val})
+                fixed_params[key] = val
 
             elif all(isinstance(v, int) for v in val):
-                variable_params.update({key: val})
+                variable_params[key] = val
 
             else:
                 raise TypeError(f"Argument {key} must be an int or iterable of ints")
 
-        elif key in basepool_args:
-            if isinstance(val, int):
-                fixed_params.setdefault("basepool", {})
-                fixed_params["basepool"].update({key[:-5]: val})
-
-            elif all(isinstance(v, int) for v in val):
-                variable_params.setdefault("basepool", {})
-                variable_params["basepool"].update({key[:-5]: val})
-
-            else:
-                raise TypeError(f"Argument {key} must be an int or iterable of ints")
         else:
             rest_of_params[key] = val
 

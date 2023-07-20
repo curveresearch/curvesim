@@ -4,7 +4,7 @@ Implements the volume-limited arbitrage pipeline.
 
 import os
 
-from curvesim.iterators.param_samplers import Grid
+from curvesim.iterators.param_samplers import ParameterizedPoolIterator
 from curvesim.iterators.price_samplers import PriceVolume
 from curvesim.logging import get_logger
 from curvesim.metrics import init_metrics, make_results
@@ -123,7 +123,8 @@ def pipeline(
 
     pool = get_sim_pool(pool_metadata, pool_data_cache=pool_data_cache)
 
-    param_sampler = Grid(pool, variable_params, fixed_params=fixed_params)
+    # pylint: disable-next=abstract-class-instantiated
+    param_sampler = ParameterizedPoolIterator(pool, variable_params, fixed_params)
     price_sampler = PriceVolume(
         pool.assets, days=days, data_dir=data_dir, src=src, end=end
     )

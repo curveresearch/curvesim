@@ -6,7 +6,7 @@ along with a strategy that is run at each timestemp.
 Iterators fall into two general categories:
 
     1. :mod:`.param_samplers`:
-        Generate pool with updated parameters per tick.
+        Generate pools with updated parameters per run.
     2. :mod:`.price_samplers`:
         Generate price, volume, and/or other time-series data per tick.
 """

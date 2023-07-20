@@ -9,11 +9,13 @@ __all__ = [
     "SimPool",
     "Trade",
     "TradeResult",
+    "ParameterSampler",
     "PriceSample",
     "PriceSampler",
 ]
 
-from .samplers import PriceSample, PriceSampler
+from .param_samplers import ParameterSampler
+from .price_samplers import PriceSample, PriceSampler
 from .sim_assets import SimAssets
 from .sim_pool import SimPool
 from .strategy import Strategy
