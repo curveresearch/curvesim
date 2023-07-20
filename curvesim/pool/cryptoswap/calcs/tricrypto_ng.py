@@ -155,7 +155,7 @@ def get_y(  # noqa: complexity: 18
 
     # delta1**2 + 4*delta0**2/b*delta0
     if b_is_neg:
-        sqrt_arg: int = delta1**2 + 4 * -(delta0**2 // -b * delta0)
+        sqrt_arg: int = delta1**2 - (4 * delta0**2 // -b * delta0)
     else:
         sqrt_arg: int = delta1**2 + 4 * delta0**2 // b * delta0
 
