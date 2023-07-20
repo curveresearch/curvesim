@@ -97,7 +97,7 @@ def get_y(
         )
     )  # <------- The first two expressions can be unsafe, and unsafely added.
 
-    # c:int256 = 10**36/9 + gamma*(gamma + 4*10**18)/27 + gamma**2*(x_j+x_k-D)/D*ANN/27/convert(A_MULTIPLIER, int256)
+    # 10**36/9 + gamma*(gamma + 4*10**18)/27 + gamma2*(x_j+x_k-D)/D*ANN/27/convert(A_MULTIPLIER, int256)
     c: int256 = (
         unsafe_add(
             10**36 / 9,

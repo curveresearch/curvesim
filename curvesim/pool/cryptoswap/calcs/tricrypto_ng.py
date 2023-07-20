@@ -64,8 +64,9 @@ def get_y(  # noqa: complexity: 18
         j = 0
         k = 1
 
-    x_j: int = x[j]
-    x_k: int = x[k]
+    x_j: int = mpz(x[j])
+    x_k: int = mpz(x[k])
+    gamma = mpz(gamma)
     gamma2: int = gamma**2
 
     a: int = 10**36 // 27
@@ -78,13 +79,18 @@ def get_y(  # noqa: complexity: 18
     )
     # <------- The first two expressions can be unsafe, and unsafely added.
 
-    # 10**36/9 + gamma*(gamma + 4*10**18)/27 + gamma**2*(x_j+x_k-D)/D*ANN/27/convert(A_MULTIPLIER, int256)
-    c: int = (
-        10**36 // 9
-        + gamma * (gamma + 4 * 10**18) // 27
-        + gamma2 * (x_j + x_k - D) // D * ANN // 27 // A_MULTIPLIER
-    )
-    # XXX: `c` can sometimes be less by 1 wei compared to tricrypto-ng contract.  Why?
+    # 10**36/9 + gamma*(gamma + 4*10**18)/27
+    #   + gamma**2*(x_j+x_k-D)/D*ANN/27/convert(A_MULTIPLIER, int256)
+    c: int = 10**36 // 9 + gamma * (gamma + 4 * 10**18) // 27
+    _c_neg: int = x_j + x_k - D
+    if _c_neg < 0:
+        # since vyper will do signed integer division, which rounds toward 0,
+        # we switch signs to round appropriately and then change the sign back
+        _c: int = gamma2 * (-1 * _c_neg) // D * ANN // 27 // A_MULTIPLIER
+        _c *= -1
+    else:
+        _c: int = gamma2 * _c_neg // D * ANN // 27 // A_MULTIPLIER
+    c += _c
     # <--------- Same as above with the first two expressions. In the third
     #   expression, x_j + x_k will not overflow since we know their range from
     #                                              previous assert statements.
@@ -167,7 +173,7 @@ def get_y(  # noqa: complexity: 18
     # D*D/27/x_k*D/x_j*root_K0/a
     root: int = D * D // 27 // x_k * D // x_j * root_K0 // a
 
-    out: List[int] = [root, 10**18 * root_K0 // a]
+    out: List[int] = [int(root), int(10**18 * root_K0 // a)]
 
     frac = out[0] * 10**18 // D
     assert frac >= 10**16 - 1 and frac < 10**20 + 1, "Unsafe value for y"
