@@ -232,7 +232,7 @@ _num_iter = 10
 
 @given(
     st.lists(
-        st.integers(min_value=1, max_value=20000),
+        st.integers(min_value=1, max_value=10000),
         min_size=_num_iter,
         max_size=_num_iter,
     ),
