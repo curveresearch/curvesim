@@ -435,6 +435,8 @@ def newton_D(
     diff: int = 0
     frac: int = 0
 
+    D = mpz(D)
+
     for i in range(255):
         D_prev = D
 
@@ -505,7 +507,7 @@ def newton_D(
             for _x in x:
                 frac: int = (_x * 10**18) // D
                 assert 10**16 <= frac <= 10**20, "Unsafe values x[i]"
-            return D
+            return int(D)
 
     raise CalculationError("Did not converge")
 
