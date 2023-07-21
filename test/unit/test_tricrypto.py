@@ -28,19 +28,6 @@ def get_math(tricrypto):
     return MATH
 
 
-def unpack_3_uint64s(packed_nums):
-    mask = 2**64 - 1
-    return [
-        (packed_nums >> 128) & mask,
-        (packed_nums >> 64) & mask,
-        packed_nums & mask,
-    ]
-
-
-def pack_3_uint64s(nums):
-    return (nums[0] << 128) | (nums[1] << 64) | nums[0]
-
-
 def initialize_pool(vyper_tricrypto):
     """
     Initialize python-based pool from the state variables of the
@@ -123,44 +110,6 @@ def initialize_pool(vyper_tricrypto):
     pool.virtual_price = virtual_price
 
     return pool
-
-
-def sync_ema_logic(
-    vyper_tricrypto,
-    pool,
-    last_prices,
-):
-    """
-    Test helper to synchronize state variables needed for EMA update.
-
-    This is needed because the local evm block timestamp will drift
-    from the python pool's internal timestamp.
-    """
-    # pylint: disable=protected-access
-    price_oracle = vyper_tricrypto.eval("self._price_oracle")
-    pool._price_oracle = [price_oracle]
-
-    # synchronize the times between the two pools and reset
-    # last_prices and last_prices_timestamp
-    vyper_tricrypto.eval(f"self.last_prices={last_prices}")
-    pool.last_prices = [last_prices]
-
-    vm_timestamp = boa.env.vm.state.timestamp
-    pool._increment_timestamp(timestamp=vm_timestamp)
-
-    last_prices_timestamp = vm_timestamp - 120
-    vyper_tricrypto.eval(f"self.last_prices_timestamp={last_prices_timestamp}")
-    pool.last_prices_timestamp = last_prices_timestamp
-
-
-def pack_A_gamma(A, gamma):
-    """
-    Need this to set A and gamma in the smart contract since they
-    are stored in packed format.
-    """
-    A_gamma = A << 128
-    A_gamma = A_gamma | gamma
-    return A_gamma
 
 
 def get_real_balances(virtual_balances, precisions, price_scale):
