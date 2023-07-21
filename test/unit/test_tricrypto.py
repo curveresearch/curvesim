@@ -400,3 +400,41 @@ def test_wad_exp(vyper_tricrypto, x):
     expected_result = MATH.wad_exp(x)
     result = tricrypto_ng.wad_exp(x)
     assert result == expected_result
+
+
+@given(
+    amplification_coefficient,
+    gamma_coefficient,
+    positive_balance,
+    positive_balance,
+    positive_balance,
+    st.tuples(
+        st.integers(min_value=0, max_value=2),
+        st.integers(min_value=0, max_value=2),
+    ).filter(lambda x: x[0] != x[1]),
+    st.integers(min_value=1, max_value=10000),
+)
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=1,
+    deadline=None,
+)
+def test__newton_y(vyper_tricrypto, A, gamma, x0, x1, x2, pair, dx_perc):
+    """Test D calculation against vyper implementation."""
+    i, j = pair
+
+    xp = [x0, x1, x2]
+    assume(0.02 < xp[0] / xp[1] < 50)
+    assume(0.02 < xp[1] / xp[2] < 50)
+    assume(0.02 < xp[0] / xp[2] < 50)
+
+    MATH = get_math(vyper_tricrypto)
+    # pylint: disable=no-member
+    D = MATH.newton_D(A, gamma, xp)
+
+    xp[i] += xp[i] * dx_perc // 10000
+
+    expected_y = MATH.eval(f"self._newton_y({A}, {gamma}, {xp}, {D}, {j})")
+    y = tricrypto_ng._newton_y(A, gamma, xp, D, j)
+
+    assert y == expected_y
