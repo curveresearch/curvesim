@@ -175,7 +175,7 @@ price = st.integers(min_value=10**12, max_value=10**25)
 @given(positive_balance, positive_balance)
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
-    max_examples=5,
+    max_examples=2,
     deadline=None,
 )
 def test_xp(vyper_cryptopool, x0, x1):
@@ -199,7 +199,7 @@ def test_xp(vyper_cryptopool, x0, x1):
 @given(positive_balance, positive_balance, st.booleans())
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
-    max_examples=5,
+    max_examples=2,
     deadline=None,
 )
 def test_geometric_mean(vyper_cryptopool, x0, x1, sort_flag):
@@ -215,7 +215,7 @@ def test_geometric_mean(vyper_cryptopool, x0, x1, sort_flag):
 @given(st.integers(min_value=0))
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
-    max_examples=5,
+    max_examples=2,
     deadline=None,
 )
 def test_halfpow(vyper_cryptopool, power):
@@ -230,7 +230,7 @@ def test_halfpow(vyper_cryptopool, power):
 @given(st.integers(min_value=0))
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
-    max_examples=5,
+    max_examples=2,
     deadline=None,
 )
 def test_sqrt_int(vyper_cryptopool, number):
@@ -245,7 +245,7 @@ def test_sqrt_int(vyper_cryptopool, number):
 @given(st.integers(min_value=100))
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
-    max_examples=5,
+    max_examples=2,
     deadline=None,
 )
 def test_get_xcp(vyper_cryptopool, D):

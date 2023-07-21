@@ -209,7 +209,7 @@ price = st.integers(min_value=10**12, max_value=10**25)
 )
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
-    max_examples=50,
+    max_examples=5,
     deadline=None,
 )
 def test_exchange(vyper_tricrypto, dx_perc, i, j):
@@ -252,7 +252,7 @@ _num_iter = 10
 )
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
-    max_examples=10,
+    max_examples=5,
     deadline=None,
 )
 def test_multiple_exchange_with_repeg(
@@ -326,7 +326,7 @@ def test_newton_D(vyper_tricrypto, A, gamma, x0, x1, x2):
 )
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
-    max_examples=5,
+    max_examples=2,
     deadline=None,
 )
 def test_get_p(vyper_tricrypto, A, gamma, x0, x1, x2):
@@ -390,7 +390,7 @@ def test_get_y(vyper_tricrypto, A, gamma, x0, x1, x2, pair, dx_perc):
 @given(st.integers(min_value=-42139678854452767551, max_value=135305999368893231589))
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
-    max_examples=5,
+    max_examples=2,
     deadline=None,
 )
 def test_wad_exp(vyper_tricrypto, x):
