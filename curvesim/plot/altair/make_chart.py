@@ -24,11 +24,14 @@ def make_chart(config, x=None, y=None, color=None, **kwargs):
     config : dict
         The configuration dictionary for the chart. Must contain a 'style' key.
     x : str or dict, optional
-        The x-axis property. Can be a shorthand string or a dictionary of alt.X kwargs.
+        The x-axis property. Can be a shorthand string or a dictionary
+        of alt.X kwargs.
     y : str or dict, optional
-        The y-axis property. Can be a shorthand string or a dictionary of alt.Y kwargs.
+        The y-axis property. Can be a shorthand string or a dictionary
+        of alt.Y kwargs.
     color : str or dict, optional
-        The color property. Can be a shorthand string or a dictionary of alt.Color kwargs.
+        The color property. Can be a shorthand string or a dictionary
+        of alt.Color kwargs.
     **kwargs
         Additional keyword arguments are added to the chart configuration.
 
@@ -68,11 +71,14 @@ def make_defaults(title, x=None, y=None, color=None):
     title : str
         The title of the chart.
     x : str or dict, optional
-        The x-axis property. Can be a shorthand string or a dictionary of alt.X kwargs.
+        The x-axis property. Can be a shorthand string or a dictionary
+        of alt.X kwargs.
     y : str or dict, optional
-        The y-axis property. Can be a shorthand string or a dictionary of alt.Y kwargs.
+        The y-axis property. Can be a shorthand string or a dictionary
+        of alt.Y kwargs.
     color : str or dict, optional
-        The color property. Can be a shorthand string or a dictionary of alt.Color kwargs.
+        The color property. Can be a shorthand string or a dictionary
+        of alt.Color kwargs.
 
     Returns
     -------
@@ -82,7 +88,8 @@ def make_defaults(title, x=None, y=None, color=None):
     Raises
     ------
     PlotError
-        If x, y, or color is not a string (shorthand) or a dictionary (altair kwargs).
+        If x, y, or color is not a string (shorthand) or
+        a dictionary (altair kwargs).
     """
     defaults = {
         "title": title,

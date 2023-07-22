@@ -542,5 +542,5 @@ class Timestamp(Metric):
     def config(self):
         return {"functions": {"metrics": self._get_timestamp}}
 
-    def _get_timestamp(self, price_sample, **kwargs):
+    def _get_timestamp(self, price_sample):
         return DataFrame(price_sample.timestamp)
