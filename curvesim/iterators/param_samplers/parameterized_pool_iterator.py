@@ -76,7 +76,8 @@ class ParameterizedPoolIterator(ParameterSampler):
         self._validate_pool_type(pool)
         self.pool_template = deepcopy(pool)
         self.set_pool_attributes(self.pool_template, fixed_params)
-        self.parameter_sequence = self.make_parameter_sequence(variable_params)
+        parameter_sequence = self.make_parameter_sequence(variable_params)
+        self.parameter_sequence = parameter_sequence or [fixed_params]
 
     def __iter__(self):
         """
