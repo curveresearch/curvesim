@@ -116,7 +116,7 @@ def pipeline(
         ncpu = cpu_count if cpu_count is not None else 1
 
     default_params = DEFAULT_PARAMS.copy()
-    for key in default_params:
+    for key in DEFAULT_PARAMS:
         if key in fixed_params:
             del default_params[key]
 
