@@ -14,7 +14,7 @@ class VolumeLimitedArbitrageur(Trader):
     Computes, executes, and reports out arbitrage trades.
     """
 
-    def compute_trades(self, prices, volume_limits):
+    def compute_trades(self, prices, volume_limits):  # pylint: disable=arguments-differ
         """
         Computes trades to optimally arbitrage the pool, constrained by volume limits.
 
@@ -36,13 +36,15 @@ class VolumeLimitedArbitrageur(Trader):
             Dict of additional data to be passed to the state log as part of trade_data.
         """
 
-        trades, errors, res = multipair_optimal_arbitrage(
+        trades, errors, _ = multipair_optimal_arbitrage(
             self.pool, prices, volume_limits
         )
         return trades, {"price_errors": errors}
 
 
-def multipair_optimal_arbitrage(pool, prices, limits):  # noqa: C901
+def multipair_optimal_arbitrage(  # noqa: C901  pylint: disable=too-many-locals
+    pool, prices, limits
+):
     """
     Computes trades to optimally arbitrage the pool, constrained by volume limits.
 
@@ -129,7 +131,11 @@ def multipair_optimal_arbitrage(pool, prices, limits):  # noqa: C901
 
     except Exception:
         logger.error(
-            f"Optarbs args: x0: {sizes}, lo: {lo}, hi: {hi}, prices: {price_targets}",
+            "Optarbs args: x0: {sizes}, lo: {lo}, hi: {hi}, prices: {price_targets}",
+            sizes=sizes,
+            lo=lo,
+            hi=hi,
+            price_targets=price_targets,
             exc_info=True,
         )
         errors = post_trade_price_error_multi([0] * len(sizes), price_targets, coins)
