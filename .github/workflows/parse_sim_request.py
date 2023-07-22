@@ -19,6 +19,8 @@ def get_int_or_int_list(int_string):
 
     if int_list[-1] == "":
         int_list = int_list[:-1]
+
+    int_list = [int(x) for x in int_list]
     if len(int_list) == 1:
         return int_list[0]
 
