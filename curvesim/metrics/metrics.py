@@ -84,7 +84,7 @@ class ArbMetrics(PricingMetric):
     def __init__(self, pool, **kwargs):
         super().__init__(pool.assets.symbols)
 
-    def compute_arb_metrics(self, price_sample, trade_data, **kwargs):
+    def compute_arb_metrics(self, price_sample, trade_data):
         """Computes all metrics for each timestamp in an individual run."""
 
         prices = DataFrame(price_sample.prices.to_list(), index=price_sample.index)
@@ -104,7 +104,6 @@ class ArbMetrics(PricingMetric):
         Computes arbitrageur profits and pool fees for a single row of data (i.e.,
         a single timestamp) in units of the chosen numeraire, `self.numeraire`.
         """
-        get_price = self.get_market_price
         numeraire = self.numeraire
 
         profit = []
@@ -115,14 +114,16 @@ class ArbMetrics(PricingMetric):
             pool_profit = 0
 
             for trade in trade_row:
-                market_price = get_price(trade.coin_in, trade.coin_out, prices)
+                market_price = self.get_market_price(
+                    trade.coin_in, trade.coin_out, prices
+                )
                 arb = trade.amount_out - trade.amount_in * market_price
                 fee = trade.fee
 
                 if trade.coin_out != numeraire:
-                    price = get_price(trade.coin_out, numeraire, prices)
-                    arb = arb * price
-                    fee = fee * price
+                    price = self.get_market_price(trade.coin_out, numeraire, prices)
+                    arb *= price
+                    fee *= price
 
                 arb_profit += arb
                 pool_profit += fee
@@ -177,17 +178,20 @@ class PoolVolume(PoolMetric):
 
         return config
 
-    def get_stableswap_pool_volume(self, trade_data, **kwargs):
+    def get_stableswap_pool_volume(
+        self,
+        trade_data,
+    ):
         """
         Records trade volume for stableswap non-meta-pools.
         """
 
         def per_timestamp_function(trades):
-            return sum([trade.amount_in for trade in trades]) / 10**18
+            return sum(trade.amount_in for trade in trades) / 10**18
 
         return self._get_volume(trade_data, per_timestamp_function)
 
-    def get_stableswap_metapool_volume(self, trade_data, **kwargs):
+    def get_stableswap_metapool_volume(self, trade_data):
         """
         Records trade volume for stableswap meta-pools. Only includes trades involving
         the meta-asset (basepool-only trades are ignored).
@@ -255,7 +259,7 @@ class PoolBalance(PoolMetric):
             [SimCurveMetaPool, SimCurvePool, SimCurveRaiPool], ss_config
         )
 
-    def get_stableswap_balance(self, pool_state, **kwargs):
+    def get_stableswap_balance(self, pool_state):
         """
         Computes pool balance metrics for each timestamp in an individual run.
         Used for any stableswap pool.
@@ -271,7 +275,7 @@ class PoolBalance(PoolMetric):
         self.set_pool_state(pool_state_row)
         pool = self._pool
 
-        xp = array(pool._xp())
+        xp = array(pool._xp())  # pylint: disable=protected-access
         n = pool.n
         bal = 1 - sum(abs(xp / sum(xp) - 1 / n)) / (2 * (n - 1) / n)
 
@@ -344,7 +348,7 @@ class PoolValue(PoolPricingMetric):
             },
         }
 
-    def get_stableswap_pool_value(self, pool_state, price_sample, **kwargs):
+    def get_stableswap_pool_value(self, pool_state, price_sample):
         """
         Computes all metrics for each timestamp in an individual run.
         Used for non-meta stableswap pools.
@@ -366,7 +370,7 @@ class PoolValue(PoolPricingMetric):
         results.columns = list(self.config["plot"]["metrics"])
         return results.astype("float64")
 
-    def get_stableswap_metapool_value(self, pool_state, price_sample, **kwargs):
+    def get_stableswap_metapool_value(self, pool_state, price_sample):
         """
         Computes all metrics for each timestamp in an individual run.
         Used for stableswap metapools.
@@ -471,9 +475,9 @@ class PriceDepth(PoolMetric):
 
     def __init__(self, pool, factor=10**8, **kwargs):
         self._factor = factor
-        super().__init__(pool)
+        super().__init__(pool, **kwargs)
 
-    def get_curve_LD(self, pool_state, **kwargs):
+    def get_curve_LD(self, pool_state):
         """
         Computes liquidity density for each timestamp in an individual run.
         Used for all Curve pools.
