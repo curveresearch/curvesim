@@ -82,12 +82,13 @@ def get_arb_trades(pool, prices):
         except ValueError:
             pool_price = pool.price(coin_in, coin_out)
             logger.error(
-                "Opt_arb error: Pair: {(coin_in, coin_out)}, Pool price: {pool_price},"
-                "Target Price: {price}, Diff: {pool_price - price}",
-                coin_in=coin_in,
-                coin_out=coin_out,
-                pool_price=pool_price,
-                price=price,
+                "Opt_arb error: Pair: (%s, %s), Pool price: %s,"
+                "Target Price: %s, Diff: %s",
+                coin_in,
+                coin_out,
+                pool_price,
+                price,
+                pool_price - price,
             )
             size = 0
 

@@ -131,11 +131,11 @@ def multipair_optimal_arbitrage(  # noqa: C901  pylint: disable=too-many-locals
 
     except Exception:
         logger.error(
-            "Optarbs args: x0: {sizes}, lo: {lo}, hi: {hi}, prices: {price_targets}",
-            sizes=sizes,
-            lo=lo,
-            hi=hi,
-            price_targets=price_targets,
+            "Optarbs args: x0: %s, lo: %s, hi: %s, prices: %s",
+            sizes,
+            lo,
+            hi,
+            price_targets,
             exc_info=True,
         )
         errors = post_trade_price_error_multi([0] * len(sizes), price_targets, coins)
