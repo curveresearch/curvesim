@@ -1,8 +1,24 @@
 from scipy.optimize import root_scalar
 
 from curvesim.logging import get_logger
+from curvesim.metrics import metrics as Metrics
 
 logger = get_logger(__name__)
+DEFAULT_METRICS = [
+    Metrics.Timestamp,
+    Metrics.PoolValue,
+    Metrics.PoolBalance,
+    Metrics.PriceDepth,
+    Metrics.PoolVolume,
+    Metrics.ArbMetrics,
+]
+
+DEFAULT_PARAMS = {
+    "A": [int(2 ** (a / 2)) for a in range(12, 28)],
+    "fee": list(range(1000000, 5000000, 1000000)),
+}
+
+TEST_PARAMS = {"A": [100, 1000], "fee": [3000000, 4000000]}
 
 
 def get_arb_trades(pool, prices):
