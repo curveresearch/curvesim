@@ -3,9 +3,10 @@ from copy import deepcopy
 from itertools import product
 
 from curvesim.exceptions import ParameterSamplerError
-from curvesim.pool.sim_interface import SimCurvePool, SimCurveRaiPool, SimCurveMetaPool
+from curvesim.pool.sim_interface import SimCurveMetaPool, SimCurvePool, SimCurveRaiPool
 from curvesim.templates import ParameterSampler
-from .pool_mixins import CurvePoolMixin, CurveMetaPoolMixin, CurveCryptoPoolMixin
+
+from .pool_mixins import CurveCryptoPoolMixin, CurveMetaPoolMixin, CurvePoolMixin
 
 
 class ParameterizedPoolIterator(ParameterSampler):
@@ -108,6 +109,8 @@ class ParameterizedPoolIterator(ParameterSampler):
         List(dict)
             A list of dicts defining the parameters for each iteration.
         """
+        if not variable_params:
+            return []
 
         keys, values = zip(*variable_params.items())
         self._validate_attributes(self.pool_template, keys)
