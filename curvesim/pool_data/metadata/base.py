@@ -13,8 +13,8 @@ class PoolMetaDataInterface(ABC):
         """
         raise NotImplementedError
 
-    @abstractmethod
     @property
+    @abstractmethod
     def address(self):
         """
         Returns the pool address.
@@ -25,8 +25,8 @@ class PoolMetaDataInterface(ABC):
         """
         raise NotImplementedError
 
-    @abstractmethod
     @property
+    @abstractmethod
     def chain(self):
         """
         Returns the chain/layer 2 identifier.
@@ -37,8 +37,8 @@ class PoolMetaDataInterface(ABC):
         """
         raise NotImplementedError
 
-    @abstractmethod
     @property
+    @abstractmethod
     def pool_type(self):
         """
         Returns the pool type.
@@ -50,8 +50,8 @@ class PoolMetaDataInterface(ABC):
         """
         raise NotImplementedError
 
-    @abstractmethod
     @property
+    @abstractmethod
     def sim_pool_type(self):
         """
         Returns the pool type.
@@ -63,8 +63,8 @@ class PoolMetaDataInterface(ABC):
         """
         raise NotImplementedError
 
-    @abstractmethod
     @property
+    @abstractmethod
     def coins(self):
         """
         Returns coin addresses for the pool's holdings.
@@ -83,8 +83,8 @@ class PoolMetaDataInterface(ABC):
         """
         raise NotImplementedError
 
-    @abstractmethod
     @property
+    @abstractmethod
     def coin_names(self):
         """
         Returns coin names for the pool's holdings.
@@ -103,8 +103,8 @@ class PoolMetaDataInterface(ABC):
         """
         raise NotImplementedError
 
-    @abstractmethod
     @property
+    @abstractmethod
     def n(self):
         """
         Returns the number of token-types (e.g., DAI, USDC, USDT) in a pool.
