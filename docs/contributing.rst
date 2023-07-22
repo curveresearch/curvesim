@@ -42,6 +42,8 @@ Create a Virtual Environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 First create a virtual env and install all the dev dependencies (``requirements.txt``).
+We recommend using Python 3.10; other versions may have issues with the dependencies.
+
 The following steps all assume you are working out of a virtual env with all
 dependencies installed.
 
@@ -51,11 +53,25 @@ Running the Tests
 
 Unit tests::
 
+    $ pytest -n auto
+
+This runs the tests in parallel for speed but unfortunately does not display fine-grained
+progress on individual test modules.  To see pass/fail on individual test modules, you
+need to turn off parallelization and run `pytest` normally::
+
     $ pytest
 
 End-to-end tests::
 
+    $ python -m test.simple_ci
+
+This runs the simple arbitrage pipeline on several types of pools.  A longer test that
+exercises the volume-limited arbitrage pipeline is::
+
     $ python -m test.ci
+
+Note this test's results are numerically unstable and thus may fail due to machine-level
+differences.
 
 
 Lint your code
