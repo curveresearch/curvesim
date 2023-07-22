@@ -115,7 +115,12 @@ def pipeline(
         cpu_count = os.cpu_count()
         ncpu = cpu_count if cpu_count is not None else 1
 
-    variable_params = variable_params or DEFAULT_PARAMS
+    default_params = DEFAULT_PARAMS.copy()
+    for key in default_params:
+        if key in fixed_params:
+            del default_params[key]
+
+    variable_params = variable_params or default_params
     metrics = metrics or DEFAULT_METRICS
 
     if pool_data_cache is None:
