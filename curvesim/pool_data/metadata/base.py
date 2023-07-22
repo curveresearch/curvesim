@@ -4,16 +4,37 @@ from abc import ABC, abstractmethod
 class PoolMetaDataInterface(ABC):
     @abstractmethod
     def init_kwargs(self, balanced=True, balanced_base=True, normalize=True):
+        """
+        Returns a dictionary of kwargs used to initialize the pool.
+
+        Returns
+        -------
+        dict
+        """
         raise NotImplementedError
 
     @abstractmethod
     @property
     def address(self):
+        """
+        Returns the pool address.
+
+        Returns
+        -------
+        str
+        """
         raise NotImplementedError
 
     @abstractmethod
     @property
     def chain(self):
+        """
+        Returns the chain/layer 2 identifier.
+
+        Returns
+        -------
+        str
+        """
         raise NotImplementedError
 
     @abstractmethod
