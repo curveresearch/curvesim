@@ -19,10 +19,11 @@ from .strategy import VolumeLimitedStrategy
 logger = get_logger(__name__)
 
 
-# pylint: disable-next=too-many-arguments,too-many-locals
+# pylint: disable-next=too-many-locals
 def pipeline(
     pool_metadata,
     pool_data_cache=None,
+    *,
     variable_params=None,
     fixed_params=None,
     metrics=None,

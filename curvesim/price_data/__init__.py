@@ -12,7 +12,15 @@ from curvesim.exceptions import NetworkError
 from .sources import coingecko, local
 
 
-def get(coins, chain="mainnet", days=60, data_dir="data", src="coingecko", end=None):
+def get(
+    coins,
+    chain="mainnet",
+    *,
+    days=60,
+    data_dir="data",
+    src="coingecko",
+    end=None,
+):
     """
     Pull price and volume data for given coins.
 

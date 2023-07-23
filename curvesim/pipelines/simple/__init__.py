@@ -14,6 +14,7 @@ from ..common import DEFAULT_METRICS, DEFAULT_PARAMS, TEST_PARAMS
 def pipeline(  # pylint: disable=too-many-locals
     pool_address,
     chain,
+    *,
     variable_params=None,
     fixed_params=None,
     test=False,

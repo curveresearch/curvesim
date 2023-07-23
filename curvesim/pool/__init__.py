@@ -39,6 +39,7 @@ def make(
     A,
     D,
     n,
+    *,
     basepool=None,
     rates=None,
     rate_multiplier=None,
@@ -137,6 +138,7 @@ def make(
 def get_pool(
     pool_metadata,
     chain="mainnet",
+    *,
     balanced=False,
     balanced_base=False,
     normalize=False,
@@ -200,6 +202,7 @@ POOL_TYPE_TO_CUSTOM_KWARGS = {SimCurveRaiPool: ["redemption_prices"]}
 def get_sim_pool(
     pool_metadata,
     chain="mainnet",
+    *,
     balanced=True,
     balanced_base=True,
     custom_kwargs=None,
