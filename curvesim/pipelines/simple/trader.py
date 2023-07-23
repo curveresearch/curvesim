@@ -11,7 +11,7 @@ class SimpleArbitrageur(Trader):
     Computes, executes, and reports out arbitrage trades.
     """
 
-    def compute_trades(self, prices):
+    def compute_trades(self, prices):  # pylint: disable=arguments-differ
         """
         Compute trades to arbitrage the pool, as follows:
             1. For each coin pair i and j, calculate size of coin i

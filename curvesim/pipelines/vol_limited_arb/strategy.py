@@ -28,12 +28,12 @@ class VolumeLimitedStrategy(Strategy):
         super().__init__(metrics)
         self.vol_mult = vol_mult
 
-    def _get_trader_inputs(self, sample):
-        volume_limits = compute_volume_limits(sample.volumes, self.vol_mult)
+    def _get_trader_inputs(self, sample):  # pylint: disable=too-few-public-methods
+        volume_limits = _compute_volume_limits(sample.volumes, self.vol_mult)
         return sample.prices, volume_limits
 
 
-def compute_volume_limits(volumes, vol_mult):
+def _compute_volume_limits(volumes, vol_mult):
     limits = {key: volumes[key] * vol_mult[key] for key in volumes}
     reversed_limits = {(j, i): lim for (i, j), lim in limits.items()}
     return {**limits, **reversed_limits}

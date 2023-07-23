@@ -1,6 +1,7 @@
 from curvesim.utils import get_pairs
 
 
+# pylint: disable-next=too-few-public-methods
 class SimAssets:
     """
     Stores the properties of the assets to be used in a simulation. Currently, only
