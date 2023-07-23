@@ -225,7 +225,6 @@ def get_sim_pool(
             raise CurvesimValueError(
                 "`end_ts` has no effect unless pool address is used."
             )
-        pass
     else:
         raise CurvesimValueError(
             "`pool_metadata` must be of type `str`, `dict`, or `PoolMetaDataInterface`."
