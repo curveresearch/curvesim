@@ -304,6 +304,7 @@ def test_cryptopool():
         "tokens": 17477479403491661243983086,
         "ma_half_time": 146000000000000,
         "price_scale": 1532848669525694314,
+        "admin_fee": 5000000000,
         "xcp_profit": 1073065310463073367,
         "xcp_profit_a": 1073065310463073367,
     }
@@ -324,6 +325,7 @@ def test_cryptopool():
         "tokens": 17477479403491661243983086,
         "ma_half_time": 146000000000000,
         "price_scale": 1532848669525694314,
+        "admin_fee": 5000000000,
         "xcp_profit": 1073065310463073367,
         "xcp_profit_a": 1073065310463073367,
     }
@@ -344,6 +346,7 @@ def test_cryptopool():
         "tokens": 17477479403491661243983086,
         "ma_half_time": 146000000000000,
         "price_scale": 1532848669525694314,
+        "admin_fee": 5000000000,
         "xcp_profit": 1073065310463073367,
         "xcp_profit_a": 1073065310463073367,
         "precisions": [
