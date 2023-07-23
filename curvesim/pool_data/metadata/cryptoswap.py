@@ -17,8 +17,7 @@ class CryptoswapMetaData(PoolMetaDataBase):
                 "fee_gamma": data["params"]["fee_gamma"],
                 "adjustment_step": data["params"]["adjustment_step"],
                 "price_scale": data["params"]["price_scale"],
-                # FIXME: when subgraph is fixed, we can pull this
-                # "admin_fee": data["params"]["admin_fee"],
+                "admin_fee": data["params"]["admin_fee"],
                 "ma_half_time": data["params"]["ma_half_time"],
                 "tokens": data["reserves"]["tokens"],
                 "xcp_profit": data["params"]["xcp_profit"],
