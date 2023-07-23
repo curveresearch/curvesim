@@ -62,7 +62,7 @@ class SimCurveMetaPool(SimPool, AssetIndicesMixin, CurveMetaPool):
         return self._dydx(i, j, xp=xp, use_fee=use_fee)
 
     @override
-    def trade(self, coin_in, coin_out, amount_in):
+    def trade(self, coin_in, coin_out, size):
         """
         Trade between two coins in a pool.
 
@@ -72,10 +72,10 @@ class SimCurveMetaPool(SimPool, AssetIndicesMixin, CurveMetaPool):
         bp_token_index = self.n_total
 
         if bp_token_index not in (i, j):
-            return self.exchange_underlying(i, j, amount_in)
+            return self.exchange_underlying(i, j, size)
 
         i, j = self.get_meta_asset_indices(i, j, bp_token_index)
-        return self.exchange(i, j, amount_in)
+        return self.exchange(i, j, size)
 
     def get_meta_asset_indices(self, i, j, bp_token_index):
         """

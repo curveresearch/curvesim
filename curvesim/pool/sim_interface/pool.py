@@ -35,12 +35,12 @@ class SimCurvePool(SimPool, AssetIndicesMixin, CurvePool):
         return self.dydx(i, j, use_fee=use_fee)
 
     @override
-    def trade(self, coin_in, coin_out, amount_in):
+    def trade(self, coin_in, coin_out, size):
         """
         Note all quantities are in D units.
         """
         i, j = self.get_asset_indices(coin_in, coin_out)
-        amount_out, fee = self.exchange(i, j, amount_in)
+        amount_out, fee = self.exchange(i, j, size)
         return amount_out, fee
 
     def get_in_amount(self, coin_in, coin_out, out_balance_perc):

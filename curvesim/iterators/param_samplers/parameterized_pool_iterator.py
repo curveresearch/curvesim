@@ -14,6 +14,7 @@ class ParameterizedPoolIterator(ParameterSampler):
     Iterates over pools with all possible combinations of the input parameters.
     """
 
+    # pylint: disable-next=unused-argument
     def __new__(cls, pool, variable_params, fixed_params=None, pool_map=None):
         """
         Returns a pool-specific ParameterizedPoolIterator subclass.
@@ -46,6 +47,7 @@ class ParameterizedPoolIterator(ParameterSampler):
 
         return super().__new__(subclass)
 
+    # pylint: disable-next=unused-argument
     def __init__(self, pool, variable_params, fixed_params=None, pool_map=None):
         """
         Parameters
