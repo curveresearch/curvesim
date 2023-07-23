@@ -172,7 +172,6 @@ def get_pool(
     --------
     >>> import curvesim
     >>> pool = curvesim.pool.get("0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7", "mainnet")
-
     """
     if isinstance(pool_metadata, str):
         pool_metadata = get_metadata(pool_metadata, chain=chain)

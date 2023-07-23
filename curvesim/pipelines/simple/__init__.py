@@ -24,11 +24,11 @@ def pipeline(  # pylint: disable=too-many-locals
     ncpu=None,
 ):
     """
-    Implements the simple arbitrage pipeline.  This is a very simplified version of the
-    :func:`volume-limited arbitrage pipeline<curvesim.pipelines.vol_limited_arb.pipeline>`.
+    Implements the simple arbitrage pipeline.  This is a very simplified version
+    of :func:`curvesim.pipelines.vol_limited_arb.pipeline`.
 
-    At each timestep, the pool is arbitraged as close to the prevailing market price
-    as possible for the coin pair generating the largest arbitrage profit.
+    At each timestep, the pool is arbitraged as close to the prevailing market
+    price as possible for the coin pair generating the largest arbitrage profit.
 
     Parameters
     ----------

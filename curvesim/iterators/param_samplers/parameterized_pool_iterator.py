@@ -146,13 +146,15 @@ class ParameterizedPoolIterator(ParameterSampler):
 
 class ParameterizedCurvePoolIterator(CurvePoolMixin, ParameterizedPoolIterator):
     """
-    :class:`ParameterizedPoolIterator` parameter sampler specialized for Curve pools.
+    :class:`ParameterizedPoolIterator` parameter sampler specialized
+    for Curve pools.
     """
 
 
 class ParameterizedCurveMetaPoolIterator(CurveMetaPoolMixin, ParameterizedPoolIterator):
     """
-    :class:`ParameterizedPoolIterator` parameter sampler specialized for Curve meta-pools.
+    :class:`ParameterizedPoolIterator` parameter sampler specialized
+    for Curve meta-pools.
     """
 
 
@@ -160,7 +162,8 @@ class ParameterizedCurveCryptoPoolIterator(
     CurveCryptoPoolMixin, ParameterizedPoolIterator
 ):
     """
-    :class:`ParameterizedPoolIterator` parameter sampler specialized for Curve crypto pools.
+    :class:`ParameterizedPoolIterator` parameter sampler specialized
+    for Curve crypto pools.
     """
 
 

@@ -34,7 +34,8 @@ def PoolMetaData(metadata_dict):
     Parameters
     ----------
     metadata_dict : dict
-        Pool metadata in the format returned by :func:`curvesim.network.subgraph.pool_snapshot`.
+        Pool metadata in the format returned by
+        :func:`curvesim.network.subgraph.pool_snapshot`.
 
     Returns
     -------
