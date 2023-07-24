@@ -2,8 +2,8 @@ import curvesim
 from curvesim import bonding_curve
 
 
-def test_bonding_curve():
-    """Simple test of the bonding curve."""
+def test_bonding_curve_stableswap():
+    """Simple test of the bonding curve for a regular stableswap."""
     A = 2000
     balances = [96930673769101734848937206, 96029665968769, 94203880672841]
     rates = [10**18, 10**30, 10**30]
@@ -32,4 +32,49 @@ def test_bonding_curve():
             (204771181.49157527, 143582.10515040296),
         ],
     }
+    assert pair_to_curve == expected_result
+
+
+def test_bonding_curve_metapool():
+    """Simple test of the bonding curve for a regular stableswap.
+
+    Note: test data was generated via
+
+        pool_address = "0x4e43151b78b5fbb16298C1161fcbF7531d5F8D93"
+        pool = curvesim.pool.get(pool_address)
+        basepool = pool.basepool
+        pair_to_curve = bonding_curve(pool, resolution=5)
+    """
+    pool_address = "0x4e43151b78b5fbb16298C1161fcbF7531d5F8D93"
+    pool = curvesim.pool.get(pool_address)
+    basepool = pool.basepool
+    pair_to_curve = bonding_curve(pool, resolution=5)
+
+    A = 1500
+    rates = [10**18, 10**30]
+    balances = [350744085115649212803306457, 141003714500628]
+    bp_tokens = 491124709934878945923137105
+    basepool = curvesim.pool.make(A, balances, 2, rates=rates, tokens=bp_tokens)
+
+    A = 1500
+    balances = [7059917, 88935085280709722288137]
+    rate_multiplier = 10**34
+    pool = curvesim.pool.make(
+        A,
+        balances,
+        2,
+        rate_multiplier=rate_multiplier,
+        basepool=basepool,
+    )
+    pair_to_curve = bonding_curve(pool, resolution=5)
+    expected_result = {
+        (0, 1): [
+            (79.81988656375063, 182748.88552045962),
+            (45747.08629503773, 113904.53710112568),
+            (91414.35270351169, 68226.56650379577),
+            (137081.61911198567, 22614.30606286462),
+            (182748.88552045965, 79.81988656375057),
+        ]
+    }
+
     assert pair_to_curve == expected_result
