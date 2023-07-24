@@ -38,6 +38,13 @@ def bonding_curve(pool, *, truncate=0.0005, resolution=1000, plot=False):
         Dictionary with coin index pairs as keys and lists of corresponding reserves
         as values. Each list of reserves is a list of pairs, where each pair consists
         of the reserves for the first and second coin of the corresponding pair.
+
+    Example
+    --------
+    >>> import curvesim
+    >>> pool_address = "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7"
+    >>> pool = curvesim.pool.get(pool_address)
+    >>> pair_to_curve = curvesim.bonding_curve(pool, plot=True)
     """
 
     if isinstance(pool, CurveMetaPool):
