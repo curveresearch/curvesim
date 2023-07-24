@@ -43,7 +43,7 @@ def bonding_curve(pool, *, truncate=0.0005, resolution=1000, plot=False):
     if isinstance(pool, CurveMetaPool):
         combos = [(0, 1)]
     else:
-        combos = list(combinations(range(pool.n), 2))
+        combos = combinations(range(pool.n), 2)
 
     D = pool.D()
     xp = pool._xp()  # pylint: disable=protected-access
