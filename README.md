@@ -5,7 +5,6 @@
 | Name                                                                |    Stmts |     Miss |   Branch |   BrPart |   Cover |   Missing |
 |-------------------------------------------------------------------- | -------: | -------: | -------: | -------: | ------: | --------: |
 | curvesim/\_\_init\_\_.py                                            |        5 |        0 |        0 |        0 |    100% |           |
-| curvesim/\_bonding\_curve/\_\_init\_\_.py                           |       40 |       35 |       20 |        0 |      8% |     41-90 |
 | curvesim/\_order\_book/\_\_init\_\_.py                              |       53 |       48 |       12 |        0 |      8% |52-100, 104-130 |
 | curvesim/exceptions/\_\_init\_\_.py                                 |       20 |        0 |        0 |        0 |    100% |           |
 | curvesim/iterators/\_\_init\_\_.py                                  |        0 |        0 |        0 |        0 |    100% |           |
@@ -54,7 +53,7 @@
 | curvesim/plot/altair/selectors.py                                   |       32 |       24 |       10 |        0 |     19% |59-69, 97-109, 134-154, 179 |
 | curvesim/plot/altair/styles.py                                      |        2 |        0 |        0 |        0 |    100% |           |
 | curvesim/plot/result\_plotter.py                                    |       16 |        9 |        8 |        0 |     29% |     53-63 |
-| curvesim/pool/\_\_init\_\_.py                                       |       53 |       30 |       22 |        2 |     33% |107-135, 178-196, 220-232, 242-245 |
+| curvesim/pool/\_\_init\_\_.py                                       |       53 |       18 |       22 |        4 |     55% |108, 180-185, 220-232, 242-245 |
 | curvesim/pool/base.py                                               |       50 |       21 |       18 |        4 |     49% |29-31, 36-38, 45, 52, 57-59, 66, 71-73, 80, 85-89 |
 | curvesim/pool/cryptoswap/\_\_init\_\_.py                            |        2 |        0 |        0 |        0 |    100% |           |
 | curvesim/pool/cryptoswap/pool.py                                    |      538 |       70 |      156 |       37 |     83% |153, 158, 161, 163->166, 169-176, 182, 228, 230, 260, 285, 299, 302, 316, 318, 320, 347, 360-361, 374, 388, 396, 469->478, 474, 516->526, 531-532, 536-559, 684->692, 744, 794->793, 804, 818->842, 820-840, 845-848, 1123, 1128, 1141, 1163, 1167, 1187 |
@@ -85,9 +84,11 @@
 | curvesim/templates/sim\_pool.py                                     |        6 |        0 |        0 |        0 |    100% |           |
 | curvesim/templates/strategy.py                                      |       19 |        0 |        2 |        0 |    100% |           |
 | curvesim/templates/trader.py                                        |       40 |        4 |       12 |        0 |     81% |20, 35, 39-40 |
+| curvesim/tools/\_\_init\_\_.py                                      |        2 |        0 |        0 |        0 |    100% |           |
+| curvesim/tools/bonding\_curve.py                                    |       42 |       17 |       18 |        1 |     57% |72-76, 82-97 |
 | curvesim/utils.py                                                   |       50 |       12 |       21 |        8 |     69% |54, 57, 93, 105-114, 116->exit, 117, 140, 156 |
 | curvesim/version.py                                                 |        7 |        0 |        0 |        0 |    100% |           |
-|                                                           **TOTAL** | **3458** |  **777** |  **907** |   **91** | **74%** |           |
+|                                                           **TOTAL** | **3462** |  **747** |  **905** |   **94** | **75%** |           |
 
 
 ## Setup coverage badge
