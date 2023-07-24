@@ -7,10 +7,10 @@ The basic model for a pipeline is demonstrated in the implementation of
 
 Pipelines iterate over pools with parameters set by
 :mod:`curvesim.iterators.param_samplers` and time-series data produced by
-:mod:`curvesim.iterators.price_samplers`. The :class:`~curvesim.pipelines.templates.Strategy`
-dictates what is done at each timestep.
+:mod:`curvesim.iterators.price_samplers`.  At each timestemp, the
+the :class:`~curvesim.pipelines.templates.Strategy` dictates what is done.
 
-A typical pipeline implementation is a function that takes in whatever market data needed;
+A typical pipeline implementation is a function taking in whatever market data needed;
 pool data such as :class:`~curvesim.pool_data.metadata.PoolMetaDataInterface`;
 instantiates a param_sampler, price_sampler, and strategy; and invokes `run_pipeline`,
 returning its result metrics.

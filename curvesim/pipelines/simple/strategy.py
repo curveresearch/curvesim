@@ -7,7 +7,7 @@ from .trader import SimpleArbitrageur
 logger = get_logger(__name__)
 
 
-class SimpleStrategy(Strategy):
+class SimpleStrategy(Strategy):  # pylint: disable=too-few-public-methods
     """
     Class Attributes
     ----------------

@@ -8,21 +8,22 @@ from curvesim.iterators.param_samplers import ParameterizedPoolIterator
 from curvesim.iterators.price_samplers import PriceVolume
 from curvesim.logging import get_logger
 from curvesim.metrics import init_metrics, make_results
-from curvesim.metrics import metrics as Metrics
 from curvesim.pool import get_sim_pool
 from curvesim.pool_data.cache import PoolDataCache
 
 from .. import run_pipeline
+from ..common import DEFAULT_METRICS, DEFAULT_PARAMS, TEST_PARAMS
 from ..utils import compute_volume_multipliers
 from .strategy import VolumeLimitedStrategy
 
 logger = get_logger(__name__)
 
 
-# pylint: disable-next=too-many-arguments
+# pylint: disable-next=too-many-locals
 def pipeline(
     pool_metadata,
     pool_data_cache=None,
+    *,
     variable_params=None,
     fixed_params=None,
     metrics=None,
@@ -152,21 +153,3 @@ def pipeline(
     results = make_results(*output, metrics)
 
     return results
-
-
-# Defaults
-DEFAULT_METRICS = [
-    Metrics.Timestamp,
-    Metrics.PoolValue,
-    Metrics.PoolBalance,
-    Metrics.PriceDepth,
-    Metrics.PoolVolume,
-    Metrics.ArbMetrics,
-]
-
-DEFAULT_PARAMS = {
-    "A": [int(2 ** (a / 2)) for a in range(12, 28)],
-    "fee": list(range(1000000, 5000000, 1000000)),
-}
-
-TEST_PARAMS = {"A": [100, 1000], "fee": [3000000, 4000000]}

@@ -39,6 +39,7 @@ def make(
     A,
     D,
     n,
+    *,
     basepool=None,
     rates=None,
     rate_multiplier=None,
@@ -137,6 +138,7 @@ def make(
 def get_pool(
     pool_metadata,
     chain="mainnet",
+    *,
     balanced=False,
     balanced_base=False,
     normalize=False,
@@ -172,7 +174,6 @@ def get_pool(
     --------
     >>> import curvesim
     >>> pool = curvesim.pool.get("0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7", "mainnet")
-
     """
     if isinstance(pool_metadata, str):
         pool_metadata = get_metadata(pool_metadata, chain=chain)
@@ -201,6 +202,7 @@ POOL_TYPE_TO_CUSTOM_KWARGS = {SimCurveRaiPool: ["redemption_prices"]}
 def get_sim_pool(
     pool_metadata,
     chain="mainnet",
+    *,
     balanced=True,
     balanced_base=True,
     custom_kwargs=None,
@@ -226,7 +228,6 @@ def get_sim_pool(
             raise CurvesimValueError(
                 "`end_ts` has no effect unless pool address is used."
             )
-        pass
     else:
         raise CurvesimValueError(
             "`pool_metadata` must be of type `str`, `dict`, or `PoolMetaDataInterface`."

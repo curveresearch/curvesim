@@ -22,7 +22,8 @@ class PoolDataCache:
         Parameters
         ----------
         metadata_dict : dict, :class:`PoolMetaDataInterface`
-            Pool metadata in the format returned by :func:`curvesim.network.subgraph.pool_snapshot`.
+            Pool metadata in the format returned by
+            :func:`curvesim.network.subgraph.pool_snapshot`.
 
         cache_data : bool, optional
             If True, fetches and caches historical volume and redemption price.

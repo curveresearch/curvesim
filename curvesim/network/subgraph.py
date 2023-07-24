@@ -109,6 +109,7 @@ async def symbol_address(symbol, chain):
         Pool address.
 
     """
+    # pylint: disable=consider-using-f-string
     q = (
         """
         {
@@ -150,9 +151,10 @@ async def _volume(address, chain, days=60, end=None):
         )
     else:
         t_end = datetime.fromtimestamp(end, tz=timezone.utc)
-    logger.info(f"Volume end date: {t_end}")
+    logger.info("Volume end date: %s", t_end)
     t_start = t_end - timedelta(days=days)
 
+    # pylint: disable=consider-using-f-string
     q = """
         {
           swapVolumeSnapshots(
@@ -182,7 +184,7 @@ async def _volume(address, chain, days=60, end=None):
     num_snapshots = len(snapshots)
 
     if num_snapshots < days:
-        logger.warning(f"Only {num_snapshots}/{days} days of pool volume returned.")
+        logger.warning("Only %s/%s days of pool volume returned.", num_snapshots, days)
 
     return snapshots
 
@@ -232,6 +234,7 @@ async def _pool_snapshot(address, chain, end_ts=None):
         end_date = datetime.now(timezone.utc)
         end_ts = int(end_date.timestamp())
 
+    # pylint: disable=consider-using-f-string
     q = """
         {
           dailyPoolSnapshots(
@@ -290,10 +293,10 @@ async def _pool_snapshot(address, chain, end_ts=None):
     r = await convex(chain, q)
     try:
         r = r["dailyPoolSnapshots"][0]
-    except IndexError:
+    except IndexError as e:
         raise SubgraphResultError(
             f"No daily snapshot for this pool: {address}, {chain}"
-        )
+        ) from e
 
     return r
 
@@ -317,7 +320,7 @@ async def pool_snapshot(address, chain, end_ts=None):
 
     """
     r = await _pool_snapshot(address, chain, end_ts)
-    logger.debug(f"Pool snapshot: {r}")
+    logger.debug("Pool snapshot: %s", r)
 
     # Flatten
     pool = r.pop("pool")
@@ -432,6 +435,9 @@ RAI_ADDR = ("0x618788357D0EBd8A37e763ADab3bc575D54c2C7d", "mainnet")
 
 
 def has_redemption_prices(address, chain):
+    """
+    Return True if the given pool has RAI redemption prices available.
+    """
     return (address, chain) == RAI_ADDR
 
 

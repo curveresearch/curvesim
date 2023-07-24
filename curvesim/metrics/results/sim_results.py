@@ -19,6 +19,7 @@ class SimResults:
 
     def __init__(
         self,
+        *,
         data_per_run,
         data_per_trade,
         summary_data,

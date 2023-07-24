@@ -1,8 +1,10 @@
 from numpy import isnan
-from scipy.optimize import least_squares, root_scalar
+from scipy.optimize import least_squares
 
 from curvesim.logging import get_logger
 from curvesim.templates.trader import Trade, Trader
+
+from ..common import get_arb_trades
 
 logger = get_logger(__name__)
 
@@ -12,7 +14,7 @@ class VolumeLimitedArbitrageur(Trader):
     Computes, executes, and reports out arbitrage trades.
     """
 
-    def compute_trades(self, prices, volume_limits):
+    def compute_trades(self, prices, volume_limits):  # pylint: disable=arguments-differ
         """
         Computes trades to optimally arbitrage the pool, constrained by volume limits.
 
@@ -34,13 +36,15 @@ class VolumeLimitedArbitrageur(Trader):
             Dict of additional data to be passed to the state log as part of trade_data.
         """
 
-        trades, errors, res = multipair_optimal_arbitrage(
+        trades, errors, _ = multipair_optimal_arbitrage(
             self.pool, prices, volume_limits
         )
         return trades, {"price_errors": errors}
 
 
-def multipair_optimal_arbitrage(pool, prices, limits):  # noqa: C901
+def multipair_optimal_arbitrage(  # noqa: C901  pylint: disable=too-many-locals
+    pool, prices, limits
+):
     """
     Computes trades to optimally arbitrage the pool, constrained by volume limits.
 
@@ -127,81 +131,14 @@ def multipair_optimal_arbitrage(pool, prices, limits):  # noqa: C901
 
     except Exception:
         logger.error(
-            f"Optarbs args: x0: {sizes}, lo: {lo}, hi: {hi}, prices: {price_targets}",
+            "Optarbs args: x0: %s, lo: %s, hi: %s, prices: %s",
+            sizes,
+            lo,
+            hi,
+            price_targets,
             exc_info=True,
         )
         errors = post_trade_price_error_multi([0] * len(sizes), price_targets, coins)
         res = []
 
     return trades, errors, res
-
-
-def get_arb_trades(pool, prices):
-    """
-    Returns triples of "trades", one for each coin pair in `combo`.
-
-    Each trade is a triple consisting of size, ordered coin-pair,
-    and price target to move the pool price to.
-
-    Parameters
-    ----------
-    pool: SimPool
-        Pool to arbitrage on
-
-    prices : iterable
-        External market prices for each coin-pair
-
-
-    Returns
-    -------
-    trades: List[Tuple]
-        List of triples (size, coins, price_target)
-        "size": trade size
-        "coins": in token, out token
-        "price_target": price target for arbing the token pair
-    """
-
-    def post_trade_price_error(dx, coin_in, coin_out, price_target):
-        with pool.use_snapshot_context():
-            if dx > 0:
-                pool.trade(coin_in, coin_out, int(dx))
-            price = pool.price(coin_in, coin_out, use_fee=True)
-
-        return price - price_target
-
-    trades = []
-
-    for pair in prices:
-        i, j = pair
-
-        if pool.price(i, j) - prices[pair] > 0:
-            price = prices[pair]
-            coin_in, coin_out = i, j
-        elif pool.price(j, i) - 1 / prices[pair] > 0:
-            price = 1 / prices[pair]
-            coin_in, coin_out = j, i
-        else:
-            trades.append((0, pair, prices[pair]))
-            continue
-
-        high = pool.get_in_amount(coin_in, coin_out, out_balance_perc=0.01)
-        bounds = (0, high)
-        try:
-            res = root_scalar(
-                post_trade_price_error,
-                args=(coin_in, coin_out, price),
-                bracket=bounds,
-                method="brentq",
-            )
-            size = int(res.root)
-        except ValueError:
-            pool_price = pool.price(coin_in, coin_out)
-            logger.error(
-                f"Opt_arb error: Pair: {(coin_in, coin_out)}, Pool price: {pool_price},"
-                f"Target Price: {price}, Diff: {pool_price - price}"
-            )
-            size = 0
-
-        trades.append((size, (coin_in, coin_out), price))
-
-    return trades

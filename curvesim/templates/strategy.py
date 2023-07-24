@@ -8,8 +8,8 @@ logger = get_logger(__name__)
 class Strategy(ABC):
     """
     A Strategy defines the trading approach used during each step of a simulation.
-    It executes the trades using an injected `Trader` class and then logs the changes
-    using the injected `StateLog` class.
+    It executes the trades using an injected `Trader` class and then logs the
+    changes using the injected `StateLog` class.
 
     Class Attributes
     ----------------
@@ -48,10 +48,12 @@ class Strategy(ABC):
             The pool to be traded against.
 
         parameters : dict
-            Current pool parameters from the param_sampler (only used for logging/display).
+            Current pool parameters from the param_sampler (only used for
+            logging/display).
 
         price_sampler : iterable
-            Iterable that for each timestep returns market data used by the trader.
+            Iterable that for each timestep returns market data used by
+            the trader.
 
 
         Returns
@@ -64,7 +66,7 @@ class Strategy(ABC):
         state_log = self.state_log_class(pool, self.metrics)
 
         symbol = pool.symbol
-        logger.info(f"[{symbol}] Simulating with {parameters}")
+        logger.info("[%s] Simulating with %s", symbol, parameters)
 
         for sample in price_sampler:
             pool.prepare_for_trades(sample.timestamp)

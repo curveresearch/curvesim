@@ -31,11 +31,10 @@ def _python_info():
     str:
         Implementation name, version, and platform
     """
-    return "{} {} on {}".format(
-        platform.python_implementation(),
-        platform.python_version(),
-        platform.system(),
-    )
+    impl = platform.python_implementation()
+    version = platform.python_version()
+    system = platform.system()
+    return f"{impl} {version} on {system}"
 
 
 if __name__ == "__main__":

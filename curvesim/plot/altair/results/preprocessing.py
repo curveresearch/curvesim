@@ -31,8 +31,8 @@ def preprocess_data(data, config, factors, downsample=False):
     """
     if downsample:
         return downsample_data(data, config, factors)
-    else:
-        return {"main": data.round(6)}
+
+    return {"main": data.round(6)}
 
 
 def downsample_data(data, config, factors):

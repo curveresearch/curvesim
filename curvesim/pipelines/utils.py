@@ -51,7 +51,7 @@ def compute_volume_multipliers(pool_vol, market_vol, n, pool_type, mode=1):
     vol_mult = get_vol_mult(pool_vol_array, market_vol_array, n, mode)
     vol_mult_dict = dict(zip(pairs, vol_mult))
 
-    logger.info(f"Volume Multipliers: {format_info_str(vol_mult_dict)}")
+    logger.info("Volume Multipliers: %s", format_info_str(vol_mult_dict))
     return vol_mult_dict
 
 

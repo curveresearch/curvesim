@@ -27,7 +27,15 @@ class PriceVolume(PriceSampler):
     An iterator that retrieves price/volume and iterates over timepoints in the data.
     """
 
-    def __init__(self, assets, days=60, data_dir="data", src="coingecko", end=None):
+    def __init__(
+        self,
+        assets,
+        *,
+        days=60,
+        data_dir="data",
+        src="coingecko",
+        end=None,
+    ):
         """
         Retrieves price/volume data and prepares it for iteration.
 

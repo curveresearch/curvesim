@@ -1,20 +1,44 @@
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 
 
 class PoolMetaDataInterface(ABC):
     @abstractmethod
     def init_kwargs(self, balanced=True, balanced_base=True, normalize=True):
+        """
+        Returns a dictionary of kwargs used to initialize the pool.
+
+        Returns
+        -------
+        dict
+        """
         raise NotImplementedError
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def address(self):
+        """
+        Returns the pool address.
+
+        Returns
+        -------
+        str
+        """
         raise NotImplementedError
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def chain(self):
+        """
+        Returns the chain/layer 2 identifier.
+
+        Returns
+        -------
+        str
+        """
         raise NotImplementedError
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def pool_type(self):
         """
         Returns the pool type.
@@ -26,7 +50,8 @@ class PoolMetaDataInterface(ABC):
         """
         raise NotImplementedError
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def sim_pool_type(self):
         """
         Returns the pool type.
@@ -38,7 +63,8 @@ class PoolMetaDataInterface(ABC):
         """
         raise NotImplementedError
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def coins(self):
         """
         Returns coin addresses for the pool's holdings.
@@ -57,7 +83,8 @@ class PoolMetaDataInterface(ABC):
         """
         raise NotImplementedError
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def coin_names(self):
         """
         Returns coin names for the pool's holdings.
@@ -76,7 +103,8 @@ class PoolMetaDataInterface(ABC):
         """
         raise NotImplementedError
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def n(self):
         """
         Returns the number of token-types (e.g., DAI, USDC, USDT) in a pool.

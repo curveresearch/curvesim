@@ -16,7 +16,13 @@ def make_results(data_per_run, data_per_trade, summary_data, metrics):
     factors = get_factors(data_per_run)
     plot_config = combine_plot_configs(metrics)
 
-    return SimResults(data_per_run, data_per_trade, summary_data, factors, plot_config)
+    return SimResults(
+        data_per_run=data_per_run,
+        data_per_trade=data_per_trade,
+        summary_data=summary_data,
+        factors=factors,
+        plot_config=plot_config,
+    )
 
 
 def combine_plot_configs(metrics):

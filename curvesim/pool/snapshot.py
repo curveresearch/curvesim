@@ -120,7 +120,13 @@ class CurveMetaPoolBalanceSnapshot(Snapshot):
     """
 
     def __init__(
-        self, balances, admin_balances, bp_balances, bp_admin_balances, bp_tokens
+        self,
+        *,
+        balances,
+        admin_balances,
+        bp_balances,
+        bp_admin_balances,
+        bp_tokens,
     ):
         self.balances = balances
         self.admin_balances = admin_balances
@@ -136,7 +142,13 @@ class CurveMetaPoolBalanceSnapshot(Snapshot):
         bp_balances = basepool.balances.copy()
         bp_admin_balances = basepool.admin_balances.copy()
         bp_tokens = basepool.tokens
-        return cls(balances, admin_balances, bp_balances, bp_admin_balances, bp_tokens)
+        return cls(
+            balances=balances,
+            admin_balances=admin_balances,
+            bp_balances=bp_balances,
+            bp_admin_balances=bp_admin_balances,
+            bp_tokens=bp_tokens,
+        )
 
     def restore(self, pool):
         pool.balances = self.balances.copy()
