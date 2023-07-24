@@ -62,9 +62,8 @@ def bonding_curve(pool, *, truncate=0.0005, resolution=1000, plot=False):
         pair_to_curve[(i, j)] = curve
 
     if plot:
-        try:
-            labels = pool.metadata["coins"]["names"]
-        except (AttributeError, KeyError):
+        labels = pool.coin_names
+        if not labels:
             labels = [f"Coin {str(label)}" for label in range(pool.n)]
 
         _plot_bonding_curve(pair_to_curve, labels, xp)
