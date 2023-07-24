@@ -67,7 +67,7 @@
             <a id="nextFileLink" class="nav" href="d_bd79fe21f027187d_trader_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.2.7">coverage.py v7.2.7</a>,
-            created at 2023-07-22 18:55 +0000
+            created at 2023-07-24 15:05 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"/>
@@ -112,12 +112,12 @@
     <p class="mis show_mis"><span class="n"><a id="t28" href="#t28">28</a></span><span class="t">        <span class="nam">super</span><span class="op">(</span><span class="op">)</span><span class="op">.</span><span class="nam">__init__</span><span class="op">(</span><span class="nam">metrics</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t29" href="#t29">29</a></span><span class="t">        <span class="nam">self</span><span class="op">.</span><span class="nam">vol_mult</span> <span class="op">=</span> <span class="nam">vol_mult</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t30" href="#t30">30</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t31" href="#t31">31</a></span><span class="t">    <span class="key">def</span> <span class="nam">_get_trader_inputs</span><span class="op">(</span><span class="nam">self</span><span class="op">,</span> <span class="nam">sample</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t32" href="#t32">32</a></span><span class="t">        <span class="nam">volume_limits</span> <span class="op">=</span> <span class="nam">compute_volume_limits</span><span class="op">(</span><span class="nam">sample</span><span class="op">.</span><span class="nam">volumes</span><span class="op">,</span> <span class="nam">self</span><span class="op">.</span><span class="nam">vol_mult</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t31" href="#t31">31</a></span><span class="t">    <span class="key">def</span> <span class="nam">_get_trader_inputs</span><span class="op">(</span><span class="nam">self</span><span class="op">,</span> <span class="nam">sample</span><span class="op">)</span><span class="op">:</span>  <span class="com"># pylint: disable=too-few-public-methods</span>&nbsp;</span><span class="r"></span></p>
+    <p class="mis show_mis"><span class="n"><a id="t32" href="#t32">32</a></span><span class="t">        <span class="nam">volume_limits</span> <span class="op">=</span> <span class="nam">_compute_volume_limits</span><span class="op">(</span><span class="nam">sample</span><span class="op">.</span><span class="nam">volumes</span><span class="op">,</span> <span class="nam">self</span><span class="op">.</span><span class="nam">vol_mult</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t33" href="#t33">33</a></span><span class="t">        <span class="key">return</span> <span class="nam">sample</span><span class="op">.</span><span class="nam">prices</span><span class="op">,</span> <span class="nam">volume_limits</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t34" href="#t34">34</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t35" href="#t35">35</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t36" href="#t36">36</a></span><span class="t"><span class="key">def</span> <span class="nam">compute_volume_limits</span><span class="op">(</span><span class="nam">volumes</span><span class="op">,</span> <span class="nam">vol_mult</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t36" href="#t36">36</a></span><span class="t"><span class="key">def</span> <span class="nam">_compute_volume_limits</span><span class="op">(</span><span class="nam">volumes</span><span class="op">,</span> <span class="nam">vol_mult</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t37" href="#t37">37</a></span><span class="t">    <span class="nam">limits</span> <span class="op">=</span> <span class="op">{</span><span class="nam">key</span><span class="op">:</span> <span class="nam">volumes</span><span class="op">[</span><span class="nam">key</span><span class="op">]</span> <span class="op">*</span> <span class="nam">vol_mult</span><span class="op">[</span><span class="nam">key</span><span class="op">]</span> <span class="key">for</span> <span class="nam">key</span> <span class="key">in</span> <span class="nam">volumes</span><span class="op">}</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t38" href="#t38">38</a></span><span class="t">    <span class="nam">reversed_limits</span> <span class="op">=</span> <span class="op">{</span><span class="op">(</span><span class="nam">j</span><span class="op">,</span> <span class="nam">i</span><span class="op">)</span><span class="op">:</span> <span class="nam">lim</span> <span class="key">for</span> <span class="op">(</span><span class="nam">i</span><span class="op">,</span> <span class="nam">j</span><span class="op">)</span><span class="op">,</span> <span class="nam">lim</span> <span class="key">in</span> <span class="nam">limits</span><span class="op">.</span><span class="nam">items</span><span class="op">(</span><span class="op">)</span><span class="op">}</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t39" href="#t39">39</a></span><span class="t">    <span class="key">return</span> <span class="op">{</span><span class="op">**</span><span class="nam">limits</span><span class="op">,</span> <span class="op">**</span><span class="nam">reversed_limits</span><span class="op">}</span>&nbsp;</span><span class="r"></span></p>
@@ -130,7 +130,7 @@
             <a id="nextFileLink" class="nav" href="d_bd79fe21f027187d_trader_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.2.7">coverage.py v7.2.7</a>,
-            created at 2023-07-22 18:55 +0000
+            created at 2023-07-24 15:05 +0000
         </p>
     </div>
 </footer>
