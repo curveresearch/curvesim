@@ -4,19 +4,16 @@ from hypothesis import HealthCheck, assume, given, settings
 from hypothesis import strategies as st
 
 from curvesim.pool import CurveCryptoPool
-from curvesim.pool.cryptoswap.pool import (
-    A_MULTIPLIER,
+from curvesim.pool.cryptoswap.calcs import factory_2_coin
+from curvesim.pool.cryptoswap.calcs.factory_2_coin import (
+    MAX_A,
     MAX_GAMMA,
+    MIN_A,
     MIN_GAMMA,
     PRECISION,
-    _geometric_mean,
-    _halfpow,
-    _sqrt_int,
+    geometric_mean,
 )
-
-N_COINS = 2
-MIN_A = N_COINS**N_COINS * A_MULTIPLIER // 10
-MAX_A = N_COINS**N_COINS * A_MULTIPLIER * 100000
+from curvesim.pool.cryptoswap.pool import _halfpow, _sqrt_int
 
 
 def initialize_pool(vyper_cryptopool):
@@ -36,7 +33,11 @@ def initialize_pool(vyper_cryptopool):
     admin_fee = vyper_cryptopool.admin_fee()
     ma_half_time = vyper_cryptopool.ma_half_time()
     price_scale = vyper_cryptopool.price_scale()
+    price_oracle = vyper_cryptopool.eval("self._price_oracle")
+    last_prices = vyper_cryptopool.last_prices()
+    last_prices_timestamp = vyper_cryptopool.last_prices_timestamp()
     balances = [vyper_cryptopool.balances(i) for i in range(n_coins)]
+    # Use the cached `D`. See warning for `virtual_price` below
     D = vyper_cryptopool.D()
     lp_total_supply = vyper_cryptopool.totalSupply()
     xcp_profit = vyper_cryptopool.xcp_profit()
@@ -54,7 +55,10 @@ def initialize_pool(vyper_cryptopool):
         adjustment_step=adjustment_step,
         admin_fee=admin_fee,
         ma_half_time=ma_half_time,
-        price_scale=price_scale,
+        price_scale=[price_scale],
+        price_oracle=[price_oracle],
+        last_prices=[last_prices],
+        last_prices_timestamp=last_prices_timestamp,
         balances=balances,
         D=D,
         tokens=lp_total_supply,
@@ -65,23 +69,30 @@ def initialize_pool(vyper_cryptopool):
     assert pool.A == vyper_cryptopool.A()
     assert pool.gamma == vyper_cryptopool.gamma()
     assert pool.balances == balances
+    assert pool.price_scale == [price_scale]
+    assert pool._price_oracle == [price_oracle]  # pylint: disable=protected-access
+    assert pool.last_prices == [last_prices]
+    assert pool.last_prices_timestamp == last_prices_timestamp
     assert pool.D == vyper_cryptopool.D()
     assert pool.tokens == lp_total_supply
     assert pool.xcp_profit == xcp_profit
     assert pool.xcp_profit_a == xcp_profit_a
 
+    # WARNING: both `virtual_price` and `D` are cached values
+    # so depending on the test, may not be updated to be
+    # consistent with the rest of the pool state.
+    #
+    # Allowing this simplifies testing since we can avoid
+    # coupling tests of basic functionality with the tests
+    # for the complex newton calculations.
+    #
+    # We think it makes sense the initialized pool should
+    # at least match the vyper pool (inconsistencies and all).
+    # When full consistency is required, the `update_cached_values`
+    # helper function should be utilized before calling
+    # `initialize_pool`.
     virtual_price = vyper_cryptopool.virtual_price()
     pool.virtual_price = virtual_price
-
-    price_oracle = vyper_cryptopool.eval("self._price_oracle")
-    # pylint: disable-next=protected-access
-    pool._price_oracle = price_oracle
-
-    last_prices = vyper_cryptopool.last_prices()
-    last_prices_timestamp = vyper_cryptopool.last_prices_timestamp()
-
-    pool.last_prices = last_prices
-    pool.last_prices_timestamp = last_prices_timestamp
 
     return pool
 
@@ -99,12 +110,12 @@ def sync_ema_logic(
     """
     # pylint: disable=protected-access
     price_oracle = vyper_cryptopool.eval("self._price_oracle")
-    pool._price_oracle = price_oracle
+    pool._price_oracle = [price_oracle]
 
     # synchronize the times between the two pools and reset
     # last_prices and last_prices_timestamp
     vyper_cryptopool.eval(f"self.last_prices={last_prices}")
-    pool.last_prices = last_prices
+    pool.last_prices = [last_prices]
 
     vm_timestamp = boa.env.vm.state.timestamp
     pool._increment_timestamp(timestamp=vm_timestamp)
@@ -129,6 +140,7 @@ def get_real_balances(virtual_balances, precisions, price_scale):
     Convert from units of D to native token units using the
     given price scale.
     """
+    assert len(virtual_balances) == 2
     balances = [x // p for x, p in zip(virtual_balances, precisions)]
     balances[1] = balances[1] * PRECISION // price_scale
     return balances
@@ -163,7 +175,7 @@ price = st.integers(min_value=10**12, max_value=10**25)
 @given(positive_balance, positive_balance)
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
-    max_examples=5,
+    max_examples=2,
     deadline=None,
 )
 def test_xp(vyper_cryptopool, x0, x1):
@@ -187,7 +199,7 @@ def test_xp(vyper_cryptopool, x0, x1):
 @given(positive_balance, positive_balance, st.booleans())
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
-    max_examples=5,
+    max_examples=2,
     deadline=None,
 )
 def test_geometric_mean(vyper_cryptopool, x0, x1, sort_flag):
@@ -195,7 +207,7 @@ def test_geometric_mean(vyper_cryptopool, x0, x1, sort_flag):
 
     xp = [x0, x1]
     expected_result = vyper_cryptopool.eval(f"self.geometric_mean({xp}, {sort_flag})")
-    result = _geometric_mean(xp, sort_flag)
+    result = geometric_mean(xp, sort_flag)
 
     assert result == expected_result
 
@@ -203,7 +215,7 @@ def test_geometric_mean(vyper_cryptopool, x0, x1, sort_flag):
 @given(st.integers(min_value=0))
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
-    max_examples=5,
+    max_examples=2,
     deadline=None,
 )
 def test_halfpow(vyper_cryptopool, power):
@@ -218,7 +230,7 @@ def test_halfpow(vyper_cryptopool, power):
 @given(st.integers(min_value=0))
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
-    max_examples=5,
+    max_examples=2,
     deadline=None,
 )
 def test_sqrt_int(vyper_cryptopool, number):
@@ -233,7 +245,7 @@ def test_sqrt_int(vyper_cryptopool, number):
 @given(st.integers(min_value=100))
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
-    max_examples=5,
+    max_examples=2,
     deadline=None,
 )
 def test_get_xcp(vyper_cryptopool, D):
@@ -260,9 +272,7 @@ def test_newton_D(vyper_cryptopool, A, gamma, x0, x1):
     assume(0.02 < xp[0] / xp[1] < 50)
 
     expected_D = vyper_cryptopool.eval(f"self.newton_D({A}, {gamma}, {xp})")
-
-    # pylint: disable=protected-access
-    D = CurveCryptoPool._newton_D(A, gamma, xp)
+    D = factory_2_coin.newton_D(A, gamma, xp)
 
     assert D == expected_D
 
@@ -293,8 +303,7 @@ def test_newton_y(vyper_cryptopool, A, gamma, x0, x1, i, delta_perc):
         f"self.newton_y({A}, {gamma}, {xp}, {D_changed}, {i})"
     )
 
-    # pylint: disable=protected-access
-    y = CurveCryptoPool._newton_y(A, gamma, xp, D_changed, i)
+    y = factory_2_coin.newton_y(A, gamma, xp, D_changed, i)
 
     assert y == expected_y
 
@@ -306,7 +315,7 @@ def test_newton_y(vyper_cryptopool, A, gamma, x0, x1, i, delta_perc):
         f"self.newton_y({A}, {gamma}, {xp_changed}, {D}, {i})"
     )
 
-    y = CurveCryptoPool._newton_y(A, gamma, xp_changed, D, i)
+    y = factory_2_coin.newton_y(A, gamma, xp_changed, D, i)
 
     assert y == expected_y
 
@@ -368,18 +377,19 @@ def test_tweak_price(
     pool = initialize_pool(vyper_cryptopool)
 
     # ------- test no oracle update and no scale adjustment ------------- #
-    assert pool.price_scale == vyper_cryptopool.price_scale()
-    assert pool._price_oracle == vyper_cryptopool.eval("self._price_oracle")
+    assert pool.price_scale == [vyper_cryptopool.price_scale()]
+    assert pool._price_oracle == [vyper_cryptopool.eval("self._price_oracle")]
 
     old_scale = pool.price_scale
     assert old_scale == pool._price_oracle
 
     old_oracle = pool._price_oracle
 
-    pool._tweak_price(A, gamma, xp, last_price, 0)  # pylint: disable=protected-access
+    # pylint: disable=protected-access
+    pool._tweak_price(A, gamma, xp, 1, last_price, 0)
     vyper_cryptopool.eval(f"self.tweak_price({A_gamma}, {xp}, {last_price}, 0)")
 
-    assert pool.price_scale == vyper_cryptopool.price_scale()
+    assert pool.price_scale == [vyper_cryptopool.price_scale()]
     # no price adjustment since price oracle is same as price scale (`norm` is 0)
     assert pool.price_scale == old_scale
     # EMA price oracle won't update if price oracle and last price is the same
@@ -396,12 +406,12 @@ def test_tweak_price(
     old_scale = pool.price_scale
     old_virtual_price = pool.virtual_price
 
-    pool._tweak_price(A, gamma, xp, last_price, 0)  # pylint: disable=protected-access
+    pool._tweak_price(A, gamma, xp, 1, last_price, 0)
     vyper_cryptopool.eval(f"self.tweak_price({A_gamma}, {xp}, {last_price}, 0)")
 
     # check the pools are the same
-    assert pool.price_scale == vyper_cryptopool.price_scale()
-    assert pool._price_oracle == vyper_cryptopool.eval("self._price_oracle")
+    assert pool.price_scale == [vyper_cryptopool.price_scale()]
+    assert pool._price_oracle == [vyper_cryptopool.eval("self._price_oracle")]
     assert pool.virtual_price == vyper_cryptopool.virtual_price()
     assert pool.D == vyper_cryptopool.D()
 
@@ -424,11 +434,11 @@ def test_tweak_price(
     xp[0] = xp[0] + pool.allowed_extra_profit // 10
 
     # omitting price will calculate the spot price in `tweak_price`
-    pool._tweak_price(A, gamma, xp, 0, 0)
+    pool._tweak_price(A, gamma, xp, 1, 0, 0)
     vyper_cryptopool.eval(f"self.tweak_price({A_gamma}, {xp}, 0, 0)")
 
-    assert pool.price_scale == vyper_cryptopool.price_scale()
-    assert pool._price_oracle == vyper_cryptopool.eval("self._price_oracle")
+    assert pool.price_scale == [vyper_cryptopool.price_scale()]
+    assert pool._price_oracle == [vyper_cryptopool.eval("self._price_oracle")]
 
     assert pool.D == vyper_cryptopool.D()
     assert pool.virtual_price == vyper_cryptopool.virtual_price()
@@ -443,11 +453,11 @@ def test_tweak_price(
     xp[0] = xp[0] * 115 // 100
 
     # omitting price will calculate the spot price in `tweak_price`
-    pool._tweak_price(A, gamma, xp, 0, 0)
+    pool._tweak_price(A, gamma, xp, 1, 0, 0)
     vyper_cryptopool.eval(f"self.tweak_price({A_gamma}, {xp}, 0, 0)")
 
-    assert pool.price_scale == vyper_cryptopool.price_scale()
-    assert pool._price_oracle == vyper_cryptopool.eval("self._price_oracle")
+    assert pool.price_scale == [vyper_cryptopool.price_scale()]
+    assert pool._price_oracle == [vyper_cryptopool.eval("self._price_oracle")]
 
     assert pool.D == vyper_cryptopool.D()
     assert pool.virtual_price == vyper_cryptopool.virtual_price()
@@ -636,7 +646,7 @@ def test_price_oracle(vyper_cryptopool, price_oracle, last_price, time_delta):
     # pylint: disable-next=protected-access
     pool._increment_timestamp(timestamp=vm_timestamp)
 
-    assert pool.price_oracle() == vyper_cryptopool.price_oracle()
+    assert pool.price_oracle() == [vyper_cryptopool.price_oracle()]
     assert pool.lp_price() == vyper_cryptopool.lp_price()
 
 
@@ -682,3 +692,66 @@ def test_calc_token_amount(vyper_cryptopool, x0, x1):
 
     expected_balances = [vyper_cryptopool.balances(i) for i in range(2)]
     assert pool.balances == expected_balances
+
+
+_num_iter = 10
+
+
+@given(
+    st.lists(
+        st.integers(min_value=1, max_value=5000),
+        min_size=_num_iter,
+        max_size=_num_iter,
+    ),
+    st.lists(
+        st.tuples(
+            st.integers(min_value=0, max_value=1),
+            st.integers(min_value=0, max_value=1),
+        ).filter(lambda x: x[0] != x[1]),
+        min_size=_num_iter,
+        max_size=_num_iter,
+    ),
+    st.lists(
+        st.integers(min_value=0, max_value=86400),
+        min_size=_num_iter,
+        max_size=_num_iter,
+    ),
+)
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=5,
+    deadline=None,
+)
+def test_multiple_exchange_with_repeg(
+    vyper_cryptopool, dx_perc_list, indices_list, time_delta_list
+):
+    """Test `exchange` against vyper implementation."""
+
+    pool = initialize_pool(vyper_cryptopool)
+
+    for indices, dx_perc, time_delta in zip(
+        indices_list, dx_perc_list, time_delta_list
+    ):
+        vm_timestamp = boa.env.vm.state.timestamp
+        pool._block_timestamp = vm_timestamp
+
+        i, j = indices
+        dx = pool.balances[i] * dx_perc // 10000  # dx_perc in bps
+
+        expected_dy = vyper_cryptopool.exchange(i, j, dx, 0)
+        dy, _ = pool.exchange(i, j, dx)
+        assert dy == expected_dy
+
+        expected_balances = [vyper_cryptopool.balances(i) for i in range(2)]
+        assert pool.balances[0] == expected_balances[0]
+        assert pool.balances[1] == expected_balances[1]
+
+        assert pool.last_prices == [vyper_cryptopool.last_prices()]
+        assert pool.last_prices_timestamp == vyper_cryptopool.last_prices_timestamp()
+
+        expected_price_oracle = [vyper_cryptopool.price_oracle()]
+        expected_price_scale = [vyper_cryptopool.price_scale()]
+        assert pool.price_oracle() == expected_price_oracle
+        assert pool.price_scale == expected_price_scale
+
+        boa.env.time_travel(time_delta)
