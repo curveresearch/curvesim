@@ -5,14 +5,16 @@ Technically these are not end-to-end tests since we don't pull the data,
 so besides the network code there is a lack of coverage around the
 `pool_data` and `price_data` packages.
 """
+import argparse
 import os
+import pickle
 
 from pandas import DataFrame, read_pickle
 
 import curvesim
 
 
-def main():  # noqa: C901
+def main(generate=False, ncpu=None):  # noqa: C901
 
     data_dir = os.path.join("test", "data")
     pools = [
@@ -75,10 +77,16 @@ def main():  # noqa: C901
             "summary": results.summary(),
         }
 
-        for key in test_functions:
+        for key, test_func in test_functions.items():
             f_name = os.path.join(data_dir, f"{address}-results_{key}.pickle")
-            stored_data = read_pickle(f_name)
-            test_functions[key](sim_data[key], stored_data)
+
+            if generate:
+                with open(f_name, "wb") as f:
+                    pickle.dump(sim_data[key], f)
+
+            else:
+                stored_data = read_pickle(f_name)
+                test_func(sim_data[key], stored_data)
 
 
 def per_run(sim, stored):
@@ -192,4 +200,22 @@ def compute_R2(sim, stored):
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(
+        prog="Volume-limited Arbitrage CI Test",
+        description="Test end-to-end by running the volume-limited"
+        "arbitrage pipeline across multiple pool types",
+    )
+    parser.add_argument(
+        "-g",
+        "--generate",
+        action="store_true",
+        help="Generate pickled test data",
+    )
+    parser.add_argument(
+        "-n",
+        "--ncpu",
+        type=int,
+        help="Number of cores to use; use 1 for debugging/profiling",
+    )
+    args = parser.parse_args()
+    main(args.generate, args.ncpu)
