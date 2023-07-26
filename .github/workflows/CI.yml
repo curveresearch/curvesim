@@ -1,12 +1,13 @@
 name: CI
 
-# Controls when the action will run. Triggers the workflow on push or pull request
-# events but only for the main and develop branches.
+# the "Generate comparison results" workflow will trigger
+# push / pull request events on `main` or `develop`.
 on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
+  workflow_run:
+    workflows: [Generate comparison results]
+    types:
+      - completed
+
 
 jobs:
   package:
@@ -50,6 +51,12 @@ jobs:
           python3 -m pip install dist/curvesim*.whl
           # ensure tests hit installed package
           rm -r curvesim
+
+      - name: Download comparison results
+        uses: actions/download-artifact@v3
+        with:
+          name: test-data-${{ github.event.workflow_run.head_sha }}
+          path: test/data/
 
       - name: End-to-end tests
         run: |
@@ -96,6 +103,12 @@ jobs:
         run: |
           # coverage run -m pytest
           pytest --cov -n auto --cov-report=
+
+      - name: Download comparison results
+        uses: actions/download-artifact@v3
+        with:
+          name: test-data-${{ github.event.workflow_run.head_sha }}
+          path: test/data/
 
       - name: End-to-end tests
         run: |

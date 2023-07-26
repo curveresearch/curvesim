@@ -1,0 +1,40 @@
+name: Generate comparison results
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the main and develop branches.
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+
+    - name: Set up latest Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.10"
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python3 -m pip install --upgrade pip
+        python3 -m pip install -r requirements.txt
+
+    - name: Generate comparison results
+      run: |
+        python3 -m test.simple_ci --generate
+
+    - name: Upload test data
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-data-${{ github.sha }}
+        path: test/data/
+
