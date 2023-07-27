@@ -58,9 +58,11 @@ jobs:
           rm -r curvesim
 
       - name: Download comparison results
-        uses: actions/download-artifact@v3
+        id: download-artifact
+        uses: dawidd6/action-download-artifact@v2
         with:
-          name: test-data-${{ github.event.workflow_run.id }}
+          workflow_conclusion: completed
+          run_id: ${{ github.event.workflow_run.id }}
           path: test/data/
 
       - name: End-to-end tests
@@ -110,9 +112,11 @@ jobs:
           pytest --cov -n auto --cov-report=
 
       - name: Download comparison results
-        uses: actions/download-artifact@v3
+        id: download-artifact
+        uses: dawidd6/action-download-artifact@v2
         with:
-          name: test-data-${{ github.event.workflow_run.id }}
+          workflow_conclusion: completed
+          run_id: ${{ github.event.workflow_run.id }}
           path: test/data/
 
       - name: End-to-end tests
