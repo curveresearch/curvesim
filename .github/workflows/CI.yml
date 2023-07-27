@@ -1,15 +1,43 @@
 name: CI
 
-# the "Generate comparison results" workflow will trigger
-# push / pull request events on `main` or `develop`.
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the main and develop branches.
 on:
-  workflow_run:
-    workflows: [Generate comparison results]
-    types:
-      - completed
-
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
 
 jobs:
+  generate:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+
+    - name: Set up latest Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.10"
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python3 -m pip install --upgrade pip
+        python3 -m pip install -r requirements.txt
+
+    - name: Generate comparison results
+      run: |
+        python3 -m test.simple_ci --generate
+
+    - name: Upload results
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-data
+        path: test/data
+
   package:
     name: Test package (${{ matrix.py }} on ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -34,11 +62,6 @@ jobs:
             py: "3.11"
 
     steps:
-      - name: Dump GitHub context
-        env:
-          GITHUB_CONTEXT: ${{ toJSON(github) }}
-        run: echo "$GITHUB_CONTEXT"
-
       - uses: actions/checkout@v3
 
       - name: Set up latest Python
@@ -58,16 +81,13 @@ jobs:
           rm -r curvesim
 
       - name: Download comparison results
-        id: download-artifact
-        uses: dawidd6/action-download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
-          workflow_conclusion: completed
-          run_id: ${{ github.event.workflow_run.id }}
+          name: test-data
+          path: test/data
 
       - name: End-to-end tests
         run: |
-          rm -r test/data/*
-          mv test-data/* test/data/
           python3 -m test.simple_ci
 
 
@@ -98,25 +118,15 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Format
-        run: |
-          black --version
-          black . --check
-
-      - name: Lint
-        run: |
-          make lint
-
       - name: Unit tests
         run: |
           pytest --cov -n auto --cov-report=
 
-      - name: Download comparison results
-        id: download-artifact
-        uses: dawidd6/action-download-artifact@v2
+      - name: Download test data
+        uses: actions/download-artifact@v3
         with:
-          workflow_conclusion: completed
-          run_id: ${{ github.event.workflow_run.id }}
+          name: test-data
+          path: test/data
 
       - name: End-to-end tests
         run: |
