@@ -133,7 +133,6 @@ jobs:
 
       - name: End-to-end tests
         run: |
-          mv test-data/* test/data/
           coverage run -m test.simple_ci
 
       - name: Download coverage badge
