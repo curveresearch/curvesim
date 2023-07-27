@@ -36,5 +36,5 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: test-data-${{ github.run_id }}
-        path: test/data/
+        path: test/data
 
