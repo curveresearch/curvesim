@@ -10,6 +10,7 @@ on:
 
 jobs:
   generate:
+    name: Generate comparison results
     runs-on: ubuntu-latest
 
     steps:
@@ -124,7 +125,7 @@ jobs:
         run: |
           pytest --cov -n auto --cov-report=
 
-      - name: Download test data
+      - name: Download comparison results
         uses: actions/download-artifact@v3
         with:
           name: test-data
