@@ -35,6 +35,6 @@ jobs:
     - name: Upload test data
       uses: actions/upload-artifact@v3
       with:
-        name: test-data-${{ github.sha }}
+        name: test-data-${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
         path: test/data/
 
