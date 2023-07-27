@@ -33,8 +33,8 @@ class SimCurveCryptoPool(SimPool, AssetIndicesMixin, CurveCryptoPool):
 
     @override
     def price(self, coin_in, coin_out, use_fee=True):
-        # TODO: fill this method in
-        raise SimPoolError("Price not implemented for SimCurveCryptoPool.")
+        # need to implement a dydxfee equivalent on the cryptopool
+        raise SimPoolError("`price` not implemented for SimCurveCryptoPool.")
 
     @override
     def trade(self, coin_in, coin_out, amount_in):
@@ -46,15 +46,26 @@ class SimCurveCryptoPool(SimPool, AssetIndicesMixin, CurveCryptoPool):
         return amount_out, fee
 
     def get_in_amount(self, coin_in, coin_out, out_balance_perc):
+        """
+        Get the approximate in-amount to achieve the given percentage
+        of the out-token balance.
+        """
+        raise SimPoolError("`get_in_amount` not implemented for SimCurveCryptoPool.")
         i, j = self.get_asset_indices(coin_in, coin_out)
 
-        A = self.A
-        gamma = self.gamma
-        xp = self._xp()
-        D = self._newton_D(A, gamma, xp)
+        # The cryptoswap (dynamic) fee is calculated on the state `xp`,
+        # which has been adjusted by increasing in-token balance and
+        # decreasing out-token balance.
+        #
+        # This means we can't just back out the `in_amount` using `get_y`
+        # as with stableswap (fixed fee).
+        #
+        # We can use the following get_dx helper function:
+        # https://github.com/curvefi/tricrypto-ng/blob/main/contracts/main/CurveCryptoViews3Optimized.vy#L183
+        # Tricrypto-ng uses this 5 times in a loop, we may want to increase the
+        # number of iterations.
+        in_amount = None
 
-        xp[j] = int(xp[j] * out_balance_perc)
-        in_amount = self._newton_y(A, gamma, xp, D, j)
         return in_amount
 
     @property
