@@ -40,6 +40,7 @@ jobs:
 
   package:
     name: Test package (${{ matrix.py }} on ${{ matrix.os }})
+    needs: generate
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -93,6 +94,7 @@ jobs:
 
   source:
     name: Test source with coverage
+    needs: generate
     runs-on: ubuntu-latest
 
     permissions:
