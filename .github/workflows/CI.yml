@@ -63,10 +63,10 @@ jobs:
         with:
           workflow_conclusion: completed
           run_id: ${{ github.event.workflow_run.id }}
-          path: test/data/
 
       - name: End-to-end tests
         run: |
+          mv test-data/* test/data/
           python3 -m test.simple_ci
 
 
@@ -108,7 +108,6 @@ jobs:
 
       - name: Unit tests
         run: |
-          # coverage run -m pytest
           pytest --cov -n auto --cov-report=
 
       - name: Download comparison results
@@ -117,11 +116,10 @@ jobs:
         with:
           workflow_conclusion: completed
           run_id: ${{ github.event.workflow_run.id }}
-          path: test/data/
 
       - name: End-to-end tests
         run: |
-          # coverage run -m test.ci
+          mv test-data/* test/data/
           coverage run -m test.simple_ci
 
       - name: Download coverage badge
