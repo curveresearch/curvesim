@@ -66,7 +66,7 @@ jobs:
 
       - name: End-to-end tests
         run: |
-          mv test-data/* test/data/
+          mv -f test-data/* test/data/
           python3 -m test.simple_ci
 
 
