@@ -1,8 +1,11 @@
 name: Run volume limited arbitrage pipeline
 
-# Controls when the action will run. Triggers the workflow on push or pull request
-# events but only for the main and develop branches.
-on: workflow_dispatch
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
 
 jobs:
   build:
