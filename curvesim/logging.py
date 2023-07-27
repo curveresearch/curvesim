@@ -26,7 +26,8 @@ LEVELS = {
 
 BASE_DIR = os.getcwd()
 LOG_DIR = os.path.join(BASE_DIR, "logs")
-os.makedirs(LOG_DIR, exist_ok=True)
+if USE_LOG_FILE:
+    os.makedirs(LOG_DIR, exist_ok=True)
 
 __dt_string = datetime.datetime.now().strftime("%Y%m%d")
 LOG_FILEPATH = os.path.join(LOG_DIR, __dt_string + ".log")
