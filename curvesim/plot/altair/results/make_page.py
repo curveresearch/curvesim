@@ -96,14 +96,16 @@ def make_page(data_dict, config, factors, metric_axis, selectors):
         The created chart page.
     """
     kwargs = selectors["kwargs"]
-    charts = concat(data=data_dict["main"], columns=2)
+    page = concat(data=data_dict["main"], columns=2)
 
     for metric_key, cfg in config.items():
         metrics, kwargs["data"] = get_metric_data(metric_key, data_dict)
         subplot = make_subplot(cfg, metrics, factors, metric_axis, kwargs)
-        charts |= subplot
+        page |= subplot
 
-    page = vconcat(selectors["charts"], charts)
+    if factors:
+        page = vconcat(selectors["charts"], page)
+
     return page.resolve_scale(color="independent")
 
 

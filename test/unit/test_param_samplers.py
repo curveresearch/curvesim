@@ -139,10 +139,9 @@ def test_ParameterizedPoolIterator_unmapped_pool_exception():
                 setattr(self, attr, None)
 
     pool = DummyPool()
-    variable_params = {"a": [1, 2], "b": [3, 4]}
 
     with pytest.raises(ParameterSamplerError):
-        ParameterizedPoolIterator(pool, variable_params)
+        ParameterizedPoolIterator(pool)
 
 
 def test_ParameterizedPoolIterator_wrong_pool_exception():
@@ -155,13 +154,12 @@ def test_ParameterizedPoolIterator_wrong_pool_exception():
         pass
 
     pool = DummyPool()
-    variable_params = {"a": 1, "b": 2}
 
     for subclass in DEFAULT_POOL_MAP.values():
         mapping = {DummyPool: subclass}
 
         with pytest.raises(ParameterSamplerError):
-            ParameterizedPoolIterator(pool, variable_params, pool_map=mapping)
+            ParameterizedPoolIterator(pool, pool_map=mapping)
 
 
 @given(*make_parameter_strats(POOL_PARAMS))

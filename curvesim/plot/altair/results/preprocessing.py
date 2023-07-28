@@ -119,6 +119,9 @@ def to_histograms(data, factors):
     pandas.DataFrame
         The data converted to histograms.
     """
+    if not factors:
+        return make_histogram(data).reset_index()
+
     return data.groupby(factors).apply(make_histogram).reset_index()
 
 
