@@ -29,11 +29,14 @@ class VolumeLimitedStrategy(Strategy):
         self.vol_mult = vol_mult
 
     def _get_trader_inputs(self, sample):  # pylint: disable=too-few-public-methods
-        volume_limits = _compute_volume_limits(sample.volumes, self.vol_mult)
+        volume_limits = _compute_volume_limits(sample, self.vol_mult)
         return sample.prices, volume_limits
 
 
-def _compute_volume_limits(volumes, vol_mult):
+def _compute_volume_limits(sample, vol_mult):
+    prices = sample.prices
+    volumes = sample.volumes
+
     limits = {key: volumes[key] * vol_mult[key] for key in volumes}
-    reversed_limits = {(j, i): lim for (i, j), lim in limits.items()}
+    reversed_limits = {(j, i): lim * prices[(i, j)] for (i, j), lim in limits.items()}
     return {**limits, **reversed_limits}
