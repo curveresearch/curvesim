@@ -1,12 +1,33 @@
-from curvesim.pool.sim_interface import SimCurveMetaPool, SimCurvePool, SimCurveRaiPool
+from curvesim.pool.sim_interface import (
+    SimCurveMetaPool,
+    SimCurvePool,
+    SimCurveRaiPool,
+    SimCurveCryptoPool,
+)
 
 
 def get_pool_state(pool):
     """
     Returns pool state for the input pool. Functions for each pool type are
-    specified in the `pool_state_functions` dict.
+    specified in the `pool_state_functions` dict. Each function returns the
+    values necessary to reconstruct pool state throughout a simulation run.
     """
     return pool_state_functions[type(pool)](pool)
+
+
+def get_cryptoswap_pool_state(pool):
+    """Returns pool state for stableswap non-meta pools."""
+    return {
+        "balances": pool.balances,
+        "tokens": pool.tokens,
+        "price_scale": pool.price_scale,
+        "price_oracle": pool.price_oracle(),
+        "xcp_profit": pool.xcp_profit,
+        "xcp_profit_a": pool.xcp_profit_a,
+        "last_prices": pool.last_prices,
+        "last_prices_timestamp": pool.last_prices_timestamp,
+        "not_adjusted": pool.not_adjusted,
+    }
 
 
 def get_stableswap_pool_state(pool):
@@ -31,4 +52,5 @@ pool_state_functions = {
     SimCurvePool: get_stableswap_pool_state,
     SimCurveMetaPool: get_stableswap_metapool_state,
     SimCurveRaiPool: get_stableswap_metapool_state,
+    SimCurveCryptoPool: get_cryptoswap_pool_state,
 }
