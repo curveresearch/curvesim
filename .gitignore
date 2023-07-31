@@ -28,4 +28,7 @@ __pycache__/
 .coverage
 .coverage.*
 
+# generated CI test data
+test/data/*-simple_results_*.pickle
+
 /.pdbrc
