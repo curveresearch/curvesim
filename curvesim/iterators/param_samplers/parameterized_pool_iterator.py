@@ -3,7 +3,12 @@ from copy import deepcopy
 from itertools import product
 
 from curvesim.exceptions import ParameterSamplerError
-from curvesim.pool.sim_interface import SimCurveMetaPool, SimCurvePool, SimCurveRaiPool
+from curvesim.pool.sim_interface import (
+    SimCurveMetaPool,
+    SimCurvePool,
+    SimCurveRaiPool,
+    SimCurveCryptoPool,
+)
 from curvesim.templates import ParameterSampler
 
 from .pool_mixins import CurveCryptoPoolMixin, CurveMetaPoolMixin, CurvePoolMixin
@@ -171,5 +176,5 @@ DEFAULT_POOL_MAP = {
     SimCurvePool: ParameterizedCurvePoolIterator,
     SimCurveRaiPool: ParameterizedCurveMetaPoolIterator,
     SimCurveMetaPool: ParameterizedCurveMetaPoolIterator,
-    # SimCurveCryptoPool: ParameterizedCurveCryptoPoolIterator
+    SimCurveCryptoPool: ParameterizedCurveCryptoPoolIterator,
 }
