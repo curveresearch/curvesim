@@ -29,7 +29,7 @@
 | curvesim/network/http.py                                            |       39 |        5 |        8 |        1 |     87% |42->45, 49-54 |
 | curvesim/network/subgraph.py                                        |      136 |       55 |       48 |        2 |     56% |78, 113-144, 149, 213-229, 445-471, 504-528 |
 | curvesim/network/utils.py                                           |       38 |        6 |        8 |        1 |     80% |41-42, 68-71 |
-| curvesim/network/web3.py                                            |       70 |        5 |       16 |        5 |     86% |62-63, 139->147, 143-144, 147->152, 176 |
+| curvesim/network/web3.py                                            |       70 |        3 |       16 |        4 |     90% |139->147, 143-144, 147->152, 176 |
 | curvesim/overrides/\_\_init\_\_.py                                  |        9 |        3 |        4 |        1 |     54% |     40-42 |
 | curvesim/pipelines/\_\_init\_\_.py                                  |       21 |        5 |       12 |        1 |     76% |     75-79 |
 | curvesim/pipelines/common/\_\_init\_\_.py                           |       36 |        4 |       12 |        0 |     92% |     82-93 |
@@ -45,11 +45,11 @@
 | curvesim/plot/altair/chart\_properties.py                           |       35 |       25 |       14 |        0 |     20% |31-38, 61-66, 83-88, 130-142 |
 | curvesim/plot/altair/make\_chart.py                                 |       30 |       23 |       10 |        0 |     18% |48-62, 94-117 |
 | curvesim/plot/altair/results/\_\_init\_\_.py                        |        0 |        0 |        0 |        0 |    100% |           |
-| curvesim/plot/altair/results/make\_page.py                          |       59 |       45 |       16 |        0 |     19% |40-46, 71-73, 98-107, 126-140, 165-170, 195-198, 223-235 |
-| curvesim/plot/altair/results/preprocessing.py                       |       35 |       28 |       10 |        0 |     16% |32-35, 61-80, 101-103, 122, 141-148 |
+| curvesim/plot/altair/results/make\_page.py                          |       60 |       46 |       18 |        0 |     18% |40-46, 71-73, 98-109, 128-142, 167-172, 197-200, 225-237 |
+| curvesim/plot/altair/results/preprocessing.py                       |       37 |       30 |       12 |        0 |     14% |32-35, 61-80, 101-103, 122-125, 144-151 |
 | curvesim/plot/altair/results/result\_plotter.py                     |       25 |       14 |        0 |        0 |     44% |15-17, 25-30, 38-43, 53 |
 | curvesim/plot/altair/results/result\_selectors.py                   |       40 |       32 |        6 |        0 |     17% |31-43, 65-75, 94-105, 127-137, 159-169, 188-190 |
-| curvesim/plot/altair/results/tooltip.py                             |       10 |        8 |        4 |        0 |     14% |      6-16 |
+| curvesim/plot/altair/results/tooltip.py                             |       11 |        9 |        4 |        0 |     13% |      6-18 |
 | curvesim/plot/altair/selectors.py                                   |       32 |       24 |       10 |        0 |     19% |59-69, 97-109, 134-154, 179 |
 | curvesim/plot/altair/styles.py                                      |        2 |        0 |        0 |        0 |    100% |           |
 | curvesim/plot/result\_plotter.py                                    |       16 |        9 |        8 |        0 |     29% |     53-63 |
@@ -58,7 +58,7 @@
 | curvesim/pool/cryptoswap/\_\_init\_\_.py                            |        2 |        0 |        0 |        0 |    100% |           |
 | curvesim/pool/cryptoswap/calcs/\_\_init\_\_.py                      |        0 |        0 |        0 |        0 |    100% |           |
 | curvesim/pool/cryptoswap/calcs/factory\_2\_coin.py                  |      129 |       14 |       46 |       13 |     85% |40, 48, 60, 86, 88, 130-131, 144, 154, 173, 175, 218, 227, 230 |
-| curvesim/pool/cryptoswap/calcs/tricrypto\_ng.py                     |      303 |       33 |      116 |       29 |     85% |62->66, 107, 109, 111, 113, 127, 129-133, 141, 146, 152, 158, 166, 172, 178, 182, 224, 226, 270-271, 284, 294, 306, 320, 413, 417, 497, 508, 515, 552, 579->582, 604 |
+| curvesim/pool/cryptoswap/calcs/tricrypto\_ng.py                     |      303 |       27 |      116 |       27 |     87% |62->66, 107, 109, 111, 113, 121, 127, 141, 146, 152, 158, 166, 172, 224, 226, 270-271, 284, 294, 306, 320, 413, 417, 497, 508, 515, 552, 579->582, 604 |
 | curvesim/pool/cryptoswap/pool.py                                    |      470 |       70 |      166 |       26 |     82% |157, 164, 167, 172->175, 178, 188-190, 196, 201-205, 270, 322, 373->382, 378, 416->426, 431-454, 585->598, 589, 650, 695, 711->739, 715-730, 742-745, 929, 1010, 1027, 1039, 1061, 1098, 1102, 1112-1122 |
 | curvesim/pool/sim\_interface/\_\_init\_\_.py                        |        5 |        0 |        0 |        0 |    100% |           |
 | curvesim/pool/sim\_interface/asset\_indices.py                      |       22 |        1 |        8 |        1 |     93% |        60 |
@@ -92,7 +92,7 @@
 | curvesim/tools/bonding\_curve.py                                    |       42 |       17 |       18 |        1 |     57% |72-76, 82-97 |
 | curvesim/utils.py                                                   |       50 |       12 |       21 |        8 |     69% |54, 57, 93, 105-114, 116->exit, 117, 140, 156 |
 | curvesim/version.py                                                 |        7 |        0 |        0 |        0 |    100% |           |
-|                                                           **TOTAL** | **3865** |  **808** | **1083** |  **126** | **76%** |           |
+|                                                           **TOTAL** | **3869** |  **804** | **1087** |  **123** | **76%** |           |
 
 
 ## Setup coverage badge
