@@ -47,7 +47,7 @@ class SimPool(ABC):
         coin_out : str, int
             ID of quote currency; in a swapping context, this is the
             "out"-token.
-        use_fee: bool, default=False
+        use_fee: bool, default=True
             Deduct fees.
 
         Returns
@@ -81,8 +81,8 @@ class SimPool(ABC):
 
         Returns
         -------
-        (int, int, int)
-            (amount of coin `j` received, trading fee, volume)
+        (int, int)
+            (amount of coin `j` received, trading fee)
         """
         raise NotImplementedError
 

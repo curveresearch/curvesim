@@ -916,8 +916,9 @@ class CurveCryptoPool(Pool):
         Returns an LP token price approximating behavior as a constant-product AMM.
         """
         if self.n == 2:
-            price_oracle = self.internal_price_oracle()[0]
-            return 2 * self.virtual_price * _sqrt_int(price_oracle) // 10**18
+            virtual_price = self.virtual_price
+            price_oracle = self.internal_price_oracle()
+            return factory_2_coin.lp_price(virtual_price, price_oracle)
         # TODO: find/implement integer cube root function
         # elif self.n == 3:
         #     price_oracle = self.internal_price_oracle()
