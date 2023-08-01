@@ -4,8 +4,10 @@ from altair import Tooltip
 def make_tooltip(encoding, metric_axis, factors, prefix=None):
     """Makes a tooltip for a subplot."""
     tooltip = []
-    if "timestamp" in encoding["x"]["shorthand"]:
-        tooltip.append(Tooltip(encoding["x"]["shorthand"], title="Time"))
+
+    x_shorthand = encoding["x"]["shorthand"]
+    if isinstance(x_shorthand, str) and "timestamp" in x_shorthand:
+        tooltip.append(Tooltip(x_shorthand, title="Time"))
 
     title = encoding[metric_axis]["title"]
     if prefix:

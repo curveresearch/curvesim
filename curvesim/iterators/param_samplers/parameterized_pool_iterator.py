@@ -15,7 +15,7 @@ class ParameterizedPoolIterator(ParameterSampler):
     """
 
     # pylint: disable-next=unused-argument
-    def __new__(cls, pool, variable_params, fixed_params=None, pool_map=None):
+    def __new__(cls, pool, variable_params=None, fixed_params=None, pool_map=None):
         """
         Returns a pool-specific ParameterizedPoolIterator subclass.
 
@@ -48,14 +48,14 @@ class ParameterizedPoolIterator(ParameterSampler):
         return super().__new__(subclass)
 
     # pylint: disable-next=unused-argument
-    def __init__(self, pool, variable_params, fixed_params=None, pool_map=None):
+    def __init__(self, pool, variable_params=None, fixed_params=None, pool_map=None):
         """
         Parameters
         ----------
         pool : :class:`~curvesim.templates.SimPool`
             The "template" pool that will have its parameters modified.
 
-        variable_params: dict
+        variable_params: dict, optional
             Pool parameters to vary across simulations.
 
             Keys are parameter names and values are iterables of values. For metapools,
