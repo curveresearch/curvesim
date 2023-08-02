@@ -337,6 +337,36 @@ def test__get_y(vyper_tricrypto, A, gamma, x0, x1, x2, pair, dx_perc):
     assert y_out[1] == expected_y_out[1]
 
 
+def test_get_y(vyper_tricrypto):
+    """
+    Test `get_y`.
+
+    Note `_get_y`, which is the pure version, is already tested
+    thoroughly in its own test against the vyper.
+
+    This test is a sanity check to make sure we pass values in correctly
+    to the underlying `_get_y` implementation.
+    """
+    pool = initialize_pool(vyper_tricrypto)
+
+    xp = pool._xp()
+    A = pool.A
+    gamma = pool.gamma
+    D = _newton_D(A, gamma, xp)
+
+    i = 0
+    j = 1
+
+    # `get_y` will set i-th balance to `x`
+    x = xp[i] * 102 // 100
+    y = pool.get_y(i, j, x, xp)
+
+    xp[i] = x
+    expected_y, _ = _get_y(A, gamma, xp, D, j)
+
+    assert y == expected_y
+
+
 @given(st.integers(min_value=-42139678854452767551, max_value=135305999368893231589))
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],

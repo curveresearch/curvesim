@@ -500,6 +500,41 @@ class CurveCryptoPool(Pool):
 
         return dy
 
+    def get_y(self, i, j, x, xp):
+        r"""
+        Calculate x[j] if one makes x[i] = x.
+
+        Parameters
+        ----------
+        i: int
+            index of coin; usually the "in"-token
+        j: int
+            index of coin; usually the "out"-token
+        x: int
+            balance of i-th coin in units of D
+        xp: list of int
+            coin balances in units of D
+
+        Returns
+        -------
+        int
+            The balance of the j-th coin, in units of D, for the other
+            coin balances given.
+
+        Note
+        ----
+        This is a "view" function; it doesn't change the state of the pool.
+        """
+        A: int = self.A
+        gamma: int = self.gamma
+        D: int = _newton_D(A, gamma, xp)
+
+        xp = xp.copy()
+        xp[i] = x
+
+        y, _ = _get_y(A, gamma, xp, D, j)
+        return y
+
     def _fee(self, xp: List[int]) -> int:
         """
         f = fee_gamma / (fee_gamma + (1 - K))
