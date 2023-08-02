@@ -38,6 +38,9 @@ Curve Pools
 .. autoclass:: curvesim.pool.CurveRaiPool
    :members:
 
+.. autoclass:: curvesim.pool.CurveCryptoPool
+   :members:
+
 
 Pool Plots
 ----------
