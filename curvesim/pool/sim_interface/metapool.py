@@ -65,7 +65,7 @@ class SimCurveMetaPool(SimPool, AssetIndicesMixin, CurveMetaPool):
             raise SimPoolError("SimCurveMetaPool must have a consistent number of metapool asset names and basepool asset names, separately.")
 
         self._asset_names = asset_names
-        self._basepool_asset_names = basepoolasset_names_asset_names
+        self._basepool_asset_names = basepool_asset_names
 
     @property
     @override
