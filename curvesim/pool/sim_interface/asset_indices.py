@@ -22,7 +22,7 @@ class AssetIndicesMixin:
         # -> AssetIndicesMixin children (SimPools) call their implementations in __init__ with a copy() of metadata
         # -> setter sets an attribute _asset_names to input array after passing checks
 
-    # asset_balances check:
+    # both arrays are equal length check:
         # in asset_balances below
 
     @property
@@ -37,11 +37,11 @@ class AssetIndicesMixin:
 
     @asset_names.setter
     @abstractmethod
-    def asset_names(self, *asset_names):
+    def asset_names(self, **kwargs):
         """
         Set list of asset names. 
         
-        Implementations should disallow setting duplicate names.
+        Implementations should disallow setting duplicate names and inconsistent numbers of names.
         """
         raise NotImplementedError
 

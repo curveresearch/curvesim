@@ -1,4 +1,4 @@
-from curvesim.exceptions import SimPoolError, CurvesimValueError
+from curvesim.exceptions import SimPoolError
 from curvesim.templates import SimAssets
 from curvesim.templates.sim_pool import SimPool
 from curvesim.utils import cache, override
@@ -11,7 +11,7 @@ class SimCurvePool(SimPool, AssetIndicesMixin, CurvePool):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.asset_names(self.coin_names.copy())
+        self.asset_names(asset_names=self.coin_names)
 
         rates = self.rates  # pylint: disable=no-member
         for r in rates:
@@ -27,16 +27,20 @@ class SimCurvePool(SimPool, AssetIndicesMixin, CurvePool):
 
     @asset_names.setter
     @override
-    def asset_names(self, *asset_names):
-        """Set list of asset names."""
+    def asset_names(self, **kwargs):
+        """
+        Set list of asset names.
+        
+        Keywords:
+
+        asset_names: list of all pool asset names.
+        """
+        asset_names = kwargs["asset_names"].copy()
         if len(asset_names) != len(set(asset_names)):
             raise SimPoolError("SimPool must have unique asset names.")
 
         if hasattr(self, "asset_names") and len(self.asset_names) != len(asset_names):
             raise SimPoolError("SimPool must have a consistent number of asset names.")
-
-        # edge case: user specifies an arbitrary number of existing asset names, but with 
-        # at least one at a different index by mistake or as an attempt at switching coin indices
         
         self._asset_names = asset_names
 
@@ -73,4 +77,4 @@ class SimCurvePool(SimPool, AssetIndicesMixin, CurvePool):
     @override
     @cache
     def assets(self):
-        return SimAssets(self.coin_names, self.coin_addresses, self.chain)
+        return SimAssets(self.asset_names, self.coin_addresses, self.chain)
