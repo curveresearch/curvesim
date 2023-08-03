@@ -11,7 +11,7 @@ class SimCurvePool(SimPool, AssetIndicesMixin, CurvePool):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.asset_names(asset_names=self.coin_names)
+        self.asset_names = self.coin_names
 
         rates = self.rates  # pylint: disable=no-member
         for r in rates:
@@ -27,19 +27,20 @@ class SimCurvePool(SimPool, AssetIndicesMixin, CurvePool):
 
     @asset_names.setter
     @override
-    def asset_names(self, **kwargs):
+    def asset_names(self, *asset_lists):
         """
         Set list of asset names.
         
-        Keywords:
+        Positional args:
 
-        asset_names: list of all pool asset names.
+        [0]: list of all pool asset names.
         """
-        asset_names = kwargs["asset_names"].copy()
+        asset_names = asset_lists[0].copy()
+
         if len(asset_names) != len(set(asset_names)):
             raise SimPoolError("SimPool must have unique asset names.")
 
-        if hasattr(self, "asset_names") and len(self.asset_names) != len(asset_names):
+        if hasattr(self, "_asset_names") and len(self.asset_names) != len(asset_names):
             raise SimPoolError("SimPool must have a consistent number of asset names.")
         
         self._asset_names = asset_names

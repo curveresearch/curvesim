@@ -11,10 +11,7 @@ class SimCurveMetaPool(SimPool, AssetIndicesMixin, CurveMetaPool):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.asset_names(
-            asset_names=self.coin_names, 
-            basepool_asset_names=self.basepool.coin_names,
-        )
+        self.asset_names = self.coin_names, self.basepool.coin_names
 
         # The rates check has a couple special cases:
         # 1. For metapools, we need to use the basepool rates
@@ -38,34 +35,34 @@ class SimCurveMetaPool(SimPool, AssetIndicesMixin, CurveMetaPool):
 
         For metapools, our convention is to place the basepool LP token last.
         """
-        meta_coin_names = self._asset_names[:-1]
-        base_coin_names = self._basepool_asset_names
-        bp_token_name = self._asset_names[-1]
+        meta_coin_names = self._metapool_names[:-1]
+        base_coin_names = self._basepool_names
+        bp_token_name = self._metapool_names[-1]
 
         return [*meta_coin_names, *base_coin_names, bp_token_name]
 
     @asset_names.setter
     @override
-    def asset_names(self, **kwargs):
+    def asset_names(self, *asset_lists):
         """
         Set list of asset names.
 
-        Keywords:
+        Positional args:
 
-        asset_names: list of all metapool asset names.
-        basepool_asset_names: list of all basepool asset names.
+        [0]: list of all metapool asset names.
+        [1]: list of all basepool asset names.
         """
-        asset_names = kwargs["asset_names"].copy()
-        basepool_asset_names = kwargs["basepool_asset_names"].copy()
+        metapool_names = asset_lists[0].copy()
+        basepool_names = asset_lists[1].copy()
 
-        if len(asset_names) != len(set(asset_names)) or len(basepool_asset_names) != len(set(basepool_asset_names)):
+        if len(metapool_names) != len(set(metapool_names)) or len(basepool_names) != len(set(basepool_names)):
             raise SimPoolError("SimCurveMetaPool must have unique asset names for metapool and basepool, separately.")
 
-        if hasattr(self, "asset_names") and (len(self._asset_names) != len(asset_names) or len(self._basepool_asset_names) != len(basepool_asset_names)):
+        if hasattr(self, "asset_names") and (len(self._metapool_names) != len(metapool_names) or len(self._basepool_names) != len(basepool_names)):
             raise SimPoolError("SimCurveMetaPool must have a consistent number of metapool asset names and basepool asset names, separately.")
 
-        self._asset_names = asset_names
-        self._basepool_asset_names = basepool_asset_names
+        self._metapool_names = metapool_names
+        self._basepool_names = basepool_names
 
     @property
     @override
@@ -159,7 +156,7 @@ class SimCurveMetaPool(SimPool, AssetIndicesMixin, CurveMetaPool):
     @override
     @cache
     def assets(self):
-        symbols = self._asset_names[:-1] + self._basepool_asset_names
+        symbols = self._metapool_names[:-1] + self._basepool_names
         addresses = self.coin_addresses[:-1] + self.basepool.coin_addresses
 
         return SimAssets(symbols, addresses, self.chain)

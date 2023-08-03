@@ -37,11 +37,11 @@ class AssetIndicesMixin:
 
     @asset_names.setter
     @abstractmethod
-    def asset_names(self, **kwargs):
+    def asset_names(self, *asset_lists):
         """
         Set list of asset names. 
         
-        Implementations should disallow setting duplicate names and inconsistent numbers of names.
+        Implementations should disallow setting of duplicate names and inconsistent numbers of names.
         """
         raise NotImplementedError
 
