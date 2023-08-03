@@ -13,7 +13,7 @@ class SimCurveMetaPool(SimPool, AssetIndicesMixin, CurveMetaPool):
 
         self.asset_names(
             asset_names=self.coin_names, 
-            basepool_asset_names=self.basepool.coin_names
+            basepool_asset_names=self.basepool.coin_names,
         )
 
         # The rates check has a couple special cases:
