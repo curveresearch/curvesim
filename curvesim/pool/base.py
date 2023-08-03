@@ -53,7 +53,7 @@ class Pool(SnapshotMixin):
 
     @property
     def coin_decimals(self):
-        """Addresses for the pool coins."""
+        """Decimal precisions for the pool coins."""
         if hasattr(self, "metadata"):
             return self.metadata["coins"]["decimals"]
         return []

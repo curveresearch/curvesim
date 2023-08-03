@@ -39,6 +39,11 @@ class SimCurveMetaPool(SimPool, AssetIndicesMixin, CurveMetaPool):
 
         return [*meta_coin_names, *base_coin_names, bp_token_name]
 
+    @asset_names.setter
+    @override
+    def asset_names(self, *asset_names):
+        pass
+
     @property
     @override
     def _asset_balances(self):
