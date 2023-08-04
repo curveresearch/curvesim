@@ -269,7 +269,7 @@ class CurveCryptoPool(Pool):
 
         self._block_timestamp += 12 * blocks
 
-    # pylint: disable=too-many-statements
+    # pylint: disable-next=R0912,R0913,R0914,R0915
     def _tweak_price(  # noqa: complexity: 12
         self,
         A: int,
@@ -528,6 +528,7 @@ class CurveCryptoPool(Pool):
             f = fee_gamma * 10**18 // (fee_gamma + 10**18 - K)
         return (self.mid_fee * f + self.out_fee * (10**18 - f)) // 10**18
 
+    # pylint: disable-next=too-many-locals
     def _exchange(
         self,
         i: int,
@@ -649,6 +650,7 @@ class CurveCryptoPool(Pool):
         """
         return self.exchange(i, j, dx, min_dy)
 
+    # pylint: disable-next=too-many-locals
     def add_liquidity(
         self,
         amounts: List[int],
@@ -832,6 +834,7 @@ class CurveCryptoPool(Pool):
 
         return dy
 
+    # pylint: disable-next=too-many-locals,too-many-arguments
     def _calc_withdraw_one_coin(
         self,
         A: int,
@@ -918,15 +921,17 @@ class CurveCryptoPool(Pool):
         if self.n == 2:
             virtual_price = self.virtual_price
             price_oracle = self.internal_price_oracle()
-            return factory_2_coin.lp_price(virtual_price, price_oracle)
+            price = factory_2_coin.lp_price(virtual_price, price_oracle)
         # TODO: find/implement integer cube root function
         # elif self.n == 3:
         #     price_oracle = self.internal_price_oracle()
-        #     return (
+        #     price =  (
         #         3 * self.virtual_price * icbrt(price_oracle[0] * price_oracle[1])
         #     ) // 10**24
         else:
             raise CalculationError("LP price calc doesn't support more than 3 coins")
+
+        return price
 
     def internal_price_oracle(self) -> List[int]:
         """
@@ -1003,11 +1008,13 @@ def _geometric_mean(unsorted_x: List[int]) -> int:
     """
     n_coins = len(unsorted_x)
     if n_coins == 2:
-        return factory_2_coin.geometric_mean(unsorted_x, True)
+        mean = factory_2_coin.geometric_mean(unsorted_x, True)
     elif n_coins == 3:
-        return tricrypto_ng.geometric_mean(unsorted_x)
+        mean = tricrypto_ng.geometric_mean(unsorted_x)
     else:
         raise CurvesimValueError("More than 3 coins is not supported.")
+
+    return mean
 
 
 def _newton_D(A: int, gamma: int, xp: List[int], K0_prev: int = 0) -> int:
