@@ -351,6 +351,7 @@ class CurvePool(Pool):  # pylint: disable=too-many-instance-attributes
         self.admin_balances[j] += admin_fee
         return dy, fee
 
+    # pylint: disable-next=too-many-locals
     def calc_withdraw_one_coin(self, token_amount, i, use_fee=True):
         """
         Calculate the amount in the i-th coin received from
@@ -457,6 +458,7 @@ class CurvePool(Pool):  # pylint: disable=too-many-instance-attributes
         self.tokens -= token_amount
         return dy, dy_fee
 
+    # pylint: disable-next=too-many-locals
     def calc_token_amount(self, amounts, use_fee=False):
         """
         Calculate the amount of LP tokens received for the given coin

@@ -32,7 +32,7 @@ class CurveMetaPool(Pool):  # pylint: disable=too-many-instance-attributes
         "admin_balances",
     )
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable-next=too-many-arguments
     def __init__(
         self,
         A,
@@ -362,6 +362,7 @@ class CurveMetaPool(Pool):  # pylint: disable=too-many-instance-attributes
         self.admin_balances[j] += admin_fee
         return dy, fee
 
+    # pylint: disable-next=too-many-locals
     def exchange_underlying(self, i, j, dx):
         """
         Perform an exchange between two coins.
@@ -445,6 +446,7 @@ class CurveMetaPool(Pool):  # pylint: disable=too-many-instance-attributes
 
         return dy, dy_fee
 
+    # pylint: disable-next=too-many-locals
     def calc_withdraw_one_coin(self, token_amount, i, use_fee=True):
         """
         Calculate the amount in the i-th coin received from
@@ -558,6 +560,7 @@ class CurveMetaPool(Pool):  # pylint: disable=too-many-instance-attributes
         base_virtual_price = self.basepool.get_virtual_price()
         return [self.rate_multiplier, base_virtual_price]
 
+    # pylint: disable-next=too-many-locals
     def calc_token_amount(self, amounts, use_fee=False):
         """
         Calculate the amount of LP tokens received for the given coin
@@ -685,6 +688,7 @@ class CurveMetaPool(Pool):  # pylint: disable=too-many-instance-attributes
         """
         return self.dydx(i, j, use_fee=True)
 
+    # pylint: disable-next=too-many-locals
     def dydx(self, i, j, use_fee=False):
         r"""
         Returns the spot price of i-th coin quoted in terms of j-th coin,
