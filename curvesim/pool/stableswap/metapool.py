@@ -554,6 +554,7 @@ class CurveMetaPool(Pool):  # pylint: disable=too-many-instance-attributes
 
     @property
     def rates(self):
+        """Return rates conversion for each top-level token."""
         base_virtual_price = self.basepool.get_virtual_price()
         return [self.rate_multiplier, base_virtual_price]
 
@@ -633,6 +634,21 @@ class CurveMetaPool(Pool):  # pylint: disable=too-many-instance-attributes
         return self.D() * 10**18 // self.tokens
 
     def dynamic_fee(self, xpi, xpj):
+        """
+        Return a fee based on the amount of imbalance.
+
+        Parameters
+        ----------
+        xpi: int
+            i-th coin balance in units of D
+        xpj: int
+            j-th coin balance in units of D
+
+        Returns
+        -------
+        int
+            The dynamic fee in 10 decimals.
+        """
         xps2 = xpi + xpj
         xps2 *= xps2  # Doing just ** 2 can overflow apparently
         return (self.fee_mul * self.fee) // (
