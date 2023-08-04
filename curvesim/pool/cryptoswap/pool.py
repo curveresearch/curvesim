@@ -1100,23 +1100,3 @@ def _halfpow(power: int) -> int:
             return int(result * S // 10**18)
 
     raise CalculationError("Did not converge")
-
-
-def _sqrt_int(x: int) -> int:
-    """
-    Originating from: https://github.com/vyperlang/vyper/issues/1266
-    """
-    if x == 0:
-        return 0
-
-    x = mpz(x)
-    z: int = (x + 10**18) // 2
-    y: int = x
-
-    for _ in range(256):
-        if z == y:
-            return int(y)
-        y = z
-        z = (x * 10**18 // z + z) // 2
-
-    raise CalculationError("Did not converge")
