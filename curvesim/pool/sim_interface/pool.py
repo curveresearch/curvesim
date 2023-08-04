@@ -32,10 +32,15 @@ class SimCurvePool(SimPool, AssetIndicesMixin, CurvePool):
         Set list of asset names.
 
         Positional args:
+        ----------------
 
         [0]: list of all pool asset names.
         """
-        asset_names = asset_lists[0].copy()
+
+        # potential source of error: whenever asset_names is set, self._asset_names = ... gives it a reference to a 
+        # new array. objects like our SimAsset object below might contain the outdated reference, where the 
+        # "unused" outdated reference might get garbage collected - leaving some vital attributes as None or empty or whatever
+        asset_names = asset_lists[0]
 
         if len(asset_names) != len(set(asset_names)):
             raise SimPoolError("SimPool must have unique asset names.")
@@ -43,7 +48,11 @@ class SimCurvePool(SimPool, AssetIndicesMixin, CurvePool):
         if hasattr(self, "asset_names") and len(self.asset_names) != len(asset_names):
             raise SimPoolError("SimPool must have a consistent number of asset names.")
 
-        self._asset_names = asset_names
+        if not hasattr(self, "asset_names"):
+            self._asset_names = [str()] * len(asset_names)
+
+        for i in range(len(asset_names)):
+            self._asset_names[i] = asset_names[i]
 
     @property
     @override

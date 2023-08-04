@@ -48,12 +48,13 @@ class SimCurveMetaPool(SimPool, AssetIndicesMixin, CurveMetaPool):
         Set list of asset names.
 
         Positional args:
+        ----------------
 
         [0]: list of all metapool asset names.
         [1]: list of all basepool asset names.
         """
-        metapool_names = asset_lists[0].copy()
-        basepool_names = asset_lists[1].copy()
+        metapool_names = asset_lists[0]
+        basepool_names = asset_lists[1]
 
         if len(metapool_names) != len(set(metapool_names)) or len(
             basepool_names
@@ -70,8 +71,15 @@ class SimCurveMetaPool(SimPool, AssetIndicesMixin, CurveMetaPool):
                 "SimCurveMetaPool must have a consistent number of metapool asset names and basepool asset names, separately."
             )
 
-        self._metapool_names = metapool_names
-        self._basepool_names = basepool_names
+        if not hasattr(self, "asset_names"):
+            self._metapool_names = [str()] * len(metapool_names)
+            self._basepool_names = [str()] * len(basepool_names)
+
+        for i in range(len(metapool_names)):
+            self._metapool_names[i] = metapool_names[i]
+            
+        for i in range(len(basepool_names)):
+            self._basepool_names[i] = basepool_names[i]
 
     @property
     @override
