@@ -3,6 +3,7 @@ import pytest
 import itertools
 
 from curvesim.pool.sim_interface.asset_indices import AssetIndicesMixin
+from curvesim.exceptions import CurvesimValueError, SimPoolError
 from curvesim.utils import override
 
 # pylint: disable=redefined-outer-name
@@ -18,6 +19,19 @@ class FakeSimPool(AssetIndicesMixin):
     @override
     def asset_names(self):
         return ["SYM_0", "SYM_1", "SYM_2"]
+
+    @asset_names.setter
+    @override
+    def asset_names(self, *asset_lists):
+        asset_names = asset_lists[0].copy()
+
+        if len(asset_names) != len(set(asset_names)):
+            raise SimPoolError("SimPool must have unique asset names.")
+
+        if hasattr(self, "asset_names") and len(self.asset_names) != len(asset_names):
+            raise SimPoolError("SimPool must have a consistent number of asset names.")
+
+        self._asset_names = asset_names
 
     @property
     @override
@@ -67,10 +81,11 @@ def test_asset_indices(sim_pool):
 def test_asset_balances(sim_pool):
     assert sim_pool.asset_balances == {"SYM_0": 100, "SYM_1": 200, "SYM_2": 300}
 
+
 # make dedicated test function for get_asset_indices
 # convert test to test all permutations of mixed str and int inputs + duplicates (str/ str, int/int, str/int, int/str, etc.)
-    # on duplicate inputs assert that CurvesimValueError is thrown properly 
-        # CHECKS FOR STR/INT INPUT WILL BE DONE ELSEWHERE
+# on duplicate inputs assert that CurvesimValueError is thrown properly
+# CHECKS FOR STR/INT INPUT WILL BE DONE ELSEWHERE
 
 
 # test cases where asset_names and asset_balances are unequal length

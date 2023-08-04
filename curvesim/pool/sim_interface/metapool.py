@@ -55,11 +55,20 @@ class SimCurveMetaPool(SimPool, AssetIndicesMixin, CurveMetaPool):
         metapool_names = asset_lists[0].copy()
         basepool_names = asset_lists[1].copy()
 
-        if len(metapool_names) != len(set(metapool_names)) or len(basepool_names) != len(set(basepool_names)):
-            raise SimPoolError("SimCurveMetaPool must have unique asset names for metapool and basepool, separately.")
+        if len(metapool_names) != len(set(metapool_names)) or len(
+            basepool_names
+        ) != len(set(basepool_names)):
+            raise SimPoolError(
+                "SimCurveMetaPool must have unique asset names for metapool and basepool, separately."
+            )
 
-        if hasattr(self, "asset_names") and (len(self._metapool_names) != len(metapool_names) or len(self._basepool_names) != len(basepool_names)):
-            raise SimPoolError("SimCurveMetaPool must have a consistent number of metapool asset names and basepool asset names, separately.")
+        if hasattr(self, "asset_names") and (
+            len(self._metapool_names) != len(metapool_names)
+            or len(self._basepool_names) != len(basepool_names)
+        ):
+            raise SimPoolError(
+                "SimCurveMetaPool must have a consistent number of metapool asset names and basepool asset names, separately."
+            )
 
         self._metapool_names = metapool_names
         self._basepool_names = basepool_names

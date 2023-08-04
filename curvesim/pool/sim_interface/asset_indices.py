@@ -12,18 +12,18 @@ class AssetIndicesMixin:
     in arbitrage pipelines.
     """
 
-    # we want to enforce valid inputs for asset_names and _asset_balances. 
-        # both arrays are equal length
-        # no duplicates in asset_names specifically
-    
+    # we want to enforce valid inputs for asset_names and _asset_balances.
+    # both arrays are equal length
+    # no duplicates in asset_names specifically
+
     # asset_names check:
-        # -> SimPools automatically load metadata
-        # -> add abstract asset_names.setter
-        # -> AssetIndicesMixin children (SimPools) call their implementations in __init__ with a copy() of metadata
-        # -> setter sets an attribute _asset_names to input array after passing checks
+    # -> SimPools automatically load metadata
+    # -> add abstract asset_names.setter
+    # -> AssetIndicesMixin children (SimPools) call their implementations in __init__ with a copy() of metadata
+    # -> setter sets an attribute _asset_names to input array after passing checks
 
     # both arrays are equal length check:
-        # in asset_balances below
+    # in asset_balances below
 
     @property
     @abstractmethod
@@ -39,8 +39,8 @@ class AssetIndicesMixin:
     @abstractmethod
     def asset_names(self, *asset_lists):
         """
-        Set list of asset names. 
-        
+        Set list of asset names.
+
         Implementations should disallow setting of duplicate names and inconsistent numbers of names.
         """
         raise NotImplementedError
@@ -55,7 +55,7 @@ class AssetIndicesMixin:
     def asset_balances(self):
         """Return dict mapping asset names to coin balances."""
 
-        # check equal length 
+        # check equal length
         return dict(zip(self.asset_names, self._asset_balances))
 
     @property

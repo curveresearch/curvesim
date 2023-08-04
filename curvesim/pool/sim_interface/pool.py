@@ -30,7 +30,7 @@ class SimCurvePool(SimPool, AssetIndicesMixin, CurvePool):
     def asset_names(self, *asset_lists):
         """
         Set list of asset names.
-        
+
         Positional args:
 
         [0]: list of all pool asset names.
@@ -40,9 +40,9 @@ class SimCurvePool(SimPool, AssetIndicesMixin, CurvePool):
         if len(asset_names) != len(set(asset_names)):
             raise SimPoolError("SimPool must have unique asset names.")
 
-        if hasattr(self, "_asset_names") and len(self.asset_names) != len(asset_names):
+        if hasattr(self, "asset_names") and len(self.asset_names) != len(asset_names):
             raise SimPoolError("SimPool must have a consistent number of asset names.")
-        
+
         self._asset_names = asset_names
 
     @property
