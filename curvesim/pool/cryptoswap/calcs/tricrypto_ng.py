@@ -206,7 +206,7 @@ def sign(x):
     return -1 if x < 0 else 1
 
 
-def _newton_y(  # noqa: complexity: 11
+def _newton_y(  # noqa: complexity: 11  # pylint: disable=duplicate-code
     ANN: int,
     gamma: int,
     x: List[int],
