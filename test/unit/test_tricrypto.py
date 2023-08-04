@@ -18,6 +18,7 @@ from curvesim.pool.cryptoswap.calcs.tricrypto_ng import (
     MIN_GAMMA,
     PRECISION,
 )
+from curvesim.pool.cryptoswap.pool import _get_y, _newton_D
 
 
 def get_math(tricrypto):
@@ -250,7 +251,7 @@ def test_multiple_exchange_with_repeg(
     max_examples=5,
     deadline=None,
 )
-def test_newton_D(vyper_tricrypto, A, gamma, x0, x1, x2):
+def test__newton_D(vyper_tricrypto, A, gamma, x0, x1, x2):
     """Test D calculation against vyper implementation."""
 
     xp = [x0, x1, x2]
@@ -261,7 +262,7 @@ def test_newton_D(vyper_tricrypto, A, gamma, x0, x1, x2):
     MATH = get_math(vyper_tricrypto)
     # pylint: disable=no-member
     expected_D = MATH.newton_D(A, gamma, xp)
-    D = tricrypto_ng.newton_D(A, gamma, xp)
+    D = _newton_D(A, gamma, xp)
 
     assert D == expected_D
 
@@ -314,7 +315,7 @@ def test_get_p(vyper_tricrypto, A, gamma, x0, x1, x2):
     max_examples=5,
     deadline=None,
 )
-def test_get_y(vyper_tricrypto, A, gamma, x0, x1, x2, pair, dx_perc):
+def test__get_y(vyper_tricrypto, A, gamma, x0, x1, x2, pair, dx_perc):
     """Test D calculation against vyper implementation."""
     i, j = pair
 
@@ -330,10 +331,40 @@ def test_get_y(vyper_tricrypto, A, gamma, x0, x1, x2, pair, dx_perc):
     xp[i] += xp[i] * dx_perc // 10000
 
     expected_y_out = MATH.get_y(A, gamma, xp, D, j)
-    y_out = tricrypto_ng.get_y(A, gamma, xp, D, j)
+    y_out = _get_y(A, gamma, xp, D, j)
 
     assert y_out[0] == expected_y_out[0]
     assert y_out[1] == expected_y_out[1]
+
+
+def test_get_y(vyper_tricrypto):
+    """
+    Test `get_y`.
+
+    Note `_get_y`, which is the pure version, is already tested
+    thoroughly in its own test against the vyper.
+
+    This test is a sanity check to make sure we pass values in correctly
+    to the underlying `_get_y` implementation.
+    """
+    pool = initialize_pool(vyper_tricrypto)
+
+    xp = pool._xp()
+    A = pool.A
+    gamma = pool.gamma
+    D = _newton_D(A, gamma, xp)
+
+    i = 0
+    j = 1
+
+    # `get_y` will set i-th balance to `x`
+    x = xp[i] * 102 // 100
+    y = pool.get_y(i, j, x, xp)
+
+    xp[i] = x
+    expected_y, _ = _get_y(A, gamma, xp, D, j)
+
+    assert y == expected_y
 
 
 @given(st.integers(min_value=-42139678854452767551, max_value=135305999368893231589))

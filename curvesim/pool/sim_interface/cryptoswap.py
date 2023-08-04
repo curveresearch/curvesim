@@ -117,22 +117,13 @@ class SimCurveCryptoPool(SimPool, AssetIndicesMixin, CurveCryptoPool):
             An approximate quantity to swap to achieve the target out-token
             balance
         """
-        raise SimPoolError("`get_in_amount` not implemented for SimCurveCryptoPool.")
-        # i, j = self.get_asset_indices(coin_in, coin_out)
+        i, j = self.get_asset_indices(coin_in, coin_out)
 
-        # The cryptoswap (dynamic) fee is calculated on the state `xp`,
-        # which has been adjusted by increasing in-token balance and
-        # decreasing out-token balance.
-        #
-        # This means we can't just back out the `in_amount` using `get_y`
-        # as with stableswap (fixed fee).
-        #
-        # We can use the following get_dx helper function:
-        # https://github.com/curvefi/tricrypto-ng/blob/main/contracts/main/CurveCryptoViews3Optimized.vy#L183
-        # Tricrypto-ng uses this 5 times in a loop, we may want to increase the
-        # number of iterations.
+        xp = self._xp()
+        xp_j = int(xp[j] * out_balance_perc)
 
-        # return in_amount
+        in_amount = self.get_y(j, i, xp_j, xp) - xp[i]
+        return in_amount
 
     @property
     @override
