@@ -1,7 +1,7 @@
 """Base SimPool implementation for Curve stableswap pools, both regular and meta."""
 from abc import abstractmethod
 
-from curvesim.exceptions import CurvesimValueError
+from curvesim.exceptions import CurvesimException, CurvesimValueError
 from curvesim.utils import cache
 
 
@@ -11,20 +11,6 @@ class AssetIndicesMixin:
     Used in both stableswap and cryptoswap implementations used
     in arbitrage pipelines.
     """
-
-    # we want to enforce valid inputs for asset_names and _asset_balances.
-    # both arrays are equal length
-    # no duplicates in asset_names specifically
-
-    # asset_names check:
-    # -> SimPools automatically load metadata
-    # -> add abstract asset_names.setter
-    # -> AssetIndicesMixin children (SimPools) call their implementations in __init__ with a copy() of metadata
-    # -> setter sets an attribute _asset_names to input array after passing checks
-
-    # both arrays are equal length check:
-    # in asset_balances below
-
     @property
     @abstractmethod
     def asset_names(self):
@@ -54,8 +40,9 @@ class AssetIndicesMixin:
     @property
     def asset_balances(self):
         """Return dict mapping asset names to coin balances."""
+        if len(self.asset_names) != len(self._asset_balances):
+            raise CurvesimException("Number of symbols and number of balances aren't the same.")
 
-        # check equal length
         return dict(zip(self.asset_names, self._asset_balances))
 
     @property

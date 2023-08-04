@@ -36,10 +36,6 @@ class SimCurvePool(SimPool, AssetIndicesMixin, CurvePool):
 
         [0]: list of all pool asset names.
         """
-
-        # potential source of error: whenever asset_names is set, self._asset_names = ... gives it a reference to a 
-        # new array. objects like our SimAsset object below might contain the outdated reference, where the 
-        # "unused" outdated reference might get garbage collected - leaving some vital attributes as None or empty or whatever
         asset_names = asset_lists[0]
 
         if len(asset_names) != len(set(asset_names)):
