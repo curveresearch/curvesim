@@ -11,6 +11,7 @@ class AssetIndicesMixin:
     Used in both stableswap and cryptoswap implementations used
     in arbitrage pipelines.
     """
+
     @property
     @abstractmethod
     def asset_names(self):
@@ -41,7 +42,9 @@ class AssetIndicesMixin:
     def asset_balances(self):
         """Return dict mapping asset names to coin balances."""
         if len(self.asset_names) != len(self._asset_balances):
-            raise CurvesimException("Number of symbols and number of balances aren't the same.")
+            raise CurvesimException(
+                "Number of symbols and number of balances aren't the same."
+            )
 
         return dict(zip(self.asset_names, self._asset_balances))
 

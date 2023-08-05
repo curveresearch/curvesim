@@ -77,7 +77,7 @@ class SimCurveMetaPool(SimPool, AssetIndicesMixin, CurveMetaPool):
 
         for i in range(len(metapool_names)):
             self._metapool_names[i] = metapool_names[i]
-            
+
         for i in range(len(basepool_names)):
             self._basepool_names[i] = basepool_names[i]
 

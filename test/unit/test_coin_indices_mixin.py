@@ -15,15 +15,18 @@ class FakeSimPool(AssetIndicesMixin):
     for testing purposes.
     """
 
+    def __init__(self):
+        self.asset_names = ["SYM_0", "SYM_1", "SYM_2"]
+
     @property
     @override
     def asset_names(self):
-        return ["SYM_0", "SYM_1", "SYM_2"]
+        return self._asset_names
 
     @asset_names.setter
     @override
     def asset_names(self, *asset_lists):
-        asset_names = asset_lists[0].copy()
+        asset_names = asset_lists[0]
 
         if len(asset_names) != len(set(asset_names)):
             raise SimPoolError("SimPool must have unique asset names.")
@@ -31,7 +34,11 @@ class FakeSimPool(AssetIndicesMixin):
         if hasattr(self, "asset_names") and len(self.asset_names) != len(asset_names):
             raise SimPoolError("SimPool must have a consistent number of asset names.")
 
-        self._asset_names = asset_names
+        if not hasattr(self, "asset_names"):
+            self._asset_names = [str()] * len(asset_names)
+
+        for i in range(len(asset_names)):
+            self._asset_names[i] = asset_names[i]
 
     @property
     @override
@@ -45,47 +52,86 @@ def sim_pool():
     return FakeSimPool()
 
 
+def indices(sim_pool, *assets):
+    """Returns the indices of all symbols/indices in assets"""
+    indices = []
+    symbols = sim_pool.asset_names
+    for ID in assets:
+        if isinstance(ID, str):
+            ID = symbols.index(ID)
+        indices.append(ID)
+
+    return indices
+
+
+def duplicates(sim_pool, *assets):
+    """Determines whether assets contains duplicate symbols/indices"""
+    indices = indices(sim_pool, *assets)
+
+    return len(indices) != len(set(indices))
+
+
 def test_asset_indices(sim_pool):
     """Test index conversion and getting"""
+    assert sim_pool.asset_indices == {"SYM_0": 0, "SYM_1": 1, "SYM_2": 2}
+
+
+def test_asset_balances(sim_pool):
+    """Test mapping symbols to balances"""
+    assert sim_pool.asset_balances == {"SYM_0": 100, "SYM_1": 200, "SYM_2": 300}
+
+
+def test_get_asset_indices(sim_pool):
+    """Test getting index from symbol or index itself"""
     # Example calling by symbol
     result = sim_pool.get_asset_indices("SYM_2", "SYM_0")
     assert result == [2, 0]
-
-    names = sim_pool.asset_names
-    name_sets = [
-        list(itertools.permutations(names, r=i)) for i in range(1, len(names) + 1)
-    ]
-    for lst in name_sets:
-        for name_set in lst:
-            name_set = list(name_set)
-            result = sim_pool.get_asset_indices(*name_set)
-            assert result == [names.index(symbol) for symbol in name_set]
 
     # Example calling by index
     result = sim_pool.get_asset_indices(1, 2)
     assert result == [1, 2]
 
+    # Example calling by symbol and index
+    result = sim_pool.get_asset_indices("SYM_0", 2, "SYM_1")
+    assert result == [0, 2, 1]
+
+    # Examples calling by a symbol that doesn't exist
+    try:
+        assets = ["SYM_0", 1, "SYM_3"]
+        result = sim_pool.get_asset_indices(*assets)
+    except Exception as err:
+        assert isinstance(err, KeyError)
+
+    try:
+        assets = [2, 3, 0]
+        result = sim_pool.get_asset_indices(*assets)
+    except Exception as err:
+        assert isinstance(err, KeyError)
+
+    # Examples calling by symbol and index, with occasional duplicates
+    symbols = sim_pool.asset_names
     indices = sim_pool.asset_indices.values()
-    index_sets = [
-        list(itertools.permutations(indices, r=i)) for i in range(1, len(indices) + 1)
+    symbols_and_indices = symbols + indices
+    assets = [
+        list(itertools.permutations(symbols_and_indices, r=i))
+        for i in range(1, len(symbols_and_indices) + 1)
     ]
-    for lst in index_sets:
-        for index_set in lst:
-            index_set = list(index_set)
-            result = sim_pool.get_asset_indices(*index_set)
-            assert result == index_set
-
-    assert sim_pool.asset_indices == {"SYM_0": 0, "SYM_1": 1, "SYM_2": 2}
-
-
-def test_asset_balances(sim_pool):
-    assert sim_pool.asset_balances == {"SYM_0": 100, "SYM_1": 200, "SYM_2": 300}
-
-
-# make dedicated test function for get_asset_indices
-# convert test to test all permutations of mixed str and int inputs + duplicates (str/ str, int/int, str/int, int/str, etc.)
-# on duplicate inputs assert that CurvesimValueError is thrown properly
-# CHECKS FOR STR/INT INPUT WILL BE DONE ELSEWHERE
+    for lst in assets:
+        for asset_set in lst:
+            try:
+                result = sim_pool.get_asset_indices(*asset_set)
+                assert result == indices(sim_pool, *asset_set)
+            except Exception as err:
+                assert duplicates(sim_pool, *asset_set)
+                assert isinstance(err, CurvesimValueError)
 
 
 # test cases where asset_names and asset_balances are unequal length
+
+# setter
+# for breaking tests, check that the appropriate exception is raised (may need to use multiple functions in a
+# specific order to get the right error)
+
+# non-str input (e.g. ints that are and aren't duplicates of indices of the str)
+# change number of symbols after initial set
+# initial set that's longer/shorter than _asset_balances
