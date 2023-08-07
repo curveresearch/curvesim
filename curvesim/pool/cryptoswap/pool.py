@@ -2,16 +2,22 @@
 Mainly a module to house the `CryptoPool`, a cryptoswap implementation in Python.
 """
 import time
-from math import ceil, isqrt
+from math import isqrt
 from typing import List
 
-from gmpy2 import mpz
-
-from curvesim.exceptions import CalculationError, CryptoPoolError, CurvesimValueError
+from curvesim.exceptions import CalculationError, CryptoPoolError
 from curvesim.logging import get_logger
 from curvesim.pool.base import Pool
 
-from .calcs import factory_2_coin, tricrypto_ng
+from .calcs import (
+    factory_2_coin,
+    geometric_mean,
+    get_alpha,
+    get_p,
+    get_y,
+    halfpow,
+    newton_D,
+)
 
 logger = get_logger(__name__)
 
@@ -20,8 +26,7 @@ EXP_PRECISION = 10**10
 PRECISION = 10**18  # The precision to convert to
 
 
-# pylint: disable-next=too-many-instance-attributes
-class CurveCryptoPool(Pool):
+class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
     """Cryptoswap implementation in Python."""
 
     __slots__ = (
@@ -50,8 +55,7 @@ class CurveCryptoPool(Pool):
         "not_adjusted",
     )
 
-    # pylint: disable-next=too-many-locals,too-many-arguments
-    def __init__(
+    def __init__(  # pylint: disable=too-many-locals,too-many-arguments
         self,
         A: int,
         gamma: int,
@@ -177,9 +181,8 @@ class CurveCryptoPool(Pool):
             if not balances:
                 self.balances = self._convert_D_to_balances(D)
             else:
-                # If user passes both `D` and `balances`, it's possible
-                # they may be inconsistent; however we allow this for
-                # unanticipated use-cases.
+                # If user passes both `D` and `balances`, it's possible they may
+                # be inconsistent; however we allow this for unanticipated use-cases.
                 logger.debug(
                     "Both `D` and `balances` were passed into `__init__`. "
                     "Inconsistent values may create issues."
@@ -259,7 +262,7 @@ class CurveCryptoPool(Pool):
         x = [D // n_coins] + [
             D * PRECISION // (price * n_coins) for price in price_scale
         ]
-        return _geometric_mean(x)
+        return geometric_mean(x)
 
     def _increment_timestamp(self, blocks=1, timestamp=None):
         """Update the internal clock used to mimic the block timestamp."""
@@ -301,7 +304,7 @@ class CurveCryptoPool(Pool):
         # EMA uses price of the last trade and oracle price in previous block.
         if last_prices_timestamp < block_timestamp:
             ma_half_time: int = self.ma_half_time
-            alpha: int = _alpha(
+            alpha: int = get_alpha(
                 ma_half_time, block_timestamp, last_prices_timestamp, n_coins
             )
             if n_coins == 2:
@@ -325,7 +328,7 @@ class CurveCryptoPool(Pool):
 
         D_unadjusted: int = new_D  # Withdrawal methods know new D already
         if new_D == 0:
-            D_unadjusted = _newton_D(A, gamma, _xp, K0_prev)
+            D_unadjusted = newton_D(A, gamma, _xp, K0_prev)
 
         if p_i > 0:
             # Save the last price
@@ -351,7 +354,7 @@ class CurveCryptoPool(Pool):
                     for k in range(1, n_coins)
                 ]
             else:
-                last_prices = tricrypto_ng.get_p(_xp, D_unadjusted, A, gamma)
+                last_prices = get_p(_xp, D_unadjusted, A, gamma)
                 last_prices = [
                     last_p * p // 10**18
                     for last_p, p in zip(last_prices, price_scale)
@@ -371,7 +374,7 @@ class CurveCryptoPool(Pool):
         virtual_price: int = 10**18
 
         if old_virtual_price > 0:
-            xcp: int = _geometric_mean(xp)
+            xcp: int = geometric_mean(xp)
             virtual_price = 10**18 * xcp // total_supply
 
             if virtual_price < old_virtual_price:
@@ -404,11 +407,11 @@ class CurveCryptoPool(Pool):
                 ]
 
                 # Calculate "extended constant product" invariant xCP and virtual price
-                D: int = _newton_D(A, gamma, xp)
+                D: int = newton_D(A, gamma, xp)
                 xp = [D // n_coins] + [
                     D * PRECISION // (n_coins * p_new) for p_new in new_prices
                 ]
-                new_virtual_price = 10**18 * _geometric_mean(xp) // total_supply
+                new_virtual_price = 10**18 * geometric_mean(xp) // total_supply
 
                 # Proceed if we've got enough profit:
                 #   new_virtual_price > 10**18
@@ -554,7 +557,7 @@ class CurveCryptoPool(Pool):
 
         xp = self._xp_mem(xp)
 
-        y_out = _get_y(A, gamma, xp, self.D, j)
+        y_out = get_y(A, gamma, xp, self.D, j)
         dy = xp[j] - y_out[0]
         xp[j] -= dy
         dy -= 1
@@ -630,12 +633,7 @@ class CurveCryptoPool(Pool):
         -----
         In the vyper contract, there is an option to exchange using WETH or ETH.
         """
-        return self._exchange(
-            i,
-            j,
-            dx,
-            min_dy,
-        )
+        return self._exchange(i, j, dx, min_dy)
 
     def exchange_underlying(
         self,
@@ -944,7 +942,7 @@ class CurveCryptoPool(Pool):
         if last_prices_timestamp < block_timestamp:
             ma_half_time: int = self.ma_half_time
             last_prices: int = self.last_prices
-            alpha: int = _halfpow(
+            alpha: int = halfpow(
                 (block_timestamp - last_prices_timestamp) * 10**18 // ma_half_time
             )
             return [
@@ -1000,110 +998,3 @@ class CurveCryptoPool(Pool):
 def _get_unix_timestamp():
     """Get the timestamp in Unix time."""
     return int(time.time())
-
-
-def _geometric_mean(unsorted_x: List[int]) -> int:
-    """
-    (x[0] * x[1] * ...) ** (1/N)
-    """
-    n_coins = len(unsorted_x)
-    if n_coins == 2:
-        mean = factory_2_coin.geometric_mean(unsorted_x, True)
-    elif n_coins == 3:
-        mean = tricrypto_ng.geometric_mean(unsorted_x)
-    else:
-        raise CurvesimValueError("More than 3 coins is not supported.")
-
-    return mean
-
-
-def _newton_D(A: int, gamma: int, xp: List[int], K0_prev: int = 0) -> int:
-    """
-    Compute D using using specific approaches depending on
-    the number of coins.
-
-    For 3 coins, we actually use Halley's method and allow a
-    starting value.
-    """
-    n_coins = len(xp)
-    if n_coins == 2:
-        D = factory_2_coin.newton_D(A, gamma, xp)
-    elif n_coins == 3:
-        D = tricrypto_ng.newton_D(A, gamma, xp, K0_prev)
-    else:
-        raise CurvesimValueError("More than 3 coins is not supported.")
-
-    return D
-
-
-def _get_y(A: int, gamma: int, xp: List[int], D: int, j: int) -> List[int]:
-    n_coins = len(xp)
-    if n_coins == 2:
-        y_out = [factory_2_coin.newton_y(A, gamma, xp, D, j), 0]
-    elif n_coins == 3:
-        y_out = tricrypto_ng.get_y(A, gamma, xp, D, j)
-    else:
-        raise CurvesimValueError("More than 3 coins is not supported.")
-
-    return y_out
-
-
-def _alpha(ma_half_time, block_timestamp, last_prices_timestamp, n_coins):
-    if n_coins == 2:
-        alpha: int = _halfpow(
-            (block_timestamp - last_prices_timestamp) * 10**18 // ma_half_time
-        )
-    elif n_coins == 3:
-        # tricrypto-ng stores the ma half-time divided by ln(2), so we have to
-        # take the real half-time and divide by ln(2) to use in the alpha calc.
-        #
-        # Note ln(2) = 0.693147... but the approx actually used is 694 / 1000.
-        #
-        # CAUTION: neeed to be wary of off-by-one errors from integer division.
-        ma_half_time = ceil(ma_half_time * 1000 / 694)
-        alpha: int = tricrypto_ng.wad_exp(
-            -1 * ((block_timestamp - last_prices_timestamp) * 10**18 // ma_half_time)
-        )
-    else:
-        raise CurvesimValueError("More than 3 coins is not supported.")
-
-    return alpha
-
-
-def _halfpow(power: int) -> int:
-    """
-    1e18 * 0.5 ** (power/1e18)
-
-    Inspired by:
-    https://github.com/balancer-labs/balancer-core/blob/master/contracts/BNum.sol#L128
-    """
-    intpow: int = power // 10**18
-    otherpow: int = power - intpow * 10**18
-    if intpow > 59:
-        return 0
-    result: int = 10**18 // (2**intpow)
-    if otherpow == 0:
-        return result
-
-    term: int = mpz(10**18)
-    x: int = 5 * 10**17
-    S: int = 10**18
-    neg: bool = False
-
-    for i in range(1, 256):
-        K: int = i * 10**18
-        c: int = K - 10**18
-        if otherpow > c:
-            c = otherpow - c
-            neg = not neg
-        else:
-            c -= otherpow
-        term = term * (c * x // 10**18) // K
-        if neg:
-            S -= term
-        else:
-            S += term
-        if term < EXP_PRECISION:
-            return int(result * S // 10**18)
-
-    raise CalculationError("Did not converge")

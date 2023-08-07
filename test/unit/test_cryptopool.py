@@ -4,7 +4,7 @@ from hypothesis import HealthCheck, assume, given, settings
 from hypothesis import strategies as st
 
 from curvesim.pool import CurveCryptoPool
-from curvesim.pool.cryptoswap.calcs import factory_2_coin
+from curvesim.pool.cryptoswap.calcs import factory_2_coin, halfpow
 from curvesim.pool.cryptoswap.calcs.factory_2_coin import (
     MAX_A,
     MAX_GAMMA,
@@ -13,7 +13,6 @@ from curvesim.pool.cryptoswap.calcs.factory_2_coin import (
     PRECISION,
     geometric_mean,
 )
-from curvesim.pool.cryptoswap.pool import _halfpow
 
 
 def initialize_pool(vyper_cryptopool):
@@ -222,7 +221,7 @@ def test_halfpow(vyper_cryptopool, power):
     """Test halfpow calculation against vyper implementation."""
 
     expected_result = vyper_cryptopool.eval(f"self.halfpow({power})")
-    result = _halfpow(power)
+    result = halfpow(power)
 
     assert result == expected_result
 
