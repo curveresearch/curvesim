@@ -4,13 +4,14 @@ from hypothesis import HealthCheck, assume, given, settings
 from hypothesis import strategies as st
 
 from curvesim.pool import CurveCryptoPool
-from curvesim.pool.cryptoswap.calcs import factory_2_coin, halfpow
+from curvesim.pool.cryptoswap.calcs import get_y, halfpow, newton_D
 from curvesim.pool.cryptoswap.calcs.factory_2_coin import (
     MAX_A,
     MAX_GAMMA,
     MIN_A,
     MIN_GAMMA,
     PRECISION,
+    _sqrt_int,
     geometric_mean,
 )
 
@@ -236,7 +237,7 @@ def test_sqrt_int(vyper_cryptopool, number):
     """Test sqrt_int calculation against vyper implementation."""
 
     expected_result = vyper_cryptopool.eval(f"self.sqrt_int({number})")
-    result = factory_2_coin._sqrt_int(number)  # pylint: disable=protected-access
+    result = _sqrt_int(number)  # pylint: disable=protected-access
 
     assert result == expected_result
 
@@ -271,7 +272,7 @@ def test_newton_D(vyper_cryptopool, A, gamma, x0, x1):
     assume(0.02 < xp[0] / xp[1] < 50)
 
     expected_D = vyper_cryptopool.eval(f"self.newton_D({A}, {gamma}, {xp})")
-    D = factory_2_coin.newton_D(A, gamma, xp)
+    D = newton_D(A, gamma, xp)
 
     assert D == expected_D
 
@@ -289,7 +290,7 @@ def test_newton_D(vyper_cryptopool, A, gamma, x0, x1):
     max_examples=5,
     deadline=None,
 )
-def test_newton_y(vyper_cryptopool, A, gamma, x0, x1, i, delta_perc):
+def test_get_y(vyper_cryptopool, A, gamma, x0, x1, i, delta_perc):
     """Test get_y calculation against vyper implementation."""
 
     xp = [x0, x1]
@@ -302,7 +303,7 @@ def test_newton_y(vyper_cryptopool, A, gamma, x0, x1, i, delta_perc):
         f"self.newton_y({A}, {gamma}, {xp}, {D_changed}, {i})"
     )
 
-    y = factory_2_coin.newton_y(A, gamma, xp, D_changed, i)
+    y, _ = get_y(A, gamma, xp, D_changed, i)
 
     assert y == expected_y
 
@@ -314,7 +315,7 @@ def test_newton_y(vyper_cryptopool, A, gamma, x0, x1, i, delta_perc):
         f"self.newton_y({A}, {gamma}, {xp_changed}, {D}, {i})"
     )
 
-    y = factory_2_coin.newton_y(A, gamma, xp_changed, D, i)
+    y, _ = get_y(A, gamma, xp_changed, D, i)
 
     assert y == expected_y
 

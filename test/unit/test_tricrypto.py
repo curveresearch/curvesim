@@ -10,15 +10,16 @@ from hypothesis import HealthCheck, assume, given, settings
 from hypothesis import strategies as st
 
 from curvesim.pool import CurveCryptoPool
-from curvesim.pool.cryptoswap.calcs import tricrypto_ng
+from curvesim.pool.cryptoswap.calcs import get_p, get_y, newton_D
 from curvesim.pool.cryptoswap.calcs.tricrypto_ng import (
     MAX_A,
     MAX_GAMMA,
     MIN_A,
     MIN_GAMMA,
     PRECISION,
+    _newton_y,
+    wad_exp,
 )
-from curvesim.pool.cryptoswap.pool import _get_y, _newton_D
 
 
 def get_math(tricrypto):
@@ -251,7 +252,7 @@ def test_multiple_exchange_with_repeg(
     max_examples=5,
     deadline=None,
 )
-def test__newton_D(vyper_tricrypto, A, gamma, x0, x1, x2):
+def test_newton_D(vyper_tricrypto, A, gamma, x0, x1, x2):
     """Test D calculation against vyper implementation."""
 
     xp = [x0, x1, x2]
@@ -262,7 +263,7 @@ def test__newton_D(vyper_tricrypto, A, gamma, x0, x1, x2):
     MATH = get_math(vyper_tricrypto)
     # pylint: disable=no-member
     expected_D = MATH.newton_D(A, gamma, xp)
-    D = _newton_D(A, gamma, xp)
+    D = newton_D(A, gamma, xp)
 
     assert D == expected_D
 
@@ -293,7 +294,7 @@ def test_get_p(vyper_tricrypto, A, gamma, x0, x1, x2):
 
     A_gamma = [A, gamma]
     expected_p = MATH.get_p(xp, D, A_gamma)
-    p = tricrypto_ng.get_p(xp, D, A, gamma)
+    p = get_p(xp, D, A, gamma)
 
     assert p == expected_p
 
@@ -315,8 +316,8 @@ def test_get_p(vyper_tricrypto, A, gamma, x0, x1, x2):
     max_examples=5,
     deadline=None,
 )
-def test__get_y(vyper_tricrypto, A, gamma, x0, x1, x2, pair, dx_perc):
-    """Test D calculation against vyper implementation."""
+def test_pure_get_y(vyper_tricrypto, A, gamma, x0, x1, x2, pair, dx_perc):
+    """Test `get_y` calculation against vyper implementation."""
     i, j = pair
 
     xp = [x0, x1, x2]
@@ -331,28 +332,28 @@ def test__get_y(vyper_tricrypto, A, gamma, x0, x1, x2, pair, dx_perc):
     xp[i] += xp[i] * dx_perc // 10000
 
     expected_y_out = MATH.get_y(A, gamma, xp, D, j)
-    y_out = _get_y(A, gamma, xp, D, j)
+    y_out = get_y(A, gamma, xp, D, j)
 
     assert y_out[0] == expected_y_out[0]
     assert y_out[1] == expected_y_out[1]
 
 
-def test_get_y(vyper_tricrypto):
+def test_pool_get_y(vyper_tricrypto):
     """
-    Test `get_y`.
+    Test `CurveCryptoPool.get_y`.
 
-    Note `_get_y`, which is the pure version, is already tested
+    Note the pure version of `get_y` is already tested
     thoroughly in its own test against the vyper.
 
     This test is a sanity check to make sure we pass values in correctly
-    to the underlying `_get_y` implementation.
+    to the pure `get_y` implementation.
     """
     pool = initialize_pool(vyper_tricrypto)
 
     xp = pool._xp()
     A = pool.A
     gamma = pool.gamma
-    D = _newton_D(A, gamma, xp)
+    D = newton_D(A, gamma, xp)
 
     i = 0
     j = 1
@@ -362,7 +363,7 @@ def test_get_y(vyper_tricrypto):
     y = pool.get_y(i, j, x, xp)
 
     xp[i] = x
-    expected_y, _ = _get_y(A, gamma, xp, D, j)
+    expected_y, _ = get_y(A, gamma, xp, D, j)
 
     assert y == expected_y
 
@@ -378,7 +379,7 @@ def test_wad_exp(vyper_tricrypto, x):
     MATH = get_math(vyper_tricrypto)
     # pylint: disable=no-member
     expected_result = MATH.wad_exp(x)
-    result = tricrypto_ng.wad_exp(x)
+    result = wad_exp(x)
     assert result == expected_result
 
 
@@ -415,6 +416,6 @@ def test__newton_y(vyper_tricrypto, A, gamma, x0, x1, x2, pair, dx_perc):
     xp[i] += xp[i] * dx_perc // 10000
 
     expected_y = MATH.eval(f"self._newton_y({A}, {gamma}, {xp}, {D}, {j})")
-    y = tricrypto_ng._newton_y(A, gamma, xp, D, j)
+    y = _newton_y(A, gamma, xp, D, j)
 
     assert y == expected_y

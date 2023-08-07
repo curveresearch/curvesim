@@ -530,12 +530,12 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         """
         A: int = self.A
         gamma: int = self.gamma
-        D: int = _newton_D(A, gamma, xp)
+        D: int = newton_D(A, gamma, xp)
 
         xp = xp.copy()
         xp[i] = x
 
-        y, _ = _get_y(A, gamma, xp, D, j)
+        y, _ = get_y(A, gamma, xp, D, j)
         return y
 
     def _fee(self, xp: List[int]) -> int:
