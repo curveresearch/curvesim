@@ -1,17 +1,18 @@
 import pytest
 
-from hypothesis import given, settings
-from hypothesis import strategies as st
-from pandas import DataFrame
+from math import prod
 
-from itertools import product
+from hypothesis import given, settings, HealthCheck
+from hypothesis import strategies as st
 
 from curvesim.exceptions import ParameterSamplerError
 from curvesim.iterators.param_samplers import ParameterizedPoolIterator
 from curvesim.iterators.param_samplers.parameterized_pool_iterator import (
     DEFAULT_POOL_MAP,
 )
-from curvesim.pool.sim_interface import SimCurvePool, SimCurveRaiPool, SimCurveMetaPool
+from curvesim.pool.cryptoswap.pool import _newton_D
+from curvesim.pool.sim_interface import SimCurveCryptoPool
+
 
 # Strategies
 POOL_PARAMS = {
@@ -43,7 +44,13 @@ CRYPTOPOOL_PARAMS = {
 
 
 def make_parameter_strats(parameters):
-    """Returns param_subset_strats for variable_params and fixed_params arguments."""
+    """
+    Returns param_subset_strats for variable_params and fixed_params arguments.
+
+    Note: variable params are limited to length 1 and fixed params limited to length 0.
+    Variable params of length 0 are tested seperately in
+    test_ParameterizedPoolIterator_no_variable_params.
+    """
     return (
         param_subset_strat(parameters, val_to_list=True),
         param_subset_strat(parameters, min_size=0),
@@ -82,20 +89,19 @@ def to_list_strat(strategy, min_size=2, max_size=20):
 
 
 # Tests
-def test_invalid_parameter_exceptions():
+def test_invalid_parameter_exceptions(sim_curve_pool):
     """
     Test exceptions for invalid parameter names. If fails,
     ParameterSampler._validate_attributes is malfunctioning.
     """
-    pool = POOLS[SimCurvePool]
 
     # Not a pool param
     with pytest.raises(ParameterSamplerError):
-        ParameterizedPoolIterator(pool, {"not_a_param": [20, 30]})
+        ParameterizedPoolIterator(sim_curve_pool, {"not_a_param": [20, 30]})
 
     # Basepool param when no basepool
     with pytest.raises(ParameterSamplerError):
-        ParameterizedPoolIterator(pool, {"A_base": [10, 100]})
+        ParameterizedPoolIterator(sim_curve_pool, {"A_base": [10, 100]})
 
 
 def test_ParameterizedPoolIterator_subclass_mapping():
@@ -162,56 +168,142 @@ def test_ParameterizedPoolIterator_wrong_pool_exception():
             ParameterizedPoolIterator(pool, pool_map=mapping)
 
 
+def test_ParameterizedPoolIterator_pool_template_mutation():
+    """
+    Test that parameter iteration doesn't mutate the pool template.
+    """
+
+    class DummyPool:
+        def __init__(self):
+            self.a = 0
+            self.b = 0
+
+    class DummyParamSampler(ParameterizedPoolIterator):
+        @property
+        def _pool_type(self):
+            return DummyPool
+
+    pool = DummyPool()
+    variable_params = {"a": [1, 2], "b": [3, 4]}
+    mapping = {DummyPool: DummyParamSampler}
+
+    param_sampler = ParameterizedPoolIterator(pool, variable_params, pool_map=mapping)
+
+    for pool_sample, pool_params in param_sampler:
+        assert param_sampler.pool_template.a == 0
+        assert param_sampler.pool_template.b == 0
+
+
+def test_ParameterizedPoolIterator_no_variable_params():
+    """
+    Test that .parameter_sequence uses fixed params when variable params are omitted.
+    """
+
+    class DummyPool:
+        def __init__(self):
+            self.a = 0
+            self.b = 0
+
+    class DummyParamSampler(ParameterizedPoolIterator):
+        @property
+        def _pool_type(self):
+            return DummyPool
+
+    pool = DummyPool()
+    mapping = {DummyPool: DummyParamSampler}
+    fixed_params = {"a": 1, "b": 2}
+
+    param_sampler = ParameterizedPoolIterator(
+        pool, fixed_params=fixed_params, pool_map=mapping
+    )
+
+    assert param_sampler.parameter_sequence == [fixed_params]
+
+
 @given(*make_parameter_strats(POOL_PARAMS))
-@settings(max_examples=5, deadline=None)
-def test_ParameterizedPoolIterator_curve_pool(variable_params, fixed_params):
+@settings(
+    max_examples=5,
+    deadline=None,
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+)
+def test_ParameterizedPoolIterator_curve_pool(
+    sim_curve_pool, variable_params, fixed_params
+):
     """Tests full instantiation of ParameterizedCurvePoolIterator from SimCurvePool."""
-    _test_ParameterizedPoolIterator(SimCurvePool, variable_params, fixed_params)
+    _test_ParameterizedPoolIterator(sim_curve_pool, variable_params, fixed_params)
 
 
 @given(*make_parameter_strats(METAPOOL_PARAMS))
-@settings(max_examples=5, deadline=None)
-def test_ParameterizedPoolIterator_curve_meta_pool(variable_params, fixed_params):
+@settings(
+    max_examples=5,
+    deadline=None,
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+)
+def test_ParameterizedPoolIterator_curve_meta_pool(
+    sim_curve_meta_pool, variable_params, fixed_params
+):
     """Tests full instantiation of ParameterizedCurveMetaPoolIterator from SimCurveMetaPool."""
-    _test_ParameterizedPoolIterator(SimCurveMetaPool, variable_params, fixed_params)
+
+    def fixed_virtual_price():
+        return 10**18
+
+    sim_curve_meta_pool.basepool.get_virtual_price = fixed_virtual_price
+
+    _test_ParameterizedPoolIterator(sim_curve_meta_pool, variable_params, fixed_params)
 
 
 @given(*make_parameter_strats(METAPOOL_PARAMS))
-@settings(max_examples=5, deadline=None)
-def test_ParameterizedPoolIterator_curve_rai_pool(variable_params, fixed_params):
+@settings(
+    max_examples=5,
+    deadline=None,
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+)
+def test_ParameterizedPoolIterator_curve_rai_pool(
+    sim_curve_rai_pool, variable_params, fixed_params
+):
     """Tests full instantiation of ParameterizedCurveMetaPoolIterator from SimCurveRaiPool."""
-    _test_ParameterizedPoolIterator(SimCurveRaiPool, variable_params, fixed_params)
+
+    def fixed_virtual_price():
+        return 10**18
+
+    sim_curve_rai_pool.basepool.get_virtual_price = fixed_virtual_price
+
+    _test_ParameterizedPoolIterator(sim_curve_rai_pool, variable_params, fixed_params)
 
 
-@pytest.mark.skip(reason="Requires SimCurveCryptoPool")
 @given(*make_parameter_strats(CRYPTOPOOL_PARAMS))
-@settings(max_examples=5, deadline=None)
-def test_ParameterizedPoolIterator_curve_crypto_pool(variable_params, fixed_params):
+@settings(
+    max_examples=5,
+    deadline=None,
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+)
+def test_ParameterizedPoolIterator_curve_crypto_pool(
+    sim_curve_crypto_pool, variable_params, fixed_params
+):
     """Tests full instantiation of ParameterizedCurveCryptoPoolIteratorfrom SimCurveCryptoPool."""
-    # _test_ParameterizedPoolIterator(SimCurveCryptoPool, variable_params, fixed_params)
+    _test_ParameterizedPoolIterator(
+        sim_curve_crypto_pool, variable_params, fixed_params
+    )
 
 
 # Helper functions for tests
-def _test_ParameterizedPoolIterator(
-    pool_type, variable_params, fixed_params, pool_map=None
-):
+def _test_ParameterizedPoolIterator(pool, variable_params, fixed_params, pool_map=None):
     """
     Tests correct instantiation of a ParameterizedPoolIterator subclass, including
     correct class and parameters/attributes.
     """
-    pool = POOLS[pool_type]
     param_sampler = ParameterizedPoolIterator(
         pool, variable_params, fixed_params, pool_map
     )
 
     pool_to_sampler = pool_map or DEFAULT_POOL_MAP
-    expected_type = pool_to_sampler[pool_type]
+    expected_type = pool_to_sampler[type(pool)]
 
     assert isinstance(param_sampler, expected_type)
-    assert pool != param_sampler.pool_template  # ensure deepcopy
 
     _test_pool_params(param_sampler.pool_template, fixed_params)
-    _test_ParameterizedPoolIterator_variable_params(param_sampler, variable_params)
+    _test_ParameterizedPoolIterator_parameter_sequence(param_sampler, variable_params)
+    _test_ParameterizedPoolIterator_iterations(param_sampler)
 
 
 def _test_pool_params(pool, params):
@@ -222,9 +314,12 @@ def _test_pool_params(pool, params):
         _pool, _key = parse_pool_attribute(pool, key)
 
         if _key == "D":
-            if hasattr(_pool, "_newton_D"):  # v2 pools
-                D = _pool._newton_D(_pool.A, _pool.gamma, _pool._xp())
-                assert abs(D - val) <= 10**10  # _newton_D allows some minor error
+            if isinstance(pool, SimCurveCryptoPool):
+                D_from_xp = _newton_D(_pool.A, _pool.gamma, _pool._xp())
+                assert _pool.D == val
+                assert (
+                    abs(D_from_xp - val) <= 10**10
+                )  # _newton_D allows some minor error
 
             else:
                 D = _pool.D()
@@ -234,22 +329,51 @@ def _test_pool_params(pool, params):
             assert getattr(_pool, _key) == val
 
 
-def _test_ParameterizedPoolIterator_variable_params(param_sampler, variable_params):
+def _test_ParameterizedPoolIterator_parameter_sequence(param_sampler, variable_params):
     """
-    Tests that .parameter_sequence is generated and applied to pool on each iter.
+    Tests that param_sampler.parameter_sequence has the expected properties for the
+    product of the input variable params.
     """
-    keys, values = zip(*variable_params.items())
-    expected_sequence = []
-    for vals in product(*values):
-        params = dict(zip(keys, vals))
-        expected_sequence.append(params)
 
-    sequences = zip(param_sampler, param_sampler.parameter_sequence, expected_sequence)
+    param_sequence = param_sampler.parameter_sequence
+    param_keys, param_values = zip(*variable_params.items())
 
-    for (pool_sample, pool_params), sampler_params, expected_params in sequences:
-        assert pool_params == sampler_params
-        assert sampler_params == expected_params
-        _test_pool_params(pool_sample, pool_params)
+    # Test expected number of combinations
+    lengths = [len(vals) for vals in param_values]
+    length_product = prod(lengths)
+    assert len(param_sequence) == length_product
+
+    # Test all keys present in each dict
+    input_keys = variable_params.keys()
+    for params in param_sequence:
+        assert params.keys() == input_keys  # note: undordered equality
+
+    # Test no duplicate entries
+    for params1 in param_sequence:
+        same_entry_count = 0
+        for params2 in param_sequence:
+            if params1 == params2:
+                same_entry_count += 1
+        assert same_entry_count == 1
+
+    # Test expected count of each parameter value
+    all_param_values = {key: [dct[key] for dct in param_sequence] for key in param_keys}
+    for key, values in variable_params.items():
+        param_list = all_param_values[key]
+        expected_repeats = length_product / len(values)
+        for val in values:
+            assert param_list.count(val) == expected_repeats
+
+
+def _test_ParameterizedPoolIterator_iterations(param_sampler):
+    """
+    Tests that .parameter_sequence is applied to pool on each iter.
+    """
+    sequences = zip(param_sampler, param_sampler.parameter_sequence)
+
+    for (pool_sample, pool_params), sampler_params in sequences:
+        assert pool_params == sampler_params  # test if correct vals
+        _test_pool_params(pool_sample, pool_params)  # test if vals applied to pool
 
 
 def parse_pool_attribute(pool, attribute):
@@ -260,49 +384,3 @@ def parse_pool_attribute(pool, attribute):
         return pool.basepool, attribute[:-5]
 
     return pool, attribute
-
-
-# Pools
-basepool = SimCurvePool(A=250, D=1000000 * 10**18, n=2, admin_fee=5 * 10**9)
-
-
-def fixed_virtual_price():
-    return 10**18
-
-
-basepool.get_virtual_price = fixed_virtual_price
-
-meta_kwargs = {
-    "A": 250,
-    "D": 4000000 * 10**18,
-    "n": 2,
-    "admin_fee": 5 * 10**9,
-    "basepool": basepool,
-}
-rp = DataFrame([1, 2, 3], columns=["price"])
-
-crypto_kwargs = {
-    "A": 400000,
-    "gamma": 72500000000000,
-    "n": 2,
-    "precisions": [1, 1],
-    "mid_fee": 26000000,
-    "out_fee": 45000000,
-    "allowed_extra_profit": 2000000000000,
-    "fee_gamma": 230000000000000,
-    "adjustment_step": 146000000000000,
-    "admin_fee": 5000000000,
-    "ma_half_time": 600,
-    "price_scale": 1550997347493624157,
-    "balances": [20477317313816545807568241, 13270936465339000000000000],
-    "tokens": 1550997347493624157,
-    "xcp_profit": 1052829794354693246,
-    "xcp_profit_a": 1052785575319598710,
-}
-
-POOLS = {
-    SimCurvePool: SimCurvePool(A=250, D=1000000 * 10**18, n=2, admin_fee=5 * 10**9),
-    SimCurveMetaPool: SimCurveMetaPool(**meta_kwargs),
-    SimCurveRaiPool: SimCurveRaiPool(**meta_kwargs, redemption_prices=rp),
-    # SimCurveCryptoPool: SimCurveCryptoPool(**crypto_kwargs),
-}

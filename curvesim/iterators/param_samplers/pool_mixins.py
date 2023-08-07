@@ -5,7 +5,11 @@ of pool instances configured by different simulation parameters.
 Each mixin defines a different pool type and a set of special attribute setters.
 """
 
-from curvesim.pool.sim_interface import SimCurveMetaPool, SimCurvePool
+from curvesim.pool.sim_interface import (
+    SimCurveMetaPool,
+    SimCurvePool,
+    SimCurveCryptoPool,
+)
 
 
 class CurvePoolMixin:
@@ -58,7 +62,7 @@ class CurveCryptoPoolMixin:
 
     @property
     def _pool_type(self):
-        return  # SimCurveCryptoPool
+        return SimCurveCryptoPool
 
     @property
     def setters(self):
@@ -115,15 +119,5 @@ def cryptoswap_D_to_balances(pool, D):
     D : int
         The invariant value.
     """
-    n = pool.n
-    price_scale = pool.price_scale
-    precisions = pool.precisions
-
-    if n == 2:
-        price_scale = [price_scale]
-
-    balances = [D // n // precisions[0]]
-    divisors = zip(price_scale, precisions[1:])
-    balances += [D * 10**18 // (n * price) // prec for price, prec in divisors]
-
-    pool.balances = balances
+    pool.D = D
+    pool.balances = pool._convert_D_to_balances(D)
