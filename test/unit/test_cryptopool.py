@@ -13,7 +13,7 @@ from curvesim.pool.cryptoswap.calcs.factory_2_coin import (
     PRECISION,
     geometric_mean,
 )
-from curvesim.pool.cryptoswap.pool import _halfpow, _sqrt_int
+from curvesim.pool.cryptoswap.pool import _halfpow
 
 
 def initialize_pool(vyper_cryptopool):
@@ -237,7 +237,7 @@ def test_sqrt_int(vyper_cryptopool, number):
     """Test sqrt_int calculation against vyper implementation."""
 
     expected_result = vyper_cryptopool.eval(f"self.sqrt_int({number})")
-    result = _sqrt_int(number)
+    result = factory_2_coin._sqrt_int(number)  # pylint: disable=protected-access
 
     assert result == expected_result
 
