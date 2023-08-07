@@ -1,8 +1,7 @@
-import pytest
-
 from math import prod
 
-from hypothesis import given, settings, HealthCheck
+import pytest
+from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
 from curvesim.exceptions import ParameterSamplerError
@@ -10,9 +9,8 @@ from curvesim.iterators.param_samplers import ParameterizedPoolIterator
 from curvesim.iterators.param_samplers.parameterized_pool_iterator import (
     DEFAULT_POOL_MAP,
 )
-from curvesim.pool.cryptoswap.pool import _newton_D
+from curvesim.pool.cryptoswap.calcs import newton_D
 from curvesim.pool.sim_interface import SimCurveCryptoPool
-
 
 # Strategies
 POOL_PARAMS = {
@@ -315,7 +313,7 @@ def _test_pool_params(pool, params):
 
         if _key == "D":
             if isinstance(pool, SimCurveCryptoPool):
-                D_from_xp = _newton_D(_pool.A, _pool.gamma, _pool._xp())
+                D_from_xp = newton_D(_pool.A, _pool.gamma, _pool._xp())
                 assert _pool.D == val
                 assert (
                     abs(D_from_xp - val) <= 10**10
