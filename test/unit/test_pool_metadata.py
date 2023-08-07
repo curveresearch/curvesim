@@ -1,8 +1,9 @@
 import json
 
-from curvesim.pool.cryptoswap.pool import CurveCryptoPool
+from curvesim.pool.sim_interface.cryptoswap import SimCurveCryptoPool
 from curvesim.pool.sim_interface.metapool import SimCurveMetaPool
 from curvesim.pool.sim_interface.pool import SimCurvePool
+from curvesim.pool.cryptoswap.pool import CurveCryptoPool
 from curvesim.pool.stableswap.metapool import CurveMetaPool
 from curvesim.pool.stableswap.pool import CurvePool
 from curvesim.pool_data.metadata import PoolMetaData
@@ -280,8 +281,7 @@ def test_cryptopool():
     assert metadata.chain == "mainnet"
 
     assert metadata.pool_type == CurveCryptoPool
-    # TODO: create sim pool for crypto pools
-    # assert metadata.sim_pool_type == SimCurveCryptoPool
+    assert metadata.sim_pool_type == SimCurveCryptoPool
 
     assert metadata.coin_names == ["STG", "USDC"]
     assert metadata.coins == [
