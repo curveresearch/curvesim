@@ -66,9 +66,9 @@ def indices(sim_pool, *assets):
 
 def duplicates(sim_pool, *assets):
     """Determines whether assets contains duplicate symbols/indices"""
-    indices = indices(sim_pool, *assets)
+    asset_indices = indices(sim_pool, *assets)
 
-    return len(indices) != len(set(indices))
+    return len(asset_indices) != len(set(asset_indices))
 
 
 def test_asset_indices(sim_pool):
@@ -126,12 +126,17 @@ def test_get_asset_indices(sim_pool):
                 assert isinstance(err, CurvesimValueError)
 
 
-# test cases where asset_names and asset_balances are unequal length
-
-# setter
+# how we would test the asset_names setter
 # for breaking tests, check that the appropriate exception is raised (may need to use multiple functions in a
 # specific order to get the right error)
 
-# non-str input (e.g. ints that are and aren't duplicates of indices of the str)
-# change number of symbols after initial set
+# post-init set with duplicate symbols
+
 # initial set that's longer/shorter than _asset_balances
+# delete self.asset_names -> "initial" set immediately after
+
+# change number of symbols after initial set (no matter if valid length or invalid length)
+# assert isinstance(err, SimPoolError)
+
+# regular set to different symbols
+# check that get_asset_indices returns something different from before

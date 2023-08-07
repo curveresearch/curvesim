@@ -68,7 +68,8 @@ class SimCurveMetaPool(SimPool, AssetIndicesMixin, CurveMetaPool):
             or len(self._basepool_names) != len(basepool_names)
         ):
             raise SimPoolError(
-                "SimCurveMetaPool must have a consistent number of metapool asset names and basepool asset names, separately."
+                "SimCurveMetaPool must have a consistent number of metapool asset names and \
+                    basepool asset names, separately."
             )
 
         if not hasattr(self, "asset_names"):
