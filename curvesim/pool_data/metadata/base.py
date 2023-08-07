@@ -2,10 +2,31 @@ from abc import ABC, abstractmethod
 
 
 class PoolMetaDataInterface(ABC):
+    """
+    Interface for container holding a pool's metadata.
+
+    Besides easy to access attributes, it provides `init_kwargs`, which
+    are keyword arguments to use in a pool's `__init__`.  This is useful
+    for factory functions.
+    """
+
     @abstractmethod
     def init_kwargs(self, balanced=True, balanced_base=True, normalize=True):
         """
         Returns a dictionary of kwargs used to initialize the pool.
+
+        Parameters
+        ----------
+        balanced: bool
+            Will derive balances corresponding to the pool's total value so
+            that it is balanced.
+        balanced_base: bool
+            For metapools only.
+
+            Will derive balances corresponding to the basepool's total value so
+            that it is balanced.
+        normalize: bool
+            Will put the balances in units of D, e.g. 18 decimals.
 
         Returns
         -------
@@ -123,6 +144,13 @@ class PoolMetaDataInterface(ABC):
 
 
 class PoolMetaDataBase(PoolMetaDataInterface, ABC):
+    """
+    Base class for pool metadata containers.
+
+    Provides a very simple and generic implementation that is used
+    by simulation pipelines.
+    """
+
     def __init__(self, metadata_dict, pool_type, sim_pool_type):
         self._dict = metadata_dict
         self._pool_type = pool_type
