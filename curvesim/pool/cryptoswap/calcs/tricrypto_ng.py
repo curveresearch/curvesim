@@ -1,3 +1,8 @@
+"""
+Auxiliary calculations needed for the tricrypto implementation.
+
+This is loosely the python counterpart to the Tricrypto math contract.
+"""
 from math import isqrt
 from typing import List
 
@@ -23,6 +28,7 @@ MIN_A: int = N_COINS**N_COINS * A_MULTIPLIER // 100
 MAX_A: int = N_COINS**N_COINS * A_MULTIPLIER * 1000
 
 
+# pylint: disable-next=too-many-locals,too-many-statements,too-many-branches
 def get_y(  # noqa: complexity: 18
     ANN: int,
     gamma: int,
@@ -206,7 +212,7 @@ def sign(x):
     return -1 if x < 0 else 1
 
 
-def _newton_y(  # noqa: complexity: 11
+def _newton_y(  # noqa: complexity: 11  # pylint: disable=duplicate-code,too-many-locals
     ANN: int,
     gamma: int,
     x: List[int],
@@ -381,7 +387,7 @@ def get_p(
     ]
 
 
-def newton_D(
+def newton_D(  # pylint: disable=too-many-locals
     ANN: int,
     gamma: int,
     x_unsorted: List[int],
@@ -433,7 +439,7 @@ def newton_D(
 
     D = mpz(D)
 
-    for i in range(255):
+    for _ in range(255):
         D_prev = D
 
         # K0 = 10**18 * x[0] * N_COINS / D * x[1] * N_COINS / D * x[2] * N_COINS / D
@@ -463,7 +469,8 @@ def newton_D(
         #      10**15 * 10**18 + 1, since we get that in get_y which is called
         #    with newton_D. _g1k0 > 0, so the entire expression can be unsafe.
 
-        # neg_fprime: int = (S + S * mul2 / 10**18) + mul1 * N_COINS / K0 - mul2 * D / 10**18
+        # neg_fprime: int = (S + S * mul2 / 10**18)
+        #                   + mul1 * N_COINS / K0 - mul2 * D / 10**18
         neg_fprime = (
             (S + S * mul2 // 10**18) + mul1 * N_COINS // K0 - mul2 * D // 10**18
         )
@@ -628,18 +635,22 @@ def wad_exp(x: int) -> int:
     if x <= -42139678854452767551:
         return 0
 
-    # When the result is "> (2 ** 255 - 1) / 1e18" we cannot represent it as a signed integer.
+    # When the result is "> (2 ** 255 - 1) / 1e18" we cannot represent it
+    # as a signed integer.
     # This happens when "x >= floor(log((2 ** 255 - 1) / 1e18) * 1e18) ~ 135".
     assert x < 135305999368893231589, "wad_exp overflow"
 
-    # `x` is now in the range "(-42, 136) * 1e18". Convert to "(-42, 136) * 2 ** 96" for higher
-    # intermediate precision and a binary base. This base conversion is a multiplication with
+    # `x` is now in the range "(-42, 136) * 1e18".
+    # Convert to "(-42, 136) * 2 ** 96" for higher intermediate precision
+    # and a binary base. This base conversion is a multiplication with
     # "1e18 / 2 ** 96 = 5 ** 18 / 2 ** 78".
     value = (x << 78) // 5**18
 
-    # Reduce the range of `x` to "(-½ ln 2, ½ ln 2) * 2 ** 96" by factoring out powers of two
-    # so that "exp(x) = exp(x') * 2 ** k", where `k` is a signer integer. Solving this gives
-    # "k = round(x / log(2))" and "x' = x - k * log(2)". Thus, `k` is in the range "[-61, 195]".
+    # Reduce the range of `x` to "(-½ ln 2, ½ ln 2) * 2 ** 96" by
+    # factoring out powers of two so that "exp(x) = exp(x') * 2 ** k",
+    # where `k` is a signer integer. Solving this gives
+    # "k = round(x / log(2))" and "x' = x - k * log(2)".
+    # Thus, `k` is in the range "[-61, 195]".
     k: int = ((value << 96) // 54916777467707473351141471128 + 2**95) >> 96
     value = value - (k * 54916777467707473351141471128)
 

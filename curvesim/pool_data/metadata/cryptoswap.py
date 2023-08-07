@@ -2,6 +2,8 @@ from .base import PoolMetaDataBase
 
 
 class CryptoswapMetaData(PoolMetaDataBase):
+    """Specific implementation of the `PoolMetaDataInterface` for Cryptoswap."""
+
     def init_kwargs(self, balanced=True, balanced_base=True, normalize=True):
         data = self._dict
 

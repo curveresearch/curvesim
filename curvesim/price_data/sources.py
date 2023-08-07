@@ -1,3 +1,6 @@
+"""
+Helper functions for the different data sources we pull from.
+"""
 from datetime import datetime, timezone
 
 from curvesim.logging import get_logger
@@ -8,6 +11,26 @@ logger = get_logger(__name__)
 
 
 def coingecko(coins, chain="mainnet", days=60, end=None):
+    """
+    Fetch CoinGecko price data for specified coins.
+
+    Parameters
+    ----------
+    coins : list of str
+        List of coin symbols to fetch data for.
+    chain : str, optional
+        Blockchain network to consider. Default is "mainnet".
+    days : int, optional
+        Number of past days to fetch data for. Default is 60.
+    end : int, optional
+        End timestamp for the data in seconds since epoch.
+        If None, the end time will be the current time. Default is None.
+
+    Returns
+    -------
+    tuple of (dict, dict, int)
+        Tuple of prices, volumes, and pzero (fixed as 0 for this function).
+    """
     logger.info("Fetching CoinGecko price data...")
     prices, volumes = _coingecko.pool_prices(coins, "usd", days, chain=chain, end=end)
     pzero = 0
@@ -16,6 +39,24 @@ def coingecko(coins, chain="mainnet", days=60, end=None):
 
 
 def local(coins, data_dir="data", end=None):
+    """
+    Load data for specified coins from a local directory.
+
+    Parameters
+    ----------
+    coins : list of str
+        List of coin symbols to load data for.
+    data_dir : str, optional
+        Path to the directory containing the data files. Default is "data".
+    end : int, optional
+        End timestamp for the data in seconds since epoch.
+        If None, the end time will be the current time. Default is None.
+
+    Returns
+    -------
+    tuple of (dict, dict, int)
+        Tuple of prices, volumes, and pzero.
+    """
     logger.info("Using local data...")
     if end is not None:
         t_end = datetime.fromtimestamp(end, tz=timezone.utc)

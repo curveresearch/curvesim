@@ -4,6 +4,8 @@ from .base import PoolMetaDataBase
 
 
 class StableswapMetaData(PoolMetaDataBase):
+    """Specific implementation of the `PoolMetaDataInterface` for Stableswap."""
+
     def init_kwargs(self, balanced=True, balanced_base=True, normalize=True):
         data = self._dict
 

@@ -1,6 +1,11 @@
+"""
+Module to house the `StateLog`, a generic class to record changing pool states
+during simulations.
+"""
 from pandas import DataFrame, concat
 
 from curvesim.metrics.base import PoolMetric
+
 from .pool_parameters import get_pool_parameters
 from .pool_state import get_pool_state
 
