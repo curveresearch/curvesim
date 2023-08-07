@@ -31,9 +31,7 @@ def compute_volume_multipliers(pool_vol, market_vol, n, pool_type, mode=1):
         Modes for computing the volume multiplier:
 
         1: limits trade volumes proportionally to market volume for each pair
-
         2: limits trade volumes equally across pairs
-
         3: mode 2 for trades with meta-pool asset, mode 1 for basepool-only trades
 
     """
@@ -51,11 +49,11 @@ def compute_volume_multipliers(pool_vol, market_vol, n, pool_type, mode=1):
     vol_mult = get_vol_mult(pool_vol_array, market_vol_array, n, mode)
     vol_mult_dict = dict(zip(pairs, vol_mult))
 
-    logger.info("Volume Multipliers: %s", format_info_str(vol_mult_dict))
+    logger.info("Volume Multipliers: %s", _format_info_str(vol_mult_dict))
     return vol_mult_dict
 
 
-def pool_vol_mult(pool_vol, market_vol, n, mode):
+def _pool_vol_mult(pool_vol, market_vol, n, mode):
     if mode == 1:
         vol_mult = [pool_vol / market_vol.sum()] * n
 
@@ -72,7 +70,7 @@ def pool_vol_mult(pool_vol, market_vol, n, mode):
     return vol_mult
 
 
-def metapool_vol_mult(pool_vol, market_vol, n, mode):
+def _metapool_vol_mult(pool_vol, market_vol, n, mode):
     pool_vol_meta = pool_vol[0]
     pool_vol_base = pool_vol[1]
     mkt_vol_meta = market_vol[0 : n[1]]
@@ -104,10 +102,10 @@ def metapool_vol_mult(pool_vol, market_vol, n, mode):
     return vol_mult
 
 
-def format_info_str(vol_mult_dict):
+def _format_info_str(vol_mult_dict):
     info = [f"{base}/{quote}: {mult}" for (base, quote), mult in vol_mult_dict.items()]
     new_line = "\n    "
     return new_line + new_line.join(info)
 
 
-_pool_functions = {CurvePool: pool_vol_mult, CurveMetaPool: metapool_vol_mult}
+_pool_functions = {CurvePool: _pool_vol_mult, CurveMetaPool: _metapool_vol_mult}

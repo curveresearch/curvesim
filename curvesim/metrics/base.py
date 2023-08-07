@@ -11,7 +11,7 @@ __all__ = [
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
 
-from pandas import DataFrame, Series, MultiIndex
+from pandas import DataFrame, MultiIndex, Series
 
 from curvesim.exceptions import MetricError
 from curvesim.utils import cache, override
