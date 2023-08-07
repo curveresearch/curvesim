@@ -97,6 +97,7 @@ class SimCurveCryptoPool(SimPool, AssetIndicesMixin, CurveCryptoPool):
         amount_out, fee = self.exchange(i, j, size)
         return amount_out, fee
 
+    # pylint: disable-next=duplicate-code
     def get_in_amount(self, coin_in, coin_out, out_balance_perc):
         """
         Get the approximate in-amount to achieve the given percentage
