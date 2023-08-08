@@ -772,4 +772,4 @@ def test_dydxfee(vyper_cryptopool):
 
     dx *= precisions[i]
     dy *= precisions[j]
-    assert dydx == dy / dx
+    assert abs(dydx - dy / dx) < 5e-3

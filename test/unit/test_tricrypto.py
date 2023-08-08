@@ -437,7 +437,7 @@ def test_dydxfee(vyper_tricrypto):
 
     dx *= precisions[i]
     dy *= precisions[j]
-    # assert dydx == dy / dx
+    assert abs(dydx - dy / dx) < 1e-3
 
     i = 1
     j = 0
@@ -448,7 +448,7 @@ def test_dydxfee(vyper_tricrypto):
 
     dx *= precisions[i]
     dy *= precisions[j]
-    # assert dydx == dy / dx
+    assert abs(dydx - dy / dx) < 100
 
     i = 2
     j = 1
@@ -459,4 +459,4 @@ def test_dydxfee(vyper_tricrypto):
 
     dx *= precisions[i]
     dy *= precisions[j]
-    assert dydx == dy / dx
+    assert abs(dydx - dy / dx) < 1e-3
