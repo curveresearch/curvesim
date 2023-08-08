@@ -755,3 +755,17 @@ def test_multiple_exchange_with_repeg(
         assert pool.price_scale == expected_price_scale
 
         boa.env.time_travel(time_delta)
+
+
+def test_dydxfee(vyper_cryptopool):
+    pool = initialize_pool(vyper_cryptopool)
+    i = 0
+    j = 1
+    dydx = pool.dydx(i, j)
+    dx = 10**14
+    dy = vyper_cryptopool.exchange(i, j, dx, 0)
+    dy *= 10**12
+
+    print(pool.price_scale)
+
+    assert dydx == dy / dx
