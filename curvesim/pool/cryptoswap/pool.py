@@ -1106,7 +1106,10 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
             # TODO: handle other case
             ...
 
-        # TODO: add fee
+        if use_fee:
+            fee = self._fee(xp)
+            dydx *= 1 - fee / 10**10
+
         return dydx
 
 

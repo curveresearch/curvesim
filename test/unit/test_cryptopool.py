@@ -761,11 +761,9 @@ def test_dydxfee(vyper_cryptopool):
     pool = initialize_pool(vyper_cryptopool)
     i = 0
     j = 1
-    dydx = pool.dydx(i, j)
+    dydx = pool.dydxfee(i, j)
     dx = 10**14
     dy = vyper_cryptopool.exchange(i, j, dx, 0)
     dy *= 10**12
-
-    print(pool.price_scale)
 
     assert dydx == dy / dx
