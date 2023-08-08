@@ -1093,10 +1093,10 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         A_multiplier = 10**4
         gamma = self.gamma
 
-        K0 = n**n * prod(xp) / D**n
+        K0 = 10**18 * n**n * prod(xp) / D**n
 
-        coeff = gamma**2 * A / (D * (1 + gamma - K0) ** 2) / A_multiplier
-        frac = (1 + gamma + K0) / (1 + gamma - K0) * (sum(xp) - D)
+        coeff = gamma**2 * A / (D * (10**18 + gamma - K0) ** 2) / A_multiplier
+        frac = (10**18 + gamma + K0) * (sum(xp) - D) / (10**18 + gamma - K0)
         dydx = x_j * (1 + coeff * (x_i + frac)) / (x_i * (1 + coeff * (x_j + frac)))
 
         if j > 0:
@@ -1108,7 +1108,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
 
         if use_fee:
             fee = self._fee(xp)
-            dydx *= 1 - fee / 10**10
+            dydx = dydx - dydx * fee / 10**10
 
         return dydx
 
