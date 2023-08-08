@@ -419,3 +419,44 @@ def test__newton_y(vyper_tricrypto, A, gamma, x0, x1, x2, pair, dx_perc):
     y = _newton_y(A, gamma, xp, D, j)
 
     assert y == expected_y
+
+
+def test_dydxfee(vyper_tricrypto):
+    pool = initialize_pool(vyper_tricrypto)
+
+    # USDT, WBTC, WETH
+    decimals = [6, 8, 18]
+    precisions = [10 ** (18 - d) for d in decimals]
+
+    i = 0
+    j = 1
+    dydx = pool.dydxfee(i, j)
+    dx = 10**6
+    dy = vyper_tricrypto.exchange(i, j, dx, 0)
+    pool.exchange(i, j, dx, 0)
+
+    dx *= precisions[i]
+    dy *= precisions[j]
+    # assert dydx == dy / dx
+
+    i = 1
+    j = 0
+    dydx = pool.dydxfee(i, j)
+    dx = 10**8
+    dy = vyper_tricrypto.exchange(i, j, dx, 0)
+    pool.exchange(i, j, dx, 0)
+
+    dx *= precisions[i]
+    dy *= precisions[j]
+    # assert dydx == dy / dx
+
+    i = 2
+    j = 1
+    dydx = pool.dydxfee(i, j)
+    dx = 10**18
+    dy = vyper_tricrypto.exchange(i, j, dx, 0)
+    pool.exchange(i, j, dx, 0)
+
+    dx *= precisions[i]
+    dy *= precisions[j]
+    assert dydx == dy / dx

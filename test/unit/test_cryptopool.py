@@ -759,11 +759,17 @@ def test_multiple_exchange_with_repeg(
 
 def test_dydxfee(vyper_cryptopool):
     pool = initialize_pool(vyper_cryptopool)
+
+    # STG, USDC
+    decimals = [18, 6]
+    precisions = [10 ** (18 - d) for d in decimals]
+
     i = 0
     j = 1
     dydx = pool.dydxfee(i, j)
     dx = 10**14
     dy = vyper_cryptopool.exchange(i, j, dx, 0)
-    dy *= 10**12
 
+    dx *= precisions[i]
+    dy *= precisions[j]
     assert dydx == dy / dx
