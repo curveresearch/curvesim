@@ -1102,9 +1102,9 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         if j > 0:
             price_scale = self.price_scale[j - 1]
             dydx = dydx * 10**18 / price_scale
-        else:
-            # TODO: handle other case
-            ...
+        if i > 0:
+            price_scale = self.price_scale[i - 1]
+            dydx = dydx * price_scale / 10**18
 
         if use_fee:
             fee = self._fee(xp)
