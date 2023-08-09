@@ -1,4 +1,3 @@
-
 """
 Getters for pool parameters of different pool types.
 
@@ -6,10 +5,10 @@ Used for the `StateLog`.
 """
 
 from curvesim.pool.sim_interface import (
+    SimCurveCryptoPool,
     SimCurveMetaPool,
     SimCurvePool,
     SimCurveRaiPool,
-    SimCurveCryptoPool,
 )
 
 

@@ -1,8 +1,8 @@
 from curvesim.pool.sim_interface import (
+    SimCurveCryptoPool,
     SimCurveMetaPool,
     SimCurvePool,
     SimCurveRaiPool,
-    SimCurveCryptoPool,
 )
 
 

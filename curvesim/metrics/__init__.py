@@ -21,9 +21,9 @@ Metrics recorded during simulations. The submodule includes:
 
 __all__ = ["SimResults", "StateLog", "init_metrics", "make_results", "metrics"]
 
-from .state_log import StateLog
-from .results import SimResults, make_results
 from . import metrics
+from .results import SimResults, make_results
+from .state_log import StateLog
 
 
 def init_metrics(metric_classes, **kwargs):
