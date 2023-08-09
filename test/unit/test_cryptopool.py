@@ -766,10 +766,11 @@ def test_dydxfee(vyper_cryptopool):
 
     i = 0
     j = 1
+    dx = 10**18
+
     dydx = pool.dydxfee(i, j)
-    dx = 10**14
     dy = vyper_cryptopool.exchange(i, j, dx, 0)
 
     dx *= precisions[i]
     dy *= precisions[j]
-    assert abs(dydx - dy / dx) < 5e-3
+    assert abs(dydx - dy / dx) < 1e-6
