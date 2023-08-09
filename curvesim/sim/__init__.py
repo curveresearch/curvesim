@@ -15,6 +15,7 @@ from curvesim.logging import get_logger
 from curvesim.pipelines.vol_limited_arb import DEFAULT_PARAMS
 from curvesim.pipelines.vol_limited_arb import pipeline as volume_limited_arbitrage
 from curvesim.pool_data import get_metadata
+from curvesim.utils import get_pairs
 
 logger = get_logger(__name__)
 
@@ -114,12 +115,15 @@ def autosim(
     data_dir: str, default='data'
         Relative path to saved data folder.
 
-    vol_mult : float or numpy.ndarray, default computed from data
+    vol_mult : dict, float, or int, default computed from data
         Value(s) multiplied by market volume to specify volume limits
         (overrides vol_mode).
 
-        Can be a scalar or vector with values for each pairwise coin
-        combination.
+        dict should map from trade-pair tuples to values, e.g.:
+
+        .. code-block::
+
+            {('DAI', 'USDC'): 0.1, ('DAI', 'USDT'): 0.1, ('USDC', 'USDT'): 0.1}
 
     vol_mode : int, default=1
         Modes for limiting trade volume.
@@ -138,7 +142,7 @@ def autosim(
     assert any([pool, pool_metadata]), "Must input 'pool' or 'pool_metadata'"
 
     pool_metadata = pool_metadata or get_metadata(pool, chain)
-    p_var, p_fixed, kwargs = _parse_arguments(**kwargs)
+    p_var, p_fixed, kwargs = _parse_arguments(pool_metadata, **kwargs)
 
     results = volume_limited_arbitrage(
         pool_metadata,
@@ -151,7 +155,7 @@ def autosim(
     return results
 
 
-def _parse_arguments(**kwargs):
+def _parse_arguments(pool_metadata, **kwargs):
     pool_args = ["A", "D", "x", "p", "fee", "fee_mul", "tokens", "admin_fee"]
     pool_args += [arg + "_base" for arg in pool_args[:-1]]
 
@@ -173,6 +177,10 @@ def _parse_arguments(**kwargs):
 
             else:
                 raise TypeError(f"Argument {key} must be an int or iterable of ints")
+
+        elif key == "vol_mult" and isinstance(val, (int, float)):
+            coin_pairs = get_pairs(pool_metadata.coin_names)
+            rest_of_params[key] = dict.fromkeys(coin_pairs, val)
 
         else:
             rest_of_params[key] = val
