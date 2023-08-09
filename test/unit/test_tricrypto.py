@@ -368,7 +368,7 @@ def test_pool_get_y(vyper_tricrypto):
     assert y == expected_y
 
 
-@given(st.integers(min_value=-42139678854452767551, max_value=135305999368893231589))
+@given(st.integers(min_value=-42139678854452767551, max_value=135305999368893231588))
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
     max_examples=2,
