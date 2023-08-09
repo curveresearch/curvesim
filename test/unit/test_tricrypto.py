@@ -428,6 +428,9 @@ def test_dydxfee(vyper_tricrypto):
     decimals = [6, 8, 18]
     precisions = [10 ** (18 - d) for d in decimals]
 
+    print("WBTC price:", pool.price_scale[0] / 10**18)
+    print("WETH price:", pool.price_scale[1] / 10**18)
+
     i = 0
     j = 1
     dydx = pool.dydxfee(i, j)
@@ -437,18 +440,18 @@ def test_dydxfee(vyper_tricrypto):
 
     dx *= precisions[i]
     dy *= precisions[j]
-    assert abs(dydx - dy / dx) < 1e-3
+    assert abs(dydx - dy / dx) < 1e-4
 
     i = 1
     j = 0
     dydx = pool.dydxfee(i, j)
-    dx = 10**8
+    dx = 10**2
     dy = vyper_tricrypto.exchange(i, j, dx, 0)
     pool.exchange(i, j, dx, 0)
 
     dx *= precisions[i]
     dy *= precisions[j]
-    assert abs(dydx - dy / dx) < 100
+    assert abs(dydx - dy / dx) < 1
 
     i = 2
     j = 1
@@ -459,4 +462,4 @@ def test_dydxfee(vyper_tricrypto):
 
     dx *= precisions[i]
     dy *= precisions[j]
-    assert abs(dydx - dy / dx) < 1e-3
+    assert abs(dydx - dy / dx) < 1e-5
