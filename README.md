@@ -73,7 +73,7 @@
 | curvesim/pool/stableswap/raipool.py                                 |       14 |        8 |        2 |        0 |     38% |35-41, 44-46 |
 | curvesim/pool\_data/\_\_init\_\_.py                                 |       12 |        3 |        0 |        0 |     75% |     41-44 |
 | curvesim/pool\_data/cache.py                                        |       60 |       42 |       18 |        2 |     26% |35-51, 62-63, 69-70, 73->72, 94-98, 101-117, 120->119, 143-147, 150-158 |
-| curvesim/pool\_data/metadata/\_\_init\_\_.py                        |       35 |        5 |        6 |        1 |     85% |51, 62-63, 68-69 |
+| curvesim/pool\_data/metadata/\_\_init\_\_.py                        |       35 |        5 |        6 |        1 |     85% |55, 66-67, 72-73 |
 | curvesim/pool\_data/metadata/base.py                                |       26 |        0 |        8 |        4 |     88% |160->159, 164->163, 168->167, 172->171 |
 | curvesim/pool\_data/metadata/cryptoswap.py                          |       25 |        0 |       14 |        3 |     92% |45->44, 49->48, 53->52 |
 | curvesim/pool\_data/metadata/stableswap.py                          |       45 |        0 |       24 |        3 |     96% |49->48, 60->59, 71->70 |
