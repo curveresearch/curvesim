@@ -4,6 +4,7 @@ Unit tests for CurveCryptoPool for n = 3
 Tests are against the tricrypto-ng contract.
 """
 import os
+from itertools import permutations
 
 import boa
 from hypothesis import HealthCheck, assume, given, settings
@@ -419,3 +420,33 @@ def test__newton_y(vyper_tricrypto, A, gamma, x0, x1, x2, pair, dx_perc):
     y = _newton_y(A, gamma, xp, D, j)
 
     assert y == expected_y
+
+
+def test_dydxfee(vyper_tricrypto):
+    """Test spot price formula against execution price for small trades."""
+    pool = initialize_pool(vyper_tricrypto)
+
+    # USDT, WBTC, WETH
+    decimals = [6, 8, 18]
+    precisions = [10 ** (18 - d) for d in decimals]
+
+    # print("WBTC price:", pool.price_scale[0] / 10**18)
+    # print("WETH price:", pool.price_scale[1] / 10**18)
+
+    dxs = [
+        10**6,
+        10**4,
+        10**15,
+    ]
+
+    for pair in permutations([0, 1, 2], 2):
+        i, j = pair
+
+        dydx = pool.dydxfee(i, j)
+        dx = dxs[i]
+        dy = vyper_tricrypto.exchange(i, j, dx, 0)
+        pool.exchange(i, j, dx, 0)  # update state to match vyper pool
+
+        dx *= precisions[i]
+        dy *= precisions[j]
+        assert abs(dydx - dy / dx) / (dy / dx) < 1e-4

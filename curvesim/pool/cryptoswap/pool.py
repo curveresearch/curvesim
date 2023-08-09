@@ -2,7 +2,7 @@
 Mainly a module to house the `CryptoPool`, a cryptoswap implementation in Python.
 """
 import time
-from math import isqrt
+from math import isqrt, prod
 from typing import List
 
 from curvesim.exceptions import CalculationError, CryptoPoolError
@@ -1028,6 +1028,89 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         d_token: int = token_supply * D // D0 - token_supply
         d_token -= self._calc_token_fee(amountsp, xp) * d_token // 10**10 + 1
         return d_token
+
+    def dydxfee(self, i, j):
+        """
+        Returns the spot price of i-th coin quoted in terms of j-th coin,
+        i.e. the ratio of output coin amount to input coin amount for
+        an "infinitesimally" small trade.
+
+        Trading fees are deducted.
+
+        Parameters
+        ----------
+        i: int
+            Index of coin to be priced; in a swapping context, this is
+            the "in"-token.
+        j: int
+            Index of quote currency; in a swapping context, this is the
+            "out"-token.
+
+        Returns
+        -------
+        float
+            Price of i-th coin quoted in j-th coin with fees deducted.
+
+        Note
+        ----
+        This is a "view" function; it doesn't change the state of the pool.
+        """
+        return self.dydx(i, j, use_fee=True)
+
+    def dydx(self, i, j, use_fee=False):
+        """
+        Returns the spot price of i-th coin quoted in terms of j-th coin,
+        i.e. the ratio of output coin amount to input coin amount for
+        an "infinitesimally" small trade.
+
+        Defaults to no fees deducted.
+
+        Parameters
+        ----------
+        i: int
+            Index of coin to be priced; in a swapping context, this is
+            the "in"-token.
+        j: int
+            Index of quote currency; in a swapping context, this is the
+            "out"-token.
+
+        Returns
+        -------
+        float
+            Price of i-th coin quoted in j-th coin
+
+        Note
+        ----
+        This is a "view" function; it doesn't change the state of the pool.
+        """
+        xp = self._xp()
+        x_i = xp[i]
+        x_j = xp[j]
+        n = len(xp)
+
+        D = self.D
+        A = self.A
+        A_multiplier = 10**4
+        gamma = self.gamma
+
+        K0 = 10**18 * n**n * prod(xp) / D**n
+
+        coeff = gamma**2 * A / (D * (10**18 + gamma - K0) ** 2) / A_multiplier
+        frac = (10**18 + gamma + K0) * (sum(xp) - D) / (10**18 + gamma - K0)
+        dydx = x_j * (1 + coeff * (x_i + frac)) / (x_i * (1 + coeff * (x_j + frac)))
+
+        if j > 0:
+            price_scale = self.price_scale[j - 1]
+            dydx = dydx * 10**18 / price_scale
+        if i > 0:
+            price_scale = self.price_scale[i - 1]
+            dydx = dydx * price_scale / 10**18
+
+        if use_fee:
+            fee = self._fee(xp)
+            dydx = dydx - dydx * fee / 10**10
+
+        return dydx
 
 
 def _get_unix_timestamp():

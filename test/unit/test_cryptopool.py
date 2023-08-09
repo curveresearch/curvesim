@@ -755,3 +755,23 @@ def test_multiple_exchange_with_repeg(
         assert pool.price_scale == expected_price_scale
 
         boa.env.time_travel(time_delta)
+
+
+def test_dydxfee(vyper_cryptopool):
+    """Test spot price formula against execution price for small trades."""
+    pool = initialize_pool(vyper_cryptopool)
+
+    # STG, USDC
+    decimals = [18, 6]
+    precisions = [10 ** (18 - d) for d in decimals]
+
+    i = 0
+    j = 1
+    dx = 10**18
+
+    dydx = pool.dydxfee(i, j)
+    dy = vyper_cryptopool.exchange(i, j, dx, 0)
+
+    dx *= precisions[i]
+    dy *= precisions[j]
+    assert abs(dydx - dy / dx) < 1e-6
