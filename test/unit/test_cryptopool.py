@@ -758,6 +758,7 @@ def test_multiple_exchange_with_repeg(
 
 
 def test_dydxfee(vyper_cryptopool):
+    """Test spot price formula against execution price for small trades."""
     pool = initialize_pool(vyper_cryptopool)
 
     # STG, USDC

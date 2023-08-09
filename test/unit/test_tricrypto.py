@@ -423,6 +423,7 @@ def test__newton_y(vyper_tricrypto, A, gamma, x0, x1, x2, pair, dx_perc):
 
 
 def test_dydxfee(vyper_tricrypto):
+    """Test spot price formula against execution price for small trades."""
     pool = initialize_pool(vyper_tricrypto)
 
     # USDT, WBTC, WETH
