@@ -24,7 +24,7 @@ from curvesim.pool.sim_interface import (
     SimCurvePool,
     SimCurveRaiPool,
 )
-from curvesim.utils import get_pairs
+from curvesim.utils import cache, get_pairs
 
 from .base import Metric, PoolMetric, PoolPricingMetric, PricingMetric
 
@@ -153,6 +153,7 @@ class PoolVolume(PoolPricingMetric):
     """
 
     @property
+    @cache
     def pool_config(self):
         base = {
             "functions": {"summary": {"pool_volume": "sum"}},
@@ -264,6 +265,7 @@ class PoolBalance(PoolMetric):
     """
 
     @property
+    @cache
     def pool_config(self):
         ss_config = {
             "functions": {
@@ -332,6 +334,7 @@ class PoolValue(PoolPricingMetric):
     """
 
     @property
+    @cache
     def pool_config(self):
         plot = {
             "metrics": {
@@ -521,6 +524,7 @@ class PriceDepth(PoolMetric):
     __slots__ = ["_factor"]
 
     @property
+    @cache
     def pool_config(self):
         ss_config = {
             "functions": {

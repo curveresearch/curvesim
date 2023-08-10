@@ -356,11 +356,11 @@ def get_coin_pairs(prices):
     Returns the coin pairs available in the price data.
     """
     if isinstance(prices, DataFrame):
-        return prices.columns
+        return tuple(prices.columns)
     if isinstance(prices, Series):
-        return prices.index
+        return tuple(prices.index)
     if isinstance(prices, dict):
-        return prices.keys()
+        return tuple(prices.keys())
 
     raise MetricError(
         f"Argument 'price' must be DataFrame, Series, or dict, not {type(prices)}"

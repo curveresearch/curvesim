@@ -4,6 +4,7 @@ Getters for pool parameters of different pool types.
 Used for the `StateLog`.
 """
 
+from curvesim.exceptions import UnregisteredPoolError
 from curvesim.pool.sim_interface import (
     SimCurveCryptoPool,
     SimCurveMetaPool,
@@ -18,7 +19,12 @@ def get_pool_parameters(pool):
     specified in the `pool_parameter_functions` dict. Returned values are recorded
     at the start of each simulation run.
     """
-    return pool_parameter_functions[type(pool)](pool)
+    try:
+        return pool_parameter_functions[type(pool)](pool)
+    except KeyError as e:
+        raise UnregisteredPoolError(
+            f"Parameter getter not implemented for pool type '{type(pool)}'."
+        ) from e
 
 
 def get_cryptoswap_pool_params(pool):
