@@ -63,8 +63,8 @@ class SimCurveCryptoPool(SimPool, AssetIndicesMixin, CurveCryptoPool):
         float
             Price of `coin_in` quoted in `coin_out`
         """
-        # need to implement a dydxfee equivalent on the cryptopool
-        raise SimPoolError("`price` not implemented for SimCurveCryptoPool.")
+        i, j = self.get_asset_indices(coin_in, coin_out)
+        return self.dydx(i, j, use_fee=use_fee)
 
     @override
     def trade(self, coin_in, coin_out, size):
