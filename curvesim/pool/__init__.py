@@ -236,6 +236,7 @@ def get_sim_pool(
         )
 
     init_kwargs = pool_metadata.init_kwargs(balanced, balanced_base, normalize=True)
+    print(init_kwargs)
 
     pool_type = pool_metadata.sim_pool_type
 
