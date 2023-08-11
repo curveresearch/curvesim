@@ -48,8 +48,9 @@ def get_arb_trades(pool, prices):
 
     def post_trade_price_error(dx, coin_in, coin_out, price_target):
         with pool.use_snapshot_context():
+            dx = int(dx)
             if dx > 0:
-                pool.trade(coin_in, coin_out, int(dx))
+                pool.trade(coin_in, coin_out, dx)
             price = pool.price(coin_in, coin_out, use_fee=True)
 
         return price - price_target
