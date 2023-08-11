@@ -65,3 +65,11 @@ class SimPoolError(CurvesimException):
 
 class ParameterSamplerError(CurvesimException):
     """Error using a parameter sampler."""
+
+
+class StateLogError(CurvesimException):
+    """Error using a state log (metrics.StateLog)."""
+
+
+class UnregisteredPoolError(StateLogError):
+    """Error raised when a pool type is not recognized by the metrics framework."""

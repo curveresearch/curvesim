@@ -327,7 +327,7 @@ class PricingMixin:
             Symbol for the "in" coin; the "base" currency
         quote : str
             Symbol for the "out" coin; the "quote" currency
-        prices : pandas.DataFrame or pandas.Series
+        prices : pandas.DataFrame, pandas.Series, or dict
             Market prices for each pair. In the simulator context, this is provided on
             each iteration of the :mod:`price_sampler`.
 
@@ -337,12 +337,7 @@ class PricingMixin:
             The price of the "base" coin, quoted in the "quote" coin.
 
         """
-        try:
-            coin_pairs = getattr(prices, pandas_coin_pair_attr[type(prices)])
-        except KeyError as e:
-            raise MetricError(
-                f"Argument 'price' must be DataFrame or Series, not {type(prices)}"
-            ) from e
+        coin_pairs = get_coin_pairs(prices)
 
         if base == quote:
             return 1
@@ -354,6 +349,22 @@ class PricingMixin:
 
 
 pandas_coin_pair_attr = {DataFrame: "columns", Series: "index"}
+
+
+def get_coin_pairs(prices):
+    """
+    Returns the coin pairs available in the price data.
+    """
+    if isinstance(prices, DataFrame):
+        return tuple(prices.columns)
+    if isinstance(prices, Series):
+        return tuple(prices.index)
+    if isinstance(prices, dict):
+        return tuple(prices.keys())
+
+    raise MetricError(
+        f"Argument 'price' must be DataFrame, Series, or dict, not {type(prices)}"
+    )
 
 
 def get_numeraire(coins):

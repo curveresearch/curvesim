@@ -1,11 +1,11 @@
-from pandas import DataFrame
 import pytest
+from pandas import DataFrame
 
 from curvesim.pool.sim_interface import (
+    SimCurveCryptoPool,
+    SimCurveMetaPool,
     SimCurvePool,
     SimCurveRaiPool,
-    SimCurveMetaPool,
-    SimCurveCryptoPool,
 )
 
 

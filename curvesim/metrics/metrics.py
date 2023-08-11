@@ -6,6 +6,7 @@ Specific metric classes for use in simulations.
 __all__ = [
     "ArbMetrics",
     "PoolBalance",
+    "PoolVolume",
     "PoolValue",
     "PriceDepth",
     "Timestamp",
@@ -17,8 +18,13 @@ from altair import Axis, Scale
 from numpy import array, exp, log, timedelta64
 from pandas import DataFrame, concat
 
-from curvesim.pool.sim_interface import SimCurveMetaPool, SimCurvePool, SimCurveRaiPool
-from curvesim.utils import get_pairs
+from curvesim.pool.sim_interface import (
+    SimCurveCryptoPool,
+    SimCurveMetaPool,
+    SimCurvePool,
+    SimCurveRaiPool,
+)
+from curvesim.utils import cache, get_pairs
 
 from .base import Metric, PoolMetric, PoolPricingMetric, PricingMetric
 
@@ -141,12 +147,13 @@ class ArbMetrics(PricingMetric):
         return DataFrame(profit).set_index("timestamp")
 
 
-class PoolVolume(PoolMetric):
+class PoolVolume(PoolPricingMetric):
     """
     Records total trade volume for each timestamp.
     """
 
     @property
+    @cache
     def pool_config(self):
         base = {
             "functions": {"summary": {"pool_volume": "sum"}},
@@ -171,12 +178,24 @@ class PoolVolume(PoolMetric):
             SimCurvePool: self.get_stableswap_pool_volume,
             SimCurveMetaPool: self.get_stableswap_metapool_volume,
             SimCurveRaiPool: self.get_stableswap_metapool_volume,
+            SimCurveCryptoPool: self.get_cryptoswap_pool_volume,
+        }
+
+        units = {
+            SimCurvePool: "(of Any Coin)",
+            SimCurveMetaPool: "(of Any Coin)",
+            SimCurveRaiPool: "(of Any Coin)",
+            SimCurveCryptoPool: f"(in {self.numeraire})",
         }
 
         config = {}
-        for pool, fn in functions.items():
-            config[pool] = deepcopy(base)
-            config[pool]["functions"]["metrics"] = fn
+        for pool in functions:
+            cfg = deepcopy(base)
+            cfg["functions"]["metrics"] = functions[pool]
+            _units = units[pool]
+            cfg["plot"]["metrics"]["pool_volume"]["title"] = "Daily Volume " + _units
+            cfg["plot"]["summary"]["pool_volume"]["title"] = "Total Volume " + _units
+            config[pool] = cfg
 
         return config
 
@@ -186,7 +205,8 @@ class PoolVolume(PoolMetric):
         """
         trade_data = kwargs["trade_data"]
 
-        def per_timestamp_function(trades):
+        def per_timestamp_function(trade_data):
+            trades = trade_data.trades
             return sum(trade.amount_in for trade in trades) / 10**18
 
         return self._get_volume(trade_data, per_timestamp_function)
@@ -200,18 +220,39 @@ class PoolVolume(PoolMetric):
 
         meta_asset = self._pool.assets.symbols[0]
 
-        def per_timestamp_function(trades):
+        def per_timestamp_function(trade_data):
             volume = 0
-            for trade in trades:
+            for trade in trade_data.trades:
                 if meta_asset in (trade.coin_in, trade.coin_out):
                     volume += trade.amount_in
             return volume / 10**18
 
         return self._get_volume(trade_data, per_timestamp_function)
 
+    def get_cryptoswap_pool_volume(self, **kwargs):
+        """
+        Records trade volume for cryptoswap non-meta-pools.
+        """
+        trades = kwargs["trade_data"].trades
+        prices = kwargs["price_sample"].prices
+
+        trade_price_data = concat([trades, prices], axis=1)
+        numeraire = self.numeraire
+
+        def per_timestamp_function(trade_price_data):
+            trades = trade_price_data.trades
+            prices = trade_price_data.prices
+            get_price = self.get_market_price
+
+            volume = 0
+            for trade in trades:
+                volume += trade.amount_in * get_price(trade.coin_in, numeraire, prices)
+            return volume / 10**18
+
+        return self._get_volume(trade_price_data, per_timestamp_function)
+
     def _get_volume(self, trade_data, per_timestamp_function):
-        trades = trade_data.trades
-        volume = trades.apply(per_timestamp_function)
+        volume = trade_data.apply(per_timestamp_function, axis=1)
         results = DataFrame(volume)
         results.columns = ["pool_volume"]
         return results
@@ -224,10 +265,11 @@ class PoolBalance(PoolMetric):
     """
 
     @property
+    @cache
     def pool_config(self):
         ss_config = {
             "functions": {
-                "metrics": self.get_stableswap_balance,
+                "metrics": self.get_pool_balance,
                 "summary": {"pool_balance": ["median", "min"]},
             },
             "plot": {
@@ -257,13 +299,14 @@ class PoolBalance(PoolMetric):
         }
 
         return dict.fromkeys(
-            [SimCurveMetaPool, SimCurvePool, SimCurveRaiPool], ss_config
+            [SimCurveMetaPool, SimCurvePool, SimCurveRaiPool, SimCurveCryptoPool],
+            ss_config,
         )
 
-    def get_stableswap_balance(self, **kwargs):
+    def get_pool_balance(self, **kwargs):
         """
         Computes pool balance metrics for each timestamp in an individual run.
-        Used for any stableswap pool.
+        Used for any Curve pool.
         """
         pool_state = kwargs["pool_state"]
         balance = pool_state.apply(self._compute_stableswap_balance, axis=1)
@@ -272,7 +315,7 @@ class PoolBalance(PoolMetric):
     def _compute_stableswap_balance(self, pool_state_row):
         """
         Computes balance metric for a single row of data (i.e., a single timestamp).
-        Used for any stableswap pool.
+        Used for any Curve pool.
         """
         self.set_pool_state(pool_state_row)
         pool = self._pool
@@ -291,8 +334,9 @@ class PoolValue(PoolPricingMetric):
     """
 
     @property
+    @cache
     def pool_config(self):
-        ss_plot = {
+        plot = {
             "metrics": {
                 "pool_value_virtual": {
                     "title": "Pool Value (Virtual)",
@@ -319,45 +363,73 @@ class PoolValue(PoolPricingMetric):
             },
         }
 
-        ss_summary_fns = {
+        summary_fns = {
             "pool_value_virtual": {
                 "annualized_returns": self.compute_annualized_returns
             },
             "pool_value": {"annualized_returns": self.compute_annualized_returns},
         }
 
-        return {
-            SimCurvePool: {
-                "functions": {
-                    "metrics": self.get_stableswap_pool_value,
-                    "summary": ss_summary_fns,
-                },
-                "plot": ss_plot,
-            },
-            SimCurveMetaPool: {
-                "functions": {
-                    "metrics": self.get_stableswap_metapool_value,
-                    "summary": ss_summary_fns,
-                },
-                "plot": ss_plot,
-            },
-            SimCurveRaiPool: {
-                "functions": {
-                    "metrics": self.get_stableswap_metapool_value,
-                    "summary": ss_summary_fns,
-                },
-                "plot": ss_plot,
-            },
+        base = {
+            "functions": {"summary": summary_fns},
+            "plot": plot,
         }
+
+        functions = {
+            SimCurvePool: self.get_stableswap_pool_value,
+            SimCurveMetaPool: self.get_stableswap_metapool_value,
+            SimCurveRaiPool: self.get_stableswap_metapool_value,
+            SimCurveCryptoPool: self.get_cryptoswap_pool_value,
+        }
+
+        config = {}
+        for pool, fn in functions.items():
+            config[pool] = deepcopy(base)
+            config[pool]["functions"]["metrics"] = fn
+
+        return config
 
     def get_stableswap_pool_value(self, **kwargs):
         """
         Computes all metrics for each timestamp in an individual run.
         Used for non-meta stableswap pools.
         """
-        pool_state = kwargs["pool_state"]
-        price_sample = kwargs["price_sample"]
 
+        return self._get_pool_value(
+            kwargs["pool_state"],
+            kwargs["price_sample"],
+            self._get_stableswap_virtual_value,
+        )
+
+    def get_stableswap_metapool_value(self, **kwargs):
+        """
+        Computes all metrics for each timestamp in an individual run.
+        Used for stableswap metapools.
+        """
+
+        return self._get_metapool_value(
+            kwargs["pool_state"],
+            kwargs["price_sample"],
+            self._get_stableswap_virtual_value,
+        )
+
+    def get_cryptoswap_pool_value(self, **kwargs):
+        """
+        Computes all metrics for each timestamp in an individual run.
+        Used for non-meta cryptoswap pools.
+        """
+
+        return self._get_pool_value(
+            kwargs["pool_state"],
+            kwargs["price_sample"],
+            self._get_cryptoswap_virtual_value,
+        )
+
+    def _get_pool_value(self, pool_state, price_sample, virtual_price_fn):
+        """
+        Computes all metrics for each timestamp in an individual run.
+        Used for non-meta pools.
+        """
         reserves = DataFrame(
             pool_state.balances.to_list(),
             index=pool_state.index,
@@ -367,22 +439,17 @@ class PoolValue(PoolPricingMetric):
         prices = DataFrame(price_sample.prices.to_list(), index=price_sample.index)
 
         pool_value = self._get_value_from_prices(reserves / 10**18, prices)
-        pool_value_virtual = pool_state.apply(
-            self._get_stableswap_virtual_value, axis=1
-        )
+        pool_value_virtual = pool_state.apply(virtual_price_fn, axis=1)
 
         results = concat([pool_value_virtual, pool_value], axis=1)
         results.columns = list(self.config["plot"]["metrics"])
         return results.astype("float64")
 
-    def get_stableswap_metapool_value(self, **kwargs):
+    def _get_metapool_value(self, pool_state, price_sample, virtual_price_fn):
         """
         Computes all metrics for each timestamp in an individual run.
         Used for stableswap metapools.
         """
-        pool_state = kwargs["pool_state"]
-        price_sample = kwargs["price_sample"]
-
         max_coin = self._pool.max_coin
         pool = self._pool
 
@@ -405,9 +472,7 @@ class PoolValue(PoolPricingMetric):
         reserves = concat([meta_reserves.iloc[:, :max_coin], base_reserves], axis=1)
 
         pool_value = self._get_value_from_prices(reserves / 10**18, prices)
-        pool_value_virtual = pool_state.apply(
-            self._get_stableswap_virtual_value, axis=1
-        )
+        pool_value_virtual = pool_state.apply(virtual_price_fn, axis=1)
 
         results = concat([pool_value_virtual, pool_value], axis=1)
         results.columns = list(self.config["plot"]["metrics"])
@@ -434,6 +499,14 @@ class PoolValue(PoolPricingMetric):
         self.set_pool_state(pool_state_row)
         return self._pool.D() / 10**18
 
+    def _get_cryptoswap_virtual_value(self, pool_state_row):
+        """
+        Computes virtual pool value for a single row of data (i.e., a single timestamp).
+        Used for any cryptoswap pool.
+        """
+        self.set_pool_state(pool_state_row)
+        return self._pool._get_xcp(self._pool.D) / 10**18
+
     def compute_annualized_returns(self, data):
         """Computes annualized returns from a series of pool values."""
         year_multipliers = timedelta64(1, "Y") / data.index.to_series().diff()
@@ -451,6 +524,7 @@ class PriceDepth(PoolMetric):
     __slots__ = ["_factor"]
 
     @property
+    @cache
     def pool_config(self):
         ss_config = {
             "functions": {
@@ -478,7 +552,8 @@ class PriceDepth(PoolMetric):
         }
 
         return dict.fromkeys(
-            [SimCurveMetaPool, SimCurvePool, SimCurveRaiPool], ss_config
+            [SimCurveMetaPool, SimCurvePool, SimCurveRaiPool, SimCurveCryptoPool],
+            ss_config,
         )
 
     def __init__(self, pool, factor=10**8, **kwargs):
