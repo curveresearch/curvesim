@@ -45,8 +45,8 @@ class CryptoswapMetaData(PoolMetaDataBase):
                 coin_balances = data["reserves"]["by_coin"]
                 numeraire_balance = coin_balances[0]
                 price_scale = [
-                    numeraire_balance * 10**18 // coin_balances[0],
                     numeraire_balance * 10**18 // coin_balances[1],
+                    numeraire_balance * 10**18 // coin_balances[2],
                 ]
                 kwargs["price_scale"] = price_scale
 
