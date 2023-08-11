@@ -25,16 +25,31 @@ class CryptoswapMetaData(PoolMetaDataBase):
                 "xcp_profit": data["params"]["xcp_profit"],
                 "xcp_profit_a": data["params"]["xcp_profit_a"],
             }
+            n = kwargs["n"]
+
             if not normalize:
                 kwargs["precisions"] = [
                     10 ** (18 - d) for d in data["coins"]["decimals"]
                 ]
+            else:
+                kwargs["precisions"] = [1] * n
+
             if not balanced:
                 if normalize:
                     coin_balances = data["reserves"]["by_coin"]
                 else:
                     coin_balances = data["reserves"]["unnormalized_by_coin"]
                 kwargs["balances"] = coin_balances
+
+            if n == 3:
+                coin_balances = data["reserves"]["by_coin"]
+                numeraire_balance = coin_balances[0]
+                price_scale = [
+                    numeraire_balance * 10**18 // coin_balances[0],
+                    numeraire_balance * 10**18 // coin_balances[1],
+                ]
+                kwargs["price_scale"] = price_scale
+
             return kwargs
 
         kwargs = process_to_kwargs(data, balanced, normalize)
