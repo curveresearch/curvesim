@@ -64,7 +64,8 @@ class SimCurveCryptoPool(SimPool, AssetIndicesMixin, CurveCryptoPool):
             Price of `coin_in` quoted in `coin_out`
         """
         i, j = self.get_asset_indices(coin_in, coin_out)
-        return self.dydx(i, j, use_fee=use_fee)
+        p = self.dydx(i, j, use_fee=use_fee)
+        return p
 
     @override
     def trade(self, coin_in, coin_out, size):
@@ -124,6 +125,8 @@ class SimCurveCryptoPool(SimPool, AssetIndicesMixin, CurveCryptoPool):
         xp_j = int(xp[j] * out_balance_perc)
 
         in_amount = self.get_y(j, i, xp_j, xp) - xp[i]
+        if i > 0:
+            in_amount = in_amount * 10**18 // self.price_scale[i - 1]
         return in_amount
 
     @property
