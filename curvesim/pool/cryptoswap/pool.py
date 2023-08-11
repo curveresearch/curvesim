@@ -637,7 +637,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         else:
             K0_prev = y_out[1]
 
-        self._tweak_price(A, gamma, xp, ix, p, 0, K0_prev)
+        # self._tweak_price(A, gamma, xp, ix, p, 0, K0_prev)
 
         return dy, fee
 
