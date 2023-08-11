@@ -4,7 +4,7 @@ from math import factorial
 from numpy import append, array
 
 from curvesim.logging import get_logger
-from curvesim.pool import CurveMetaPool, CurvePool
+from curvesim.pool import CurveCryptoPool, CurveMetaPool, CurvePool
 
 logger = get_logger(__name__)
 
@@ -108,4 +108,8 @@ def _format_info_str(vol_mult_dict):
     return new_line + new_line.join(info)
 
 
-_pool_functions = {CurvePool: _pool_vol_mult, CurveMetaPool: _metapool_vol_mult}
+_pool_functions = {
+    CurvePool: _pool_vol_mult,
+    CurveMetaPool: _metapool_vol_mult,
+    CurveCryptoPool: _pool_vol_mult,
+}
