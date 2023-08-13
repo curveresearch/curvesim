@@ -1,7 +1,7 @@
 """Base SimPool implementation for Curve stableswap pools, both regular and meta."""
 from abc import abstractmethod
 
-from curvesim.exceptions import CurvesimValueError
+from curvesim.exceptions import CurvesimException, CurvesimValueError
 from curvesim.utils import cache
 
 
@@ -22,6 +22,16 @@ class AssetIndicesMixin:
         """
         raise NotImplementedError
 
+    @asset_names.setter
+    @abstractmethod
+    def asset_names(self, *asset_lists):
+        """
+        Set list of asset names.
+
+        Implementations should disallow setting of duplicate names and inconsistent numbers of names.
+        """
+        raise NotImplementedError
+
     @property
     @abstractmethod
     def _asset_balances(self):
@@ -31,6 +41,11 @@ class AssetIndicesMixin:
     @property
     def asset_balances(self):
         """Return dict mapping asset names to coin balances."""
+        if len(self.asset_names) != len(self._asset_balances):
+            raise CurvesimException(
+                "Number of symbols and number of balances aren't the same."
+            )
+
         return dict(zip(self.asset_names, self._asset_balances))
 
     @property
