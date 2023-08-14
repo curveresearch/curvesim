@@ -1097,15 +1097,19 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         gamma = self.gamma
 
         K0 = 10**18 * n**n * prod(xp) / D**n
+        # print("K0:", K0)
+        calc_D = newton_D(A, gamma, xp)
 
         coeff = A * gamma**2 / (10**18 + gamma - K0) ** 2
         frac = (10**18 + gamma + K0) * (sum(xp) - D) / (10**18 + gamma - K0)
         dydx_top = x_j * (A_multiplier * D + coeff * (x_i + frac))
         dydx_bottom = x_i * (A_multiplier * D + coeff * (x_j + frac))
-        # if dydx_bottom == 0:
-        #     print("K0:", K0)
-        #     print("coeff:", coeff)
-        #     print("frac:", frac)
+        if dydx_bottom == 0:
+            print("K0:", K0)
+            #     print("coeff:", coeff)
+            #     print("frac:", frac)
+            print("Set D:", D)
+            print("Calc D:", calc_D)
         dydx = dydx_top / dydx_bottom
 
         if j > 0:
