@@ -5,6 +5,7 @@ of pool instances configured by different simulation parameters.
 Each mixin defines a different pool type and a set of special attribute setters.
 """
 
+from curvesim.pool.cryptoswap.calcs import newton_D
 from curvesim.pool.sim_interface import (
     SimCurveCryptoPool,
     SimCurveMetaPool,
@@ -72,7 +73,27 @@ class CurveCryptoPoolMixin:
         dict
             A dictionary containing the special setters for the pool parameters.
         """
-        return {"D": cryptoswap_D_to_balances}
+        return {
+            "D": cryptoswap_D_to_balances,
+            "A": set_cryptoswap_A,
+        }
+
+
+def set_cryptoswap_A(pool, A):
+    xp = pool._xp()
+    gamma = pool.gamma
+    D = newton_D(A, gamma, xp)
+    print("A setter, D value:", D)
+    pool.D = D
+    pool.A = A
+
+
+def set_cryptoswap_gamma(pool, gamma):
+    xp = pool._xp()
+    A = pool.A
+    D = newton_D(A, gamma, xp)
+    pool.D = D
+    pool.gamma = gamma
 
 
 def stableswap_D_to_balances(pool, D):
