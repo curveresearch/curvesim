@@ -1098,9 +1098,15 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
 
         K0 = 10**18 * n**n * prod(xp) / D**n
 
-        coeff = gamma**2 * A / (D * (10**18 + gamma - K0) ** 2) / A_multiplier
+        coeff = A * gamma**2 / (10**18 + gamma - K0) ** 2
         frac = (10**18 + gamma + K0) * (sum(xp) - D) / (10**18 + gamma - K0)
-        dydx = x_j * (1 + coeff * (x_i + frac)) / (x_i * (1 + coeff * (x_j + frac)))
+        dydx_top = x_j * (A_multiplier * D + coeff * (x_i + frac))
+        dydx_bottom = x_i * (A_multiplier * D + coeff * (x_j + frac))
+        # if dydx_bottom == 0:
+        #     print("K0:", K0)
+        #     print("coeff:", coeff)
+        #     print("frac:", frac)
+        dydx = dydx_top / dydx_bottom
 
         if j > 0:
             price_scale = self.price_scale[j - 1]
