@@ -1,6 +1,9 @@
+from curvesim.logging import get_logger
 from curvesim.pool.cryptoswap.calcs import newton_D
 
 from .base import PoolMetaDataBase
+
+logger = get_logger(__name__)
 
 
 class CryptoswapMetaData(PoolMetaDataBase):
@@ -44,24 +47,26 @@ class CryptoswapMetaData(PoolMetaDataBase):
                 kwargs["balances"] = coin_balances
 
             if n == 3:
-                coin_balances = data["reserves"]["by_coin"]
-                numeraire_balance = coin_balances[0]
-                price_scale = [
-                    numeraire_balance * 10**18 // coin_balances[1],
-                    numeraire_balance * 10**18 // coin_balances[2],
-                ]
-                kwargs["price_scale"] = price_scale
+                if len(kwargs["price_scale"]) != 2:
+                    logger.warning("Price scale is missing.  Using ad-hoc setting.")
+                    coin_balances = data["reserves"]["by_coin"]
+                    numeraire_balance = coin_balances[0]
+                    price_scale = [
+                        numeraire_balance * 10**18 // coin_balances[1],
+                        numeraire_balance * 10**18 // coin_balances[2],
+                    ]
+                    kwargs["price_scale"] = price_scale
 
-                A = kwargs["A"]
-                gamma = kwargs["gamma"]
-                xp = [
-                    coin_balances[0],
-                    coin_balances[0],
-                    coin_balances[0],
-                ]
+                    A = kwargs["A"]
+                    gamma = kwargs["gamma"]
+                    xp = [
+                        coin_balances[0],
+                        coin_balances[0],
+                        coin_balances[0],
+                    ]
 
-                D = newton_D(A, gamma, xp)
-                kwargs["D"] = D
+                    D = newton_D(A, gamma, xp)
+                    kwargs["D"] = D
 
             return kwargs
 
