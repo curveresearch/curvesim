@@ -49,9 +49,23 @@ query_sync = sync(query)
 CONVEX_COMMUNITY_URL = (
     "https://api.thegraph.com/subgraphs/name/convex-community/volume-%s"
 )
+STAGING_CONVEX_COMMUNITY_URL = (
+    "https://api.thegraph.com/subgraphs/name/convex-community/volume-%s-staging"
+)
 
 
-async def convex(chain, q):
+def _get_subgraph_url(chain, env="prod"):
+    if env.lower() == "prod":
+        url = CONVEX_COMMUNITY_URL % chain
+    elif env.lower() == "staging":
+        url = STAGING_CONVEX_COMMUNITY_URL % chain
+    else:
+        raise ValueError("'env' must be 'prod' or 'staging'")
+
+    return url
+
+
+async def convex(chain, q, env):
     """
     Async function to query convex community subgraphs
 
@@ -66,13 +80,16 @@ async def convex(chain, q):
     q : str
         A GraphQL query.
 
+    env: str
+        Environment name.  Supported: "prod", "staging"
+
     Returns
     -------
     str
         The returned results.
 
     """
-    url = CONVEX_COMMUNITY_URL % chain
+    url = _get_subgraph_url(chain, env)
     r = await query(url, q)
     if "data" not in r:
         raise SubgraphResultError(
@@ -81,7 +98,7 @@ async def convex(chain, q):
     return r["data"]
 
 
-async def symbol_address(symbol, chain):
+async def symbol_address(symbol, chain, env="prod"):
     """
     Async function to get a pool's address from it's (LP token) symbol.
 
@@ -126,7 +143,7 @@ async def symbol_address(symbol, chain):
         % symbol
     )
 
-    data = await convex(chain, q)
+    data = await convex(chain, q, env)
 
     if len(data["pools"]) > 1:
         pool_list = "\n\n"
@@ -144,7 +161,7 @@ async def symbol_address(symbol, chain):
     return addr
 
 
-async def _volume(address, chain, days=60, end=None):
+async def _volume(address, chain, env, days=60, end=None):
     if end is None:
         t_end = datetime.now(timezone.utc).replace(
             hour=0, minute=0, second=0, microsecond=0
@@ -179,7 +196,7 @@ async def _volume(address, chain, days=60, end=None):
         int(t_end.timestamp()),
     )
 
-    data = await convex(chain, q)
+    data = await convex(chain, q, env)
     snapshots = data["swapVolumeSnapshots"]
     num_snapshots = len(snapshots)
 
@@ -189,7 +206,7 @@ async def _volume(address, chain, days=60, end=None):
     return snapshots
 
 
-async def volume(addresses, chain, days=60, end=None):
+async def volume(addresses, chain, env="prod", days=60, end=None):
     """
     Retrieves historical volume for a pool or multiple pools.
 
@@ -211,13 +228,13 @@ async def volume(addresses, chain, days=60, end=None):
 
     """
     if isinstance(addresses, str):
-        r = await _volume(addresses, chain, days=days, end=end)
+        r = await _volume(addresses, chain, env, days=days, end=end)
         vol = [float(e["volume"]) for e in r]
 
     else:
         tasks = []
         for addr in addresses:
-            tasks.append(_volume(addr, chain, days=days, end=end))
+            tasks.append(_volume(addr, chain, env, days=days, end=end))
 
         r = await gather(*tasks)
 
@@ -229,7 +246,7 @@ async def volume(addresses, chain, days=60, end=None):
     return vol
 
 
-async def _pool_snapshot(address, chain, end_ts=None):
+async def _pool_snapshot(address, chain, env, end_ts=None):
     if not end_ts:
         end_date = datetime.now(timezone.utc)
         end_ts = int(end_date.timestamp())
@@ -290,7 +307,7 @@ async def _pool_snapshot(address, chain, end_ts=None):
         end_ts,
     )
 
-    r = await convex(chain, q)
+    r = await convex(chain, q, env)
     try:
         r = r["dailyPoolSnapshots"][0]
     except IndexError as e:
@@ -301,7 +318,7 @@ async def _pool_snapshot(address, chain, end_ts=None):
     return r
 
 
-async def pool_snapshot(address, chain, end_ts=None):
+async def pool_snapshot(address, chain, env="prod", end_ts=None):
     """
     Async function to pull pool state and metadata from daily snapshots.
 
@@ -319,7 +336,7 @@ async def pool_snapshot(address, chain, end_ts=None):
         A formatted dict of pool state/metadata information.
 
     """
-    r = await _pool_snapshot(address, chain, end_ts)
+    r = await _pool_snapshot(address, chain, env, end_ts)
     logger.debug("Pool snapshot: %s", r)
 
     # Flatten
@@ -354,7 +371,7 @@ async def pool_snapshot(address, chain, end_ts=None):
 
     # Basepool
     if r["metapool"]:
-        basepool = await pool_snapshot(r["basePool"], chain, end_ts)
+        basepool = await pool_snapshot(r["basePool"], chain, env, end_ts)
     else:
         basepool = None
 
@@ -385,6 +402,18 @@ async def pool_snapshot(address, chain, end_ts=None):
             "timestamp": int(r["timestamp"]),
         }
     else:
+        # Until mainnet subgraph is fixed (or we use the new curve-prices API),
+        # 2-coin crypto pools will have an integer instead of list and
+        # 3-coin crypto pools actually return a zero.
+        #
+        # So we fix the outer type here.
+        if not isinstance(r["priceScale"], list):
+            r["priceScale"] = [r["priceScale"]]
+        if not isinstance(r["priceOracle"], list):
+            r["priceOracle"] = [r["priceOracle"]]
+        if not isinstance(r["lastPrices"], list):
+            r["lastPrices"] = [r["lastPrices"]]
+
         data = {
             "name": r["name"],
             "address": to_checksum_address(r["address"]),
@@ -401,9 +430,9 @@ async def pool_snapshot(address, chain, end_ts=None):
                 "allowed_extra_profit": int(r["allowedExtraProfit"]),
                 "adjustment_step": int(r["adjustmentStep"]),
                 "ma_half_time": int(r["adjustmentStep"]),
-                "price_scale": int(r["priceScale"]),
-                "price_oracle": int(r["priceOracle"]),
-                "last_prices": int(r["lastPrices"]),
+                "price_scale": [int(p) for p in r["priceScale"]],
+                "price_oracle": [int(p) for p in r["priceOracle"]],
+                "last_prices": [int(p) for p in r["lastPrices"]],
                 "last_prices_timestamp": int(r["lastPricesTimestamp"]),
                 "admin_fee": int(Decimal(r["adminFee"]) * 10**10),
                 "xcp_profit": int(r["xcpProfit"]),
