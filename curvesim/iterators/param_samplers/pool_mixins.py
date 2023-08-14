@@ -86,6 +86,9 @@ def set_cryptoswap_A(pool, A):
     print("A setter, D value:", D)
     pool.D = D
     pool.A = A
+    print("A setter, A value:", A)
+    virtual_price = pool.get_virtual_price()
+    pool.virtual_price = virtual_price
 
 
 def set_cryptoswap_gamma(pool, gamma):
@@ -94,6 +97,8 @@ def set_cryptoswap_gamma(pool, gamma):
     D = newton_D(A, gamma, xp)
     pool.D = D
     pool.gamma = gamma
+    virtual_price = pool.get_virtual_price()
+    pool.virtual_price = virtual_price
 
 
 def stableswap_D_to_balances(pool, D):
