@@ -24,6 +24,7 @@ def get_pool_state(pool):
 def get_cryptoswap_pool_state(pool):
     """Returns pool state for stableswap non-meta pools."""
     return {
+        "D": pool.D,
         "balances": pool.balances,
         "tokens": pool.tokens,
         "price_scale": pool.price_scale,
