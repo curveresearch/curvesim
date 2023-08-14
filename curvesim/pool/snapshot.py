@@ -162,13 +162,16 @@ class CurveMetaPoolBalanceSnapshot(Snapshot):
 class CurveCryptoPoolBalanceSnapshot(Snapshot):
     """Snapshot that saves pool balances and admin balances."""
 
-    def __init__(self, balances):
+    def __init__(self, balances, D):
         self.balances = balances
+        self.D = D
 
     @classmethod
     def create(cls, pool):
         balances = pool.balances.copy()
-        return cls(balances)
+        D = pool.D
+        return cls(balances, D)
 
     def restore(self, pool):
         pool.balances = self.balances.copy()
+        pool.D = self.D
