@@ -1,3 +1,5 @@
+from curvesim.pool.cryptoswap.calcs import newton_D
+
 from .base import PoolMetaDataBase
 
 
@@ -49,6 +51,17 @@ class CryptoswapMetaData(PoolMetaDataBase):
                     numeraire_balance * 10**18 // coin_balances[2],
                 ]
                 kwargs["price_scale"] = price_scale
+
+                A = kwargs["A"]
+                gamma = kwargs["gamma"]
+                xp = [
+                    coin_balances[0],
+                    coin_balances[0],
+                    coin_balances[0],
+                ]
+
+                D = newton_D(A, gamma, xp)
+                kwargs["D"] = D
 
             return kwargs
 
