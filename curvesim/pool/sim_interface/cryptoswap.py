@@ -129,6 +129,19 @@ class SimCurveCryptoPool(SimPool, AssetIndicesMixin, CurveCryptoPool):
             in_amount = in_amount * 10**18 // self.price_scale[i - 1]
         return in_amount
 
+    def prepare_for_trades(self, timestamp):
+        """
+        Updates the pool's _block_timestamp attribute to current sim time.
+
+        Parameters
+        ----------
+        timestamp : datetime.datetime
+            The current timestamp in the simulation.
+        """
+
+        timestamp = int(timestamp.timestamp())  # unix timestamp in seconds
+        self._increment_timestamp(timestamp=timestamp)
+
     @property
     @override
     @cache
