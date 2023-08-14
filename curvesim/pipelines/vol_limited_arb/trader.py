@@ -93,7 +93,8 @@ def multipair_optimal_arbitrage(  # noqa: C901  pylint: disable=too-many-locals
                 else:
                     dx = int(dxs[k])
 
-                if dx > 0:
+                # if dx > 0:
+                if dx > 10**18:
                     pool.trade(*pair, dx)
 
             errors = []
@@ -121,6 +122,8 @@ def multipair_optimal_arbitrage(  # noqa: C901  pylint: disable=too-many-locals
 
         for k, amount_in in enumerate(dxs):
             if isnan(amount_in):
+                continue
+            if amount_in < 10**18:
                 continue
 
             amount_in = int(amount_in)
