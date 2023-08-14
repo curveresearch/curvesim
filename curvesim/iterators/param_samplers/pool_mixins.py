@@ -76,6 +76,7 @@ class CurveCryptoPoolMixin:
         return {
             "D": cryptoswap_D_to_balances,
             "A": set_cryptoswap_A,
+            "gamma": set_cryptoswap_gamma,
         }
 
 
@@ -95,8 +96,10 @@ def set_cryptoswap_gamma(pool, gamma):
     xp = pool._xp()
     A = pool.A
     D = newton_D(A, gamma, xp)
+    print("gamma setter, D value:", D)
     pool.D = D
     pool.gamma = gamma
+    print("gamma setter, gamma value:", gamma)
     virtual_price = pool.get_virtual_price()
     pool.virtual_price = virtual_price
 

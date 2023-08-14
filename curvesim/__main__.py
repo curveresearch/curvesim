@@ -20,7 +20,8 @@ def hello_world():
     res = autosim(
         "0x4ebdf703948ddcea3b11f675b4d1fba9d2414a14",
         A=[1707629, 2570000, 50000],
-        ncpu=1,
+        gamma=[1300000000000, 13000000000, 13000000000000],
+        ncpu=4,
         env="staging",
     )
     # res = autosim(

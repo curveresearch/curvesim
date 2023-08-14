@@ -164,7 +164,7 @@ def autosim(
 
 
 def _parse_arguments(pool_metadata, **kwargs):
-    pool_args = ["A", "D", "x", "p", "fee", "fee_mul", "tokens", "admin_fee"]
+    pool_args = ["A", "D", "x", "p", "fee", "fee_mul", "tokens", "admin_fee", "gamma"]
     pool_args += [arg + "_base" for arg in pool_args[:-1]]
 
     variable_params = {}
