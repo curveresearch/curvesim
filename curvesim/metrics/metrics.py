@@ -505,6 +505,7 @@ class PoolValue(PoolPricingMetric):
         Used for any cryptoswap pool.
         """
         self.set_pool_state(pool_state_row)
+        # pylint: disable-next=protected-access
         return self._pool._get_xcp(self._pool.D) / 10**18
 
     def compute_annualized_returns(self, data):
