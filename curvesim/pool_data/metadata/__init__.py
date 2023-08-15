@@ -5,10 +5,10 @@ from curvesim.exceptions import CurvesimException
 from curvesim.network.subgraph import has_redemption_prices
 from curvesim.pool.cryptoswap import CurveCryptoPool
 from curvesim.pool.sim_interface import (
+    SimCurveCryptoPool,
     SimCurveMetaPool,
     SimCurvePool,
     SimCurveRaiPool,
-    SimCurveCryptoPool,
 )
 from curvesim.pool.stableswap import CurveMetaPool, CurvePool, CurveRaiPool
 from curvesim.pool_data.metadata.cryptoswap import CryptoswapMetaData
