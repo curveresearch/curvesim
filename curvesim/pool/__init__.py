@@ -26,6 +26,7 @@ __all__ = [
 ]
 
 from curvesim.exceptions import CurvesimValueError
+from curvesim.logging import get_logger
 from curvesim.pool_data import get_metadata
 from curvesim.pool_data.metadata import PoolMetaData, PoolMetaDataInterface
 
@@ -33,6 +34,8 @@ from .base import Pool
 from .cryptoswap import CurveCryptoPool
 from .sim_interface import SimCurveMetaPool, SimCurvePool, SimCurveRaiPool
 from .stableswap import CurveMetaPool, CurvePool, CurveRaiPool
+
+logger = get_logger(__name__)
 
 
 def make(
@@ -142,6 +145,8 @@ def get_pool(
     balanced=False,
     balanced_base=False,
     normalize=False,
+    end_ts=None,
+    env="prod",
 ):
     """
     Constructs a pool object based on the stored data.
@@ -178,7 +183,7 @@ def get_pool(
     >>> pool = curvesim.pool.get(pool_address, chain)
     """
     if isinstance(pool_metadata, str):
-        pool_metadata = get_metadata(pool_metadata, chain=chain)
+        pool_metadata = get_metadata(pool_metadata, chain=chain, env=env, end_ts=end_ts)
     elif isinstance(pool_metadata, dict):
         pool_metadata = PoolMetaData(pool_metadata)
     elif isinstance(pool_metadata, PoolMetaDataInterface):
@@ -189,6 +194,7 @@ def get_pool(
         )
 
     init_kwargs = pool_metadata.init_kwargs(balanced, balanced_base, normalize)
+    logger.debug(init_kwargs)
 
     pool_type = pool_metadata.pool_type
     pool = pool_type(**init_kwargs)
@@ -210,6 +216,7 @@ def get_sim_pool(
     custom_kwargs=None,
     pool_data_cache=None,
     end_ts=None,
+    env="prod",
 ):
     """
     Effectively the same as the `get_pool` function but returns
@@ -218,7 +225,7 @@ def get_sim_pool(
     custom_kwargs = custom_kwargs or {}
 
     if isinstance(pool_metadata, str):
-        pool_metadata = get_metadata(pool_metadata, chain=chain, end_ts=end_ts)
+        pool_metadata = get_metadata(pool_metadata, chain=chain, env=env, end_ts=end_ts)
     elif isinstance(pool_metadata, dict):
         if end_ts:
             raise CurvesimValueError(
@@ -236,7 +243,7 @@ def get_sim_pool(
         )
 
     init_kwargs = pool_metadata.init_kwargs(balanced, balanced_base, normalize=True)
-    print(init_kwargs)
+    logger.debug(init_kwargs)
 
     pool_type = pool_metadata.sim_pool_type
 
