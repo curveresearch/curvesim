@@ -72,6 +72,12 @@ class CryptoswapMetaData(PoolMetaDataBase):
                 D = newton_D(A, gamma, xp)
                 kwargs["D"] = D
 
+        # Due to outstanding subgraph bug, we need to do something for
+        # the missing value.
+        if not kwargs["ma_half_time"]:
+            kwargs["ma_half_time"] = 600
+
+        print(kwargs)
         return kwargs
 
     @property

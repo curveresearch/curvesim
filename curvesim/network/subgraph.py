@@ -414,6 +414,10 @@ async def pool_snapshot(address, chain, env="prod", end_ts=None):
         if not isinstance(r["lastPrices"], list):
             r["lastPrices"] = [r["lastPrices"]]
 
+        ma_half_time = r["maHalfTime"]
+        if ma_half_time:  # subgraph bug returns None
+            ma_half_time = int(ma_half_time)
+
         data = {
             "name": r["name"],
             "address": to_checksum_address(r["address"]),
@@ -429,7 +433,7 @@ async def pool_snapshot(address, chain, env="prod", end_ts=None):
                 "out_fee": int(r["outFee"]),
                 "allowed_extra_profit": int(r["allowedExtraProfit"]),
                 "adjustment_step": int(r["adjustmentStep"]),
-                "ma_half_time": int(r["maHalfTime"]),
+                "ma_half_time": ma_half_time,
                 "price_scale": [int(p) for p in r["priceScale"]],
                 "price_oracle": [int(p) for p in r["priceOracle"]],
                 "last_prices": [int(p) for p in r["lastPrices"]],
