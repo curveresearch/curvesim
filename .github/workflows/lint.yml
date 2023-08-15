@@ -74,7 +74,7 @@ jobs:
 
       - name: Check pylint score didn't decrease
         run: |
-          OLD_SCORE=$(cat pylint_score.txt)
+          OLD_SCORE=$(cat pylint_score.txt/pylint_score.txt)
           SCORE=$(make pylint | tail -3 | head -1)
           if [ "$OLD_SCORE" -gt "$SCORE" ]; then \
               exit 1; \
