@@ -85,9 +85,6 @@ def per_run(sim, stored):
     print("Testing per-run data...")
 
     # Compare metric columns
-    stored = stored.drop(
-        columns=[("liquidity_density", "median"), ("liquidity_density", "min")]
-    )
     compare_metrics(sim.columns, stored.columns)
     sim = sim[stored.columns]
 
@@ -119,9 +116,7 @@ def per_trade(sim, stored, threshold=0.9):
     print("Testing per-trade data...")
 
     # Compare metric columns
-    stored = stored.drop(
-        columns=[("liquidity_density", "median"), ("liquidity_density", "min")]
-    )
+    stored = stored.drop(columns=["liquidity_density"])
     compare_metrics(sim.columns, stored.columns)
     sim = sim[stored.columns]
 
