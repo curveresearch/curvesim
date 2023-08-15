@@ -596,7 +596,6 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         self.balances[i] = xp[i]
 
         xp = self._xp_mem(xp)
-        _xp = xp.copy()
 
         y_out = get_y(A, gamma, xp, self.D, j)
         dy = xp[j] - y_out[0]
@@ -612,13 +611,6 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         dy = dy // prec_j
 
         fee = self._fee(xp) * dy // 10**10
-        if fee > dy:
-            # import ipdb
-
-            # ipdb.set_trace()
-            print(xp)
-            print(dy)
-            print(fee)
         dy -= fee
         assert dy >= min_dy, f"Slippage: dy: {dy}, dx: {dx} "
         y -= dy
@@ -647,9 +639,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         else:
             K0_prev = y_out[1]
 
-        # print(self.coin_names)
         self._tweak_price(A, gamma, xp, ix, p, 0, K0_prev)
-        # self.D = newton_D(A, gamma, xp)
 
         return dy, fee
 
