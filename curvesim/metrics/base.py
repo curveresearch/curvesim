@@ -372,7 +372,7 @@ def get_numeraire(coins):
     Returns a preferred numeraire from the provided list of coins.
     """
     numeraire = coins[0]
-    preferred = ["USDC", "USDT", "ETH", "WETH", "CRV"]
+    preferred = ["USDC", "USDT", "CRVUSD", "ETH", "WETH", "CRV"]
 
     # Heuristic: base coin in pool of derivatives
     base = min(coins, key=len).upper()
