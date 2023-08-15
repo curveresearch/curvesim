@@ -9,6 +9,36 @@ on:
     branches: [ main, develop ]
 
 jobs:
+  pylint_previous:
+    name: Generate comparison results
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+
+    - name: Set up latest Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.10"
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python3 -m pip install --upgrade pip
+        python3 -m pip install -r requirements.txt
+
+    - name: Pylint
+      run: |
+        make pylint | tail -3 | head -1 > pylint_score.txt
+
+    - name: Save previous pylint score
+      uses: actions/upload-artifact@v3
+      with:
+        name: pylint-score
+        path: pylint_score.txt
+
   lint:
     name: Format and Lint
     runs-on: ubuntu-latest
@@ -32,7 +62,20 @@ jobs:
           black --version
           black . --check
 
-      - name: Lint
+      - name: flake8
         run: |
-          make lint
+          make flake8
 
+      - name: Get previous pylint score
+        uses: actions/download-artifact@v3
+        with:
+          name: pylint-score
+          path: pylint_score.txt
+
+      - name: Check pylint score didn't decrease
+        run: |
+          OLD_SCORE=$(cat pylint_score.txt)
+          SCORE=$(make pylint | tail -3 | head -1)
+          if [ "$OLD_SCORE" -gt "$SCORE" ]; then \
+              exit 1; \
+          fi
