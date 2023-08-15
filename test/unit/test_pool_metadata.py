@@ -307,6 +307,7 @@ def test_cryptopool():
         "admin_fee": 5000000000,
         "xcp_profit": 1073065310463073367,
         "xcp_profit_a": 1073065310463073367,
+        "precisions": [1, 1],
     }
     assert metadata.init_kwargs(balanced=False) == {
         "A": 400000,
@@ -328,6 +329,7 @@ def test_cryptopool():
         "admin_fee": 5000000000,
         "xcp_profit": 1073065310463073367,
         "xcp_profit_a": 1073065310463073367,
+        "precisions": [1, 1],
     }
     assert metadata.init_kwargs(balanced=False, normalize=False) == {
         "A": 400000,
