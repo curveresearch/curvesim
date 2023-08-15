@@ -142,6 +142,7 @@ def test_get_pool_state_curve_rai_pool(sim_curve_rai_pool):
 
 def _test_get_pool_state_curve_meta_pool(pool):
     expected_state = {
+        "D:": pool.D,
         "balances": pool.balances,
         "tokens": pool.tokens,
         "admin_balances": pool.admin_balances,
