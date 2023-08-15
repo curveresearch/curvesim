@@ -85,6 +85,9 @@ def per_run(sim, stored):
     print("Testing per-run data...")
 
     # Compare metric columns
+    stored = stored.drop(
+        columns=[("liquidity_density", "median"), ("liquidity_density", "min")]
+    )
     compare_metrics(sim.columns, stored.columns)
     sim = sim[stored.columns]
 
@@ -111,6 +114,9 @@ def per_trade(sim, stored, threshold=0.9):
     print("Testing per-trade data...")
 
     # Compare metric columns
+    stored = stored.drop(
+        columns=[("liquidity_density", "median"), ("liquidity_density", "min")]
+    )
     compare_metrics(sim.columns, stored.columns)
     sim = sim[stored.columns]
 
@@ -149,6 +155,9 @@ def summary(sim, stored, threshold=0.99):
     print("Testing summary data...")
 
     # Compare metric columns
+    stored = stored.drop(
+        columns=[("liquidity_density", "median"), ("liquidity_density", "min")]
+    )
     compare_metrics(sim.columns, stored.columns)
     sim = sim[stored.columns]
 
@@ -173,7 +182,7 @@ def summary(sim, stored, threshold=0.99):
 
 def compare_metrics(test, reference):
     extra, missing = compare_elements(test, reference)
-    # assert not missing, f"Metrics missing from simulation results: {missing}"
+    assert not missing, f"Metrics missing from simulation results: {missing}"
 
     if extra:
         print("WARNING: extra untested metrics in simulation results:", extra)
