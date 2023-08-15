@@ -10,7 +10,7 @@ on:
 
 jobs:
   pylint_previous:
-    name: Generate comparison results
+    name: Generate and save previous pylint score
     runs-on: ubuntu-latest
 
     steps:
@@ -41,6 +41,7 @@ jobs:
 
   lint:
     name: Format and Lint
+    needs: pylint_previous
     runs-on: ubuntu-latest
 
     steps:
