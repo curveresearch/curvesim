@@ -10,7 +10,7 @@ on:
 
 jobs:
   pylint_previous:
-    name: Generate and save previous pylint score
+    name: Generate old pylint score
     runs-on: ubuntu-latest
 
     steps:
@@ -37,7 +37,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: pylint-score
-        path: pylint_score.txt
+        path: ./pylint_score.txt
 
   lint:
     name: Format and Lint
@@ -71,7 +71,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: pylint-score
-          path: pylint_score.txt
+          path: ./pylint_score.txt
 
       - name: Check pylint score didn't decrease
         run: |
