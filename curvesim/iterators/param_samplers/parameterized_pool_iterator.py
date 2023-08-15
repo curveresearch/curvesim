@@ -4,10 +4,10 @@ from itertools import product
 
 from curvesim.exceptions import ParameterSamplerError
 from curvesim.pool.sim_interface import (
+    SimCurveCryptoPool,
     SimCurveMetaPool,
     SimCurvePool,
     SimCurveRaiPool,
-    SimCurveCryptoPool,
 )
 from curvesim.templates import ParameterSampler
 

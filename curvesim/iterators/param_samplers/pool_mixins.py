@@ -6,9 +6,9 @@ Each mixin defines a different pool type and a set of special attribute setters.
 """
 
 from curvesim.pool.sim_interface import (
+    SimCurveCryptoPool,
     SimCurveMetaPool,
     SimCurvePool,
-    SimCurveCryptoPool,
 )
 
 

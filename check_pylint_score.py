@@ -85,3 +85,6 @@ if __name__ == "__main__":
     if exit_with_failure:
         print(FAILED_CHECK_MSG)
         sys.exit(1)
+
+    score = get_score(linter)
+    print(score)

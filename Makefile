@@ -20,7 +20,8 @@ help:
 	@echo "lint                   linting checks through flake8 and pylint"
 	@echo "flake8                 lint using flake8"
 	@echo "pylint                 lint using pylint"
-	@echo "black                  format using black"
+	@echo "format                 formatting checks through black and isort"
+	@echo "black                  format using black and isort"
 	@echo ""
 	@echo "release                upload new pypi release using twine"
 	@echo ""
@@ -70,6 +71,29 @@ release:
 	twine upload dist/*
 	rm -fr dist curvesim.egg-info
 
+# Use this for formatting checks.  Will not modify files.
+.PHONY: format
+format:
+	@echo ""
+	@echo "$(REVERSE)Running$(RESET) $(BOLD)black$(RESET)..."
+	@black --version
+	@black . --check
+	@echo "$(REVERSE)Running$(RESET) $(BOLD)isort$(RESET)..."
+	@isort --version-number
+	@isort curvesim --check
+	@echo ""
+	@echo "Formatting checks passed 🏆"
+
+# Use this to change files to proper format.
+.PHONY: black
+black:
+	@echo "$(REVERSE)Running$(RESET) $(BOLD)black$(RESET)..."
+	@black --version
+	@black .
+	@echo "$(REVERSE)Running$(RESET) $(BOLD)isort$(RESET)..."
+	@isort --version-number
+	@isort curvesim
+
 .PHONY: lint
 lint:
 	@echo ""
@@ -78,12 +102,6 @@ lint:
 	@make pylint
 	@echo ""
 	@echo "Linting checks passed 🏆"
-
-.PHONY: black
-black:
-	@echo "$(REVERSE)Running$(RESET) $(BOLD)black$(RESET)..."
-	@black --version
-	@black .
 
 .PHONY: flake8
 flake8:
