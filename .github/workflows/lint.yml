@@ -60,8 +60,7 @@ jobs:
 
       - name: Format
         run: |
-          black --version
-          black . --check
+          make format
 
       - name: flake8
         run: |
