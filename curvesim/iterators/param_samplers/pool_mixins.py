@@ -81,7 +81,18 @@ class CurveCryptoPoolMixin:
 
 
 def set_cryptoswap_A(pool, A):
-    xp = pool._xp()
+    """
+    Sets A on the pool, with the following side-effects:
+    - recalculate and cache D
+    - recalculate and cache virtual_price
+
+    Parameters
+    ----------
+    pool : instance of _pool_type
+    A : int
+        The A parameter
+    """
+    xp = pool._xp()  # pylint: disable=protected-access
     gamma = pool.gamma
     D = newton_D(A, gamma, xp)
     pool.D = D
@@ -91,7 +102,18 @@ def set_cryptoswap_A(pool, A):
 
 
 def set_cryptoswap_gamma(pool, gamma):
-    xp = pool._xp()
+    """
+    Sets gamma on the pool, with the following side-effects:
+    - recalculate and cache D
+    - recalculate and cache virtual_price
+
+    Parameters
+    ----------
+    pool : instance of _pool_type
+    gamma : int
+        The gamma parameter
+    """
+    xp = pool._xp()  # pylint: disable=protected-access
     A = pool.A
     D = newton_D(A, gamma, xp)
     pool.D = D
@@ -145,4 +167,4 @@ def cryptoswap_D_to_balances(pool, D):
         The invariant value.
     """
     pool.D = D
-    pool.balances = pool._convert_D_to_balances(D)
+    pool.balances = pool._convert_D_to_balances(D)  # pylint: disable=protected-access
