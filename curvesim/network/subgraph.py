@@ -429,7 +429,7 @@ async def pool_snapshot(address, chain, env="prod", end_ts=None):
                 "out_fee": int(r["outFee"]),
                 "allowed_extra_profit": int(r["allowedExtraProfit"]),
                 "adjustment_step": int(r["adjustmentStep"]),
-                "ma_half_time": int(r["adjustmentStep"]),
+                "ma_half_time": int(r["maHalfTime"]),
                 "price_scale": [int(p) for p in r["priceScale"]],
                 "price_oracle": [int(p) for p in r["priceOracle"]],
                 "last_prices": [int(p) for p in r["lastPrices"]],
