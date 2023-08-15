@@ -11,7 +11,7 @@ from eth_utils import to_checksum_address
 
 from curvesim.logging import get_logger
 
-from ..exceptions import SubgraphResultError
+from ..exceptions import CurvesimValueError, SubgraphResultError
 from ..overrides import override_subgraph_data
 from .http import HTTP
 from .utils import compute_D, sync
@@ -60,7 +60,7 @@ def _get_subgraph_url(chain, env="prod"):
     elif env.lower() == "staging":
         url = STAGING_CONVEX_COMMUNITY_URL % chain
     else:
-        raise ValueError("'env' must be 'prod' or 'staging'")
+        raise CurvesimValueError("'env' must be 'prod' or 'staging'")
 
     return url
 
