@@ -154,7 +154,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         self.ma_half_time = ma_half_time
 
         self._block_timestamp = _get_unix_timestamp()
-        self.last_prices_timestamp = last_prices_timestamp or self._block_timestamp
+        self.last_prices_timestamp = last_prices_timestamp or 0
 
         self.xcp_profit = xcp_profit
         self.xcp_profit_a = xcp_profit_a  # Full profit at last claim of admin fees
