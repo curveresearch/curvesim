@@ -115,10 +115,11 @@ def test_get_pool_state_curve_crypto_pool(sim_curve_crypto_pool):
     pool = sim_curve_crypto_pool
 
     expected_state = {
+        "D": pool.D,
         "balances": pool.balances,
         "tokens": pool.tokens,
         "price_scale": pool.price_scale,
-        "price_oracle": pool.price_oracle(),
+        "_price_oracle": pool._price_oracle,
         "xcp_profit": pool.xcp_profit,
         "xcp_profit_a": pool.xcp_profit_a,
         "last_prices": pool.last_prices,
@@ -142,7 +143,6 @@ def test_get_pool_state_curve_rai_pool(sim_curve_rai_pool):
 
 def _test_get_pool_state_curve_meta_pool(pool):
     expected_state = {
-        "D:": pool.D,
         "balances": pool.balances,
         "tokens": pool.tokens,
         "admin_balances": pool.admin_balances,
