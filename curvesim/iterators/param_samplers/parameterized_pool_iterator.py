@@ -98,7 +98,6 @@ class ParameterizedPoolIterator(ParameterSampler):
         """
         for params in self.parameter_sequence:
             pool = deepcopy(self.pool_template)
-            print(params)
             self.set_pool_attributes(pool, params)
             yield pool, params
 
