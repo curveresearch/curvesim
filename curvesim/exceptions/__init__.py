@@ -39,7 +39,7 @@ class CalculationError(CurvesimException):
     """Error during a mathematical calculation."""
 
 
-class CryptoPoolError(RuntimeError):
+class CryptoPoolError(CurvesimException, RuntimeError):
     """Runtime error from a CryptoSwap pool."""
 
 
