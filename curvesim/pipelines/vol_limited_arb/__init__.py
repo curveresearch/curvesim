@@ -35,7 +35,6 @@ def pipeline(
     vol_mode=1,
     ncpu=None,
     end=None,
-    env="prod",
 ):
     """
     Implements the volume-limited arbitrage pipeline.
@@ -105,13 +104,9 @@ def pipeline(
     ncpu : int, default=os.cpu_count()
         Number of cores to use.
 
-    env: str, default='prod'
-        Environment for the Curve subgraph, which pulls pool and volume snapshots.
-
     Returns
     -------
     SimResults object
-
     """
     fixed_params = fixed_params or {}
 
