@@ -31,8 +31,11 @@ def preprocess_data(data, config, factors, downsample=False):
     """
     if downsample:
         return downsample_data(data, config, factors)
-
-    return {"main": data.round(6)}
+    
+    factor_data = data[factors] # preserve unrounded factors
+    data_out = data.round(6)
+    data_out[factors] = factor_data
+    return {"main": data_out}
 
 
 def downsample_data(data, config, factors):
