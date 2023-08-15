@@ -99,7 +99,7 @@ class SimCurveMetaPool(SimPool, AssetIndicesMixin, CurveMetaPool):
 
         return i, j
 
-    def get_in_amount(self, coin_in, coin_out, out_balance_perc):
+    def get_in_amount(self, coin_in, coin_out, out_balance_perc=0.01):
         i, j = self.get_asset_indices(coin_in, coin_out)
 
         max_coin = self.max_coin

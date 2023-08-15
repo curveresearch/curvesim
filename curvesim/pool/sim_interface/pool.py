@@ -43,7 +43,7 @@ class SimCurvePool(SimPool, AssetIndicesMixin, CurvePool):
         amount_out, fee = self.exchange(i, j, size)
         return amount_out, fee
 
-    def get_in_amount(self, coin_in, coin_out, out_balance_perc):
+    def get_in_amount(self, coin_in, coin_out, out_balance_perc=0.01):
         i, j = self.get_asset_indices(coin_in, coin_out)
 
         xp = self._xp()
