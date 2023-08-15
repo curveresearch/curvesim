@@ -32,12 +32,14 @@ jobs:
     - name: Pylint
       run: |
         make pylint | tail -3 | head -1 > pylint_score.txt
+        SCORE=$(cat pylint_score.txt)
+        echo "Score: ${SCORE}"
 
     - name: Save previous pylint score
       uses: actions/upload-artifact@v3
       with:
         name: pylint-score
-        path: ./pylint_score.txt
+        path: pylint_score.txt
 
   lint:
     name: Format and Lint
