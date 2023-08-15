@@ -109,6 +109,8 @@ def pipeline(
     SimResults object
 
     """
+    fixed_params = fixed_params or {}
+
     if test:
         variable_params = TEST_PARAMS
 
