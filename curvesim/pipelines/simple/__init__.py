@@ -7,8 +7,9 @@ from curvesim.metrics.results import make_results
 from curvesim.pipelines import run_pipeline
 from curvesim.pipelines.simple.strategy import SimpleStrategy
 from curvesim.pool import get_sim_pool
+from curvesim.pool.cryptoswap.pool import CurveCryptoPool
 
-from ..common import DEFAULT_METRICS, DEFAULT_PARAMS, TEST_PARAMS
+from ..common import DEFAULT_METRICS, DEFAULT_PARAMS, TEST_CRYPTO_PARAMS, TEST_PARAMS
 
 
 def pipeline(  # pylint: disable=too-many-locals
@@ -23,6 +24,7 @@ def pipeline(  # pylint: disable=too-many-locals
     src="coingecko",
     data_dir="data",
     ncpu=None,
+    env="prod",
 ):
     """
     Implements the simple arbitrage pipeline.  This is a very simplified version
@@ -85,20 +87,28 @@ def pipeline(  # pylint: disable=too-many-locals
 
     """
     ncpu = ncpu or os.cpu_count()
+    fixed_params = fixed_params or {}
 
-    pool = get_sim_pool(pool_address, chain, end_ts=end_ts)
+    default_params = DEFAULT_PARAMS.copy()
+    for key in DEFAULT_PARAMS:
+        if key in fixed_params:
+            del default_params[key]
+
+    variable_params = variable_params or DEFAULT_PARAMS
+
+    pool = get_sim_pool(pool_address, chain, env=env, end_ts=end_ts)
+
+    if test:
+        fixed_params = {}
+        if isinstance(pool, CurveCryptoPool):
+            variable_params = TEST_CRYPTO_PARAMS
+        else:
+            variable_params = TEST_PARAMS
 
     sim_assets = pool.assets
     price_sampler = PriceVolume(
         sim_assets, days=days, end=end_ts, data_dir=data_dir, src=src
     )
-
-    variable_params = variable_params or DEFAULT_PARAMS
-    fixed_params = fixed_params or {}
-
-    if test:
-        variable_params = TEST_PARAMS
-        fixed_params = {}
 
     # pylint: disable-next=abstract-class-instantiated
     param_sampler = ParameterizedPoolIterator(pool, variable_params, fixed_params)

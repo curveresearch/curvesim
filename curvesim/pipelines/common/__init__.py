@@ -19,6 +19,12 @@ DEFAULT_PARAMS = {
 }
 
 TEST_PARAMS = {"A": [100, 1000], "fee": [3000000, 4000000]}
+TEST_CRYPTO_PARAMS = {
+    "A": [270000, 2700000],
+    "gamma": [1300000000000, 13000000000],
+    "fee_gamma": [500000000000000, 50000000000000],
+    "out_fee": [80000000, 800000000],
+}
 
 
 def get_arb_trades(pool, prices):

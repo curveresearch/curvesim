@@ -41,6 +41,12 @@ def main():  # noqa: C901
         #     "address": "0x618788357d0ebd8a37e763adab3bc575d54c2c7d",
         #     "end_timestamp": 1654041600,
         # },
+        # triCRV
+        {
+            "address": "0x4ebdf703948ddcea3b11f675b4d1fba9d2414a14",
+            "end_timestamp": 1692215156,
+            "env": "staging",
+        },
     ]
 
     test_functions = {
@@ -53,6 +59,7 @@ def main():  # noqa: C901
         address = pool["address"]
         end_ts = pool["end_timestamp"]
         vol_mult = pool.get("vol_mult", None)
+        env = pool.get("env", "prod")
 
         f_name = os.path.join(data_dir, f"{address}-pool_data_cache.pickle")
         pool_data_cache = read_pickle(f_name)
@@ -67,6 +74,7 @@ def main():  # noqa: C901
             pool_data_cache=pool_data_cache,
             end=end_ts,
             vol_mult=vol_mult,
+            env=env,
         )
 
         sim_data = {

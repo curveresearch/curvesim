@@ -11,7 +11,8 @@ class SimpleArbitrageur(Trader):
     Computes, executes, and reports out arbitrage trades.
     """
 
-    def compute_trades(self, prices):  # pylint: disable=arguments-differ
+    # pylint: disable-next=arguments-differ,too-many-locals
+    def compute_trades(self, prices):
         """
         Compute trades to arbitrage the pool, as follows:
             1. For each coin pair i and j, calculate size of coin i
@@ -42,6 +43,9 @@ class SimpleArbitrageur(Trader):
         for t in trades:
             size, coins, price_target = t
             i, j = coins
+            min_trade_size = pool.get_min_trade_size(i)
+            if size <= min_trade_size:
+                continue
             with pool.use_snapshot_context():
                 out_amount, _ = pool.trade(i, j, size)
                 # assume we transacted at "infinite" depth at target price
