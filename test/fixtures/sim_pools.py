@@ -67,3 +67,31 @@ def sim_curve_crypto_pool():
     }
 
     return SimCurveCryptoPool(**kwargs)
+
+
+@pytest.fixture(scope="function")
+def sim_curve_tricrypto_pool():
+    kwargs = {
+        "A": 1707629,
+        "gamma": 11809167828997,
+        "n": 3,
+        "precisions": [1, 1, 1],
+        "mid_fee": 3000000,
+        "out_fee": 30000000,
+        "allowed_extra_profit": 2000000000000,
+        "fee_gamma": 500000000000000,
+        "adjustment_step": 490000000000000,
+        "admin_fee": 5000000000,
+        "ma_half_time": 865,
+        "price_scale": [30453123431671769818574, 1871140849377954208512],
+        "balances": [
+            18418434882428000000000000,
+            605473277480000000000,
+            9914993293693631287774,
+        ],
+        "tokens": 47986553926751950746367,
+        "xcp_profit": 1000448625854298803,
+        "xcp_profit_a": 1000440033249679801,
+    }
+
+    return SimCurveCryptoPool(**kwargs)
