@@ -129,6 +129,13 @@ class SimCurveCryptoPool(SimPool, AssetIndicesMixin, CurveCryptoPool):
             in_amount = in_amount * 10**18 // self.price_scale[i - 1]
         return in_amount
 
+    def get_min_in_amount(self, coin_in):
+        (i,) = self.get_asset_indices(coin_in)
+        min_amount = 10**18
+        if i > 0:
+            min_amount = min_amount * 10**18 // self.price_scale[i - 1]
+        return min_amount
+
     def prepare_for_trades(self, timestamp):
         """
         Updates the pool's _block_timestamp attribute to current sim time.
