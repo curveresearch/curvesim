@@ -27,6 +27,18 @@ class SimPool(ABC):
             the time to sample from
         """
 
+    def prepare_for_run(self, prices):
+        """
+        Does any necessary preparation before beginning a simulation run.
+
+        Base implementation is a no-op.
+
+        Parameters
+        ----------
+        timestamp : pandas.DataFrame
+            The price time_series, price_sampler.prices.
+        """
+
     @abstractmethod
     def price(self, coin_in, coin_out, use_fee=True):
         """
