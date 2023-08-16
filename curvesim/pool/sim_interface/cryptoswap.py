@@ -1,10 +1,15 @@
 """Module to house the `SimPool` extension of the `CurveCryptoPool`."""
+from math import prod
+
 from curvesim.exceptions import SimPoolError
 from curvesim.templates import SimAssets
 from curvesim.templates.sim_pool import SimPool
 from curvesim.utils import cache, override
 
 from ..cryptoswap import CurveCryptoPool
+from ..cryptoswap.calcs import newton_D
+from ..cryptoswap.calcs.factory_2_coin import _sqrt_int
+from ..cryptoswap.calcs.tricrypto_ng import _cbrt
 from .asset_indices import AssetIndicesMixin
 
 
@@ -163,6 +168,49 @@ class SimCurveCryptoPool(SimPool, AssetIndicesMixin, CurveCryptoPool):
 
         timestamp = int(timestamp.timestamp())  # unix timestamp in seconds
         self._increment_timestamp(timestamp=timestamp)
+
+    @override
+    def prepare_for_run(self, prices):
+        """
+        Sets price parameters to the first simulation price and updates
+        balances to be equally-valued.
+
+        Balances are updated so that xcp(D) is preserved, but D may change.
+
+        Parameters
+        ----------
+        timestamp : pandas.DataFrame
+            The price time_series, price_sampler.prices.
+        """
+        xcp = self._get_xcp(self.D)
+        n = self.n
+
+        if n == 2:
+            root = _sqrt_int
+        elif n == 3:
+            root = _cbrt
+
+        # Get/set initial prices
+        initial_prices = prices.iloc[0, 0 : n - 1].tolist()
+        initial_prices = [int(10**18 / p) for p in initial_prices]
+
+        self.last_prices = initial_prices
+        self.price_scale = initial_prices
+        self._price_oracle = initial_prices
+
+        # Upbdate balances, preserving xcp
+        initial_prices_root = [root(p) for p in initial_prices]
+        new_D = prod(initial_prices_root) * xcp * n // 10 ** (18 * (n - 1))
+        balances = self._convert_D_to_balances(new_D)
+        self.balances = balances
+
+        # Recompute and store D & virtual_price
+        xp = self._xp()  # pylint: disable=protected-access
+        computed_D = newton_D(self.A, self.gamma, xp)
+        self.D = computed_D
+
+        virtual_price = self.get_virtual_price()
+        self.virtual_price = virtual_price
 
     @property
     @override
