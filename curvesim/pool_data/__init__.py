@@ -44,7 +44,12 @@ def get_data_cache(address, chain="mainnet", days=60, end=None):
     return pool_data
 
 
-def get_metadata(address, chain="mainnet", end_ts=None):
+def get_metadata(
+    address,
+    chain="mainnet",
+    env="prod",
+    end_ts=None,
+):
     """
     Pulls pool state and metadata from daily snapshot.
 
@@ -62,7 +67,7 @@ def get_metadata(address, chain="mainnet", end_ts=None):
 
     """
     # TODO: validate function arguments
-    metadata_dict = from_address(address, chain, end_ts=end_ts)
+    metadata_dict = from_address(address, chain, env=env, end_ts=end_ts)
     metadata = PoolMetaData(metadata_dict)
 
     return metadata

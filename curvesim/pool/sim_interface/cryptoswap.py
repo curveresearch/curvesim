@@ -63,8 +63,9 @@ class SimCurveCryptoPool(SimPool, AssetIndicesMixin, CurveCryptoPool):
         float
             Price of `coin_in` quoted in `coin_out`
         """
-        # need to implement a dydxfee equivalent on the cryptopool
-        raise SimPoolError("`price` not implemented for SimCurveCryptoPool.")
+        i, j = self.get_asset_indices(coin_in, coin_out)
+        p = self.dydx(i, j, use_fee=use_fee)
+        return p
 
     @override
     def trade(self, coin_in, coin_out, size):
@@ -97,8 +98,8 @@ class SimCurveCryptoPool(SimPool, AssetIndicesMixin, CurveCryptoPool):
         amount_out, fee = self.exchange(i, j, size)
         return amount_out, fee
 
-    # pylint: disable-next=duplicate-code
-    def get_in_amount(self, coin_in, coin_out, out_balance_perc):
+    @override
+    def get_max_trade_size(self, coin_in, coin_out, out_balance_perc=0.15):
         """
         Get the approximate in-amount to achieve the given percentage
         of the out-token balance.
@@ -124,10 +125,55 @@ class SimCurveCryptoPool(SimPool, AssetIndicesMixin, CurveCryptoPool):
         xp_j = int(xp[j] * out_balance_perc)
 
         in_amount = self.get_y(j, i, xp_j, xp) - xp[i]
+        if i > 0:
+            in_amount = in_amount * 10**18 // self.price_scale[i - 1]
         return in_amount
+
+    @override
+    def get_min_trade_size(self, coin_in):
+        """
+        Return the minimal trade size allowed for the pool.
+
+        Parameters
+        ----------
+        coin_in : str, int
+            ID of "in" coin.
+
+        Returns
+        -------
+        int
+            The minimal trade size
+        """
+        (i,) = self.get_asset_indices(coin_in)
+        min_amount = 10**18
+        if i > 0:
+            min_amount = min_amount * 10**18 // self.price_scale[i - 1]
+        return min_amount
+
+    @override
+    def prepare_for_trades(self, timestamp):
+        """
+        Updates the pool's _block_timestamp attribute to current sim time.
+
+        Parameters
+        ----------
+        timestamp : datetime.datetime
+            The current timestamp in the simulation.
+        """
+
+        timestamp = int(timestamp.timestamp())  # unix timestamp in seconds
+        self._increment_timestamp(timestamp=timestamp)
 
     @property
     @override
     @cache
     def assets(self):
+        """
+        Return :class:`.SimAssets` object with the properties of the pool's assets.
+
+        Returns
+        -------
+        SimAssets
+            SimAssets object that stores the properties of the pool's assets.
+        """
         return SimAssets(self.coin_names, self.coin_addresses, self.chain)

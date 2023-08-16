@@ -107,7 +107,6 @@ def pipeline(
     Returns
     -------
     SimResults object
-
     """
     fixed_params = fixed_params or {}
 

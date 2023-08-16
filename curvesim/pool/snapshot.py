@@ -157,3 +157,53 @@ class CurveMetaPoolBalanceSnapshot(Snapshot):
         basepool.balances = self.bp_balances.copy()
         basepool.admin_balances = self.bp_admin_balances.copy()
         basepool.tokens = self.bp_tokens
+
+
+class CurveCryptoPoolBalanceSnapshot(Snapshot):
+    """Snapshot that saves pool balances and admin balances."""
+
+    def __init__(
+        self,
+        balances,
+        D,
+        price_scale,
+        virtual_price,
+        xcp_profit,
+        last_prices,
+        last_prices_timestamp,
+    ):
+        self.balances = balances
+        self.D = D
+        self.price_scale = price_scale
+        self.virtual_price = virtual_price
+        self.xcp_profit = xcp_profit
+        self.last_prices = last_prices
+        self.last_prices_timestamp = last_prices_timestamp
+
+    @classmethod
+    def create(cls, pool):
+        balances = pool.balances.copy()
+        D = pool.D
+        price_scale = pool.price_scale.copy()
+        virtual_price = pool.virtual_price
+        xcp_profit = pool.xcp_profit
+        last_prices = pool.last_prices.copy()
+        last_prices_timestamp = pool.last_prices_timestamp
+        return cls(
+            balances,
+            D,
+            price_scale,
+            virtual_price,
+            xcp_profit,
+            last_prices,
+            last_prices_timestamp,
+        )
+
+    def restore(self, pool):
+        pool.balances = self.balances.copy()
+        pool.D = self.D
+        pool.price_scale = self.price_scale.copy()
+        pool.virtual_price = self.virtual_price
+        pool.xcp_profit = self.xcp_profit
+        pool.last_prices = self.last_prices.copy()
+        pool.last_prices_timestamp = self.last_prices_timestamp

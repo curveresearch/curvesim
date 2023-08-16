@@ -5,6 +5,7 @@ of pool instances configured by different simulation parameters.
 Each mixin defines a different pool type and a set of special attribute setters.
 """
 
+from curvesim.pool.cryptoswap.calcs import newton_D
 from curvesim.pool.sim_interface import (
     SimCurveCryptoPool,
     SimCurveMetaPool,
@@ -72,7 +73,53 @@ class CurveCryptoPoolMixin:
         dict
             A dictionary containing the special setters for the pool parameters.
         """
-        return {"D": cryptoswap_D_to_balances}
+        return {
+            "D": cryptoswap_D_to_balances,
+            "A": set_cryptoswap_A,
+            "gamma": set_cryptoswap_gamma,
+        }
+
+
+def set_cryptoswap_A(pool, A):
+    """
+    Sets A on the pool, with the following side-effects:
+    - recalculate and cache D
+    - recalculate and cache virtual_price
+
+    Parameters
+    ----------
+    pool : instance of _pool_type
+    A : int
+        The A parameter
+    """
+    xp = pool._xp()  # pylint: disable=protected-access
+    gamma = pool.gamma
+    D = newton_D(A, gamma, xp)
+    pool.D = D
+    pool.A = A
+    virtual_price = pool.get_virtual_price()
+    pool.virtual_price = virtual_price
+
+
+def set_cryptoswap_gamma(pool, gamma):
+    """
+    Sets gamma on the pool, with the following side-effects:
+    - recalculate and cache D
+    - recalculate and cache virtual_price
+
+    Parameters
+    ----------
+    pool : instance of _pool_type
+    gamma : int
+        The gamma parameter
+    """
+    xp = pool._xp()  # pylint: disable=protected-access
+    A = pool.A
+    D = newton_D(A, gamma, xp)
+    pool.D = D
+    pool.gamma = gamma
+    virtual_price = pool.get_virtual_price()
+    pool.virtual_price = virtual_price
 
 
 def stableswap_D_to_balances(pool, D):
@@ -120,4 +167,4 @@ def cryptoswap_D_to_balances(pool, D):
         The invariant value.
     """
     pool.D = D
-    pool.balances = pool._convert_D_to_balances(D)
+    pool.balances = pool._convert_D_to_balances(D)  # pylint: disable=protected-access

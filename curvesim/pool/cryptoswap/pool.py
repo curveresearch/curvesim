@@ -8,6 +8,7 @@ from typing import List
 from curvesim.exceptions import CalculationError, CryptoPoolError
 from curvesim.logging import get_logger
 from curvesim.pool.base import Pool
+from curvesim.pool.snapshot import CurveCryptoPoolBalanceSnapshot
 
 from .calcs import (
     factory_2_coin,
@@ -28,6 +29,8 @@ PRECISION = 10**18  # The precision to convert to
 
 class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
     """Cryptoswap implementation in Python."""
+
+    snapshot_class = CurveCryptoPoolBalanceSnapshot
 
     __slots__ = (
         "A",
@@ -151,7 +154,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         self.ma_half_time = ma_half_time
 
         self._block_timestamp = _get_unix_timestamp()
-        self.last_prices_timestamp = last_prices_timestamp or self._block_timestamp
+        self.last_prices_timestamp = last_prices_timestamp or 0
 
         self.xcp_profit = xcp_profit
         self.xcp_profit_a = xcp_profit_a  # Full profit at last claim of admin fees
@@ -378,6 +381,8 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
             virtual_price = 10**18 * xcp // total_supply
 
             if virtual_price < old_virtual_price:
+                print("old vp:", old_virtual_price)
+                print("new vp:", virtual_price)
                 raise CryptoPoolError("Loss")
 
             xcp_profit = old_xcp_profit * virtual_price // old_virtual_price
@@ -594,6 +599,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
 
         y_out = get_y(A, gamma, xp, self.D, j)
         dy = xp[j] - y_out[0]
+        assert dy >= 0, f"Invalid dy: dx: {dx}, dy: {dy}, i: {i}, j: {j} "
         xp[j] -= dy
         dy -= 1
 
@@ -607,7 +613,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
 
         fee = self._fee(xp) * dy // 10**10
         dy -= fee
-        assert dy >= min_dy, "Slippage"
+        assert dy >= min_dy, f"Slippage: dy: {dy}"
         y -= dy
 
         self.balances[j] = y
@@ -1094,10 +1100,21 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         gamma = self.gamma
 
         K0 = 10**18 * n**n * prod(xp) / D**n
+        # print("K0:", K0)
+        calc_D = newton_D(A, gamma, xp)
 
-        coeff = gamma**2 * A / (D * (10**18 + gamma - K0) ** 2) / A_multiplier
+        coeff = A * gamma**2 / (10**18 + gamma - K0) ** 2
         frac = (10**18 + gamma + K0) * (sum(xp) - D) / (10**18 + gamma - K0)
-        dydx = x_j * (1 + coeff * (x_i + frac)) / (x_i * (1 + coeff * (x_j + frac)))
+        dydx_top = x_j * (A_multiplier * D + coeff * (x_i + frac))
+        dydx_bottom = x_i * (A_multiplier * D + coeff * (x_j + frac))
+        if dydx_bottom == 0:
+            print("K0:", K0)
+            print("A:", A)
+            #     print("coeff:", coeff)
+            #     print("frac:", frac)
+            print("Set D:", D)
+            print("Calc D:", calc_D)
+        dydx = dydx_top / dydx_bottom
 
         if j > 0:
             price_scale = self.price_scale[j - 1]

@@ -15,7 +15,18 @@ def hello_world():
     """Simple sim run as a health check."""
     # pylint: disable=redefined-outer-name
     t = time.time()
-    res = autosim("0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7", test=True, ncpu=1)
+    # res = autosim("0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7", test=True, ncpu=1)
+    # tricrv
+    res = autosim(
+        "0x4ebdf703948ddcea3b11f675b4d1fba9d2414a14",
+        A=[1707629, 2570000, 50000],
+        gamma=[1300000000000, 13000000000, 13000000000000],
+        ncpu=4,
+        env="staging",
+    )
+    # res = autosim(
+    #     "0xd51a44d3fae010294c616388b506acda1bfaae46", A=[1707000, 40000, 50000], ncpu=1
+    # )
     elapsed = time.time() - t
     print("Elapsed time:", elapsed)
 

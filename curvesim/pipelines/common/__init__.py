@@ -8,7 +8,7 @@ DEFAULT_METRICS = [
     Metrics.Timestamp,
     Metrics.PoolValue,
     Metrics.PoolBalance,
-    Metrics.PriceDepth,
+    # Metrics.PriceDepth,
     Metrics.PoolVolume,
     Metrics.ArbMetrics,
 ]
@@ -48,8 +48,9 @@ def get_arb_trades(pool, prices):
 
     def post_trade_price_error(dx, coin_in, coin_out, price_target):
         with pool.use_snapshot_context():
+            dx = int(dx)
             if dx > 0:
-                pool.trade(coin_in, coin_out, int(dx))
+                pool.trade(coin_in, coin_out, dx)
             price = pool.price(coin_in, coin_out, use_fee=True)
 
         return price - price_target
@@ -69,7 +70,7 @@ def get_arb_trades(pool, prices):
             trades.append((0, pair, prices[pair]))
             continue
 
-        high = pool.get_in_amount(coin_in, coin_out, out_balance_perc=0.01)
+        high = pool.get_max_trade_size(coin_in, coin_out)
         bounds = (0, high)
         try:
             res = root_scalar(

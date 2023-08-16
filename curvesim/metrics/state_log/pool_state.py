@@ -24,10 +24,11 @@ def get_pool_state(pool):
 def get_cryptoswap_pool_state(pool):
     """Returns pool state for stableswap non-meta pools."""
     return {
+        "D": pool.D,
         "balances": pool.balances,
         "tokens": pool.tokens,
         "price_scale": pool.price_scale,
-        "price_oracle": pool.price_oracle(),
+        "_price_oracle": pool._price_oracle,  # pylint: disable=protected-access
         "xcp_profit": pool.xcp_profit,
         "xcp_profit_a": pool.xcp_profit_a,
         "last_prices": pool.last_prices,

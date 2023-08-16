@@ -13,10 +13,10 @@ def test_convex_subgraph_volume_query():
     chain = "mainnet"
     address = "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7"
     _volume_sync = sync(_volume)
-    volumes = _volume_sync(address, chain, days=2, end=1686700800)
+    volumes = _volume_sync(address, chain, env="prod", days=2, end=1686700800)
     assert len(volumes) == 2
 
-    volumes = _volume_sync(ZERO_ADDRESS, chain, days=2, end=1686700800)
+    volumes = _volume_sync(ZERO_ADDRESS, chain, env="prod", days=2, end=1686700800)
     assert len(volumes) == 0
 
 

@@ -21,7 +21,12 @@ logger = get_logger(__name__)
 
 
 def autosim(
-    pool=None, chain="mainnet", pool_metadata=None, pool_data_cache=None, **kwargs
+    pool=None,
+    chain="mainnet",
+    pool_metadata=None,
+    pool_data_cache=None,
+    env="prod",
+    **kwargs,
 ):
     """
     The autosim() function simulates existing Curve pools with a range of
@@ -134,6 +139,9 @@ def autosim(
     ncpu : int, default=os.cpu_count()
         Number of cores to use.
 
+    env: str, default='prod'
+        Environment for the Curve subgraph, which pulls pool and volume snapshots.
+
     Returns
     -------
     dict
@@ -141,7 +149,7 @@ def autosim(
     """
     assert any([pool, pool_metadata]), "Must input 'pool' or 'pool_metadata'"
 
-    pool_metadata = pool_metadata or get_metadata(pool, chain)
+    pool_metadata = pool_metadata or get_metadata(pool, chain, env)
     p_var, p_fixed, kwargs = _parse_arguments(pool_metadata, **kwargs)
 
     results = volume_limited_arbitrage(
@@ -156,7 +164,7 @@ def autosim(
 
 
 def _parse_arguments(pool_metadata, **kwargs):
-    pool_args = ["A", "D", "x", "p", "fee", "fee_mul", "tokens", "admin_fee"]
+    pool_args = ["A", "D", "x", "p", "fee", "fee_mul", "tokens", "admin_fee", "gamma"]
     pool_args += [arg + "_base" for arg in pool_args[:-1]]
 
     variable_params = {}

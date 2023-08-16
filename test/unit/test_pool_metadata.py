@@ -1,9 +1,9 @@
 import json
 
+from curvesim.pool.cryptoswap.pool import CurveCryptoPool
 from curvesim.pool.sim_interface.cryptoswap import SimCurveCryptoPool
 from curvesim.pool.sim_interface.metapool import SimCurveMetaPool
 from curvesim.pool.sim_interface.pool import SimCurvePool
-from curvesim.pool.cryptoswap.pool import CurveCryptoPool
 from curvesim.pool.stableswap.metapool import CurveMetaPool
 from curvesim.pool.stableswap.pool import CurvePool
 from curvesim.pool_data.metadata import PoolMetaData
@@ -123,7 +123,7 @@ CRYPTOPOOL_TEST_METADATA_JSON = """
         "out_fee": 45000000,
         "allowed_extra_profit": 2000000000000,
         "adjustment_step": 146000000000000,
-        "ma_half_time": 146000000000000,
+        "ma_half_time": 600,
         "price_scale": 1532848669525694314,
         "price_oracle": 1629891359676425537,
         "last_prices": 1625755383082188296,
@@ -302,11 +302,12 @@ def test_cryptopool():
         "allowed_extra_profit": 2000000000000,
         "fee_gamma": 230000000000000,
         "tokens": 17477479403491661243983086,
-        "ma_half_time": 146000000000000,
+        "ma_half_time": 600,
         "price_scale": 1532848669525694314,
         "admin_fee": 5000000000,
         "xcp_profit": 1073065310463073367,
         "xcp_profit_a": 1073065310463073367,
+        "precisions": [1, 1],
     }
     assert metadata.init_kwargs(balanced=False) == {
         "A": 400000,
@@ -323,11 +324,12 @@ def test_cryptopool():
         "allowed_extra_profit": 2000000000000,
         "fee_gamma": 230000000000000,
         "tokens": 17477479403491661243983086,
-        "ma_half_time": 146000000000000,
+        "ma_half_time": 600,
         "price_scale": 1532848669525694314,
         "admin_fee": 5000000000,
         "xcp_profit": 1073065310463073367,
         "xcp_profit_a": 1073065310463073367,
+        "precisions": [1, 1],
     }
     assert metadata.init_kwargs(balanced=False, normalize=False) == {
         "A": 400000,
@@ -344,7 +346,7 @@ def test_cryptopool():
         "allowed_extra_profit": 2000000000000,
         "fee_gamma": 230000000000000,
         "tokens": 17477479403491661243983086,
-        "ma_half_time": 146000000000000,
+        "ma_half_time": 600,
         "price_scale": 1532848669525694314,
         "admin_fee": 5000000000,
         "xcp_profit": 1073065310463073367,
