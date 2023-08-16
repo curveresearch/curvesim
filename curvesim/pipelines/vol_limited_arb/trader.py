@@ -124,8 +124,6 @@ def multipair_optimal_arbitrage(  # noqa: C901  pylint: disable=too-many-locals
         for k, amount_in in enumerate(dxs):
             if isnan(amount_in):
                 continue
-            # if amount_in < 10**18:
-            #     continue
 
             amount_in = int(amount_in)
             coin_in, coin_out = coins[k]
