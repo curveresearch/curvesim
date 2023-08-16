@@ -99,6 +99,7 @@ class SimCurveMetaPool(SimPool, AssetIndicesMixin, CurveMetaPool):
 
         return i, j
 
+    @override
     def get_in_amount(self, coin_in, coin_out, out_balance_perc=0.01):
         i, j = self.get_asset_indices(coin_in, coin_out)
 
@@ -126,6 +127,10 @@ class SimCurveMetaPool(SimPool, AssetIndicesMixin, CurveMetaPool):
             in_amount -= xp_base[base_i]
 
         return in_amount
+
+    @override
+    def get_min_trade_size(self, coin_in):
+        return 0
 
     @property
     @override

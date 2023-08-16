@@ -43,6 +43,7 @@ class SimCurvePool(SimPool, AssetIndicesMixin, CurvePool):
         amount_out, fee = self.exchange(i, j, size)
         return amount_out, fee
 
+    @override
     def get_in_amount(self, coin_in, coin_out, out_balance_perc=0.01):
         i, j = self.get_asset_indices(coin_in, coin_out)
 
@@ -51,6 +52,10 @@ class SimCurvePool(SimPool, AssetIndicesMixin, CurvePool):
 
         in_amount = self.get_y(j, i, xp_j, xp) - xp[i]
         return in_amount
+
+    @override
+    def get_min_trade_size(self, coin_in):
+        return 0
 
     @property
     @override

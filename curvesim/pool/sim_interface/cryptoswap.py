@@ -98,7 +98,7 @@ class SimCurveCryptoPool(SimPool, AssetIndicesMixin, CurveCryptoPool):
         amount_out, fee = self.exchange(i, j, size)
         return amount_out, fee
 
-    # pylint: disable-next=duplicate-code
+    @override
     def get_in_amount(self, coin_in, coin_out, out_balance_perc=0.15):
         """
         Get the approximate in-amount to achieve the given percentage
@@ -129,13 +129,15 @@ class SimCurveCryptoPool(SimPool, AssetIndicesMixin, CurveCryptoPool):
             in_amount = in_amount * 10**18 // self.price_scale[i - 1]
         return in_amount
 
-    def get_min_in_amount(self, coin_in):
+    @override
+    def get_min_trade_size(self, coin_in):
         (i,) = self.get_asset_indices(coin_in)
         min_amount = 10**18
         if i > 0:
             min_amount = min_amount * 10**18 // self.price_scale[i - 1]
         return min_amount
 
+    @override
     def prepare_for_trades(self, timestamp):
         """
         Updates the pool's _block_timestamp attribute to current sim time.
