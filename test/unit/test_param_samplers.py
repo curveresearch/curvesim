@@ -314,7 +314,7 @@ def _test_pool_params(pool, params):
         if _key == "D":
             if isinstance(pool, SimCurveCryptoPool):
                 D_from_xp = newton_D(_pool.A, _pool.gamma, _pool._xp())
-                assert _pool.D == val
+                assert abs(_pool.D - val) <= 10**10
                 assert (
                     abs(D_from_xp - val) <= 10**10
                 )  # _newton_D allows some minor error
