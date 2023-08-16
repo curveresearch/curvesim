@@ -94,7 +94,7 @@ def multipair_optimal_arbitrage(  # noqa: C901  pylint: disable=too-many-locals
                     dx = int(dxs[k])
 
                 coin_in, coin_out = pair
-                min_size = pool.get_min_in_amount(coin_in)
+                min_size = pool.get_min_trade_size(coin_in)
                 if dx > min_size:
                     pool.trade(coin_in, coin_out, dx)
 
@@ -127,7 +127,7 @@ def multipair_optimal_arbitrage(  # noqa: C901  pylint: disable=too-many-locals
 
             amount_in = int(amount_in)
             coin_in, coin_out = coins[k]
-            min_size = pool.get_min_in_amount(coin_in)
+            min_size = pool.get_min_trade_size(coin_in)
             if amount_in > min_size:
                 trades.append(Trade(coin_in, coin_out, amount_in))
 

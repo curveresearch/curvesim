@@ -70,7 +70,7 @@ def get_arb_trades(pool, prices):
             trades.append((0, pair, prices[pair]))
             continue
 
-        high = pool.get_in_amount(coin_in, coin_out)
+        high = pool.get_max_trade_size(coin_in, coin_out)
         bounds = (0, high)
         try:
             res = root_scalar(
