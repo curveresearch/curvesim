@@ -131,6 +131,19 @@ class SimCurveCryptoPool(SimPool, AssetIndicesMixin, CurveCryptoPool):
 
     @override
     def get_min_trade_size(self, coin_in):
+        """
+        Return the minimal trade size allowed for the pool.
+
+        Parameters
+        ----------
+        coin_in : str, int
+            ID of "in" coin.
+
+        Returns
+        -------
+        int
+            The minimal trade size
+        """
         (i,) = self.get_asset_indices(coin_in)
         min_amount = 10**18
         if i > 0:
@@ -155,4 +168,12 @@ class SimCurveCryptoPool(SimPool, AssetIndicesMixin, CurveCryptoPool):
     @override
     @cache
     def assets(self):
+        """
+        Return :class:`.SimAssets` object with the properties of the pool's assets.
+
+        Returns
+        -------
+        SimAssets
+            SimAssets object that stores the properties of the pool's assets.
+        """
         return SimAssets(self.coin_names, self.coin_addresses, self.chain)
