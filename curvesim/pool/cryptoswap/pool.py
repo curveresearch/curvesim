@@ -599,6 +599,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
 
         y_out = get_y(A, gamma, xp, self.D, j)
         dy = xp[j] - y_out[0]
+        assert dy >= 0, f"Invalid dy: dx: {dx}, dy: {dy}, i: {i}, j: {j} "
         xp[j] -= dy
         dy -= 1
 
@@ -612,7 +613,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
 
         fee = self._fee(xp) * dy // 10**10
         dy -= fee
-        assert dy >= min_dy, f"Slippage: dy: {dy}, dx: {dx} "
+        assert dy >= min_dy, f"Slippage: dy: {dy}"
         y -= dy
 
         self.balances[j] = y
