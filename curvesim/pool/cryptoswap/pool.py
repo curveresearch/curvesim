@@ -577,26 +577,24 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         dx: int,
         min_dy: int,
     ) -> int:
-        assert i != j  # dev: coin index out of range
-        assert i < self.n  # dev: coin index out of range
-        assert j < self.n  # dev: coin index out of range
-        assert dx > 0  # dev: do not exchange 0 coins
+        assert i != j, "Indices must be different"
+        assert i < self.n, "Index out of bounds"
+        assert j < self.n, "Index out of bounds"
+        assert dx > 0, "Can't swap zero amount"
 
         A = self.A
         gamma = self.gamma
         xp: List[int] = self.balances.copy()
         ix: int = j
-        dy: int = 0
 
         y: int = xp[j]
-        x0: int = xp[i]
-        xp[i] = x0 + dx
+        xp[i] += dx
         self.balances[i] = xp[i]
 
         xp = self._xp_mem(xp)
 
         y_out = get_y(A, gamma, xp, self.D, j)
-        dy = xp[j] - y_out[0]
+        dy: int = xp[j] - y_out[0]
         assert dy >= 0, f"Invalid dy: dx: {dx}, dy: {dy}, i: {i}, j: {j} "
         xp[j] -= dy
         dy -= 1
@@ -624,7 +622,6 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         p: int = 0
         K0_prev: int = 0
         if self.n == 2:
-            # Calculate price
             if dx > 10**5 and dy > 10**5:
                 _dx: int = dx * prec_i
                 _dy: int = dy * prec_j
@@ -1061,7 +1058,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         """
         return self.dydx(i, j, use_fee=True)
 
-    def dydx(self, i, j, use_fee=False):
+    def dydx(self, i, j, use_fee=False):  # pylint: disable=too-many-locals
         """
         Returns the spot price of i-th coin quoted in terms of j-th coin,
         i.e. the ratio of output coin amount to input coin amount for
