@@ -42,6 +42,9 @@ class SimpleArbitrageur(Trader):
         for t in trades:
             size, coins, price_target = t
             i, j = coins
+            min_trade_size = pool.get_min_trade_size(i)
+            if size <= min_trade_size:
+                continue
             with pool.use_snapshot_context():
                 out_amount, _ = pool.trade(i, j, size)
                 # assume we transacted at "infinite" depth at target price
