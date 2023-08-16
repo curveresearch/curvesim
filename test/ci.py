@@ -5,16 +5,27 @@ Technically these are not end-to-end tests since we don't pull the data,
 so besides the network code there is a lack of coverage around the
 `pool_data` and `price_data` packages.
 """
+import argparse
 import os
+import pickle
 
-from pandas import DataFrame, read_pickle
+import pandas as pd
 
 import curvesim
 
 
-def main():  # noqa: C901
+def main(generate=False, ncpu=None):
+    """
+    Run the vol-limited arb pipeline across the given pools, pulling
+    pool and market data using the specified timestamp.
 
+    Use `generate` to create and pickle the test data for comparison
+    with the output of future code changes.
+
+    Setting `ncpu` to 1 is useful for debugging and profiling.
+    """
     data_dir = os.path.join("test", "data")
+
     pools = [
         # 3CRV
         {
@@ -28,12 +39,12 @@ def main():  # noqa: C901
         },
         # frax3CRV"
         {
-            "address": "FRAX3CRV-f",
+            "address": "0xd632f22692fac7611d2aa1c0d552930d43caed3b",
             "end_timestamp": 1643673600,
         },
         # ousd3CRV
         {
-            "address": "OUSD3CRV-f",
+            "address": "0x87650d7bbfc3a9f10587d7778206671719d9910d",
             "end_timestamp": 1646265600,
         },
         # rai3CRV
@@ -61,19 +72,13 @@ def main():  # noqa: C901
         vol_mult = pool.get("vol_mult", None)
         env = pool.get("env", "prod")
 
-        f_name = os.path.join(data_dir, f"{address}-pool_data_cache.pickle")
-        pool_data_cache = read_pickle(f_name)
-        f_name = os.path.join(data_dir, f"{address}-pool_metadata.pickle")
-        pool_metadata = read_pickle(f_name)
-
         results = curvesim.autosim(
-            pool_metadata=pool_metadata,
-            test=True,
-            src="local",
-            data_dir=data_dir,
-            pool_data_cache=pool_data_cache,
+            pool=address,
+            chain="mainnet",
             end=end_ts,
+            test=True,
             vol_mult=vol_mult,
+            ncpu=ncpu,
             env=env,
         )
 
@@ -85,8 +90,13 @@ def main():  # noqa: C901
 
         for key in test_functions:
             f_name = os.path.join(data_dir, f"{address}-results_{key}.pickle")
-            stored_data = read_pickle(f_name)
-            test_functions[key](sim_data[key], stored_data)
+
+            if generate:
+                with open(f_name, "wb") as f:
+                    pickle.dump(sim_data[key], f)
+            else:
+                stored_data = pd.read_pickle(f_name)
+                test_functions[key](sim_data[key], stored_data)
 
 
 def per_run(sim, stored):
@@ -143,7 +153,7 @@ def per_trade(sim, stored, threshold=0.9):
 
         R2.append(compute_R2(_sim.resample("1D").mean(), _stored.resample("1D").mean()))
 
-    R2 = DataFrame(R2).T
+    R2 = pd.DataFrame(R2).T
 
     # Feedback
     if not (R2 >= threshold).all(axis=None):
@@ -204,4 +214,21 @@ def compute_R2(sim, stored):
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(
+        prog="Vol-limited CI Test",
+        description="Test end-to-end by running the vol-limited arb pipeline across multiple pool types",
+    )
+    parser.add_argument(
+        "-g",
+        "--generate",
+        action="store_true",
+        help="Generate pickled test data",
+    )
+    parser.add_argument(
+        "-n",
+        "--ncpu",
+        type=int,
+        help="Number of cores to use; use 1 for debugging/profiling",
+    )
+    args = parser.parse_args()
+    main(args.generate, args.ncpu)
