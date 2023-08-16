@@ -87,7 +87,7 @@ class SimPool(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_in_amount(self, coin_in, coin_out, out_balance_perc):
+    def get_max_trade_size(self, coin_in, coin_out, out_balance_perc):
         """
         Calculate the swap amount of the "in" coin needed to leave
         the specified percentage of the "out" coin.

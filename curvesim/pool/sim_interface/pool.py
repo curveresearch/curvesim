@@ -92,7 +92,7 @@ class SimCurvePool(SimPool, AssetIndicesMixin, CurvePool):
         return amount_out, fee
 
     @override
-    def get_in_amount(self, coin_in, coin_out, out_balance_perc=0.01):
+    def get_max_trade_size(self, coin_in, coin_out, out_balance_perc=0.01):
         """
         Calculate the swap amount of the "in" coin needed to leave
         the specified percentage of the "out" coin.
