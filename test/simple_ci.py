@@ -27,6 +27,12 @@ pools = [
         "address": "0xd632f22692FaC7611d2AA1C0D552930D43CAEd3B",
         "end_timestamp": 1643673600,
     },
+    # triCRV
+    {
+        "address": "0x4ebdf703948ddcea3b11f675b4d1fba9d2414a14",
+        "end_timestamp": 1692215156,
+        "env": "staging",
+    },
 ]
 
 
@@ -52,6 +58,7 @@ def main(generate=False, ncpu=None):
     for pool in pools:
         pool_address = pool["address"]
         end_ts = pool["end_timestamp"]
+        env = pool.get("env", "prod")
 
         results = simple_pipeline(
             pool_address=pool_address,
@@ -59,6 +66,7 @@ def main(generate=False, ncpu=None):
             end_ts=end_ts,
             test=True,
             ncpu=ncpu,
+            env=env,
         )
 
         sim_data = {
