@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Coverage for curvesim/metrics/metrics.py: 77%</title>
+    <title>Coverage for curvesim/metrics/metrics.py: 84%</title>
     <link rel="icon" sizes="32x32" href="favicon_32.png">
     <link rel="stylesheet" href="style.css" type="text/css">
     <script type="text/javascript" src="coverage_html.js" defer></script>
@@ -12,7 +12,7 @@
     <div class="content">
         <h1>
             <span class="text">Coverage for </span><b>curvesim/metrics/metrics.py</b>:
-            <span class="pc_cov">77%</span>
+            <span class="pc_cov">84%</span>
         </h1>
         <aside id="help_panel_wrapper">
             <input id="help_panel_state" type="checkbox">
@@ -56,8 +56,8 @@
         </aside>
         <h2>
             <span class="text">215 statements &nbsp;</span>
-            <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">174<span class="text"> run</span></button>
-            <button type="button" class="mis show_mis button_toggle_mis" value="mis" data-shortcut="m" title="Toggle lines missing">41<span class="text"> missing</span></button>
+            <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">190<span class="text"> run</span></button>
+            <button type="button" class="mis show_mis button_toggle_mis" value="mis" data-shortcut="m" title="Toggle lines missing">25<span class="text"> missing</span></button>
             <button type="button" class="exc show_exc button_toggle_exc" value="exc" data-shortcut="x" title="Toggle lines excluded">0<span class="text"> excluded</span></button>
             <button type="button" class="par run show_par button_toggle_par" value="par" data-shortcut="p" title="Toggle lines partially run">15<span class="text"> partial</span></button>
         </h2>
@@ -67,7 +67,7 @@
             <a id="nextFileLink" class="nav" href="d_e3601da9a537b3af___init___py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.3.0">coverage.py v7.3.0</a>,
-            created at 2023-08-16 21:03 +0000
+            created at 2023-08-16 23:35 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"/>
@@ -317,23 +317,23 @@
     <p class="pln"><span class="n"><a id="t233" href="#t233">233</a></span><span class="t">        <span class="str">"""</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t234" href="#t234">234</a></span><span class="t"><span class="str">        Records trade volume for cryptoswap non-meta-pools.</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t235" href="#t235">235</a></span><span class="t"><span class="str">        """</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t236" href="#t236">236</a></span><span class="t">        <span class="nam">trades</span> <span class="op">=</span> <span class="nam">kwargs</span><span class="op">[</span><span class="str">"trade_data"</span><span class="op">]</span><span class="op">.</span><span class="nam">trades</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t237" href="#t237">237</a></span><span class="t">        <span class="nam">prices</span> <span class="op">=</span> <span class="nam">kwargs</span><span class="op">[</span><span class="str">"price_sample"</span><span class="op">]</span><span class="op">.</span><span class="nam">prices</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t236" href="#t236">236</a></span><span class="t">        <span class="nam">trades</span> <span class="op">=</span> <span class="nam">kwargs</span><span class="op">[</span><span class="str">"trade_data"</span><span class="op">]</span><span class="op">.</span><span class="nam">trades</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t237" href="#t237">237</a></span><span class="t">        <span class="nam">prices</span> <span class="op">=</span> <span class="nam">kwargs</span><span class="op">[</span><span class="str">"price_sample"</span><span class="op">]</span><span class="op">.</span><span class="nam">prices</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t238" href="#t238">238</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t239" href="#t239">239</a></span><span class="t">        <span class="nam">trade_price_data</span> <span class="op">=</span> <span class="nam">concat</span><span class="op">(</span><span class="op">[</span><span class="nam">trades</span><span class="op">,</span> <span class="nam">prices</span><span class="op">]</span><span class="op">,</span> <span class="nam">axis</span><span class="op">=</span><span class="num">1</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t240" href="#t240">240</a></span><span class="t">        <span class="nam">numeraire</span> <span class="op">=</span> <span class="nam">self</span><span class="op">.</span><span class="nam">numeraire</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t239" href="#t239">239</a></span><span class="t">        <span class="nam">trade_price_data</span> <span class="op">=</span> <span class="nam">concat</span><span class="op">(</span><span class="op">[</span><span class="nam">trades</span><span class="op">,</span> <span class="nam">prices</span><span class="op">]</span><span class="op">,</span> <span class="nam">axis</span><span class="op">=</span><span class="num">1</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t240" href="#t240">240</a></span><span class="t">        <span class="nam">numeraire</span> <span class="op">=</span> <span class="nam">self</span><span class="op">.</span><span class="nam">numeraire</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t241" href="#t241">241</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t242" href="#t242">242</a></span><span class="t">        <span class="key">def</span> <span class="nam">per_timestamp_function</span><span class="op">(</span><span class="nam">trade_price_data</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t243" href="#t243">243</a></span><span class="t">            <span class="nam">trades</span> <span class="op">=</span> <span class="nam">trade_price_data</span><span class="op">.</span><span class="nam">trades</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t244" href="#t244">244</a></span><span class="t">            <span class="nam">prices</span> <span class="op">=</span> <span class="nam">trade_price_data</span><span class="op">.</span><span class="nam">prices</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t245" href="#t245">245</a></span><span class="t">            <span class="nam">get_price</span> <span class="op">=</span> <span class="nam">self</span><span class="op">.</span><span class="nam">get_market_price</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t242" href="#t242">242</a></span><span class="t">        <span class="key">def</span> <span class="nam">per_timestamp_function</span><span class="op">(</span><span class="nam">trade_price_data</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t243" href="#t243">243</a></span><span class="t">            <span class="nam">trades</span> <span class="op">=</span> <span class="nam">trade_price_data</span><span class="op">.</span><span class="nam">trades</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t244" href="#t244">244</a></span><span class="t">            <span class="nam">prices</span> <span class="op">=</span> <span class="nam">trade_price_data</span><span class="op">.</span><span class="nam">prices</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t245" href="#t245">245</a></span><span class="t">            <span class="nam">get_price</span> <span class="op">=</span> <span class="nam">self</span><span class="op">.</span><span class="nam">get_market_price</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t246" href="#t246">246</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t247" href="#t247">247</a></span><span class="t">            <span class="nam">volume</span> <span class="op">=</span> <span class="num">0</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t248" href="#t248">248</a></span><span class="t">            <span class="key">for</span> <span class="nam">trade</span> <span class="key">in</span> <span class="nam">trades</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t249" href="#t249">249</a></span><span class="t">                <span class="nam">volume</span> <span class="op">+=</span> <span class="nam">trade</span><span class="op">.</span><span class="nam">amount_in</span> <span class="op">*</span> <span class="nam">get_price</span><span class="op">(</span><span class="nam">trade</span><span class="op">.</span><span class="nam">coin_in</span><span class="op">,</span> <span class="nam">numeraire</span><span class="op">,</span> <span class="nam">prices</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t250" href="#t250">250</a></span><span class="t">            <span class="key">return</span> <span class="nam">volume</span> <span class="op">/</span> <span class="num">10</span><span class="op">**</span><span class="num">18</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t247" href="#t247">247</a></span><span class="t">            <span class="nam">volume</span> <span class="op">=</span> <span class="num">0</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t248" href="#t248">248</a></span><span class="t">            <span class="key">for</span> <span class="nam">trade</span> <span class="key">in</span> <span class="nam">trades</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t249" href="#t249">249</a></span><span class="t">                <span class="nam">volume</span> <span class="op">+=</span> <span class="nam">trade</span><span class="op">.</span><span class="nam">amount_in</span> <span class="op">*</span> <span class="nam">get_price</span><span class="op">(</span><span class="nam">trade</span><span class="op">.</span><span class="nam">coin_in</span><span class="op">,</span> <span class="nam">numeraire</span><span class="op">,</span> <span class="nam">prices</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t250" href="#t250">250</a></span><span class="t">            <span class="key">return</span> <span class="nam">volume</span> <span class="op">/</span> <span class="num">10</span><span class="op">**</span><span class="num">18</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t251" href="#t251">251</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t252" href="#t252">252</a></span><span class="t">        <span class="key">return</span> <span class="nam">self</span><span class="op">.</span><span class="nam">_get_volume</span><span class="op">(</span><span class="nam">trade_price_data</span><span class="op">,</span> <span class="nam">per_timestamp_function</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t252" href="#t252">252</a></span><span class="t">        <span class="key">return</span> <span class="nam">self</span><span class="op">.</span><span class="nam">_get_volume</span><span class="op">(</span><span class="nam">trade_price_data</span><span class="op">,</span> <span class="nam">per_timestamp_function</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t253" href="#t253">253</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t254" href="#t254">254</a></span><span class="t">    <span class="key">def</span> <span class="nam">_get_volume</span><span class="op">(</span><span class="nam">self</span><span class="op">,</span> <span class="nam">trade_data</span><span class="op">,</span> <span class="nam">per_timestamp_function</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t255" href="#t255">255</a></span><span class="t">        <span class="nam">volume</span> <span class="op">=</span> <span class="nam">trade_data</span><span class="op">.</span><span class="nam">apply</span><span class="op">(</span><span class="nam">per_timestamp_function</span><span class="op">,</span> <span class="nam">axis</span><span class="op">=</span><span class="num">1</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
@@ -503,7 +503,7 @@
     <p class="pln"><span class="n"><a id="t419" href="#t419">419</a></span><span class="t"><span class="str">        Used for non-meta cryptoswap pools.</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t420" href="#t420">420</a></span><span class="t"><span class="str">        """</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t421" href="#t421">421</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t422" href="#t422">422</a></span><span class="t">        <span class="key">return</span> <span class="nam">self</span><span class="op">.</span><span class="nam">_get_pool_value</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t422" href="#t422">422</a></span><span class="t">        <span class="key">return</span> <span class="nam">self</span><span class="op">.</span><span class="nam">_get_pool_value</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t423" href="#t423">423</a></span><span class="t">            <span class="nam">kwargs</span><span class="op">[</span><span class="str">"pool_state"</span><span class="op">]</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t424" href="#t424">424</a></span><span class="t">            <span class="nam">kwargs</span><span class="op">[</span><span class="str">"price_sample"</span><span class="op">]</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t425" href="#t425">425</a></span><span class="t">            <span class="nam">self</span><span class="op">.</span><span class="nam">_get_cryptoswap_virtual_value</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
@@ -588,9 +588,9 @@
     <p class="pln"><span class="n"><a id="t504" href="#t504">504</a></span><span class="t"><span class="str">        Computes virtual pool value for a single row of data (i.e., a single timestamp).</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t505" href="#t505">505</a></span><span class="t"><span class="str">        Used for any cryptoswap pool.</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t506" href="#t506">506</a></span><span class="t"><span class="str">        """</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t507" href="#t507">507</a></span><span class="t">        <span class="nam">self</span><span class="op">.</span><span class="nam">set_pool_state</span><span class="op">(</span><span class="nam">pool_state_row</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t507" href="#t507">507</a></span><span class="t">        <span class="nam">self</span><span class="op">.</span><span class="nam">set_pool_state</span><span class="op">(</span><span class="nam">pool_state_row</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t508" href="#t508">508</a></span><span class="t">        <span class="com"># pylint: disable-next=protected-access</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t509" href="#t509">509</a></span><span class="t">        <span class="key">return</span> <span class="nam">self</span><span class="op">.</span><span class="nam">_pool</span><span class="op">.</span><span class="nam">_get_xcp</span><span class="op">(</span><span class="nam">self</span><span class="op">.</span><span class="nam">_pool</span><span class="op">.</span><span class="nam">D</span><span class="op">)</span> <span class="op">/</span> <span class="num">10</span><span class="op">**</span><span class="num">18</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t509" href="#t509">509</a></span><span class="t">        <span class="key">return</span> <span class="nam">self</span><span class="op">.</span><span class="nam">_pool</span><span class="op">.</span><span class="nam">_get_xcp</span><span class="op">(</span><span class="nam">self</span><span class="op">.</span><span class="nam">_pool</span><span class="op">.</span><span class="nam">D</span><span class="op">)</span> <span class="op">/</span> <span class="num">10</span><span class="op">**</span><span class="num">18</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t510" href="#t510">510</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t511" href="#t511">511</a></span><span class="t">    <span class="key">def</span> <span class="nam">compute_annualized_returns</span><span class="op">(</span><span class="nam">self</span><span class="op">,</span> <span class="nam">data</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t512" href="#t512">512</a></span><span class="t">        <span class="str">"""Computes annualized returns from a series of pool values."""</span>&nbsp;</span><span class="r"></span></p>
@@ -724,7 +724,7 @@
             <a id="nextFileLink" class="nav" href="d_e3601da9a537b3af___init___py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.3.0">coverage.py v7.3.0</a>,
-            created at 2023-08-16 21:03 +0000
+            created at 2023-08-16 23:35 +0000
         </p>
     </div>
 </footer>
