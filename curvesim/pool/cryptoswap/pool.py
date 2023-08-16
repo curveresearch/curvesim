@@ -1,5 +1,5 @@
 """
-Mainly a module to house the `CryptoPool`, a cryptoswap implementation in Python.
+Mainly a module to house the `CurveCryptoPool`, a cryptoswap implementation in Python.
 """
 import time
 from math import isqrt, prod
@@ -24,7 +24,7 @@ logger = get_logger(__name__)
 
 NOISE_FEE = 10**5  # 0.1 bps
 EXP_PRECISION = 10**10
-PRECISION = 10**18  # The precision to convert to
+PRECISION = 10**18
 
 
 class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
@@ -403,7 +403,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
                     for p, p_oracle in zip(price_scale, price_oracle)
                 ]
 
-                # Calculate balances*prices
+                # Calculate balances * prices
                 xp = [_xp[0]] + [
                     balance * p_new // p
                     for balance, p, p_new in zip(_xp[1:], price_scale, new_prices)

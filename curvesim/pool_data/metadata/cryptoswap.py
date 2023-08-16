@@ -77,7 +77,6 @@ class CryptoswapMetaData(PoolMetaDataBase):
         if not kwargs["ma_half_time"]:
             kwargs["ma_half_time"] = 600
 
-        print(kwargs)
         return kwargs
 
     @property
