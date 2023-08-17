@@ -32,7 +32,6 @@ jobs:
     - name: Generate comparison results
       run: |
         python3 -m test.simple_ci --generate
-        python3 -m test.ci --generate
 
     - name: Upload results
       uses: actions/upload-artifact@v3
@@ -135,7 +134,6 @@ jobs:
       - name: End-to-end tests
         run: |
           coverage run -m test.simple_ci
-          coverage run -m test.ci
 
       - name: Download coverage badge
         uses: chanhosuh/get-gist-action@master

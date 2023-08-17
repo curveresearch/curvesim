@@ -20,9 +20,9 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Make the comparison results from saved data
+      - name: Make the comparison results
         run: |
-          python3 -m test.scripts.make_test_data
+          python3 -m test.ci --generate
 
       - name: Commit results
         run: |
