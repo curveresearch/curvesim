@@ -80,7 +80,7 @@
 | curvesim/pool\_data/queries.py                                      |       16 |        3 |        4 |        0 |     85% |     48-52 |
 | curvesim/price\_data/\_\_init\_\_.py                                |       10 |        4 |        6 |        1 |     44% |     59-63 |
 | curvesim/price\_data/sources.py                                     |       19 |        8 |        2 |        0 |     52% |     60-71 |
-| curvesim/sim/\_\_init\_\_.py                                        |       34 |       26 |       15 |        0 |     16% |150-163, 167-198 |
+| curvesim/sim/\_\_init\_\_.py                                        |       34 |       26 |       15 |        0 |     16% |150-163, 167-210 |
 | curvesim/templates/\_\_init\_\_.py                                  |        7 |        0 |        0 |        0 |    100% |           |
 | curvesim/templates/param\_samplers.py                               |       36 |        0 |       18 |        1 |     98% |    56->55 |
 | curvesim/templates/price\_samplers.py                               |       10 |        0 |        2 |        0 |    100% |           |
