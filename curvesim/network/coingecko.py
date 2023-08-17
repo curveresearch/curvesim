@@ -4,10 +4,11 @@ Network connector for Coingecko.
 # pylint: disable=redefined-outer-name
 import asyncio
 from datetime import datetime, timedelta, timezone
-from itertools import combinations
 
 import numpy as np
 import pandas as pd
+
+from curvesim.utils import get_pairs
 
 from .http import HTTP
 from .utils import sync
@@ -113,17 +114,21 @@ def pool_prices(coins, vs_currency, days, chain="mainnet", end=None):
     qprices, qvolumes = _pool_prices_sync(coins, vs_currency, days, end)
 
     # Compute prices by coin pairs
-    combos = list(combinations(range(len(coins)), 2))
+    combos = get_pairs(len(coins))
     prices = []
     volumes = []
 
     for pair in combos:
-        prices.append(
-            qprices.iloc[:, pair[0]] / qprices.iloc[:, pair[1]]
-        )  # divide prices
-        volumes.append(
-            qvolumes.iloc[:, pair[0]] + qvolumes.iloc[:, pair[1]]
-        )  # sum volumes
+        base_price = qprices.iloc[:, pair[0]]
+        base_volume = qvolumes.iloc[:, pair[0]]
+
+        quote_price = qprices.iloc[:, pair[1]]
+        quote_volume = qvolumes.iloc[:, pair[1]]
+
+        # divide prices: (usd/base) / (usd/quote) = quote/base
+        prices.append(base_price / quote_price)
+        # sum volumes and convert to base: usd / (usd/base) = base
+        volumes.append((base_volume + quote_volume) / base_price)
 
     prices = pd.concat(prices, axis=1)
     volumes = pd.concat(volumes, axis=1)
