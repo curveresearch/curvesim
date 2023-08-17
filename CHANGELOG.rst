@@ -1,4 +1,47 @@
 
+.. _changelog-0.5.0.b1:
+
+0.5.0.b1 — 2023-08-17
+=====================
+
+The cryptosim milestone enables simulation capability for cryptopools, such as 2-coin factory and 3-coin tricrypto-ng pools.
+
+Note this is a **beta release** as some limitations exist due to data provider issues, which should resolve in the near future; in addition, while simulations are fully functioning, complete pythonic interaction with 3-coin cryptopools is not yet available.
+
+Added
+-----
+
+- The `CurveCryptoPool` class was updated to handle 3 coins for the functionality required
+  for cryptoswap simulations, namely `exchange`, `_tweak_price`, and the related calculations.
+  The pythonic equivalents such as `add_liquidity`, `remove_liquidity_one_coin`, etc., were not updated.
+  For supported calculations, the pool will give exact integer results as compared to the
+  Tricrypto-NG contract.
+
+- Add volume limiting in multiple denominations. Previously, volume
+  limiting was only in USD. This update allows for volume limiting
+  across multiple asset types (e.g., in v2 pools).
+
+- Added `get_y` to `CurveCryptoPool` as with the stableswap pools.
+  This breaks tight adherence to the vyper interface, but makes it easier
+  for integrators.
+
+- Added spot price methods `dydx` and `dydxfee` to the `CurveCryptoPool`.
+
+- Cryptopools are now usable in the simulation framework, with some caveats.  Currently the Curve
+  subgraph returns erroneous total volumes, but a workaround is to use the `vol_mult` argument to
+  scale volume appropriately.  Additionally, Coingecko data provides one-hour resolution, which is
+  likely not suitable.
+
+
+Changed
+-------
+
+- The `bonding_curve` function is now part of the `tools` module in anticipation
+  of further tools, e.g. orderbook.
+
+- `vol_mult` is a dictionary for the vol-limited arbitrage pipeline function.  For backwards-compatability, `autosim` will still take in a float.
+
+
 .. _changelog-0.4.5:
 
 0.4.5 — 2023-06-29
