@@ -33,7 +33,9 @@ def get_cryptoswap_pool_state(pool):
         "xcp_profit_a": pool.xcp_profit_a,
         "last_prices": pool.last_prices.copy(),
         "last_prices_timestamp": pool.last_prices_timestamp,
+        "_block_timestamp": pool._block_timestamp,  # pylint: disable=protected-access
         "not_adjusted": pool.not_adjusted,
+        "virtual_price": pool.virtual_price,
     }
 
 
