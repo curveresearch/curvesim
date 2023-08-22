@@ -124,7 +124,9 @@ def test_get_pool_state_curve_crypto_pool(sim_curve_crypto_pool):
         "xcp_profit_a": pool.xcp_profit_a,
         "last_prices": pool.last_prices,
         "last_prices_timestamp": pool.last_prices_timestamp,
+        "_block_timestamp": pool._block_timestamp,
         "not_adjusted": pool.not_adjusted,
+        "virtual_price": pool.virtual_price,
     }
 
     state = get_pool_state(pool)
