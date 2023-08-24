@@ -172,7 +172,7 @@ def get_event_loop():
     https://docs.python.org/3.11/library/asyncio-eventloop.html?highlight=selectoreventloop#asyncio.get_event_loop.
 
     Implementation slightly modified from https://stackoverflow.com/a/73884759
-    as supporting all Python 3.x isn't necessary.
+    as below works for all versions >= 3.7.
     """
     try:
         loop = asyncio.get_running_loop()
