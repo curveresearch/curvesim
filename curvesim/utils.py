@@ -1,7 +1,7 @@
 """Utlity functions for general usage in Curvesim."""
+import asyncio
 import functools
 import inspect
-import asyncio
 import os
 import re
 import sys
@@ -161,14 +161,20 @@ def dataclass(*args, **kwargs):
 
 def get_event_loop():
     """
-    reasoning, stackoverflow post
-    default asyncio.get_event_loop() will simply emit a DeprecationWarning 
-    if there is no event loop set or running This will become an error in future releases
+    Access the event loop without using asyncio.get_event_loop().
 
-    Generally, after calling this, you should run scheduled coroutines soon after 
-    to avoid overwriting event loops that have unrun coroutines.
+    Generally, you should run scheduled coroutines soon after calling
+    this to avoid overwriting event loops that have unrun coroutines.
+
+    Calling asyncio.get_event_loop() when an event loop isn't running and/or
+    set will cause a DeprecationWarning in various versions of Python 3.10-3.12,
+    and a future release will start raising an error instead:
+    https://docs.python.org/3.11/library/asyncio-eventloop.html?highlight=selectoreventloop#asyncio.get_event_loop.
+
+    Implementation slightly modified from https://stackoverflow.com/a/73884759
+    as supporting all Python 3.x isn't necessary.
     """
-    try: 
+    try:
         loop = asyncio.get_running_loop()
     except RuntimeError:
         loop = asyncio.new_event_loop()

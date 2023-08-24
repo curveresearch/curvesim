@@ -1,5 +1,3 @@
-import asyncio
-
 from curvesim.utils import get_event_loop
 
 from ..network.subgraph import pool_snapshot_sync, symbol_address_sync
