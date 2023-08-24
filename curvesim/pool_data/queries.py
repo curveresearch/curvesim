@@ -1,5 +1,7 @@
 import asyncio
 
+from curvesim.utils import get_event_loop
+
 from ..network.subgraph import pool_snapshot_sync, symbol_address_sync
 from ..network.web3 import underlying_coin_info_sync
 
@@ -22,7 +24,7 @@ def from_address(address, chain, env="prod", end_ts=None):
     Pool snapshot dictionary in the format returned by
     :func:`curvesim.network.subgraph.pool_snapshot`.
     """
-    loop = asyncio.get_event_loop()
+    loop = get_event_loop()
     data = pool_snapshot_sync(address, chain, env=env, end_ts=end_ts, event_loop=loop)
 
     # Get underlying token addresses
