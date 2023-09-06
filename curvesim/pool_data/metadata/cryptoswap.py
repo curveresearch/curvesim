@@ -43,35 +43,6 @@ class CryptoswapMetaData(PoolMetaDataBase):
                 coin_balances = data["reserves"]["unnormalized_by_coin"]
             kwargs["balances"] = coin_balances
 
-        # Aug 15, 2023
-        #
-        # This is fallback logic for missing subgraph functionality.  Right now
-        # the subgraph will return 0 for crypto pools with more than 2 coins.
-        # ETA for fix is expected to be within few weeks.
-        #
-        # Using the staging subgraph should suffice for tricrypto-ng factory pools.
-        if n == 3:
-            if len(kwargs["price_scale"]) != 2:
-                logger.warning("Price scale is missing.  Using ad-hoc setting.")
-                coin_balances = data["reserves"]["by_coin"]
-                numeraire_balance = coin_balances[0]
-                price_scale = [
-                    numeraire_balance * 10**18 // coin_balances[1],
-                    numeraire_balance * 10**18 // coin_balances[2],
-                ]
-                kwargs["price_scale"] = price_scale
-
-                A = kwargs["A"]
-                gamma = kwargs["gamma"]
-                xp = [
-                    coin_balances[0],
-                    coin_balances[0],
-                    coin_balances[0],
-                ]
-
-                D = newton_D(A, gamma, xp)
-                kwargs["D"] = D
-
         # Due to outstanding subgraph bug, we need to do something for
         # the missing value.
         if not kwargs["ma_half_time"]:
