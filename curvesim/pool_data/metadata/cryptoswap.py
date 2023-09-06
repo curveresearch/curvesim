@@ -1,5 +1,4 @@
 from curvesim.logging import get_logger
-from curvesim.pool.cryptoswap.calcs import newton_D
 
 from .base import PoolMetaDataBase
 
