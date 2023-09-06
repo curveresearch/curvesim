@@ -5,6 +5,7 @@ from math import prod
 
 from gmpy2 import mpz
 
+from curvesim.exceptions import CurvesimValueError
 from curvesim.pool.snapshot import CurvePoolBalanceSnapshot
 
 from ..base import Pool
@@ -41,6 +42,7 @@ class CurvePool(Pool):  # pylint: disable=too-many-instance-attributes
         fee=4 * 10**6,
         fee_mul=None,
         admin_fee=0 * 10**9,
+        virtual_price=None,
     ):
         """
         Parameters
@@ -61,6 +63,9 @@ class CurvePool(Pool):  # pylint: disable=too-many-instance-attributes
             fee multiplier for dynamic fee pools
         admin_fee: int, optional
             percentage of `fee` with 10**10 precision (default = 50%)
+        virtual_price: int, optional
+            amount of D invariant per LP token; can be used when
+            missing `tokens` value.
         """
         # FIXME: set admin_fee default back to 5 * 10**9
         # once sim code is updated.  Right now we use 0
@@ -77,7 +82,21 @@ class CurvePool(Pool):  # pylint: disable=too-many-instance-attributes
         self.fee = fee
         self.rates = rates
         self.balances = balances
-        self.tokens = tokens or self.D()
+
+        if tokens and virtual_price:
+            raise CurvesimValueError(
+                "Should not set both `tokens` and `virtual_price`."
+            )
+
+        # By now, should have set everything needed for D.
+        D = self.D()
+        if tokens:
+            self.tokens = tokens
+        elif virtual_price:
+            self.tokens = D * 10**18 // virtual_price
+        else:
+            self.tokens = D
+
         self.fee_mul = fee_mul
         self.admin_fee = admin_fee
         self.r = False
