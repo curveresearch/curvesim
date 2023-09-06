@@ -10,7 +10,7 @@ import pandas as pd
 from numpy import NaN
 
 from curvesim.logging import get_logger
-from curvesim.utils import get_env_var
+from curvesim.utils import get_env_var, get_event_loop
 
 from .http import HTTP
 from .utils import sync
@@ -178,7 +178,7 @@ def update(
     t_start_orig = t_start
     t_end = t_end.replace(tzinfo=timezone.utc)
 
-    loop = asyncio.get_event_loop()
+    loop = get_event_loop()
     coins = coin_ids_from_addresses_sync(coins, event_loop=loop)
 
     # Coins priced against one another
@@ -279,7 +279,7 @@ def pool_prices(  # noqa: C901
     pzero : pandas.Series
         Proportion of timestamps with zero volume.
     """
-    loop = asyncio.get_event_loop()
+    loop = get_event_loop()
 
     coins = coins or []
     pairs = pairs or []

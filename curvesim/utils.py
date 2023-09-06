@@ -1,4 +1,5 @@
 """Utlity functions for general usage in Curvesim."""
+import asyncio
 import functools
 import inspect
 import os
@@ -156,3 +157,27 @@ def dataclass(*args, **kwargs):
         del kwargs["slots"]
 
     return _dataclass(*args, **kwargs)
+
+
+def get_event_loop():
+    """
+    Access the event loop without using asyncio.get_event_loop().
+
+    Generally, you should run scheduled coroutines soon after calling
+    this to avoid overwriting event loops that have unrun coroutines.
+
+    Calling asyncio.get_event_loop() when an event loop isn't running and/or
+    set will cause a DeprecationWarning in various versions of Python 3.10-3.12,
+    and a future release will start raising an error instead:
+    https://docs.python.org/3.11/library/asyncio-eventloop.html?highlight=selectoreventloop#asyncio.get_event_loop.
+
+    Implementation slightly modified from https://stackoverflow.com/a/73884759
+    as below works for all versions >= 3.7.
+    """
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+    return loop

@@ -5,6 +5,8 @@ from concurrent.futures import ThreadPoolExecutor
 
 from gmpy2 import mpz
 
+from curvesim.utils import get_event_loop
+
 
 def compute_D(xp, A):
     """Standalone `D` calc neede for some data processing."""
@@ -59,7 +61,7 @@ def sync(func):
 
     @functools.wraps(func)
     def inner(*args, event_loop=None, **kwargs):
-        loop = event_loop or asyncio.get_event_loop()
+        loop = event_loop or get_event_loop()
         coro = func(*args, **kwargs)
         if loop.is_running():
             # If for some reason, we are trying to make async code
