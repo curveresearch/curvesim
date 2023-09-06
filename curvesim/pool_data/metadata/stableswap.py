@@ -12,12 +12,12 @@ class StableswapMetaData(PoolMetaDataBase):
         def process_to_kwargs(data, balanced, normalize):
             kwargs = {
                 "A": data["params"]["A"],
-                "D": data["reserves"]["D"],
                 "n": len(data["coins"]["names"]),
                 "fee": data["params"]["fee"],
                 "fee_mul": data["params"]["fee_mul"],
-                "tokens": data["reserves"]["tokens"],
+                "virtual_price": data["reserves"]["virtual_price"],
             }
+
             if not normalize:
                 if data["basepool"]:
                     d = data["coins"]["decimals"][0]
@@ -26,12 +26,13 @@ class StableswapMetaData(PoolMetaDataBase):
                     kwargs["rates"] = [
                         10 ** (36 - d) for d in data["coins"]["decimals"]
                     ]
-            if not balanced:
-                if normalize:
-                    coin_balances = data["reserves"]["by_coin"]
-                else:
-                    coin_balances = data["reserves"]["unnormalized_by_coin"]
-                kwargs["D"] = coin_balances
+
+            if normalize:
+                coin_balances = data["reserves"]["by_coin"]
+            else:
+                coin_balances = data["reserves"]["unnormalized_by_coin"]
+            kwargs["D"] = coin_balances
+
             return kwargs
 
         kwargs = process_to_kwargs(data, balanced, normalize)
