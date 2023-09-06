@@ -43,11 +43,6 @@ class CryptoswapMetaData(PoolMetaDataBase):
                 coin_balances = data["reserves"]["unnormalized_by_coin"]
             kwargs["balances"] = coin_balances
 
-        # Due to outstanding subgraph bug, we need to do something for
-        # the missing value.
-        if not kwargs["ma_half_time"]:
-            kwargs["ma_half_time"] = 600
-
         return kwargs
 
     @property
