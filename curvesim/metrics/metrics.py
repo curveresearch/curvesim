@@ -510,7 +510,7 @@ class PoolValue(PoolPricingMetric):
 
     def compute_annualized_returns(self, data):
         """Computes annualized returns from a series of pool values."""
-        year_multipliers = timedelta64(1, "Y") / data.index.to_series().diff()
+        year_multipliers = timedelta64(365, "D") / data.index.to_series().diff()
         log_returns = log(data).diff()  # pylint: disable=no-member
 
         return exp((log_returns * year_multipliers).mean()) - 1
