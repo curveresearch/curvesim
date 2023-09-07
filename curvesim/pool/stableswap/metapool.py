@@ -33,7 +33,7 @@ class CurveMetaPool(Pool):  # pylint: disable=too-many-instance-attributes
         "admin_balances",
     )
 
-    # pylint: disable-next=too-many-arguments
+    # pylint: disable-next=too-many-arguments,duplicate-code
     def __init__(
         self,
         A,

@@ -68,6 +68,7 @@ def lp_price(virtual_price, price_oracle) -> int:
     return 2 * virtual_price * _sqrt_int(price_oracle) // 10**18
 
 
+# pylint: disable-next=too-many-locals
 def newton_y(  # noqa: complexity: 11
     ANN: int,
     gamma: int,
@@ -154,7 +155,7 @@ def newton_y(  # noqa: complexity: 11
     raise CalculationError("Did not converge")
 
 
-# pylint: disable=too-many-locals,too-many-branches
+# pylint: disable-next=too-many-locals,too-many-branches
 def newton_D(  # noqa: complexity: 13
     ANN: int,
     gamma: int,
