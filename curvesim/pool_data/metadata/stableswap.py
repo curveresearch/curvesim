@@ -6,10 +6,10 @@ from .base import PoolMetaDataBase
 class StableswapMetaData(PoolMetaDataBase):
     """Specific implementation of the `PoolMetaDataInterface` for Stableswap."""
 
-    def init_kwargs(self, balanced=True, balanced_base=True, normalize=True):
+    def init_kwargs(self, normalize=True):
         data = self._dict
 
-        def process_to_kwargs(data, balanced, normalize):
+        def process_to_kwargs(data, normalize):
             kwargs = {
                 "A": data["params"]["A"],
                 "n": len(data["coins"]["names"]),
@@ -35,11 +35,11 @@ class StableswapMetaData(PoolMetaDataBase):
 
             return kwargs
 
-        kwargs = process_to_kwargs(data, balanced, normalize)
+        kwargs = process_to_kwargs(data, normalize)
 
         if data["basepool"]:
             bp_data = data["basepool"]
-            bp_kwargs = process_to_kwargs(bp_data, balanced_base, normalize)
+            bp_kwargs = process_to_kwargs(bp_data, normalize)
             basepool = CurvePool(**bp_kwargs)
             basepool.metadata = bp_data
             kwargs["basepool"] = basepool

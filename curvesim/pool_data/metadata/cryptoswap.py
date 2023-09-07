@@ -8,14 +8,13 @@ logger = get_logger(__name__)
 class CryptoswapMetaData(PoolMetaDataBase):
     """Specific implementation of the `PoolMetaDataInterface` for Cryptoswap."""
 
-    def init_kwargs(self, balanced=True, balanced_base=True, normalize=True):
+    def init_kwargs(self, normalize=True):
         data = self._dict
 
         kwargs = {
             "A": data["params"]["A"],
             "gamma": data["params"]["gamma"],
             "n": len(data["coins"]["names"]),
-            "D": data["reserves"]["D"],
             "mid_fee": data["params"]["mid_fee"],
             "out_fee": data["params"]["out_fee"],
             "allowed_extra_profit": data["params"]["allowed_extra_profit"],
@@ -24,7 +23,7 @@ class CryptoswapMetaData(PoolMetaDataBase):
             "price_scale": data["params"]["price_scale"],
             "admin_fee": data["params"]["admin_fee"],
             "ma_half_time": data["params"]["ma_half_time"],
-            "tokens": data["reserves"]["tokens"],
+            "virtual_price": data["reserves"]["virtual_price"],
             "xcp_profit": data["params"]["xcp_profit"],
             "xcp_profit_a": data["params"]["xcp_profit_a"],
         }
@@ -35,12 +34,11 @@ class CryptoswapMetaData(PoolMetaDataBase):
         else:
             kwargs["precisions"] = [1] * n
 
-        if not balanced:
-            if normalize:
-                coin_balances = data["reserves"]["by_coin"]
-            else:
-                coin_balances = data["reserves"]["unnormalized_by_coin"]
-            kwargs["balances"] = coin_balances
+        if normalize:
+            coin_balances = data["reserves"]["by_coin"]
+        else:
+            coin_balances = data["reserves"]["unnormalized_by_coin"]
+        kwargs["balances"] = coin_balances
 
         return kwargs
 

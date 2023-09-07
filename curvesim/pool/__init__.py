@@ -142,14 +142,74 @@ def get_pool(
     pool_metadata,
     chain="mainnet",
     *,
-    balanced=False,
-    balanced_base=False,
     normalize=False,
     end_ts=None,
     env="prod",
 ):
     """
     Constructs a pool object based on the stored data.
+
+    Parameters
+    ----------
+    address : str
+        pool address prefixed with "0x"
+
+    chain: str, default="mainnet"
+        chain/layer2 identifier, e.g. "mainnet", "arbitrum", "optimism"
+
+    normalize : bool, default=False
+        If True, normalizes balances to 18 decimals (useful for sim calculations).
+
+    Returns
+    -------
+    :class:`Pool`
+
+    Examples
+    --------
+    >>> import curvesim
+    >>> pool_address = "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7"
+    >>> chain = "mainnet"
+    >>> pool = curvesim.pool.get(pool_address, chain)
+    """
+    if isinstance(pool_metadata, str):
+        pool_metadata = get_metadata(pool_metadata, chain=chain, env=env, end_ts=end_ts)
+    elif isinstance(pool_metadata, dict):
+        pool_metadata = PoolMetaData(pool_metadata)
+    elif isinstance(pool_metadata, PoolMetaDataInterface):
+        pass
+    else:
+        raise CurvesimValueError(
+            "`pool_metadata` must be of type `str`, `dict`, or `PoolMetaDataInterface`."
+        )
+
+    init_kwargs = pool_metadata.init_kwargs(normalize)
+    logger.debug(init_kwargs)
+
+    pool_type = pool_metadata.pool_type
+    pool = pool_type(**init_kwargs)
+
+    pool.metadata = pool_metadata._dict  # pylint: disable=protected-access
+
+    return pool
+
+
+POOL_TYPE_TO_CUSTOM_KWARGS = {SimCurveRaiPool: ["redemption_prices"]}
+
+
+def get_sim_pool(
+    pool_metadata,
+    chain="mainnet",
+    *,
+    balanced=True,
+    balanced_base=True,
+    custom_kwargs=None,
+    pool_data_cache=None,
+    end_ts=None,
+    env="prod",
+):
+    """
+    Effectively the same as the `get_pool` function but returns
+    an object in the `SimPool` hierarchy.
 
     Parameters
     ----------
@@ -180,47 +240,7 @@ def get_pool(
     >>> import curvesim
     >>> pool_address = "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7"
     >>> chain = "mainnet"
-    >>> pool = curvesim.pool.get(pool_address, chain)
-    """
-    if isinstance(pool_metadata, str):
-        pool_metadata = get_metadata(pool_metadata, chain=chain, env=env, end_ts=end_ts)
-    elif isinstance(pool_metadata, dict):
-        pool_metadata = PoolMetaData(pool_metadata)
-    elif isinstance(pool_metadata, PoolMetaDataInterface):
-        pass
-    else:
-        raise CurvesimValueError(
-            "`pool_metadata` must be of type `str`, `dict`, or `PoolMetaDataInterface`."
-        )
-
-    init_kwargs = pool_metadata.init_kwargs(balanced, balanced_base, normalize)
-    logger.debug(init_kwargs)
-
-    pool_type = pool_metadata.pool_type
-    pool = pool_type(**init_kwargs)
-
-    pool.metadata = pool_metadata._dict  # pylint: disable=protected-access
-
-    return pool
-
-
-POOL_TYPE_TO_CUSTOM_KWARGS = {SimCurveRaiPool: ["redemption_prices"]}
-
-
-def get_sim_pool(
-    pool_metadata,
-    chain="mainnet",
-    *,
-    balanced=True,
-    balanced_base=True,
-    custom_kwargs=None,
-    pool_data_cache=None,
-    end_ts=None,
-    env="prod",
-):
-    """
-    Effectively the same as the `get_pool` function but returns
-    an object in the `SimPool` hierarchy.
+    >>> pool = curvesim.pool.get_sim_pool(pool_address, chain)
     """
     custom_kwargs = custom_kwargs or {}
 
@@ -242,7 +262,7 @@ def get_sim_pool(
             "`pool_metadata` must be of type `str`, `dict`, or `PoolMetaDataInterface`."
         )
 
-    init_kwargs = pool_metadata.init_kwargs(balanced, balanced_base, normalize=True)
+    init_kwargs = pool_metadata.init_kwargs(normalize=True)
     logger.debug(init_kwargs)
 
     pool_type = pool_metadata.sim_pool_type
@@ -257,6 +277,12 @@ def get_sim_pool(
     pool = pool_type(**init_kwargs)
 
     pool.metadata = pool_metadata._dict  # pylint: disable=protected-access
+
+    if balanced:
+        ...
+
+    if balanced_base:
+        ...
 
     return pool
 

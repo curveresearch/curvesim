@@ -11,20 +11,12 @@ class PoolMetaDataInterface(ABC):
     """
 
     @abstractmethod
-    def init_kwargs(self, balanced=True, balanced_base=True, normalize=True):
+    def init_kwargs(self, normalize=True):
         """
         Returns a dictionary of kwargs used to initialize the pool.
 
         Parameters
         ----------
-        balanced: bool
-            Will derive balances corresponding to the pool's total value so
-            that it is balanced.
-        balanced_base: bool
-            For metapools only.
-
-            Will derive balances corresponding to the basepool's total value so
-            that it is balanced.
         normalize: bool
             Will put the balances in units of D, e.g. 18 decimals.
 
