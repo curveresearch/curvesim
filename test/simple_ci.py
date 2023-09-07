@@ -32,7 +32,7 @@ pools = [
     {
         "address": "0x4ebdf703948ddcea3b11f675b4d1fba9d2414a14",
         "end_timestamp": 1692215156,
-        "env": "staging",
+        # "env": "staging",
     },
 ]
 

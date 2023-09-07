@@ -107,7 +107,7 @@ class ArbMetrics(PricingMetric):
 
         return results
 
-    def _compute_profits(self, price_df, trade_df):
+    def _compute_profits(self, price_df, trade_df):  # pylint: disable=too-many-locals
         """
         Computes arbitrageur profits and pool fees for a single row of data (i.e.,
         a single timestamp) in units of the chosen numeraire, `self.numeraire`.
