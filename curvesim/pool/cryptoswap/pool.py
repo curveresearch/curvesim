@@ -192,7 +192,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
                 )
         else:
             xp = self._xp()
-            D = factory_2_coin.newton_D(A, gamma, xp)
+            D = newton_D(A, gamma, xp)
             self.D = D
 
         xcp = self._get_xcp(D)
