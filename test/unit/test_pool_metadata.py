@@ -27,7 +27,6 @@ POOL_TEST_METADATA_JSON = """
         "decimals": [18, 6, 6]
     },
     "reserves": {
-        "D": 435874505461314832883219554,
         "by_coin": [
             171485829393046867353492287,
             175414686134396000000000000,
@@ -38,8 +37,7 @@ POOL_TEST_METADATA_JSON = """
             175414686134396,
             88973989934190
         ],
-        "virtual_price": 1025499623208090719,
-        "tokens": 425036241454443455995211818
+        "virtual_price": 1025499623208090719
     },
     "basepool": null,
     "timestamp": 1677628800
@@ -65,11 +63,9 @@ METAPOOL_TEST_METADATA_JSON = """
             "decimals": [2, 18]
         },
         "reserves": {
-            "D": 9165154506890406219227550,
             "by_coin": [4580491420000000000000000, 4584663086890532793313572],
             "unnormalized_by_coin": [458049142, 4584663086890532793313572],
-            "virtual_price": 1002128768748324821,
-            "tokens": 9145685457506457679415433
+            "virtual_price": 1002128768748324821
         },
         "basepool": {
             "name": "Curve.fi FRAX/USDC",
@@ -94,11 +90,9 @@ METAPOOL_TEST_METADATA_JSON = """
                 "decimals": [18, 6]
             },
             "reserves": {
-                "D": 492801294421778420804073827,
                 "by_coin": [305660498155854651779818562, 187140798282666000000000000],
                 "unnormalized_by_coin": [305660498155854651779818562, 187140798282666],
-                "virtual_price": 1001200369105166674,
-                "tokens": 492210460192123924194896848
+                "virtual_price": 1001200369105166674
             },
             "basepool": null,
             "timestamp": 1677715200
@@ -141,11 +135,9 @@ CRYPTOPOOL_TEST_METADATA_JSON = """
         "decimals": [18, 6]
     },
     "reserves": {
-        "D": 18116170684879887969148488,
         "by_coin": [11278350350009782994292193, 6837820334873000000000000],
         "unnormalized_by_coin": [11278350350009782994292193, 6837820334873],
-        "virtual_price": 1036543672382221695,
-        "tokens": 17477479403491661243983086
+        "virtual_price": 1036543672382221695
     },
     "basepool": null,
     "timestamp": 1684108800
@@ -179,14 +171,6 @@ def test_pool():
 
     assert metadata.init_kwargs() == {
         "A": 2000,
-        "D": 435874505461314832883219554,
-        "n": 3,
-        "fee": 1000000,
-        "fee_mul": None,
-        "tokens": 425036241454443455995211818,
-    }
-    assert metadata.init_kwargs(balanced=False) == {
-        "A": 2000,
         "D": [
             171485829393046867353492287,
             175414686134396000000000000,
@@ -195,9 +179,9 @@ def test_pool():
         "n": 3,
         "fee": 1000000,
         "fee_mul": None,
-        "tokens": 425036241454443455995211818,
+        "virtual_price": 1025499623208090719,
     }
-    assert metadata.init_kwargs(balanced=False, normalize=False) == {
+    assert metadata.init_kwargs(normalize=False) == {
         "A": 2000,
         "D": [
             171485829393046867353492287,
@@ -207,7 +191,7 @@ def test_pool():
         "n": 3,
         "fee": 1000000,
         "fee_mul": None,
-        "tokens": 425036241454443455995211818,
+        "virtual_price": 1025499623208090719,
         "rates": [
             1000000000000000000,
             1000000000000000000000000000000,
@@ -237,30 +221,18 @@ def test_metapool():
     assert metadata.pool_type is CurveMetaPool
 
     init_kwargs = metadata.init_kwargs()
-    _ = init_kwargs.pop("basepool")
+    del init_kwargs["basepool"]
 
     assert init_kwargs == {
-        "A": 1500,
-        "D": 9165154506890406219227550,
-        "n": 2,
-        "fee": 4000000,
-        "fee_mul": None,
-        "tokens": 9145685457506457679415433,
-    }
-
-    unbalanced_init_kwargs = metadata.init_kwargs(balanced=False)
-    del unbalanced_init_kwargs["basepool"]
-
-    assert unbalanced_init_kwargs == {
         "A": 1500,
         "D": [4580491420000000000000000, 4584663086890532793313572],
         "n": 2,
         "fee": 4000000,
         "fee_mul": None,
-        "tokens": 9145685457506457679415433,
+        "virtual_price": 1002128768748324821,
     }
 
-    unnormalized_init_kwargs = metadata.init_kwargs(balanced=False, normalize=False)
+    unnormalized_init_kwargs = metadata.init_kwargs(normalize=False)
     del unnormalized_init_kwargs["basepool"]
 
     assert unnormalized_init_kwargs == {
@@ -269,7 +241,7 @@ def test_metapool():
         "n": 2,
         "fee": 4000000,
         "fee_mul": None,
-        "tokens": 9145685457506457679415433,
+        "virtual_price": 1002128768748324821,
         "rate_multiplier": 10000000000000000000000000000000000,
     }
 
@@ -294,25 +266,6 @@ def test_cryptopool():
     assert metadata.init_kwargs() == {
         "A": 400000,
         "gamma": 72500000000000,
-        "D": 18116170684879887969148488,
-        "n": 2,
-        "mid_fee": 26000000,
-        "out_fee": 45000000,
-        "adjustment_step": 146000000000000,
-        "allowed_extra_profit": 2000000000000,
-        "fee_gamma": 230000000000000,
-        "tokens": 17477479403491661243983086,
-        "ma_half_time": 600,
-        "price_scale": 1532848669525694314,
-        "admin_fee": 5000000000,
-        "xcp_profit": 1073065310463073367,
-        "xcp_profit_a": 1073065310463073367,
-        "precisions": [1, 1],
-    }
-    assert metadata.init_kwargs(balanced=False) == {
-        "A": 400000,
-        "gamma": 72500000000000,
-        "D": 18116170684879887969148488,
         "balances": [
             11278350350009782994292193,
             6837820334873000000000000,
@@ -323,7 +276,7 @@ def test_cryptopool():
         "adjustment_step": 146000000000000,
         "allowed_extra_profit": 2000000000000,
         "fee_gamma": 230000000000000,
-        "tokens": 17477479403491661243983086,
+        "virtual_price": 1036543672382221695,
         "ma_half_time": 600,
         "price_scale": 1532848669525694314,
         "admin_fee": 5000000000,
@@ -331,10 +284,9 @@ def test_cryptopool():
         "xcp_profit_a": 1073065310463073367,
         "precisions": [1, 1],
     }
-    assert metadata.init_kwargs(balanced=False, normalize=False) == {
+    assert metadata.init_kwargs(normalize=False) == {
         "A": 400000,
         "gamma": 72500000000000,
-        "D": 18116170684879887969148488,
         "balances": [
             11278350350009782994292193,
             6837820334873,
@@ -345,7 +297,7 @@ def test_cryptopool():
         "adjustment_step": 146000000000000,
         "allowed_extra_profit": 2000000000000,
         "fee_gamma": 230000000000000,
-        "tokens": 17477479403491661243983086,
+        "virtual_price": 1036543672382221695,
         "ma_half_time": 600,
         "price_scale": 1532848669525694314,
         "admin_fee": 5000000000,
