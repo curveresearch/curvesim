@@ -59,6 +59,7 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
+          pip install anybadge==1.14.0
 
       - name: Format
         run: |
@@ -81,3 +82,4 @@ jobs:
           echo "Old score: ${OLD_SCORE}"
           echo "New score: ${SCORE}"
           python3 -c "import sys; sys.exit(1) if float(${OLD_SCORE}) > float(${SCORE}) else None"
+          anybadge --value="${SCORE}" --file=pylint.svg pylint
