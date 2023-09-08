@@ -118,9 +118,9 @@ CRYPTOPOOL_TEST_METADATA_JSON = """
         "allowed_extra_profit": 2000000000000,
         "adjustment_step": 146000000000000,
         "ma_half_time": 600,
-        "price_scale": 1532848669525694314,
-        "price_oracle": 1629891359676425537,
-        "last_prices": 1625755383082188296,
+        "price_scale": [1532848669525694314],
+        "price_oracle": [1629891359676425537],
+        "last_prices": [1625755383082188296],
         "last_prices_timestamp": 1684107935,
         "admin_fee": 5000000000,
         "xcp_profit": 1073065310463073367,
@@ -144,9 +144,62 @@ CRYPTOPOOL_TEST_METADATA_JSON = """
 }
 """
 
+TRICRYPTO_NG_TEST_METADATA_JSON = """
+{
+    "name": "TriCRV",
+    "address": "0x4eBdF703948ddCEA3B11f675B4D1Fba9d2414A14",
+    "chain": "mainnet",
+    "symbol": "crvUSDETHCRV",
+    "version": 2,
+    "pool_type": "TRICRYPTO_FACTORY",
+    "params": {
+        "A": 2700000,
+        "gamma": 1300000000000,
+        "fee_gamma": 350000000000000,
+        "mid_fee": 2999999,
+        "out_fee": 80000000,
+        "allowed_extra_profit": 100000000000,
+        "adjustment_step": 100000000000,
+        "ma_half_time": 600,
+        "price_scale": [1649177296373068449425, 446562202678699631],
+        "price_oracle": [1648041807040538375682, 447066843075586148],
+        "last_prices": [1645044680220385710284, 446876572801432826],
+        "last_prices_timestamp": 1694130839,
+        "admin_fee": 5000000000,
+        "xcp_profit": 1018853337326661730,
+        "xcp_profit_a": 1018852684256364084
+    },
+    "coins": {
+        "names": ["crvUSD", "WETH", "CRV"],
+        "addresses": [
+            "0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E",
+            "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+            "0xD533a949740bb3306d119CC777fa900bA034cd52"
+        ],
+        "decimals": [18, 18, 18]
+    },
+    "reserves": {
+        "by_coin": [
+            3724679717441585468224357,
+            2268620966125133833261,
+            8327951931226366295069133
+        ],
+        "unnormalized_by_coin": [
+            3724679717441585468224357,
+            2268620966125133833261,
+            8327951931226366295069133
+        ],
+        "virtual_price": 1027263450430060608
+    },
+    "basepool": null,
+    "timestamp": 1694131200
+}
+"""
+
 pool_test_metadata = json.loads(POOL_TEST_METADATA_JSON)
 metapool_test_metadata = json.loads(METAPOOL_TEST_METADATA_JSON)
 cryptopool_test_metadata = json.loads(CRYPTOPOOL_TEST_METADATA_JSON)
+tricrypto_ng_test_metadata = json.loads(TRICRYPTO_NG_TEST_METADATA_JSON)
 
 
 def test_pool():
@@ -278,7 +331,7 @@ def test_cryptopool():
         "fee_gamma": 230000000000000,
         "virtual_price": 1036543672382221695,
         "ma_half_time": 600,
-        "price_scale": 1532848669525694314,
+        "price_scale": [1532848669525694314],
         "admin_fee": 5000000000,
         "xcp_profit": 1073065310463073367,
         "xcp_profit_a": 1073065310463073367,
@@ -299,7 +352,7 @@ def test_cryptopool():
         "fee_gamma": 230000000000000,
         "virtual_price": 1036543672382221695,
         "ma_half_time": 600,
-        "price_scale": 1532848669525694314,
+        "price_scale": [1532848669525694314],
         "admin_fee": 5000000000,
         "xcp_profit": 1073065310463073367,
         "xcp_profit_a": 1073065310463073367,
@@ -307,4 +360,68 @@ def test_cryptopool():
             1,
             1000000000000,
         ],
+    }
+
+
+def test_tricrypto_ng():
+    metadata = PoolMetaData(tricrypto_ng_test_metadata)
+
+    assert metadata.address == "0x4eBdF703948ddCEA3B11f675B4D1Fba9d2414A14"
+    assert metadata.chain == "mainnet"
+
+    assert metadata.pool_type == CurveCryptoPool
+    assert metadata.sim_pool_type == SimCurveCryptoPool
+
+    assert metadata.coin_names == ["crvUSD", "WETH", "CRV"]
+    assert metadata.coins == [
+        "0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E",
+        "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "0xD533a949740bb3306d119CC777fa900bA034cd52",
+    ]
+
+    assert metadata.n == 3
+
+    assert metadata.init_kwargs() == {
+        "A": 2700000,
+        "gamma": 1300000000000,
+        "balances": [
+            3724679717441585468224357,
+            2268620966125133833261,
+            8327951931226366295069133,
+        ],
+        "n": 3,
+        "mid_fee": 2999999,
+        "out_fee": 80000000,
+        "adjustment_step": 100000000000,
+        "allowed_extra_profit": 100000000000,
+        "fee_gamma": 350000000000000,
+        "virtual_price": 1027263450430060608,
+        "ma_half_time": 600,
+        "price_scale": [1649177296373068449425, 446562202678699631],
+        "admin_fee": 5000000000,
+        "xcp_profit": 1018853337326661730,
+        "xcp_profit_a": 1018852684256364084,
+        "precisions": [1, 1, 1],
+    }
+    assert metadata.init_kwargs(normalize=False) == {
+        "A": 2700000,
+        "gamma": 1300000000000,
+        "balances": [
+            3724679717441585468224357,
+            2268620966125133833261,
+            8327951931226366295069133,
+        ],
+        "n": 3,
+        "mid_fee": 2999999,
+        "out_fee": 80000000,
+        "adjustment_step": 100000000000,
+        "allowed_extra_profit": 100000000000,
+        "fee_gamma": 350000000000000,
+        "virtual_price": 1027263450430060608,
+        "ma_half_time": 600,
+        "price_scale": [1649177296373068449425, 446562202678699631],
+        "admin_fee": 5000000000,
+        "xcp_profit": 1018853337326661730,
+        "xcp_profit_a": 1018852684256364084,
+        "precisions": [1, 1, 1],
     }
