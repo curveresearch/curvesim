@@ -171,13 +171,15 @@ def get_pool(
     >>> chain = "mainnet"
     >>> pool = curvesim.pool.get(pool_address, chain)
     """
+    if end_ts and not isinstance(pool_metadata, str):
+        raise CurvesimValueError("`end_ts` has no effect unless pool address is used.")
+
     if isinstance(pool_metadata, str):
         pool_metadata = get_metadata(pool_metadata, chain=chain, env=env, end_ts=end_ts)
     elif isinstance(pool_metadata, dict):
         pool_metadata = PoolMetaData(pool_metadata)
-    elif isinstance(pool_metadata, PoolMetaDataInterface):
-        pass
-    else:
+
+    if not isinstance(pool_metadata, PoolMetaDataInterface):
         raise CurvesimValueError(
             "`pool_metadata` must be of type `str`, `dict`, or `PoolMetaDataInterface`."
         )
