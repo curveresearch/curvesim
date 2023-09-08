@@ -276,13 +276,22 @@ def get_sim_pool(
 
     pool = pool_type(**init_kwargs)
 
-    pool.metadata = pool_metadata._dict  # pylint: disable=protected-access
+    # pylint: disable=protected-access
+    pool.metadata = pool_metadata._dict
 
     if balanced:
-        ...
+        try:
+            # stableswap/metapool
+            D = pool.D()
+        except TypeError:
+            # cryptopool
+            D = pool.D
+        pool.balances = pool._convert_D_to_balances(D)
 
-    if balanced_base:
-        ...
+    if balanced_base and hasattr(pool, "basepool"):
+        basepool = pool.basepool
+        D = basepool.D()
+        basepool.balances = basepool._convert_D_to_balances(D)
 
     return pool
 
