@@ -244,20 +244,15 @@ def get_sim_pool(
     """
     custom_kwargs = custom_kwargs or {}
 
+    if end_ts and not isinstance(pool_metadata, str):
+        raise CurvesimValueError("`end_ts` has no effect unless pool address is used.")
+
     if isinstance(pool_metadata, str):
         pool_metadata = get_metadata(pool_metadata, chain=chain, env=env, end_ts=end_ts)
     elif isinstance(pool_metadata, dict):
-        if end_ts:
-            raise CurvesimValueError(
-                "`end_ts` has no effect unless pool address is used."
-            )
         pool_metadata = PoolMetaData(pool_metadata)
-    elif isinstance(pool_metadata, PoolMetaDataInterface):
-        if end_ts:
-            raise CurvesimValueError(
-                "`end_ts` has no effect unless pool address is used."
-            )
-    else:
+
+    if not isinstance(pool_metadata, PoolMetaDataInterface):
         raise CurvesimValueError(
             "`pool_metadata` must be of type `str`, `dict`, or `PoolMetaDataInterface`."
         )
@@ -275,15 +270,24 @@ def get_sim_pool(
             raise CurvesimValueError(f"'{pool_type.__name__}' needs '{key}'.") from e
 
     pool = pool_type(**init_kwargs)
+    pool.metadata = pool_metadata._dict  # pylint: disable=protected-access
+    _balance_pool(pool, balanced, balanced_base)
 
+    return pool
+
+
+def _balance_pool(pool, balanced, balanced_base):
+    """
+    Balances the pool and/or its basepool if applicable.
+
+    Note: Mutates the `pool` argument.
+    """
     # pylint: disable=protected-access
-    pool.metadata = pool_metadata._dict
-
     if balanced:
-        try:
+        if callable(pool.D):
             # stableswap/metapool
             D = pool.D()
-        except TypeError:
+        else:
             # cryptopool
             D = pool.D
         pool.balances = pool._convert_D_to_balances(D)
@@ -292,8 +296,6 @@ def get_sim_pool(
         basepool = pool.basepool
         D = basepool.D()
         basepool.balances = basepool._convert_D_to_balances(D)
-
-    return pool
 
 
 get = get_pool
