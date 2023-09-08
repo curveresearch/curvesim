@@ -230,12 +230,9 @@ def get_sim_pool(
     normalize : bool, default=False
         If True, normalizes balances to 18 decimals (useful for sim calculations).
 
-    sim: bool, default=False
-        If True, returns a `SimPool` version of the pool.
-
     Returns
     -------
-    :class:`Pool`
+    :class:`SimPool`
 
     Examples
     --------
