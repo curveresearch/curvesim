@@ -435,3 +435,31 @@ def test_dydxfee(vyper_tricrypto):
         dx *= precisions[i]
         dy *= precisions[j]
         assert abs(dydx - dy / dx) / (dy / dx) < 1e-4
+
+
+@given(positive_balance, positive_balance, positive_balance)
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=5,
+    deadline=None,
+)
+def test_calc_token_amount(vyper_tricrypto, x0, x1, x2):
+    """Test `calc_token_amount` against vyper implementation."""
+    n_coins = 3
+    xp = [x0, x1, x2]
+    assume(0.02 < xp[0] / xp[1] < 50)
+    assume(0.02 < xp[1] / xp[2] < 50)
+    assume(0.02 < xp[0] / xp[2] < 50)
+
+    precisions = vyper_tricrypto.precisions()
+    price_scale = [vyper_tricrypto.price_scale(i) for i in range(n_coins - 1)]
+    amounts = get_real_balances(xp, precisions, price_scale)
+
+    pool = initialize_pool(vyper_tricrypto)
+
+    expected_lp_amount = vyper_tricrypto.calc_token_amount(amounts, True)
+    lp_amount = pool.calc_token_amount(amounts)
+    assert lp_amount == expected_lp_amount
+
+    expected_balances = [vyper_tricrypto.balances(i) for i in range(n_coins)]
+    assert pool.balances == expected_balances
