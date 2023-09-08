@@ -77,6 +77,7 @@ class CurveMetaPool(Pool):  # pylint: disable=too-many-instance-attributes
         # to pass the CI tests.
         self.A = A
         self.n = n
+
         self.max_coin = self.n - 1
         self.fee = fee
         self.admin_fee = admin_fee
@@ -94,7 +95,7 @@ class CurveMetaPool(Pool):  # pylint: disable=too-many-instance-attributes
         if isinstance(D, list):
             self.balances = D
         else:
-            self.balances = [D // n * 10**18 // _p for _p in self.rates]
+            self.balances = self._convert_D_to_balances(D)
 
         if tokens and virtual_price:
             raise CurvesimValueError(
@@ -113,6 +114,11 @@ class CurveMetaPool(Pool):  # pylint: disable=too-many-instance-attributes
         self.n_total = n + basepool.n - 1
         self.fee_mul = fee_mul
         self.admin_balances = [0] * n
+
+    def _convert_D_to_balances(self, D):
+        n = self.n
+        rates = self.rates
+        return [D // n * 10**18 // _p for _p in rates]
 
     def D(self, xp=None):
         """
