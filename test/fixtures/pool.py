@@ -223,7 +223,7 @@ def pack_prices(prices):
 @pytest.fixture(scope="session")
 def _tricrypto_math():
     """
-    Initialize vyper fixture for tricrypto_ng's 
+    Initialize vyper fixture for tricrypto_ng's
     external math contract.
     """
     tricrypto_math_filepath = os.path.join(_curve_dir, "tricrypto_math.vy")
@@ -239,13 +239,13 @@ def tricrypto_math(_tricrypto_math):
     feature to avoid expensive loading.
     """
     with boa.env.anchor():
-        yield _tricrypto_math    
+        yield _tricrypto_math
 
 
 @pytest.fixture(scope="session")
 def _tricrypto_views():
     """
-    Initialize vyper fixture for tricrypto_ng's 
+    Initialize vyper fixture for tricrypto_ng's
     external views contract.
     """
     tricrypto_views_filepath = os.path.join(_curve_dir, "tricrypto_views.vy")
@@ -268,7 +268,7 @@ def tricrypto_views(_tricrypto_views):
 def _tricrypto_factory(_tricrypto_views, _tricrypto_math):
     """
     Initialize vyper fixture for tricrypto_ng's factory
-    contract, which routes select calculations to 
+    contract, which routes select calculations to
     the views and math contracts.
     """
     tricrypto_factory_filepath = os.path.join(_curve_dir, "tricrypto_factory.vy")

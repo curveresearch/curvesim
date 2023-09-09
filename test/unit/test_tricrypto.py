@@ -3,7 +3,6 @@ Unit tests for CurveCryptoPool for n = 3
 
 Tests are against the tricrypto-ng contract.
 """
-import os
 from itertools import permutations
 
 import boa
@@ -306,7 +305,9 @@ def test_get_p(vyper_tricrypto, tricrypto_math, A, gamma, x0, x1, x2):
     max_examples=5,
     deadline=None,
 )
-def test_pure_get_y(vyper_tricrypto, tricrypto_math, A, gamma, x0, x1, x2, pair, dx_perc):
+def test_pure_get_y(
+    vyper_tricrypto, tricrypto_math, A, gamma, x0, x1, x2, pair, dx_perc
+):
     """Test `get_y` calculation against vyper implementation."""
     i, j = pair
 
@@ -388,7 +389,9 @@ def test_wad_exp(vyper_tricrypto, tricrypto_math, x):
     max_examples=1,
     deadline=None,
 )
-def test__newton_y(vyper_tricrypto, tricrypto_math, A, gamma, x0, x1, x2, pair, dx_perc):
+def test__newton_y(
+    vyper_tricrypto, tricrypto_math, A, gamma, x0, x1, x2, pair, dx_perc
+):
     """Test D calculation against vyper implementation."""
     i, j = pair
 
