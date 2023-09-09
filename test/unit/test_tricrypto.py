@@ -23,14 +23,6 @@ from curvesim.pool.cryptoswap.calcs.tricrypto_ng import (
 )
 
 
-def get_math(tricrypto):
-    _base_dir = os.path.dirname(__file__)
-    filepath = os.path.join(_base_dir, "../fixtures/curve/tricrypto_math.vy")
-    _math = tricrypto.MATH()
-    MATH = boa.load_partial(filepath).at(_math)
-    return MATH
-
-
 def initialize_pool(vyper_tricrypto):
     """
     Initialize python-based pool from the state variables of the
@@ -127,7 +119,7 @@ def get_real_balances(virtual_balances, precisions, price_scale):
     return balances
 
 
-def update_cached_values(vyper_tricrypto):
+def update_cached_values(vyper_tricrypto, tricrypto_math):
     """
     Useful test helper after we manipulate the pool state.
 
@@ -138,8 +130,7 @@ def update_cached_values(vyper_tricrypto):
     gamma = vyper_tricrypto.gamma()
     xp = vyper_tricrypto.eval("self.xp()")
     xp = list(xp)  # boa doesn't like its own tuple wrapper
-    MATH = get_math(vyper_tricrypto)
-    D = MATH.newton_D(A, gamma, xp)  # pylint: disable=no-member
+    D = tricrypto_math.newton_D(A, gamma, xp)  # pylint: disable=no-member
     vyper_tricrypto.eval(f"self.D={D}")
     total_supply = vyper_tricrypto.totalSupply()
     vyper_tricrypto.eval(
@@ -253,7 +244,7 @@ def test_multiple_exchange_with_repeg(
     max_examples=5,
     deadline=None,
 )
-def test_newton_D(vyper_tricrypto, A, gamma, x0, x1, x2):
+def test_newton_D(vyper_tricrypto, tricrypto_math, A, gamma, x0, x1, x2):
     """Test D calculation against vyper implementation."""
 
     xp = [x0, x1, x2]
@@ -261,9 +252,8 @@ def test_newton_D(vyper_tricrypto, A, gamma, x0, x1, x2):
     assume(0.02 < xp[1] / xp[2] < 50)
     assume(0.02 < xp[0] / xp[2] < 50)
 
-    MATH = get_math(vyper_tricrypto)
     # pylint: disable=no-member
-    expected_D = MATH.newton_D(A, gamma, xp)
+    expected_D = tricrypto_math.newton_D(A, gamma, xp)
     D = newton_D(A, gamma, xp)
 
     assert D == expected_D
@@ -281,7 +271,7 @@ def test_newton_D(vyper_tricrypto, A, gamma, x0, x1, x2):
     max_examples=2,
     deadline=None,
 )
-def test_get_p(vyper_tricrypto, A, gamma, x0, x1, x2):
+def test_get_p(vyper_tricrypto, tricrypto_math, A, gamma, x0, x1, x2):
     """Test `get_p` calculation against vyper implementation."""
 
     xp = [x0, x1, x2]
@@ -289,12 +279,11 @@ def test_get_p(vyper_tricrypto, A, gamma, x0, x1, x2):
     assume(0.02 < xp[1] / xp[2] < 50)
     assume(0.02 < xp[0] / xp[2] < 50)
 
-    MATH = get_math(vyper_tricrypto)
     # pylint: disable=no-member
-    D = MATH.newton_D(A, gamma, xp)
+    D = tricrypto_math.newton_D(A, gamma, xp)
 
     A_gamma = [A, gamma]
-    expected_p = MATH.get_p(xp, D, A_gamma)
+    expected_p = tricrypto_math.get_p(xp, D, A_gamma)
     p = get_p(xp, D, A, gamma)
 
     assert p == expected_p
@@ -317,7 +306,7 @@ def test_get_p(vyper_tricrypto, A, gamma, x0, x1, x2):
     max_examples=5,
     deadline=None,
 )
-def test_pure_get_y(vyper_tricrypto, A, gamma, x0, x1, x2, pair, dx_perc):
+def test_pure_get_y(vyper_tricrypto, tricrypto_math, A, gamma, x0, x1, x2, pair, dx_perc):
     """Test `get_y` calculation against vyper implementation."""
     i, j = pair
 
@@ -326,13 +315,12 @@ def test_pure_get_y(vyper_tricrypto, A, gamma, x0, x1, x2, pair, dx_perc):
     assume(0.02 < xp[1] / xp[2] < 50)
     assume(0.02 < xp[0] / xp[2] < 50)
 
-    MATH = get_math(vyper_tricrypto)
     # pylint: disable=no-member
-    D = MATH.newton_D(A, gamma, xp)
+    D = tricrypto_math.newton_D(A, gamma, xp)
 
     xp[i] += xp[i] * dx_perc // 10000
 
-    expected_y_out = MATH.get_y(A, gamma, xp, D, j)
+    expected_y_out = tricrypto_math.get_y(A, gamma, xp, D, j)
     y_out = get_y(A, gamma, xp, D, j)
 
     assert y_out[0] == expected_y_out[0]
@@ -375,11 +363,10 @@ def test_pool_get_y(vyper_tricrypto):
     max_examples=2,
     deadline=None,
 )
-def test_wad_exp(vyper_tricrypto, x):
+def test_wad_exp(vyper_tricrypto, tricrypto_math, x):
     """Test the snekmate wad exp calc"""
-    MATH = get_math(vyper_tricrypto)
     # pylint: disable=no-member
-    expected_result = MATH.wad_exp(x)
+    expected_result = tricrypto_math.wad_exp(x)
     result = wad_exp(x)
     assert result == expected_result
 
@@ -401,7 +388,7 @@ def test_wad_exp(vyper_tricrypto, x):
     max_examples=1,
     deadline=None,
 )
-def test__newton_y(vyper_tricrypto, A, gamma, x0, x1, x2, pair, dx_perc):
+def test__newton_y(vyper_tricrypto, tricrypto_math, A, gamma, x0, x1, x2, pair, dx_perc):
     """Test D calculation against vyper implementation."""
     i, j = pair
 
@@ -410,13 +397,12 @@ def test__newton_y(vyper_tricrypto, A, gamma, x0, x1, x2, pair, dx_perc):
     assume(0.02 < xp[1] / xp[2] < 50)
     assume(0.02 < xp[0] / xp[2] < 50)
 
-    MATH = get_math(vyper_tricrypto)
     # pylint: disable=no-member
-    D = MATH.newton_D(A, gamma, xp)
+    D = tricrypto_math.newton_D(A, gamma, xp)
 
     xp[i] += xp[i] * dx_perc // 10000
 
-    expected_y = MATH.eval(f"self._newton_y({A}, {gamma}, {xp}, {D}, {j})")
+    expected_y = tricrypto_math.eval(f"self._newton_y({A}, {gamma}, {xp}, {D}, {j})")
     y = _newton_y(A, gamma, xp, D, j)
 
     assert y == expected_y

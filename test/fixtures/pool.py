@@ -223,7 +223,8 @@ def pack_prices(prices):
 @pytest.fixture(scope="session")
 def _tricrypto_math():
     """
-    
+    Initialize vyper fixture for tricrypto_ng's 
+    external math contract.
     """
     tricrypto_math_filepath = os.path.join(_curve_dir, "tricrypto_math.vy")
     math = boa.load(tricrypto_math_filepath)
@@ -233,7 +234,10 @@ def _tricrypto_math():
 
 @pytest.fixture(scope="session")
 def tricrypto_math(_tricrypto_math):
-    """"""
+    """
+    Function-scope fixture using titanoboa's snapshotting
+    feature to avoid expensive loading.
+    """
     with boa.env.anchor():
         yield _tricrypto_math    
 
@@ -241,7 +245,8 @@ def tricrypto_math(_tricrypto_math):
 @pytest.fixture(scope="session")
 def _tricrypto_views():
     """
-    
+    Initialize vyper fixture for tricrypto_ng's 
+    external views contract.
     """
     tricrypto_views_filepath = os.path.join(_curve_dir, "tricrypto_views.vy")
     views = boa.load(tricrypto_views_filepath)
@@ -251,7 +256,10 @@ def _tricrypto_views():
 
 @pytest.fixture(scope="session")
 def tricrypto_views(_tricrypto_views):
-    """"""
+    """
+    Function-scope fixture using titanoboa's snapshotting
+    feature to avoid expensive loading.
+    """
     with boa.env.anchor():
         yield _tricrypto_views
 
@@ -259,7 +267,9 @@ def tricrypto_views(_tricrypto_views):
 @pytest.fixture(scope="session")
 def _tricrypto_factory(_tricrypto_views, _tricrypto_math):
     """
-    
+    Initialize vyper fixture for tricrypto_ng's factory
+    contract, which routes select calculations to 
+    the views and math contracts.
     """
     tricrypto_factory_filepath = os.path.join(_curve_dir, "tricrypto_factory.vy")
     factory = boa.load(tricrypto_factory_filepath, FAKE_ADDRESS, FAKE_ADDRESS)
@@ -271,7 +281,10 @@ def _tricrypto_factory(_tricrypto_views, _tricrypto_math):
 
 @pytest.fixture(scope="session")
 def tricrypto_factory(_tricrypto_factory):
-    """"""
+    """
+    Function-scope fixture using titanoboa's snapshotting
+    feature to avoid expensive loading.
+    """
     with boa.env.anchor():
         yield _tricrypto_factory
 
