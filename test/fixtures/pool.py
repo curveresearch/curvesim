@@ -221,13 +221,68 @@ def pack_prices(prices):
 
 
 @pytest.fixture(scope="session")
-def _vyper_tricrypto():
+def _tricrypto_math():
+    """
+    
+    """
+    tricrypto_math_filepath = os.path.join(_curve_dir, "tricrypto_math.vy")
+    math = boa.load(tricrypto_math_filepath)
+
+    return math
+
+
+@pytest.fixture(scope="session")
+def tricrypto_math(_tricrypto_math):
+    """"""
+    with boa.env.anchor():
+        yield _tricrypto_math    
+
+
+@pytest.fixture(scope="session")
+def _tricrypto_views():
+    """
+    
+    """
+    tricrypto_views_filepath = os.path.join(_curve_dir, "tricrypto_views.vy")
+    views = boa.load(tricrypto_views_filepath)
+
+    return views
+
+
+@pytest.fixture(scope="session")
+def tricrypto_views(_tricrypto_views):
+    """"""
+    with boa.env.anchor():
+        yield _tricrypto_views
+
+
+@pytest.fixture(scope="session")
+def _tricrypto_factory(_tricrypto_views, _tricrypto_math):
+    """
+    
+    """
+    tricrypto_factory_filepath = os.path.join(_curve_dir, "tricrypto_factory.vy")
+    factory = boa.load(tricrypto_factory_filepath, FAKE_ADDRESS, FAKE_ADDRESS)
+    factory.eval(f"self.views_implementation = {_tricrypto_views.address}")
+    factory.eval(f"self.math_implementation = {_tricrypto_math.address}")
+
+    return factory
+
+
+@pytest.fixture(scope="session")
+def tricrypto_factory(_tricrypto_factory):
+    """"""
+    with boa.env.anchor():
+        yield _tricrypto_factory
+
+
+@pytest.fixture(scope="session")
+def _vyper_tricrypto(_tricrypto_factory):
     """
     Initialize vyper fixture for crypto pool
     using default volatile pair settings
     """
     trycrypto_ng_filepath = os.path.join(_curve_dir, "tricrypto_ng.vy")
-    tricrypto_math_filepath = os.path.join(_curve_dir, "tricrypto_math.vy")
     coins = [FAKE_ADDRESS] * 3
 
     # settings based on TricryptoUSDT pool
@@ -274,14 +329,14 @@ def _vyper_tricrypto():
         "B90B4B3B1043EAF7E27EF307E5FD67AF029117766661203412EDAB9E18E8F6B3"
     )
     _weth = FAKE_ADDRESS
-    _math = boa.load(tricrypto_math_filepath)
+    _math = _tricrypto_factory.math_implementation()
 
     tricrypto = boa.load(
         trycrypto_ng_filepath,
         _name,
         _symbol,
         coins,
-        _math.address,
+        _math,
         _weth,
         _salt,
         packed_precisions,
@@ -316,6 +371,8 @@ def _vyper_tricrypto():
     packed_prices :
     650960167919755280605435624016972588543318000000000000000000
     """
+
+    tricrypto.eval(f"self.factory = {_tricrypto_factory.address}")
 
     balances = [18418434882428, 60547327748, 9914993293693631287774]
     tricrypto.eval(f"self.balances={balances}")
