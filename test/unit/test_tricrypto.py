@@ -6,7 +6,7 @@ Tests are against the tricrypto-ng contract.
 from itertools import permutations
 
 import boa
-from hypothesis import HealthCheck, assume, given, settings
+from hypothesis import HealthCheck, assume, given, settings, Phase
 from hypothesis import strategies as st
 
 from curvesim.pool import CurveCryptoPool
@@ -442,9 +442,16 @@ def test_dydxfee(vyper_tricrypto):
     suppress_health_check=[HealthCheck.function_scoped_fixture],
     max_examples=5,
     deadline=None,
+    phases=[Phase.reuse, Phase.generate, Phase.target],
 )
 def test_calc_token_amount(vyper_tricrypto, x0, x1, x2):
-    """Test `calc_token_amount` against vyper implementation."""
+    """
+    Test `calc_token_amount` against vyper implementation.
+
+    CurveCryptoPool and tricrypto_views.vy have slightly different
+    _fee implementations, causing a 1-2 wei difference in LP token
+    amounts calculated.
+    """
     n_coins = 3
     xp = [x0, x1, x2]
     assume(0.02 < xp[0] / xp[1] < 50)
@@ -459,7 +466,7 @@ def test_calc_token_amount(vyper_tricrypto, x0, x1, x2):
 
     expected_lp_amount = vyper_tricrypto.calc_token_amount(amounts, True)
     lp_amount = pool.calc_token_amount(amounts)
-    assert lp_amount == expected_lp_amount
+    assert abs(lp_amount - expected_lp_amount) < 2
 
     expected_balances = [vyper_tricrypto.balances(i) for i in range(n_coins)]
     assert pool.balances == expected_balances

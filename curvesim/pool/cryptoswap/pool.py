@@ -1046,7 +1046,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         D: int = newton_D(A, gamma, xp)
         d_token: int = token_supply * D // D0 - token_supply
         d_token -= self._calc_token_fee(amountsp, xp) * d_token // 10**10 + 1
-        
+
         return d_token
 
     def dydxfee(self, i, j):
