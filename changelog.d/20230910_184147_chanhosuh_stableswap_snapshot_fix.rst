@@ -1,27 +1,21 @@
-.. A new scriv changelog fragment.
-..
-.. Uncomment the header that is right (remove the leading dots).
-..
-.. Removed
-.. -------
-..
-.. - A bullet item for the Removed category.
-..
-.. Added
-.. -----
-..
-.. - A bullet item for the Added category.
-..
-.. Changed
-.. -------
-..
-.. - A bullet item for the Changed category.
-..
-.. Deprecated
-.. ----------
-..
-.. - A bullet item for the Deprecated category.
-..
+Added
+-----
+
+- Each pool now has an internal method to handle conversion of the invariant
+  to balances.  This is helpful for use by "friend" classes/functions such
+  as factory functions.
+
+Removed
+-------
+
+- The pool snapshot from subgraph is no longer being augmented with calculated
+  data (see "Fixed" section for a related bug).  The snapshot functionality
+  is solely limited to subgraph values with appropriate conversion into
+  python types.
+
+- Pool metadata no longer takes balancing options.  This is handled by the
+  the appropriate factory function, namely `get_sim_pool`.
+
 Fixed
 -----
 
@@ -35,8 +29,3 @@ Fixed
   The calculation relies on the pool's internal logic, which we test rigorously
   in unit tests.
 
-.. Security
-.. --------
-..
-.. - A bullet item for the Security category.
-..
