@@ -27,6 +27,7 @@ __all__ = [
 
 from curvesim.exceptions import CurvesimValueError
 from curvesim.logging import get_logger
+from curvesim.network.utils import compute_D
 from curvesim.pool_data import get_metadata
 from curvesim.pool_data.metadata import PoolMetaData, PoolMetaDataInterface
 
@@ -271,6 +272,35 @@ def get_sim_pool(
     pool = pool_type(**init_kwargs)
     pool.metadata = pool_metadata._dict  # pylint: disable=protected-access
     _balance_pool(pool, balanced, balanced_base)
+    # ---- start testing harness ------
+    print(pool.metadata)
+    if hasattr(pool, "basepool"):
+        bp_vprice = pool.basepool.metadata["reserves"]["virtual_price"]
+        balances = pool.metadata["reserves"]["by_coin"]
+        balances = [balances[0], balances[1] * bp_vprice // 10**18]
+        D = compute_D(balances, pool.A)
+    else:
+        D = compute_D(pool.metadata["reserves"]["by_coin"], pool.A)
+    virtual_price = pool.metadata["reserves"]["virtual_price"]
+    tokens = D * 10**18 // virtual_price
+    try:
+        new_D = pool.D()
+    except TypeError:
+        new_D = pool.D
+    # assert abs(new_D - D) < 5, f"old D: {D}, new D: {new_D}, diff: {new_D - D}"
+    try:
+        new_vprice = pool.get_virtual_price()
+    except AttributeError:
+        new_vprice = pool.virtual_price
+    assert (
+        abs(new_vprice - virtual_price) < 5
+    ), f"old vp: {virtual_price}, new vp: {new_vprice}, diff: {new_vprice - virtual_price}"
+    assert pool.tokens == tokens, f"old token: {tokens}, new tokens: {pool.tokens}"
+    old_balances = pool._convert_D_to_balances(D)
+    assert (
+        old_balances == pool.balances
+    ), f"old balances: {old_balances}, new balances: {pool.balances}"
+    # ---- end testing harness ------
 
     return pool
 
