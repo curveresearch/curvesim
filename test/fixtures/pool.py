@@ -232,7 +232,7 @@ def _tricrypto_math():
     return math
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def tricrypto_math(_tricrypto_math):
     """
     Function-scope fixture using titanoboa's snapshotting
@@ -254,7 +254,7 @@ def _tricrypto_views():
     return views
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def tricrypto_views(_tricrypto_views):
     """
     Function-scope fixture using titanoboa's snapshotting
@@ -279,7 +279,7 @@ def _tricrypto_factory(_tricrypto_views, _tricrypto_math):
     return factory
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def tricrypto_factory(_tricrypto_factory):
     """
     Function-scope fixture using titanoboa's snapshotting

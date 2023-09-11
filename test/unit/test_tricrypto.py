@@ -243,7 +243,7 @@ def test_multiple_exchange_with_repeg(
     max_examples=5,
     deadline=None,
 )
-def test_newton_D(vyper_tricrypto, tricrypto_math, A, gamma, x0, x1, x2):
+def test_newton_D(tricrypto_math, A, gamma, x0, x1, x2):
     """Test D calculation against vyper implementation."""
 
     xp = [x0, x1, x2]
@@ -270,7 +270,7 @@ def test_newton_D(vyper_tricrypto, tricrypto_math, A, gamma, x0, x1, x2):
     max_examples=2,
     deadline=None,
 )
-def test_get_p(vyper_tricrypto, tricrypto_math, A, gamma, x0, x1, x2):
+def test_get_p(tricrypto_math, A, gamma, x0, x1, x2):
     """Test `get_p` calculation against vyper implementation."""
 
     xp = [x0, x1, x2]
@@ -305,9 +305,7 @@ def test_get_p(vyper_tricrypto, tricrypto_math, A, gamma, x0, x1, x2):
     max_examples=5,
     deadline=None,
 )
-def test_pure_get_y(
-    vyper_tricrypto, tricrypto_math, A, gamma, x0, x1, x2, pair, dx_perc
-):
+def test_pure_get_y(tricrypto_math, A, gamma, x0, x1, x2, pair, dx_perc):
     """Test `get_y` calculation against vyper implementation."""
     i, j = pair
 
@@ -364,7 +362,7 @@ def test_pool_get_y(vyper_tricrypto):
     max_examples=2,
     deadline=None,
 )
-def test_wad_exp(vyper_tricrypto, tricrypto_math, x):
+def test_wad_exp(tricrypto_math, x):
     """Test the snekmate wad exp calc"""
     # pylint: disable=no-member
     expected_result = tricrypto_math.wad_exp(x)
@@ -389,9 +387,7 @@ def test_wad_exp(vyper_tricrypto, tricrypto_math, x):
     max_examples=1,
     deadline=None,
 )
-def test__newton_y(
-    vyper_tricrypto, tricrypto_math, A, gamma, x0, x1, x2, pair, dx_perc
-):
+def test__newton_y(tricrypto_math, A, gamma, x0, x1, x2, pair, dx_perc):
     """Test D calculation against vyper implementation."""
     i, j = pair
 
@@ -405,7 +401,7 @@ def test__newton_y(
 
     xp[i] += xp[i] * dx_perc // 10000
 
-    expected_y = tricrypto_math.eval(f"self._newton_y({A}, {gamma}, {xp}, {D}, {j})")
+    expected_y = tricrypto_math.internal._newton_y(A, gamma, xp, D, j)
     y = _newton_y(A, gamma, xp, D, j)
 
     assert y == expected_y
