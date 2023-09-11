@@ -29,3 +29,6 @@ Fixed
   The calculation relies on the pool's internal logic, which we test rigorously
   in unit tests.
 
+- The value of `D` in the snapshot actually had a bug, so removing this fixes
+  that accidentally.
+
