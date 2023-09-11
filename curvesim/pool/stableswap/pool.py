@@ -78,7 +78,7 @@ class CurvePool(Pool):  # pylint: disable=too-many-instance-attributes
         self.rates = rates
 
         if isinstance(D, list):
-            self.balances = D
+            self.balances = D.copy()
         else:
             self.balances = self._convert_D_to_balances(D)
 
