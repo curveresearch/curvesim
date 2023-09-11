@@ -968,12 +968,10 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
             virtual_price = self.virtual_price
             price_oracle = self.internal_price_oracle()
             price = factory_2_coin.lp_price(virtual_price, price_oracle)
-        # TODO: find/implement integer cube root function
-        # elif self.n == 3:
-        #     price_oracle = self.internal_price_oracle()
-        #     price =  (
-        #         3 * self.virtual_price * icbrt(price_oracle[0] * price_oracle[1])
-        #     ) // 10**24
+        elif self.n == 3:
+            virtual_price = self.virtual_price
+            price_oracle = self.internal_price_oracle()
+            price = tricrypto_ng.lp_price(virtual_price, price_oracle)
         else:
             raise CalculationError("LP price calc doesn't support more than 3 coins")
 

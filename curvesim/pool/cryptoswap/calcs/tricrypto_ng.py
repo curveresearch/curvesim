@@ -318,12 +318,7 @@ def lp_price(virtual_price, price_oracle) -> int:
     """
     Returns an LP token price approximating behavior as a constant-product AMM.
     """
-    # TODO: find/implement integer cube root function
-    # price_oracle = self.internal_price_oracle()
-    # return (
-    #     3 * self.virtual_price * icbrt(price_oracle[0] * price_oracle[1])
-    # ) // 10**24
-    raise CalculationError("LP price calc doesn't support more than 3 coins")
+    return 3 * virtual_price * _cbrt(price_oracle[0] * price_oracle[1]) // 10**24
 
 
 def get_p(
