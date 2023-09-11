@@ -5,6 +5,7 @@ from math import prod
 
 from gmpy2 import mpz
 
+from curvesim.exceptions import CurvesimValueError
 from curvesim.pool.snapshot import CurveMetaPoolBalanceSnapshot
 
 from ..base import Pool
@@ -32,7 +33,7 @@ class CurveMetaPool(Pool):  # pylint: disable=too-many-instance-attributes
         "admin_balances",
     )
 
-    # pylint: disable-next=too-many-arguments
+    # pylint: disable-next=too-many-arguments,duplicate-code
     def __init__(
         self,
         A,
@@ -44,6 +45,7 @@ class CurveMetaPool(Pool):  # pylint: disable=too-many-instance-attributes
         fee=4 * 10**6,
         fee_mul=None,
         admin_fee=0 * 10**9,
+        virtual_price=None,
     ):
         """
         Parameters
@@ -66,6 +68,9 @@ class CurveMetaPool(Pool):  # pylint: disable=too-many-instance-attributes
             fee multiplier for dynamic fee pools
         admin_fee: int, optional
             percentage of `fee` with 10**10 precision (default = 50%)
+        virtual_price: int, optional
+            amount of D invariant per LP token; can be used when
+            missing `tokens` value.
         """
         # FIXME: set admin_fee default back to 5 * 10**9
         # once sim code is updated.  Right now we use 0
@@ -91,8 +96,21 @@ class CurveMetaPool(Pool):  # pylint: disable=too-many-instance-attributes
         else:
             self.balances = [D // n * 10**18 // _p for _p in self.rates]
 
+        if tokens and virtual_price:
+            raise CurvesimValueError(
+                "Should not set both `tokens` and `virtual_price`."
+            )
+
+        # By now, should have set everything needed for D.
+        D = self.D()
+        if tokens:
+            self.tokens = tokens
+        elif virtual_price:
+            self.tokens = D * 10**18 // virtual_price
+        else:
+            self.tokens = D
+
         self.n_total = n + basepool.n - 1
-        self.tokens = tokens
         self.fee_mul = fee_mul
         self.admin_balances = [0] * n
 

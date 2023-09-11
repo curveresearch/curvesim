@@ -13,6 +13,7 @@ from curvesim.pool import CurveMetaPool
 D_UNIT = 10**18
 
 
+# pylint: disable-next=too-many-locals
 def bonding_curve(pool, *, truncate=0.0005, resolution=1000, plot=False):
     """
     Computes and optionally plots a pool's bonding curve and current reserves.

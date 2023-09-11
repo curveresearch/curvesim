@@ -318,6 +318,7 @@ async def _pool_snapshot(address, chain, env, end_ts=None):
     return r
 
 
+# pylint: disable-next=too-many-locals
 async def pool_snapshot(address, chain, env="prod", end_ts=None):
     """
     Async function to pull pool state and metadata from daily snapshots.

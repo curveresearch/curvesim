@@ -5,7 +5,7 @@ import time
 from math import isqrt, prod
 from typing import List
 
-from curvesim.exceptions import CalculationError, CryptoPoolError
+from curvesim.exceptions import CalculationError, CryptoPoolError, CurvesimValueError
 from curvesim.logging import get_logger
 from curvesim.pool.base import Pool
 from curvesim.pool.snapshot import CurveCryptoPoolBalanceSnapshot
@@ -80,6 +80,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         admin_fee: int = 5 * 10**9,
         xcp_profit=10**18,
         xcp_profit_a=10**18,
+        virtual_price=None,
     ):
         """
         Parameters
@@ -137,6 +138,9 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
             Counter for accumulated profits, no losses (default = 10**18)
         xcp_profit_a: int, optional
             Value of `xcp_profit` when admin fees last claimed (default = 10**18)
+        virtual_price: int, optional
+            amount of XCP invariant per LP token; can be used when
+            missing `tokens` value.
         """
         self.A = A
         self.gamma = gamma
@@ -192,16 +196,24 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
                 )
         else:
             xp = self._xp()
-            D = factory_2_coin.newton_D(A, gamma, xp)
+            D = newton_D(A, gamma, xp)
             self.D = D
 
-        xcp = self._get_xcp(D)
-        if tokens is not None:
-            self.tokens = tokens
-        else:
-            self.tokens = xcp
+        if tokens and virtual_price:
+            raise CurvesimValueError(
+                "Should not set both `tokens` and `virtual_price`."
+            )
 
-        self.virtual_price = 10**18 * xcp // tokens
+        xcp = self._get_xcp(D)
+        if virtual_price:
+            self.virtual_price = virtual_price
+            self.tokens = xcp * 10**18 // virtual_price
+        else:
+            if tokens:
+                self.tokens = tokens
+            else:
+                self.tokens = xcp
+            self.virtual_price = 10**18 * xcp // self.tokens
 
     def _convert_D_to_balances(self, D):
         price_scale = self.price_scale
