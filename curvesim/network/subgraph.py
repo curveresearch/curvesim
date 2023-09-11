@@ -14,7 +14,7 @@ from curvesim.logging import get_logger
 from ..exceptions import CurvesimValueError, SubgraphResultError
 from ..overrides import override_subgraph_data
 from .http import HTTP
-from .utils import compute_D, sync
+from .utils import sync
 
 # pylint: disable=redefined-outer-name
 
@@ -344,9 +344,6 @@ async def pool_snapshot(address, chain, env="prod", end_ts=None):
     pool = r.pop("pool")
     r.update(pool)
 
-    # D
-    D = compute_D(r["normalizedReserves"], r["A"])
-
     # Version
     if r["isV2"]:
         version = 2
@@ -393,11 +390,9 @@ async def pool_snapshot(address, chain, env="prod", end_ts=None):
             },
             "coins": coins,
             "reserves": {
-                "D": D,
                 "by_coin": normalized_reserves,
                 "unnormalized_by_coin": unnormalized_reserves,
                 "virtual_price": int(r["virtualPrice"]),
-                "tokens": D * 10**18 // int(r["virtualPrice"]),
             },
             "basepool": basepool,
             "timestamp": int(r["timestamp"]),
@@ -445,11 +440,9 @@ async def pool_snapshot(address, chain, env="prod", end_ts=None):
             },
             "coins": coins,
             "reserves": {
-                "D": D,
                 "by_coin": normalized_reserves,
                 "unnormalized_by_coin": unnormalized_reserves,
                 "virtual_price": int(r["virtualPrice"]),
-                "tokens": D * 10**18 // int(r["virtualPrice"]),
             },
             "basepool": basepool,
             "timestamp": int(r["timestamp"]),

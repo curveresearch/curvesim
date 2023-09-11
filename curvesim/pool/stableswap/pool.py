@@ -72,16 +72,15 @@ class CurvePool(Pool):  # pylint: disable=too-many-instance-attributes
         # to pass the CI tests.
         rates = rates or [10**18] * n
 
-        if isinstance(D, list):
-            balances = D
-        else:
-            balances = [D // n * 10**18 // _p for _p in rates]
-
         self.A = A
         self.n = n
         self.fee = fee
         self.rates = rates
-        self.balances = balances
+
+        if isinstance(D, list):
+            self.balances = D.copy()
+        else:
+            self.balances = self._convert_D_to_balances(D)
 
         if tokens and virtual_price:
             raise CurvesimValueError(
@@ -102,6 +101,11 @@ class CurvePool(Pool):  # pylint: disable=too-many-instance-attributes
         self.r = False
         self.n_total = n
         self.admin_balances = [0] * n
+
+    def _convert_D_to_balances(self, D):
+        n = self.n
+        rates = self.rates
+        return [D // n * 10**18 // _p for _p in rates]
 
     def _xp(self):
         rates = self.rates

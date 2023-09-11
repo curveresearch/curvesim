@@ -6,19 +6,23 @@ from .base import PoolMetaDataBase
 class StableswapMetaData(PoolMetaDataBase):
     """Specific implementation of the `PoolMetaDataInterface` for Stableswap."""
 
-    def init_kwargs(self, balanced=True, balanced_base=True, normalize=True):
+    def init_kwargs(self, normalize=True):
         data = self._dict
 
-        def process_to_kwargs(data, balanced, normalize):
+        def process_to_kwargs(data, normalize):
             kwargs = {
                 "A": data["params"]["A"],
-                "D": data["reserves"]["D"],
                 "n": len(data["coins"]["names"]),
                 "fee": data["params"]["fee"],
                 "fee_mul": data["params"]["fee_mul"],
-                "tokens": data["reserves"]["tokens"],
+                "virtual_price": data["reserves"]["virtual_price"],
             }
-            if not normalize:
+
+            if normalize:
+                coin_balances = data["reserves"]["by_coin"]
+            else:
+                coin_balances = data["reserves"]["unnormalized_by_coin"]
+
                 if data["basepool"]:
                     d = data["coins"]["decimals"][0]
                     kwargs["rate_multiplier"] = 10 ** (36 - d)
@@ -26,19 +30,16 @@ class StableswapMetaData(PoolMetaDataBase):
                     kwargs["rates"] = [
                         10 ** (36 - d) for d in data["coins"]["decimals"]
                     ]
-            if not balanced:
-                if normalize:
-                    coin_balances = data["reserves"]["by_coin"]
-                else:
-                    coin_balances = data["reserves"]["unnormalized_by_coin"]
-                kwargs["D"] = coin_balances
+
+            kwargs["D"] = coin_balances
+
             return kwargs
 
-        kwargs = process_to_kwargs(data, balanced, normalize)
+        kwargs = process_to_kwargs(data, normalize)
 
         if data["basepool"]:
             bp_data = data["basepool"]
-            bp_kwargs = process_to_kwargs(bp_data, balanced_base, normalize)
+            bp_kwargs = process_to_kwargs(bp_data, normalize)
             basepool = CurvePool(**bp_kwargs)
             basepool.metadata = bp_data
             kwargs["basepool"] = basepool

@@ -142,34 +142,28 @@ def get_pool(
     pool_metadata,
     chain="mainnet",
     *,
-    balanced=False,
-    balanced_base=False,
     normalize=False,
     end_ts=None,
     env="prod",
 ):
     """
-    Constructs a pool object based on the stored data.
+    Factory function for creating a pool based on metadata pulled from on-chain.
 
     Parameters
     ----------
-    address : str
-        pool address prefixed with "0x"
+    pool_metadata : Union[str, dict, PoolMetaDataInterface]
+        pool address prefixed with "0x" or already pulled metadata in the form
+        of a dict or :class:`PoolMetaDataInterface`.
 
     chain: str, default="mainnet"
         chain/layer2 identifier, e.g. "mainnet", "arbitrum", "optimism"
 
-    balanced : bool, default=False
-        If True, balances the pool value across assets.
-
-    balanced_base : bool, default=False
-        If True and pool is metapool, balances the basepool value across assets.
-
     normalize : bool, default=False
         If True, normalizes balances to 18 decimals (useful for sim calculations).
 
-    sim: bool, default=False
-        If True, returns a `SimPool` version of the pool.
+    end_ts: int, optional
+        Posix timestamp indicating the datetime of the metadata snapshot.
+        Only used when `pool_metadata` is an address.
 
     Returns
     -------
@@ -182,18 +176,20 @@ def get_pool(
     >>> chain = "mainnet"
     >>> pool = curvesim.pool.get(pool_address, chain)
     """
+    if end_ts and not isinstance(pool_metadata, str):
+        raise CurvesimValueError("`end_ts` has no effect unless pool address is used.")
+
     if isinstance(pool_metadata, str):
         pool_metadata = get_metadata(pool_metadata, chain=chain, env=env, end_ts=end_ts)
     elif isinstance(pool_metadata, dict):
         pool_metadata = PoolMetaData(pool_metadata)
-    elif isinstance(pool_metadata, PoolMetaDataInterface):
-        pass
-    else:
+
+    if not isinstance(pool_metadata, PoolMetaDataInterface):
         raise CurvesimValueError(
             "`pool_metadata` must be of type `str`, `dict`, or `PoolMetaDataInterface`."
         )
 
-    init_kwargs = pool_metadata.init_kwargs(balanced, balanced_base, normalize)
+    init_kwargs = pool_metadata.init_kwargs(normalize)
     logger.debug(init_kwargs)
 
     pool_type = pool_metadata.pool_type
@@ -219,30 +215,65 @@ def get_sim_pool(
     env="prod",
 ):
     """
-    Effectively the same as the `get_pool` function but returns
-    an object in the `SimPool` hierarchy.
+    Factory function for creating a sim pool based on metadata pulled from on-chain.
+
+    Parameters
+    ----------
+    pool_metadata : Union[str, dict, PoolMetaDataInterface]
+        pool address prefixed with "0x" or already pulled metadata in the form
+        of a dict or :class:`PoolMetaDataInterface`.
+
+    chain: str, default="mainnet"
+        chain/layer2 identifier, e.g. "mainnet", "arbitrum", "optimism"
+
+    balanced : bool, default=True
+        If True, balances the pool value across assets.
+
+    balanced_base : bool, default=True
+        If True and pool is metapool, balances the basepool value across assets.
+
+    end_ts: int, optional
+        Posix timestamp indicating the datetime of the metadata snapshot.
+        Only used when `pool_metadata` is an address.
+
+    custom_kwargs: dict, optional
+        Used for passing additional kwargs to the pool's `__init__`.
+
+    pool_data_cache: PoolDataCache, optional
+        Pass in custom type that pulls/holds market prices and volume.
+        This will be deprecated in the future.
+
+    Returns
+    -------
+    :class:`SimPool`
+
+    Note
+    -----
+    The balances are always normalized to 18 decimals.
+
+    Examples
+    --------
+    >>> import curvesim
+    >>> pool_address = "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7"
+    >>> chain = "mainnet"
+    >>> pool = curvesim.pool.get_sim_pool(pool_address, chain)
     """
     custom_kwargs = custom_kwargs or {}
+
+    if end_ts and not isinstance(pool_metadata, str):
+        raise CurvesimValueError("`end_ts` has no effect unless pool address is used.")
 
     if isinstance(pool_metadata, str):
         pool_metadata = get_metadata(pool_metadata, chain=chain, env=env, end_ts=end_ts)
     elif isinstance(pool_metadata, dict):
-        if end_ts:
-            raise CurvesimValueError(
-                "`end_ts` has no effect unless pool address is used."
-            )
         pool_metadata = PoolMetaData(pool_metadata)
-    elif isinstance(pool_metadata, PoolMetaDataInterface):
-        if end_ts:
-            raise CurvesimValueError(
-                "`end_ts` has no effect unless pool address is used."
-            )
-    else:
+
+    if not isinstance(pool_metadata, PoolMetaDataInterface):
         raise CurvesimValueError(
             "`pool_metadata` must be of type `str`, `dict`, or `PoolMetaDataInterface`."
         )
 
-    init_kwargs = pool_metadata.init_kwargs(balanced, balanced_base, normalize=True)
+    init_kwargs = pool_metadata.init_kwargs(normalize=True)
     logger.debug(init_kwargs)
 
     pool_type = pool_metadata.sim_pool_type
@@ -255,10 +286,32 @@ def get_sim_pool(
             raise CurvesimValueError(f"'{pool_type.__name__}' needs '{key}'.") from e
 
     pool = pool_type(**init_kwargs)
-
     pool.metadata = pool_metadata._dict  # pylint: disable=protected-access
+    _balance_pool(pool, balanced, balanced_base)
 
     return pool
+
+
+def _balance_pool(pool, balanced, balanced_base):
+    """
+    Balances the pool and/or its basepool if applicable.
+
+    Note: Mutates the `pool` argument.
+    """
+    # pylint: disable=protected-access
+    if balanced:
+        if callable(pool.D):
+            # stableswap/metapool
+            D = pool.D()
+        else:
+            # cryptopool
+            D = pool.D
+        pool.balances = pool._convert_D_to_balances(D)
+
+    if balanced_base and hasattr(pool, "basepool"):
+        basepool = pool.basepool
+        D = basepool.D()
+        basepool.balances = basepool._convert_D_to_balances(D)
 
 
 get = get_pool
