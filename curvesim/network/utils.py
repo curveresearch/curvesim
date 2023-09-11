@@ -10,6 +10,7 @@ from curvesim.utils import get_event_loop
 
 def compute_D(xp, A):
     """Standalone `D` calc neede for some data processing."""
+    A = int(A)
     xp = list(map(int, xp))
     n = len(xp)
     S = sum(xp)
