@@ -259,6 +259,7 @@ def get_sim_pool(
 
     init_kwargs = pool_metadata.init_kwargs(normalize=True)
     logger.debug(init_kwargs)
+    print(init_kwargs)
 
     pool_type = pool_metadata.sim_pool_type
 
@@ -287,7 +288,7 @@ def get_sim_pool(
         new_D = pool.D()
     except TypeError:
         new_D = pool.D
-    # assert abs(new_D - D) < 5, f"old D: {D}, new D: {new_D}, diff: {new_D - D}"
+    assert abs(new_D - D) < 5, f"old D: {D}, new D: {new_D}, diff: {new_D - D}"
     try:
         new_vprice = pool.get_virtual_price()
     except AttributeError:
