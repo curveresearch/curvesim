@@ -147,18 +147,23 @@ def get_pool(
     env="prod",
 ):
     """
-    Constructs a pool object based on the stored data.
+    Factory function for creating a pool based on metadata pulled from on-chain.
 
     Parameters
     ----------
-    address : str
-        pool address prefixed with "0x"
+    pool_metadata : Union[str, dict, PoolMetaDataInterface]
+        pool address prefixed with "0x" or already pulled metadata in the form
+        of a dict or :class:`PoolMetaDataInterface`.
 
     chain: str, default="mainnet"
         chain/layer2 identifier, e.g. "mainnet", "arbitrum", "optimism"
 
     normalize : bool, default=False
         If True, normalizes balances to 18 decimals (useful for sim calculations).
+
+    end_ts: int, optional
+        Posix timestamp indicating the datetime of the metadata snapshot.
+        Only used when `pool_metadata` is an address.
 
     Returns
     -------
@@ -210,29 +215,41 @@ def get_sim_pool(
     env="prod",
 ):
     """
-    Effectively the same as the `get_pool` function but returns
-    an object in the `SimPool` hierarchy.
+    Factory function for creating a sim pool based on metadata pulled from on-chain.
 
     Parameters
     ----------
-    address : str
-        pool address prefixed with "0x"
+    pool_metadata : Union[str, dict, PoolMetaDataInterface]
+        pool address prefixed with "0x" or already pulled metadata in the form
+        of a dict or :class:`PoolMetaDataInterface`.
 
     chain: str, default="mainnet"
         chain/layer2 identifier, e.g. "mainnet", "arbitrum", "optimism"
 
-    balanced : bool, default=False
+    balanced : bool, default=True
         If True, balances the pool value across assets.
 
-    balanced_base : bool, default=False
+    balanced_base : bool, default=True
         If True and pool is metapool, balances the basepool value across assets.
 
-    normalize : bool, default=False
-        If True, normalizes balances to 18 decimals (useful for sim calculations).
+    end_ts: int, optional
+        Posix timestamp indicating the datetime of the metadata snapshot.
+        Only used when `pool_metadata` is an address.
+
+    custom_kwargs: dict, optional
+        Used for passing additional kwargs to the pool's `__init__`.
+
+    pool_data_cache: PoolDataCache, optional
+        Pass in custom type that pulls/holds market prices and volume.
+        This will be deprecated in the future.
 
     Returns
     -------
     :class:`SimPool`
+
+    Note
+    -----
+    The balances are always normalized to 18 decimals.
 
     Examples
     --------
