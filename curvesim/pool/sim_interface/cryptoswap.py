@@ -194,9 +194,9 @@ class SimCurveCryptoPool(SimPool, AssetIndicesMixin, CurveCryptoPool):
         initial_prices = prices.iloc[0, 0 : n - 1].tolist()
         initial_prices = [int(10**18 / p) for p in initial_prices]
 
-        self.last_prices = initial_prices
-        self.price_scale = initial_prices
-        self._price_oracle = initial_prices
+        self.last_prices = initial_prices.copy()
+        self.price_scale = initial_prices.copy()
+        self._price_oracle = initial_prices.copy()
 
         # Upbdate balances, preserving xcp
         initial_prices_root = [root(p) for p in initial_prices]
