@@ -148,16 +148,19 @@ jobs:
           coverage combine --append
           BADGE_JSON=`cat ${{ steps.covbadge.outputs.file }}`
           OLD_SCORE=$(python3 -c "import json; score=json.loads('${BADGE_JSON}')['message'].rstrip('%'); print(score)")
-          # Reduce score slightly to accomodate fluctuations
-          ADJUSTED_OLD_SCORE=$((OLD_SCORE-1))
-          coverage report --fail-under="${ADJUSTED_OLD_SCORE:-0}"
+          # Use a "band" around the old score to account for fluctuations
+          OLD_SCORE_LOWER=$((OLD_SCORE-1))
+          OLD_SCORE_UPPER=$((OLD_SCORE+1))
+          # Use low bound to test score doesn't decrease significantly
+          coverage report --fail-under="${OLD_SCORE_LOWER:-0}"
           NEW_SCORE=$(coverage report --format=total)
-          echo "OLD_COVERAGE_SCORE=${OLD_SCORE}" >> $GITHUB_ENV
+          # Save upper bound for comparison: only save score if increase is significant
+          echo "OLD_COVERAGE_SCORE=${OLD_SCORE_UPPER}" >> $GITHUB_ENV
           echo "COVERAGE_SCORE=${NEW_SCORE}" >> $GITHUB_ENV
 
       - name: Upload coverage badge
         uses: schneegans/dynamic-badges-action@v1.6.0
-        if: $${{ github.ref == 'refs/heads/main' && env.COVERAGE_SCORE > (env.OLD_COVERAGE_SCORE + 1) }}
+        if: ${{ github.ref == 'refs/heads/main' && env.COVERAGE_SCORE > env.OLD_COVERAGE_SCORE }}
         with:
           auth: ${{ secrets.GIST_TOKEN }}  # personal access token with scope "gist"
           gistID: 3da3c072e081f4509ebdd09c63e6ede5  # id of previously created gist
