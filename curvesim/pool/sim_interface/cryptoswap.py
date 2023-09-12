@@ -19,6 +19,8 @@ class SimCurveCryptoPool(SimPool, AssetIndicesMixin, CurveCryptoPool):
     a generic interface (`SimPool`).
     """
 
+    # pylint: disable=too-many-instance-attributes
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -201,16 +203,17 @@ class SimCurveCryptoPool(SimPool, AssetIndicesMixin, CurveCryptoPool):
         # Upbdate balances, preserving xcp
         initial_prices_root = [root(p) for p in initial_prices]
         new_D = prod(initial_prices_root) * xcp * n // 10 ** (18 * (n - 1))
-        balances = self._convert_D_to_balances(new_D)
-        self.balances = balances
+        self.balances = self._convert_D_to_balances(new_D)
 
-        # Recompute and store D & virtual_price
-        xp = self._xp()  # pylint: disable=protected-access
-        computed_D = newton_D(self.A, self.gamma, xp)
-        self.D = computed_D
+        # Recompute D with new balances
+        xp = self._xp()
+        self.D = newton_D(self.A, self.gamma, xp)
 
-        virtual_price = self.get_virtual_price()
-        self.virtual_price = virtual_price
+        # Set virtual price & xcp profit to 1
+        self.tokens = self._get_xcp(self.D)
+        self.virtual_price = self.get_virtual_price()
+        self.xcp_profit = 10**18
+        self.xcp_profit_a = 10**18
 
     @property
     @override
