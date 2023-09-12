@@ -529,14 +529,14 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         j: int
             index of coin; usually the "out"-token
         x: int
-            balance of i-th coin in units of D
+            balance of i-th coin in units of `D`
         xp: list of int
-            coin balances in units of D
+            coin balances in units of `D`
 
         Returns
         -------
         int
-            The balance of the j-th coin, in units of D, for the other
+            The balance of the j-th coin, in units of `D`, for the other
             coin balances given.
 
         Note
@@ -962,7 +962,19 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
 
     def lp_price(self) -> int:
         """
-        Returns an LP token price approximating behavior as a constant-product AMM.
+        Returns the price of an LP token in units of token 0.
+
+        Derived from the equilibrium point of a constant-product AMM
+        that approximates Cryptoswap's behavior.
+
+        Returns
+        -------
+        int
+            Liquidity redeemable per LP token in units of token 0.
+
+        Note
+        ----
+        This is a "view" function; it doesn't change the state of the pool.
         """
         if self.n == 2:
             virtual_price = self.virtual_price
