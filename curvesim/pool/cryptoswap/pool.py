@@ -152,9 +152,9 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         self.adjustment_step = adjustment_step
         self.admin_fee = admin_fee
 
-        self.price_scale = price_scale
-        self._price_oracle = price_oracle or price_scale
-        self.last_prices = last_prices or price_scale
+        self.price_scale = price_scale.copy()
+        self._price_oracle = price_oracle.copy() if price_oracle else price_scale.copy()
+        self.last_prices = last_prices.copy() if last_prices else price_scale.copy()
         self.ma_half_time = ma_half_time
 
         self._block_timestamp = _get_unix_timestamp()
@@ -181,7 +181,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         # calculations should have been set by this point.
 
         if balances:
-            self.balances = balances
+            self.balances = balances.copy()
 
         if D is not None:
             self.D = D
