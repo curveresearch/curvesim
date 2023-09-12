@@ -1028,18 +1028,25 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         -------
         int
             Amount of LP tokens minted.
+
+        Note
+        ----
+        This is a "view" function; it doesn't change the state of the pool.
         """
         token_supply: int = self.tokens
-        A = self.A
-        gamma = self.gamma
+        A: int = self.A
+        gamma: int = self.gamma
         xp: List[int] = self._xp()
-        amountsp = self._xp_mem(amounts)
+        amountsp: List[int] = self._xp_mem(amounts)
         D0: int = self.D
+
         for i, a in enumerate(amountsp):
             xp[i] += a
-        D: int = factory_2_coin.newton_D(A, gamma, xp)
+
+        D: int = newton_D(A, gamma, xp)
         d_token: int = token_supply * D // D0 - token_supply
         d_token -= self._calc_token_fee(amountsp, xp) * d_token // 10**10 + 1
+
         return d_token
 
     def dydxfee(self, i, j):
