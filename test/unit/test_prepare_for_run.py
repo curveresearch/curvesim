@@ -60,7 +60,11 @@ def test_cryptoswap3_prepare_for_run_high_price(sim_curve_tricrypto_pool, scalar
 
 
 def _test_cryptoswap_prepare_for_run_same_price(pool):
-    """Test that preserving price_scale doesn't change D or xcp(D)"""
+    """
+    Test that preserving price_scale doesn't change D or xcp(D);
+    and that virtual_price and xcp_profits are 10**18.
+    """
+    # pylint: disable=protected-access
 
     original_D = pool.D
     original_xcp = pool._get_xcp(pool.D)
@@ -82,10 +86,18 @@ def _test_cryptoswap_prepare_for_run_same_price(pool):
     assert abs(pool.D - original_D) < 10**10
     assert abs(new_xcp - original_xcp) < 10**10
 
+    # Test that virtual price and xcp_profits == 1
+    assert pool.virtual_price == 10**18
+    assert pool.xcp_profit == 10**18
+    assert pool.xcp_profit_a == 10**18
+
 
 def _test_cryptoswap_prepare_for_run(pool, scalar):
-    """Test that changing price_scale doesn't change xcp(D), but changes D"""
-
+    """
+    Test that changing price_scale doesn't change xcp(D), but changes D;
+    and that virtual_price and xcp_profits are 10**18.
+    """
+    # pylint: disable=protected-access
     original_D = pool.D
     original_xcp = pool._get_xcp(pool.D)
     new_price_scale = [int(p * scalar) for p in pool.price_scale]
@@ -106,7 +118,12 @@ def _test_cryptoswap_prepare_for_run(pool, scalar):
     assert abs(pool.D - original_D) > 10**10
     assert abs(new_xcp - original_xcp) < 10**10
 
+    # Test that virtual price and xcp_profits == 1
+    assert pool.virtual_price == 10**18
+    assert pool.xcp_profit == 10**18
+    assert pool.xcp_profit_a == 10**18
+
 
 def _test_list_equality(list1, list2, tol=10**10):
     """Test that differences are < tol for all elements"""
-    assert all([abs(val1 - val2) < tol for val1, val2 in zip(list1, list2)])
+    assert all(abs(val1 - val2) < tol for val1, val2 in zip(list1, list2))
