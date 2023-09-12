@@ -170,6 +170,7 @@ positive_balance = st.integers(min_value=10**5 * D_UNIT, max_value=10**11 * D_UN
 amplification_coefficient = st.integers(min_value=MIN_A, max_value=MAX_A)
 gamma_coefficient = st.integers(min_value=MIN_GAMMA, max_value=MAX_GAMMA)
 price = st.integers(min_value=10**12, max_value=10**25)
+bps_change = st.integers(min_value=0, max_value=100 * 100)
 
 
 @given(positive_balance, positive_balance)
@@ -669,20 +670,30 @@ def test_get_virtual_price(
     assert virtual_price == expected_virtual_price
 
 
-@given(positive_balance, positive_balance)
+@given(bps_change, bps_change)
 @settings(
-    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    suppress_health_check=[
+        HealthCheck.function_scoped_fixture,
+        HealthCheck.filter_too_much,
+    ],
     max_examples=5,
     deadline=None,
 )
-def test_calc_token_amount(vyper_cryptopool, x0, x1):
+def test_calc_token_amount(vyper_cryptopool, x0_perc, x1_perc):
     """Test `calc_token_amount` against vyper implementation."""
-    assume(0.02 < x0 / x1 < 50)
-    xp = [x0, x1]
+    n_coins = 2
+    percents = [x0_perc, x1_perc]
+
+    assume(not (x0_perc == 0 and x1_perc == 0))
+
+    amountsp = [
+        percent * xp // 10000
+        for percent, xp in zip(percents, vyper_cryptopool.internal.xp())
+    ]
 
     precisions = vyper_cryptopool.eval("self._get_precisions()")
     price_scale = vyper_cryptopool.price_scale()
-    amounts = get_real_balances(xp, precisions, price_scale)
+    amounts = get_real_balances(amountsp, precisions, price_scale)
 
     pool = initialize_pool(vyper_cryptopool)
 
@@ -690,7 +701,7 @@ def test_calc_token_amount(vyper_cryptopool, x0, x1):
     lp_amount = pool.calc_token_amount(amounts)
     assert lp_amount == expected_lp_amount
 
-    expected_balances = [vyper_cryptopool.balances(i) for i in range(2)]
+    expected_balances = [vyper_cryptopool.balances(i) for i in range(n_coins)]
     assert pool.balances == expected_balances
 
 

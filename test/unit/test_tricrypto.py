@@ -6,7 +6,7 @@ Tests are against the tricrypto-ng contract.
 from itertools import permutations
 
 import boa
-from hypothesis import HealthCheck, assume, given, settings, Phase
+from hypothesis import HealthCheck, assume, given, settings
 from hypothesis import strategies as st
 
 from curvesim.pool import CurveCryptoPool
@@ -142,6 +142,7 @@ positive_balance = st.integers(min_value=10**5 * D_UNIT, max_value=10**11 * D_UN
 amplification_coefficient = st.integers(min_value=MIN_A, max_value=MAX_A)
 gamma_coefficient = st.integers(min_value=MIN_GAMMA, max_value=MAX_GAMMA)
 price = st.integers(min_value=10**12, max_value=10**25)
+bps_change = st.integers(min_value=0, max_value=100 * 100)
 
 
 @given(
@@ -437,14 +438,16 @@ def test_dydxfee(vyper_tricrypto):
         assert abs(dydx - dy / dx) / (dy / dx) < 1e-4
 
 
-@given(positive_balance, positive_balance, positive_balance)
+@given(bps_change, bps_change, bps_change)
 @settings(
-    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    suppress_health_check=[
+        HealthCheck.function_scoped_fixture,
+        HealthCheck.filter_too_much,
+    ],
     max_examples=5,
     deadline=None,
-    phases=[Phase.reuse, Phase.generate, Phase.target],
 )
-def test_calc_token_amount(vyper_tricrypto, x0, x1, x2):
+def test_calc_token_amount(vyper_tricrypto, x0_perc, x1_perc, x2_perc):
     """
     Test `calc_token_amount` against vyper implementation.
 
@@ -453,20 +456,24 @@ def test_calc_token_amount(vyper_tricrypto, x0, x1, x2):
     amounts calculated.
     """
     n_coins = 3
-    xp = [x0, x1, x2]
-    assume(0.02 < xp[0] / xp[1] < 50)
-    assume(0.02 < xp[1] / xp[2] < 50)
-    assume(0.02 < xp[0] / xp[2] < 50)
+    percents = [x0_perc, x1_perc, x2_perc]
+
+    assume(not (x0_perc == 0 and x1_perc == 0 and x2_perc == 0))
+
+    amountsp = [
+        percent * xp // 10000
+        for percent, xp in zip(percents, vyper_tricrypto.internal.xp())
+    ]
 
     precisions = vyper_tricrypto.precisions()
     price_scale = [vyper_tricrypto.price_scale(i) for i in range(n_coins - 1)]
-    amounts = get_real_balances(xp, precisions, price_scale)
+    amounts = get_real_balances(amountsp, precisions, price_scale)
 
     pool = initialize_pool(vyper_tricrypto)
+    expected_balances = pool.balances
 
     expected_lp_amount = vyper_tricrypto.calc_token_amount(amounts, True)
     lp_amount = pool.calc_token_amount(amounts)
     assert abs(lp_amount - expected_lp_amount) < 2
 
-    expected_balances = [vyper_tricrypto.balances(i) for i in range(n_coins)]
     assert pool.balances == expected_balances
