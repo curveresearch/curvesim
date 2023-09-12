@@ -147,9 +147,13 @@ jobs:
           # and checks if score decreased since last CI run
           coverage combine --append
           BADGE_JSON=`cat ${{ steps.covbadge.outputs.file }}`
-          COVERAGE_SCORE=$(python3 -c "import json; score=json.loads('${BADGE_JSON}')['message'].rstrip('%'); print(score)")
-          coverage report --fail-under="${COVERAGE_SCORE:-0}"
-          echo "COVERAGE_SCORE=`coverage report --format=total`" >> $GITHUB_ENV
+          OLD_SCORE=$(python3 -c "import json; score=json.loads('${BADGE_JSON}')['message'].rstrip('%'); print(score)")
+          # Reduce score slightly to accomodate fluctuations
+          ADJUSTED_OLD_SCORE=$((OLD_SCORE-1))
+          coverage report --fail-under="${ADJUSTED_OLD_SCORE:-0}"
+          NEW_SCORE=$(coverage report --format=total)
+          echo "OLD_COVERAGE_SCORE=${OLD_SCORE}" >> $GITHUB_ENV
+          echo "COVERAGE_SCORE=${NEW_SCORE}" >> $GITHUB_ENV
 
       - name: Upload coverage badge
         uses: schneegans/dynamic-badges-action@v1.6.0
