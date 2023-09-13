@@ -192,9 +192,10 @@ def test_ParameterizedPoolIterator_pool_template_mutation():
         assert param_sampler.pool_template.b == 0
 
 
-def test_ParameterizedPoolIterator_no_variable_params():
+def test_ParameterizedPoolIterator_no__params():
     """
-    Test that .parameter_sequence uses fixed params when variable params are omitted.
+    Test that .parameter_sequence uses fixed params when variable params are omitted,
+    and [None] when all parameters are omitted.
     """
 
     class DummyPool:
@@ -211,11 +212,16 @@ def test_ParameterizedPoolIterator_no_variable_params():
     mapping = {DummyPool: DummyParamSampler}
     fixed_params = {"a": 1, "b": 2}
 
+    # No variable params
     param_sampler = ParameterizedPoolIterator(
         pool, fixed_params=fixed_params, pool_map=mapping
     )
 
     assert param_sampler.parameter_sequence == [fixed_params]
+
+    # No params
+    param_sampler = ParameterizedPoolIterator(pool, pool_map=mapping)
+    assert param_sampler.parameter_sequence == [None]
 
 
 @given(*make_parameter_strats(POOL_PARAMS))

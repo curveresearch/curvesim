@@ -9,11 +9,10 @@ from curvesim.iterators.price_samplers import PriceVolume
 from curvesim.logging import get_logger
 from curvesim.metrics import init_metrics, make_results
 from curvesim.pool import get_sim_pool
-from curvesim.pool.cryptoswap.pool import CurveCryptoPool
 from curvesim.pool_data.cache import PoolDataCache
 
 from .. import run_pipeline
-from ..common import DEFAULT_METRICS, DEFAULT_PARAMS, TEST_CRYPTO_PARAMS, TEST_PARAMS
+from ..common import DEFAULT_METRICS
 from ..utils import compute_volume_multipliers
 from .strategy import VolumeLimitedStrategy
 
@@ -28,7 +27,6 @@ def pipeline(
     variable_params=None,
     fixed_params=None,
     metrics=None,
-    test=False,
     days=60,
     src="coingecko",
     data_dir="data",
@@ -65,13 +63,6 @@ def pipeline(
         Example
         --------
         >>> fixed_params = {"D": 1000000*10**18}
-
-    test : bool, optional
-        Overrides variable_params to use four test values:
-
-        .. code-block::
-
-            {"A": [100, 1000], "fee": [3000000, 4000000]}
 
     days : int, default=60
         Number of days to pull pool and price data for.
@@ -113,27 +104,10 @@ def pipeline(
         cpu_count = os.cpu_count()
         ncpu = cpu_count if cpu_count is not None else 1
 
-    fixed_params = fixed_params or {}
-
-    default_params = DEFAULT_PARAMS.copy()
-    for key in DEFAULT_PARAMS:
-        if key in fixed_params:
-            del default_params[key]
-
-    variable_params = variable_params or default_params
-    metrics = metrics or DEFAULT_METRICS
-
     if pool_data_cache is None:
         pool_data_cache = PoolDataCache(pool_metadata, days=days, end=end)
 
     pool = get_sim_pool(pool_metadata, pool_data_cache=pool_data_cache)
-
-    if test:
-        fixed_params = {}
-        if isinstance(pool, CurveCryptoPool):
-            variable_params = TEST_CRYPTO_PARAMS
-        else:
-            variable_params = TEST_PARAMS
 
     # pylint: disable-next=abstract-class-instantiated
     param_sampler = ParameterizedPoolIterator(pool, variable_params, fixed_params)
@@ -152,6 +126,7 @@ def pipeline(
             mode=vol_mode,
         )
 
+    metrics = metrics or DEFAULT_METRICS
     metrics = init_metrics(metrics, pool=pool)
     strategy = VolumeLimitedStrategy(metrics, vol_mult)
 

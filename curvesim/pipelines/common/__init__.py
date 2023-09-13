@@ -1,3 +1,7 @@
+"""
+Contains variables and functions common to the arbitrage pipelines.
+"""
+
 from scipy.optimize import root_scalar
 
 from curvesim.logging import get_logger
@@ -12,19 +16,6 @@ DEFAULT_METRICS = [
     Metrics.PoolVolume,
     Metrics.ArbMetrics,
 ]
-
-DEFAULT_PARAMS = {
-    "A": [int(2 ** (a / 2)) for a in range(12, 28)],
-    "fee": list(range(1000000, 5000000, 1000000)),
-}
-
-TEST_PARAMS = {"A": [100, 1000], "fee": [3000000, 4000000]}
-TEST_CRYPTO_PARAMS = {
-    "A": [270000, 2700000],
-    "gamma": [1300000000000, 13000000000],
-    "fee_gamma": [500000000000000, 50000000000000],
-    "out_fee": [80000000, 800000000],
-}
 
 
 def get_arb_trades(pool, prices):

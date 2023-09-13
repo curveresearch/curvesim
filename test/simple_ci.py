@@ -12,27 +12,38 @@ import pandas as pd
 
 from curvesim.pipelines.simple import pipeline as simple_pipeline
 
+TEST_PARAMS = {"A": [100, 1000], "fee": [3000000, 4000000]}
+TEST_CRYPTO_PARAMS = {
+    "A": [270000, 2700000],
+    "gamma": [1300000000000, 13000000000],
+    "fee_gamma": [500000000000000, 50000000000000],
+    "out_fee": [80000000, 800000000],
+}
+
 pools = [
     # 3CRV
     {
         "address": "0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7",
         "end_timestamp": 1638316800,
+        "params": TEST_PARAMS,
     },
     # aCRV
     {
         "address": "0xdebf20617708857ebe4f679508e7b7863a8a8eee",
         "end_timestamp": 1622505600,
+        "params": TEST_PARAMS,
     },
     # # frax3CRV"
     {
         "address": "0xd632f22692FaC7611d2AA1C0D552930D43CAEd3B",
         "end_timestamp": 1643673600,
+        "params": TEST_PARAMS,
     },
     # triCRV
     {
         "address": "0x4ebdf703948ddcea3b11f675b4d1fba9d2414a14",
         "end_timestamp": 1692215156,
-        # "env": "staging",
+        "params": TEST_CRYPTO_PARAMS,
     },
 ]
 
@@ -59,13 +70,14 @@ def main(generate=False, ncpu=None):
     for pool in pools:
         pool_address = pool["address"]
         end_ts = pool["end_timestamp"]
+        params = pool["params"]
         env = pool.get("env", "prod")
 
         results = simple_pipeline(
             pool_address=pool_address,
             chain="mainnet",
+            variable_params=params,
             end_ts=end_ts,
-            test=True,
             ncpu=ncpu,
             env=env,
         )

@@ -1,3 +1,8 @@
+"""
+Implements the simple arbitrage pipeline, a very simplified version of
+:func:`curvesim.pipelines.vol_limited_arb.pipeline`.
+"""
+
 import os
 
 from curvesim.iterators.param_samplers import ParameterizedPoolIterator
@@ -7,9 +12,8 @@ from curvesim.metrics.results import make_results
 from curvesim.pipelines import run_pipeline
 from curvesim.pipelines.simple.strategy import SimpleStrategy
 from curvesim.pool import get_sim_pool
-from curvesim.pool.cryptoswap.pool import CurveCryptoPool
 
-from ..common import DEFAULT_METRICS, DEFAULT_PARAMS, TEST_CRYPTO_PARAMS, TEST_PARAMS
+from ..common import DEFAULT_METRICS
 
 
 def pipeline(  # pylint: disable=too-many-locals
@@ -18,7 +22,6 @@ def pipeline(  # pylint: disable=too-many-locals
     *,
     variable_params=None,
     fixed_params=None,
-    test=False,
     end_ts=None,
     days=60,
     src="coingecko",
@@ -58,13 +61,6 @@ def pipeline(  # pylint: disable=too-many-locals
         --------
         >>> fixed_params = {"D": 1000000*10**18}
 
-    test : bool, optional
-        Overrides variable_params to use four test values:
-
-        .. code-block::
-
-            {"A": [100, 1000], "fee": [3000000, 4000000]}
-
     end_ts : int, optional
         End timestamp in Unix time.  Defaults to 30 minutes before midnight of the
         current day in UTC.
@@ -87,23 +83,8 @@ def pipeline(  # pylint: disable=too-many-locals
 
     """
     ncpu = ncpu or os.cpu_count()
-    fixed_params = fixed_params or {}
-
-    default_params = DEFAULT_PARAMS.copy()
-    for key in DEFAULT_PARAMS:
-        if key in fixed_params:
-            del default_params[key]
-
-    variable_params = variable_params or DEFAULT_PARAMS
 
     pool = get_sim_pool(pool_address, chain, env=env, end_ts=end_ts)
-
-    if test:
-        fixed_params = {}
-        if isinstance(pool, CurveCryptoPool):
-            variable_params = TEST_CRYPTO_PARAMS
-        else:
-            variable_params = TEST_PARAMS
 
     sim_assets = pool.assets
     price_sampler = PriceVolume(
