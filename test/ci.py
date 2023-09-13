@@ -11,7 +11,42 @@ import pickle
 
 import pandas as pd
 
-import curvesim
+from curvesim import autosim
+
+TEST_PARAMS = {"A": [100, 1000], "fee": [3000000, 4000000]}
+TEST_CRYPTO_PARAMS = {
+    "A": [270000, 2700000],
+    "gamma": [1300000000000, 13000000000],
+    "fee_gamma": [500000000000000, 50000000000000],
+    "out_fee": [80000000, 800000000],
+}
+
+pools = [
+    # 3CRV
+    {
+        "address": "0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7",
+        "end_timestamp": 1638316800,
+        "params": TEST_PARAMS,
+    },
+    # aCRV
+    {
+        "address": "0xdebf20617708857ebe4f679508e7b7863a8a8eee",
+        "end_timestamp": 1622505600,
+        "params": TEST_PARAMS,
+    },
+    # # frax3CRV"
+    {
+        "address": "0xd632f22692FaC7611d2AA1C0D552930D43CAEd3B",
+        "end_timestamp": 1643673600,
+        "params": TEST_PARAMS,
+    },
+    # triCRV
+    {
+        "address": "0x4ebdf703948ddcea3b11f675b4d1fba9d2414a14",
+        "end_timestamp": 1692215156,
+        "params": TEST_CRYPTO_PARAMS,
+    },
+]
 
 
 def main(generate=False, ncpu=None):
@@ -26,40 +61,6 @@ def main(generate=False, ncpu=None):
     """
     data_dir = os.path.join("test", "data")
 
-    pools = [
-        # 3CRV
-        {
-            "address": "0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7",
-            "end_timestamp": 1638316800,
-        },
-        # aCRV
-        {
-            "address": "0xdebf20617708857ebe4f679508e7b7863a8a8eee",
-            "end_timestamp": 1622505600,
-        },
-        # frax3CRV"
-        {
-            "address": "0xd632f22692fac7611d2aa1c0d552930d43caed3b",
-            "end_timestamp": 1643673600,
-        },
-        # ousd3CRV
-        {
-            "address": "0x87650d7bbfc3a9f10587d7778206671719d9910d",
-            "end_timestamp": 1646265600,
-        },
-        # rai3CRV
-        # {
-        #     "address": "0x618788357d0ebd8a37e763adab3bc575d54c2c7d",
-        #     "end_timestamp": 1654041600,
-        # },
-        # triCRV
-        {
-            "address": "0x4ebdf703948ddcea3b11f675b4d1fba9d2414a14",
-            "end_timestamp": 1692215156,
-            # "env": "staging",
-        },
-    ]
-
     test_functions = {
         "summary": summary,
         "per_run": per_run,
@@ -67,16 +68,17 @@ def main(generate=False, ncpu=None):
     }
 
     for pool in pools:
-        address = pool["address"]
+        pool_address = pool["address"]
         end_ts = pool["end_timestamp"]
+        params = pool["params"]
         vol_mult = pool.get("vol_mult", None)
         env = pool.get("env", "prod")
 
-        results = curvesim.autosim(
-            pool=address,
+        results = autosim(
+            pool=pool_address,
             chain="mainnet",
+            **params,
             end=end_ts,
-            test=True,
             vol_mult=vol_mult,
             ncpu=ncpu,
             env=env,
@@ -89,7 +91,7 @@ def main(generate=False, ncpu=None):
         }
 
         for key in test_functions:
-            f_name = os.path.join(data_dir, f"{address}-results_{key}.pickle")
+            f_name = os.path.join(data_dir, f"{pool_address}-results_{key}.pickle")
 
             if generate:
                 with open(f_name, "wb") as f:

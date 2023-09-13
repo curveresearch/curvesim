@@ -12,7 +12,6 @@ The primary use-case is to determine optimal amplitude (A) and fee
 parameters given historical price and volume feeds.
 """
 from curvesim.logging import get_logger
-from curvesim.pipelines.vol_limited_arb import DEFAULT_PARAMS
 from curvesim.pipelines.vol_limited_arb import pipeline as volume_limited_arbitrage
 from curvesim.pool_data import get_metadata
 from curvesim.utils import get_pairs
@@ -66,8 +65,6 @@ def autosim(
         stableswap bonding curve.  Increased values makes the curve
         flatter in a greater neighborhood of equal balances.
 
-        Defaults to ``[int(2 ** (a / 2)) for a in range(12, 28)]``.
-
         For basepool, use **A_base**.
 
     D: int, optional
@@ -87,8 +84,6 @@ def autosim(
 
         Units are in fixed-point so that 10**10 is 100%,
         e.g. 4 * 10**6 is 4 bps and 2 * 10**8 is 2%.
-
-        Defaults to ``list(range(1000000, 5000000, 1000000))``.
 
         For basepool, use **fee_base**.
 
@@ -182,12 +177,8 @@ def _parse_arguments(pool_metadata, **kwargs):
     variable_params = {}
     fixed_params = {}
     rest_of_params = {}
-    defaults = DEFAULT_PARAMS.copy()
 
     for key, val in kwargs.items():
-        if key in defaults:
-            del defaults[key]
-
         if key in pool_args:
             if isinstance(val, int):
                 fixed_params[key] = val
@@ -204,7 +195,5 @@ def _parse_arguments(pool_metadata, **kwargs):
 
         else:
             rest_of_params[key] = val
-
-    variable_params = variable_params or defaults
 
     return variable_params, fixed_params, rest_of_params

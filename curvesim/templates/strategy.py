@@ -65,6 +65,7 @@ class Strategy(ABC):
         trader = self.trader_class(pool)
         state_log = self.state_log_class(pool, self.metrics)
 
+        parameters = parameters or "no parameter changes"
         logger.info("[%s] Simulating with %s", pool.symbol, parameters)
 
         pool.prepare_for_run(price_sampler.prices)
