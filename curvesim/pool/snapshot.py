@@ -162,11 +162,14 @@ class CurveMetaPoolBalanceSnapshot(Snapshot):
 class CurveCryptoPoolBalanceSnapshot(Snapshot):
     """Snapshot that saves pool balances and admin balances."""
 
+    # pylint: disable=too-many-instance-attributes,too-many-arguments,protected-access
+
     def __init__(
         self,
         balances,
         D,
         price_scale,
+        _price_oracle,
         virtual_price,
         xcp_profit,
         last_prices,
@@ -175,6 +178,7 @@ class CurveCryptoPoolBalanceSnapshot(Snapshot):
         self.balances = balances
         self.D = D
         self.price_scale = price_scale
+        self._price_oracle = _price_oracle
         self.virtual_price = virtual_price
         self.xcp_profit = xcp_profit
         self.last_prices = last_prices
@@ -185,6 +189,7 @@ class CurveCryptoPoolBalanceSnapshot(Snapshot):
         balances = pool.balances.copy()
         D = pool.D
         price_scale = pool.price_scale.copy()
+        _price_oracle = pool._price_oracle.copy()
         virtual_price = pool.virtual_price
         xcp_profit = pool.xcp_profit
         last_prices = pool.last_prices.copy()
@@ -193,6 +198,7 @@ class CurveCryptoPoolBalanceSnapshot(Snapshot):
             balances,
             D,
             price_scale,
+            _price_oracle,
             virtual_price,
             xcp_profit,
             last_prices,
@@ -203,6 +209,7 @@ class CurveCryptoPoolBalanceSnapshot(Snapshot):
         pool.balances = self.balances.copy()
         pool.D = self.D
         pool.price_scale = self.price_scale.copy()
+        pool._price_oracle = self._price_oracle.copy()
         pool.virtual_price = self.virtual_price
         pool.xcp_profit = self.xcp_profit
         pool.last_prices = self.last_prices.copy()
