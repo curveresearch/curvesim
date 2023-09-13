@@ -1,4 +1,71 @@
 
+.. _changelog-0.5.0.b2:
+
+0.5.0.b2 — 2023-09-12
+=====================
+
+Removed
+-------
+
+- Pool metadata no longer takes balancing options.  This is handled by the
+  the appropriate factory function, namely `get_sim_pool`.
+
+- Removed default and test parameters from simulation pipelines (#222, #247).
+  Users will have to explicitly choose the pool parameters to vary for sims.
+
+
+Added
+-----
+
+- `virtual_price` is an allowed optional argument for pools.
+
+- Added fixtures for TriCrypto-NG factory and views contracts for exact testing of view functionality.
+  These contracts are copyrighted by Swiss Stake GmbH and used with permission.
+
+- Each pool now has an internal method to handle conversion of the invariant
+  to balances.  This is helpful for use by "friend" classes/functions such
+  as factory functions.
+
+
+Changed
+-------
+
+- CurveCryptoPool can use calc_token_amount to determine LP tokens minted on deposits for 3-coin pools now.
+
+- Reset cryptoswap profit counters to initial values at the start of each
+  sim run (`SimCurveCryptoPool.prepare_for_run`). (#246)
+
+- The pool snapshot is no longer augmented with calculated values and solely handles
+  conversion of pulled subgraph data into appropriate python types.
+
+  The needed calculations are done in the factory function `get_sim_pool` where they can
+  be done rigorously by invoking the pool's internal logic.  This affects the rebalancing
+  logic when initializing a pool for a sim run.
+
+  The computation of `D` in the snapshot actually had a bug, so removing this fixes that.
+
+- Test parameters are now defined within each pipeline test  (#247)
+
+- Since `asyncio.get_event_loop` is deprecated in later versions of Python, we have replaced it by
+  a custom function `curvesim.utils.get_event_loop`.
+
+
+Fixed
+-----
+
+- The `CurveCryptoPool.__init__` had several bugs:
+  - pool creation failed if no `tokens` argument provided (#219)
+  - wrong `D` was computed for 3-coin pools when not explicitly passed-in (#219)
+  - different price-related state variables were initialized with the same object (#237)
+
+- Pool snapshot from subgraph was being augmented with some calculated values,
+  namely `tokens` and `D`.
+  These were incorrect for stableswap pools and metapools. (#239)
+
+- Fixed bug in `SimCurveCryptoPool.prepare_for_run` where the different price-related
+  state variables were initialized pointing to the same object. (#238)
+
+
 .. _changelog-0.5.0.b1:
 
 0.5.0.b1 — 2023-08-17
