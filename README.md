@@ -32,12 +32,12 @@
 | curvesim/network/web3.py                                            |       70 |        5 |       16 |        5 |     86% |62-63, 139->147, 143-144, 147->152, 176 |
 | curvesim/overrides/\_\_init\_\_.py                                  |        9 |        3 |        4 |        1 |     54% |     40-42 |
 | curvesim/pipelines/\_\_init\_\_.py                                  |       21 |        5 |       12 |        1 |     76% |     75-79 |
-| curvesim/pipelines/common/\_\_init\_\_.py                           |       38 |        4 |       12 |        0 |     92% |    89-100 |
-| curvesim/pipelines/simple/\_\_init\_\_.py                           |       32 |        1 |        8 |        2 |     92% |95, 101->108 |
+| curvesim/pipelines/common/\_\_init\_\_.py                           |       35 |        4 |       10 |        0 |     91% |     80-91 |
+| curvesim/pipelines/simple/\_\_init\_\_.py                           |       20 |        0 |        0 |        0 |    100% |           |
 | curvesim/pipelines/simple/strategy.py                               |       10 |        0 |        0 |        0 |    100% |           |
 | curvesim/pipelines/simple/trader.py                                 |       27 |        0 |       10 |        0 |    100% |           |
 | curvesim/pipelines/utils.py                                         |       46 |       36 |       14 |        0 |     17% |38-53, 57-70, 74-102, 106-108 |
-| curvesim/pipelines/vol\_limited\_arb/\_\_init\_\_.py                |       43 |       29 |       14 |        0 |     25% |   112-161 |
+| curvesim/pipelines/vol\_limited\_arb/\_\_init\_\_.py                |       31 |       18 |        6 |        0 |     35% |   103-136 |
 | curvesim/pipelines/vol\_limited\_arb/strategy.py                    |       20 |        9 |        4 |        0 |     46% |28-29, 32-33, 37-42 |
 | curvesim/pipelines/vol\_limited\_arb/trader.py                      |       53 |       44 |       20 |        0 |     12% |39-42, 74-148 |
 | curvesim/plot/\_\_init\_\_.py                                       |        2 |        0 |        0 |        0 |    100% |           |
@@ -80,19 +80,19 @@
 | curvesim/pool\_data/queries.py                                      |       16 |        3 |        4 |        0 |     85% |     48-52 |
 | curvesim/price\_data/\_\_init\_\_.py                                |       10 |        4 |        6 |        1 |     44% |     59-63 |
 | curvesim/price\_data/sources.py                                     |       19 |        8 |        2 |        0 |     52% |     60-71 |
-| curvesim/sim/\_\_init\_\_.py                                        |       34 |       26 |       15 |        0 |     16% |150-163, 167-210 |
+| curvesim/sim/\_\_init\_\_.py                                        |       29 |       22 |       13 |        0 |     17% |145-158, 162-199 |
 | curvesim/templates/\_\_init\_\_.py                                  |        7 |        0 |        0 |        0 |    100% |           |
 | curvesim/templates/param\_samplers.py                               |       36 |        0 |       18 |        1 |     98% |    56->55 |
 | curvesim/templates/price\_samplers.py                               |       10 |        0 |        2 |        0 |    100% |           |
 | curvesim/templates/sim\_assets.py                                   |        8 |        0 |        0 |        0 |    100% |           |
 | curvesim/templates/sim\_pool.py                                     |        8 |        0 |        0 |        0 |    100% |           |
-| curvesim/templates/strategy.py                                      |       19 |        0 |        2 |        0 |    100% |           |
+| curvesim/templates/strategy.py                                      |       20 |        0 |        2 |        0 |    100% |           |
 | curvesim/templates/trader.py                                        |       40 |        4 |       14 |        1 |     80% |20, 35, 39-40, 43->42 |
 | curvesim/tools/\_\_init\_\_.py                                      |        2 |        0 |        0 |        0 |    100% |           |
 | curvesim/tools/bonding\_curve.py                                    |       42 |       17 |       18 |        1 |     57% |73-77, 83-98 |
 | curvesim/utils.py                                                   |       58 |       11 |       21 |        7 |     75% |55, 58, 94, 106-115, 117->exit, 118, 157 |
 | curvesim/version.py                                                 |        7 |        0 |        0 |        0 |    100% |           |
-|                                                           **TOTAL** | **4155** |  **851** | **1401** |  **266** | **75%** |           |
+|                                                           **TOTAL** | **4124** |  **835** | **1381** |  **264** | **75%** |           |
 
 
 ## Setup coverage badge
