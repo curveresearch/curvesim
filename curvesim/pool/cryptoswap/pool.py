@@ -3,12 +3,12 @@ Mainly a module to house the `CurveCryptoPool`, a cryptoswap implementation in P
 """
 import time
 from math import isqrt, prod
-from typing import List
+from typing import List, Type
 
 from curvesim.exceptions import CalculationError, CryptoPoolError, CurvesimValueError
 from curvesim.logging import get_logger
 from curvesim.pool.base import Pool
-from curvesim.pool.snapshot import CurveCryptoPoolBalanceSnapshot
+from curvesim.pool.snapshot import CurveCryptoPoolBalanceSnapshot, Snapshot
 
 from .calcs import (
     factory_2_coin,
@@ -30,7 +30,7 @@ PRECISION = 10**18
 class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
     """Cryptoswap implementation in Python."""
 
-    snapshot_class = CurveCryptoPoolBalanceSnapshot
+    snapshot_class: Type[Snapshot] = CurveCryptoPoolBalanceSnapshot
 
     __slots__ = (
         "A",

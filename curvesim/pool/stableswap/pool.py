@@ -2,11 +2,12 @@
 Mainly a module to house the `Pool`, a basic stableswap implementation in Python.
 """
 from math import prod
+from typing import Type
 
 from gmpy2 import mpz
 
 from curvesim.exceptions import CurvesimValueError
-from curvesim.pool.snapshot import CurvePoolBalanceSnapshot
+from curvesim.pool.snapshot import CurvePoolBalanceSnapshot, Snapshot
 
 from ..base import Pool
 
@@ -16,7 +17,7 @@ class CurvePool(Pool):  # pylint: disable=too-many-instance-attributes
     Basic stableswap implementation in Python.
     """
 
-    snapshot_class = CurvePoolBalanceSnapshot
+    snapshot_class: Type[Snapshot] = CurvePoolBalanceSnapshot
 
     __slots__ = (
         "A",

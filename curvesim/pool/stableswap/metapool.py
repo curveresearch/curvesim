@@ -2,11 +2,12 @@
 Mainly a module to house the `MetaPool`, a metapool stableswap implementation in Python.
 """
 from math import prod
+from typing import Type
 
 from gmpy2 import mpz
 
 from curvesim.exceptions import CurvesimValueError
-from curvesim.pool.snapshot import CurveMetaPoolBalanceSnapshot
+from curvesim.pool.snapshot import CurveMetaPoolBalanceSnapshot, Snapshot
 
 from ..base import Pool
 
@@ -16,7 +17,7 @@ class CurveMetaPool(Pool):  # pylint: disable=too-many-instance-attributes
     Basic stableswap metapool implementation in Python.
     """
 
-    snapshot_class = CurveMetaPoolBalanceSnapshot
+    snapshot_class: Type[Snapshot] = CurveMetaPoolBalanceSnapshot
 
     __slots__ = (
         "A",
