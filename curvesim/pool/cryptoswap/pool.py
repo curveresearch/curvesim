@@ -16,8 +16,8 @@ from .calcs import (
     get_alpha,
     get_p,
     get_y,
-    halfpow,
     newton_D,
+    tricrypto_ng,
 )
 
 logger = get_logger(__name__)
@@ -981,8 +981,9 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
             price_oracle = self.internal_price_oracle()
             price = factory_2_coin.lp_price(virtual_price, price_oracle)
         elif self.n == 3:
+            # 3-coin vyper contract uses cached packed oracle prices instead of internal_price_oracle()
             virtual_price = self.virtual_price
-            price_oracle = self.internal_price_oracle()
+            price_oracle = self._price_oracle
             price = tricrypto_ng.lp_price(virtual_price, price_oracle)
         else:
             raise CalculationError("LP price calc doesn't support more than 3 coins")
@@ -998,11 +999,28 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
 
         block_timestamp: int = self._block_timestamp
         if last_prices_timestamp < block_timestamp:
+
+            if self.n == 2:
+                last_prices: List[int] = self.last_prices
+            elif self.n == 3:
+                # 3-coin vyper contract caps every "last price" that gets fed to the EMA
+                last_prices: List[int] = self.last_prices.copy()
+                price_scale: List[int] = self.price_scale
+                last_prices = [
+                    min(last_p, 2 * storage_p)
+                    for last_p, storage_p in zip(last_prices, price_scale)
+                ]
+            else:
+                raise CalculationError(
+                    "Price oracle calc doesn't support more than 3 coins"
+                )
+
             ma_half_time: int = self.ma_half_time
-            last_prices: int = self.last_prices
-            alpha: int = halfpow(
-                (block_timestamp - last_prices_timestamp) * 10**18 // ma_half_time
+            n_coins: int = self.n
+            alpha: int = get_alpha(
+                ma_half_time, block_timestamp, last_prices_timestamp, n_coins
             )
+
             return [
                 (last_p * (10**18 - alpha) + oracle_p * alpha) // 10**18
                 for last_p, oracle_p in zip(last_prices, price_oracle)

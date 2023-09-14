@@ -20,6 +20,7 @@ from curvesim.pool.cryptoswap.calcs.tricrypto_ng import (
     _newton_y,
     wad_exp,
 )
+from ..fixtures.pool import pack_prices, unpack_prices
 
 
 def initialize_pool(vyper_tricrypto):
@@ -42,7 +43,11 @@ def initialize_pool(vyper_tricrypto):
     ma_half_time = vyper_tricrypto.ma_time()
 
     price_scale = [vyper_tricrypto.price_scale(i) for i in range(n_coins - 1)]
-    price_oracle = [vyper_tricrypto.price_oracle(i) for i in range(n_coins - 1)]
+
+    # We load directly from contract storage and unpack instead of recalculating through price_oracle(i)
+    price_oracle_packed = vyper_tricrypto.eval("self.price_oracle_packed")
+    price_oracle = unpack_prices(price_oracle_packed)
+
     last_prices = [vyper_tricrypto.last_prices(i) for i in range(n_coins - 1)]
     last_prices_timestamp = vyper_tricrypto.last_prices_timestamp()
     balances = [vyper_tricrypto.balances(i) for i in range(n_coins)]
@@ -477,3 +482,35 @@ def test_calc_token_amount(vyper_tricrypto, x0_perc, x1_perc, x2_perc):
     assert abs(lp_amount - expected_lp_amount) < 2
 
     assert pool.balances == expected_balances
+
+
+@given(
+    st.lists(price, min_size=2, max_size=2),
+    st.lists(price, min_size=2, max_size=2),
+    st.integers(min_value=0, max_value=1000),
+)
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=5,
+    deadline=None,
+)
+def test_price_oracle(vyper_tricrypto, price_oracle, last_prices, time_delta):
+    """Test `price_oracle` and `lp_price` against vyper implementation."""
+    n_coins = 3
+    price_oracle_packed = pack_prices(price_oracle)
+    last_prices_packed = pack_prices(last_prices)
+
+    vyper_tricrypto.eval(f"self.price_oracle_packed={price_oracle_packed}")
+    vyper_tricrypto.eval(f"self.last_prices_packed={last_prices_packed}")
+    vm_timestamp = boa.env.vm.state.timestamp
+    last_prices_timestamp = vm_timestamp - time_delta
+    vyper_tricrypto.eval(f"self.last_prices_timestamp={last_prices_timestamp}")
+
+    pool = initialize_pool(vyper_tricrypto)
+    # pylint: disable-next=protected-access
+    pool._increment_timestamp(timestamp=vm_timestamp)
+
+    assert pool.lp_price() == vyper_tricrypto.lp_price()
+    assert pool.price_oracle() == [
+        vyper_tricrypto.price_oracle(i) for i in range(n_coins - 1)
+    ]
