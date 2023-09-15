@@ -56,6 +56,6 @@ class SimpleArbitrageur(Trader):
                     price_error = pool.price(coin_in, coin_out) - price_target
 
         if not best_trade:
-            return [], {"price_errors": []}
+            return [], {"price_errors": {}}
 
-        return [best_trade], {"price_errors": [price_error]}
+        return [best_trade], {"price_errors": {(coin_in, coin_out): price_error}}

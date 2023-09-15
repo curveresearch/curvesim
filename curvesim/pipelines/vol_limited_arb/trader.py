@@ -1,3 +1,5 @@
+from pprint import pformat
+
 from numpy import isnan
 from scipy.optimize import least_squares
 
@@ -71,10 +73,15 @@ def multipair_optimal_arbitrage(  # noqa: C901  pylint: disable=too-many-locals
     res : scipy.optimize.OptimizeResult
         Results object from the numerical optimizer.
     """
-    arb_trades = get_arb_trades(pool, prices)
-    limited_arb_trades = apply_volume_limits(arb_trades, limits, pool)
-    limited_arb_trades = sort_trades_by_size(limited_arb_trades)
-    least_squares_inputs = make_least_squares_inputs(limited_arb_trades, limits)
+    all_trades = get_arb_trades(pool, prices)
+    input_trades, skipped_trades = apply_volume_limits(all_trades, limits, pool)
+
+    if not input_trades:
+        price_errors = make_price_errors(skipped_trades=skipped_trades, pool=pool)
+        return [], price_errors, None
+
+    input_trades = sort_trades_by_size(input_trades)
+    least_squares_inputs = make_least_squares_inputs(input_trades, limits)
 
     def post_trade_price_error_multi(amounts_in, price_targets, coin_pairs):
         with pool.use_snapshot_context():
@@ -107,9 +114,7 @@ def multipair_optimal_arbitrage(  # noqa: C901  pylint: disable=too-many-locals
         )
 
         # Record optimized trades
-        optimized_amounts_in = res.x
-
-        for amount_in, trade in zip(optimized_amounts_in, limited_arb_trades):
+        for trade, amount_in in zip(input_trades, res.x):
             if isnan(amount_in):
                 continue
 
@@ -118,22 +123,14 @@ def multipair_optimal_arbitrage(  # noqa: C901  pylint: disable=too-many-locals
             if amount_in > min_size:
                 trades.append(Trade(trade.coin_in, trade.coin_out, amount_in))
 
-        errors = res.fun
+        price_errors = make_price_errors(input_trades, res.fun, skipped_trades, pool)
 
     except Exception:
-        logger.error(
-            "Optarbs args: x0: %s, bounds: %s, prices: %s",
-            least_squares_inputs["x0"],
-            least_squares_inputs["bounds"],
-            least_squares_inputs["kwargs"]["price_targets"],
-            exc_info=True,
-        )
-        errors = post_trade_price_error_multi(
-            [0] * len(limited_arb_trades), **least_squares_inputs["kwargs"]
-        )
-        res = []
+        logger.error("Opt Arbs:\n %s", pformat(least_squares_inputs), exc_info=True)
+        price_errors = make_price_errors(skipped_trades=all_trades, pool=pool)
+        res = None
 
-    return trades, errors, res
+    return trades, price_errors, res
 
 
 def apply_volume_limits(arb_trades, limits, pool):
@@ -143,15 +140,18 @@ def apply_volume_limits(arb_trades, limits, pool):
     """
 
     limited_arb_trades = []
+    excluded_trades = []
     for trade in arb_trades:
         pair = trade.coin_in, trade.coin_out
         limited_amount_in = min(limits[pair], trade.amount_in)
         lim_trade = trade.replace_amount_in(limited_amount_in)
 
-        # if lim_trade.amount_in > pool.get_min_trade_size(lim_trade.coin_in):
-        limited_arb_trades.append(lim_trade)
+        if lim_trade.amount_in > pool.get_min_trade_size(lim_trade.coin_in):
+            limited_arb_trades.append(lim_trade)
+        else:
+            excluded_trades.append(lim_trade)
 
-    return limited_arb_trades
+    return limited_arb_trades, excluded_trades
 
 
 def sort_trades_by_size(trades):
@@ -166,7 +166,7 @@ def make_least_squares_inputs(trades, limits):
     """
 
     coins_in, coins_out, amounts_in, price_targets = zip(*trades)
-    coin_pairs = zip(coins_in, coins_out)
+    coin_pairs = tuple(zip(coins_in, coins_out))
 
     low_bound = [0] * len(trades)
     high_bound = [limits[pair] + 1 for pair in coin_pairs]
@@ -176,3 +176,41 @@ def make_least_squares_inputs(trades, limits):
         "kwargs": {"price_targets": price_targets, "coin_pairs": coin_pairs},
         "bounds": (low_bound, high_bound),
     }
+
+
+def make_price_errors(trades=None, trade_errors=None, skipped_trades=None, pool=None):
+    """
+    Returns a dict mapping coin pairs to price errors.
+
+    Parameters
+    ----------
+    trades :
+        Trades input into the least_squares optimizer
+
+    trade_errors :
+        Price errors returned by the optimizer
+
+    skipped_trades :
+        Trades excluded from optimization
+
+    pool :
+        The pool used to compute the pool price for skipped trades
+
+    Returns
+    -------
+    price_errors: Dict
+        Maps coin pairs (tuple) to price_errors
+    """
+    price_errors = {}
+    if trades:
+        for trade, price_error in zip(trades, trade_errors):
+            coin_pair = trade.coin_in, trade.coin_out
+            price_errors[coin_pair] = price_error
+
+    if skipped_trades:
+        for trade in skipped_trades:
+            coin_pair = trade.coin_in, trade.coin_out
+            price_error = pool.price(*coin_pair, use_fee=True) - trade.price_target
+            price_errors[coin_pair] = price_error
+
+    return price_errors

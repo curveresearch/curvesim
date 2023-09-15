@@ -28,7 +28,7 @@ class ArbTrade(Trade):
 
     def replace_amount_in(self, new_amount_in):
         """Returns self, replacing amount_in."""
-        coin_in, coin_out, amount_in, price_target = self
+        coin_in, coin_out, _, price_target = self
         return ArbTrade(coin_in, coin_out, new_amount_in, price_target)
 
 
