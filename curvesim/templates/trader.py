@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from dataclasses import fields
 from typing import Union
 
 from curvesim.logging import get_logger
@@ -16,8 +17,19 @@ class Trade:
     amount_in: int
 
     def __iter__(self):
-        # pylint: disable=no-member
-        return (getattr(self, attr) for attr in self.__slots__)
+        return (getattr(self, field.name) for field in fields(self))
+
+
+@dataclass(frozen=True, slots=True)
+class ArbTrade(Trade):
+    """Trade object specifying an arbitrage trade."""
+
+    price_target: float
+
+    def replace_amount_in(self, new_amount_in):
+        """Returns self, replacing amount_in."""
+        coin_in, coin_out, amount_in, price_target = self
+        return ArbTrade(coin_in, coin_out, new_amount_in, price_target)
 
 
 @dataclass(slots=True)
@@ -31,8 +43,7 @@ class TradeResult:
     fee: int
 
     def __iter__(self):
-        # pylint: disable=no-member
-        return (getattr(self, attr) for attr in self.__slots__)
+        return (getattr(self, field.name) for field in fields(self))
 
     def set_attrs(self, **kwargs):
         """Sets multiple attributes defined by keyword arguments."""

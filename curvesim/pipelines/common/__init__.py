@@ -6,6 +6,7 @@ from scipy.optimize import root_scalar
 
 from curvesim.logging import get_logger
 from curvesim.metrics import metrics as Metrics
+from curvesim.templates.trader import ArbTrade
 
 logger = get_logger(__name__)
 DEFAULT_METRICS = [
@@ -64,7 +65,7 @@ def get_arb_trades(pool, prices):
             price = 1 / prices[pair]
             coin_in, coin_out = j, i
         else:
-            trades.append((0, pair, prices[pair]))
+            trades.append(ArbTrade(i, j, 0, prices[pair]))
             continue
 
         high = pool.get_max_trade_size(coin_in, coin_out)
@@ -90,6 +91,6 @@ def get_arb_trades(pool, prices):
             )
             size = 0
 
-        trades.append((size, (coin_in, coin_out), price))
+        trades.append(ArbTrade(coin_in, coin_out, size, price))
 
     return trades

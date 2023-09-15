@@ -71,37 +71,27 @@ def multipair_optimal_arbitrage(  # noqa: C901  pylint: disable=too-many-locals
     res : scipy.optimize.OptimizeResult
         Results object from the numerical optimizer.
     """
-    init_trades = get_arb_trades(pool, prices)
+    arb_trades = get_arb_trades(pool, prices)
+    limited_arb_trades = apply_volume_limits(arb_trades, limits, pool)
+    limited_arb_trades = sort_trades_by_size(limited_arb_trades)
+    least_squares_inputs = make_least_squares_inputs(limited_arb_trades, limits)
 
-    # Limit trade size, add size bounds
-    limited_init_trades = []
-    for t in init_trades:
-        size, pair, price_target = t
-        limit = int(limits[pair] * 10**18)
-        t = min(size, limit), pair, price_target, 0, limit + 1
-        limited_init_trades.append(t)
-
-    # Order trades in terms of expected size
-    limited_init_trades = sorted(limited_init_trades, reverse=True, key=lambda t: t[0])
-    sizes, coins, price_targets, lo, hi = zip(*limited_init_trades)
-
-    def post_trade_price_error_multi(dxs, price_targets, coins):
+    def post_trade_price_error_multi(amounts_in, price_targets, coin_pairs):
         with pool.use_snapshot_context():
-            for k, pair in enumerate(coins):
-                if isnan(dxs[k]):
+            for coin_pair, amount_in in zip(coin_pairs, amounts_in):
+                if isnan(amount_in):
                     dx = 0
                 else:
-                    dx = int(dxs[k])
+                    dx = int(amount_in)
 
-                coin_in, coin_out = pair
-                min_size = pool.get_min_trade_size(coin_in)
+                min_size = pool.get_min_trade_size(coin_pair[0])
                 if dx > min_size:
-                    pool.trade(coin_in, coin_out, dx)
+                    pool.trade(*coin_pair, dx)
 
             errors = []
-            for k, pair in enumerate(coins):
-                price = pool.price(*pair, use_fee=True)
-                errors.append(price - price_targets[k])
+            for coin_pair, price_target in zip(coin_pairs, price_targets):
+                price = pool.price(*coin_pair, use_fee=True)
+                errors.append(price - price_target)
 
         return errors
 
@@ -111,38 +101,78 @@ def multipair_optimal_arbitrage(  # noqa: C901  pylint: disable=too-many-locals
     try:
         res = least_squares(
             post_trade_price_error_multi,
-            x0=sizes,
-            args=(price_targets, coins),
-            bounds=(lo, hi),
+            **least_squares_inputs,
             gtol=10**-15,
             xtol=10**-15,
         )
 
-        # Format trades into tuples, ignore if dx=0
-        dxs = res.x
+        # Record optimized trades
+        optimized_amounts_in = res.x
 
-        for k, amount_in in enumerate(dxs):
+        for amount_in, trade in zip(optimized_amounts_in, limited_arb_trades):
             if isnan(amount_in):
                 continue
 
             amount_in = int(amount_in)
-            coin_in, coin_out = coins[k]
-            min_size = pool.get_min_trade_size(coin_in)
+            min_size = pool.get_min_trade_size(trade.coin_in)
             if amount_in > min_size:
-                trades.append(Trade(coin_in, coin_out, amount_in))
+                trades.append(Trade(trade.coin_in, trade.coin_out, amount_in))
 
         errors = res.fun
 
     except Exception:
         logger.error(
-            "Optarbs args: x0: %s, lo: %s, hi: %s, prices: %s",
-            sizes,
-            lo,
-            hi,
-            price_targets,
+            "Optarbs args: x0: %s, bounds: %s, prices: %s",
+            least_squares_inputs["x0"],
+            least_squares_inputs["bounds"],
+            least_squares_inputs["kwargs"]["price_targets"],
             exc_info=True,
         )
-        errors = post_trade_price_error_multi([0] * len(sizes), price_targets, coins)
+        errors = post_trade_price_error_multi(
+            [0] * len(limited_arb_trades), **least_squares_inputs["kwargs"]
+        )
         res = []
 
     return trades, errors, res
+
+
+def apply_volume_limits(arb_trades, limits, pool):
+    """
+    Returns list of ArbTrades with amount_in set to min(limit, amount_in). Any trades
+    limited to less than the pool's minimum trade size are excluded.
+    """
+
+    limited_arb_trades = []
+    for trade in arb_trades:
+        pair = trade.coin_in, trade.coin_out
+        limited_amount_in = min(limits[pair], trade.amount_in)
+        lim_trade = trade.replace_amount_in(limited_amount_in)
+
+        # if lim_trade.amount_in > pool.get_min_trade_size(lim_trade.coin_in):
+        limited_arb_trades.append(lim_trade)
+
+    return limited_arb_trades
+
+
+def sort_trades_by_size(trades):
+    """Sorts trades by amount_in."""
+    sorted_trades = sorted(trades, reverse=True, key=lambda t: t.amount_in)
+    return sorted_trades
+
+
+def make_least_squares_inputs(trades, limits):
+    """
+    Returns a dict of trades, bounds, and targets formatted as kwargs for least_squares.
+    """
+
+    coins_in, coins_out, amounts_in, price_targets = zip(*trades)
+    coin_pairs = zip(coins_in, coins_out)
+
+    low_bound = [0] * len(trades)
+    high_bound = [limits[pair] + 1 for pair in coin_pairs]
+
+    return {
+        "x0": amounts_in,
+        "kwargs": {"price_targets": price_targets, "coin_pairs": coin_pairs},
+        "bounds": (low_bound, high_bound),
+    }

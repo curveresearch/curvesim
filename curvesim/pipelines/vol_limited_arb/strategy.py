@@ -39,4 +39,6 @@ def _compute_volume_limits(sample, vol_mult):
 
     limits = {key: volumes[key] * vol_mult[key] for key in volumes}
     reversed_limits = {(j, i): lim * prices[(i, j)] for (i, j), lim in limits.items()}
-    return {**limits, **reversed_limits}
+    all_limits = {**limits, **reversed_limits}
+
+    return {key: int(val * 10**18) for key, val in all_limits.items()}
