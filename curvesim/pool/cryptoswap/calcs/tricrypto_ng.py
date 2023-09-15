@@ -333,7 +333,10 @@ def lp_price(virtual_price: int, price_oracle: List[int]) -> int:
     int
         Liquidity redeemable per LP token in units of token 0.
     """
-    return 3 * virtual_price * _cbrt(price_oracle[0] * price_oracle[1]) // 10**24
+    p_0: int = price_oracle[0]
+    p_1: int = price_oracle[1]
+    
+    return 3 * virtual_price * _cbrt(p_0 * p_1) // 10**24
 
 
 def get_p(
