@@ -162,21 +162,27 @@ class CurveMetaPoolBalanceSnapshot(Snapshot):
 class CurveCryptoPoolBalanceSnapshot(Snapshot):
     """Snapshot that saves pool balances and admin balances."""
 
+    # pylint: disable=too-many-instance-attributes,too-many-arguments,protected-access
+
     def __init__(
         self,
         balances,
         D,
         price_scale,
+        _price_oracle,
         virtual_price,
         xcp_profit,
+        xcp_profit_a,
         last_prices,
         last_prices_timestamp,
     ):
         self.balances = balances
         self.D = D
         self.price_scale = price_scale
+        self._price_oracle = _price_oracle
         self.virtual_price = virtual_price
         self.xcp_profit = xcp_profit
+        self.xcp_profit_a = xcp_profit_a
         self.last_prices = last_prices
         self.last_prices_timestamp = last_prices_timestamp
 
@@ -185,16 +191,20 @@ class CurveCryptoPoolBalanceSnapshot(Snapshot):
         balances = pool.balances.copy()
         D = pool.D
         price_scale = pool.price_scale.copy()
+        _price_oracle = pool._price_oracle.copy()
         virtual_price = pool.virtual_price
         xcp_profit = pool.xcp_profit
+        xcp_profit_a = pool.xcp_profit_a
         last_prices = pool.last_prices.copy()
         last_prices_timestamp = pool.last_prices_timestamp
         return cls(
             balances,
             D,
             price_scale,
+            _price_oracle,
             virtual_price,
             xcp_profit,
+            xcp_profit_a,
             last_prices,
             last_prices_timestamp,
         )
@@ -203,7 +213,9 @@ class CurveCryptoPoolBalanceSnapshot(Snapshot):
         pool.balances = self.balances.copy()
         pool.D = self.D
         pool.price_scale = self.price_scale.copy()
+        pool._price_oracle = self._price_oracle.copy()
         pool.virtual_price = self.virtual_price
         pool.xcp_profit = self.xcp_profit
+        pool.xcp_profit_a = self.xcp_profit_a
         pool.last_prices = self.last_prices.copy()
         pool.last_prices_timestamp = self.last_prices_timestamp
