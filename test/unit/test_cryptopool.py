@@ -484,6 +484,7 @@ def test_get_dy(vyper_cryptopool, x0, x1, dx_perc, i):
     """Test get_dy calculation against vyper implementation."""
     assume(0.02 < x0 / x1 < 50)
 
+    n_coins = 2
     j = 1 - i
     xp = [x0, x1]
 
@@ -495,14 +496,14 @@ def test_get_dy(vyper_cryptopool, x0, x1, dx_perc, i):
     update_cached_values(vyper_cryptopool)
     pool = initialize_pool(vyper_cryptopool)
 
-    dx = balances[i] * dx_perc // 10**5
+    dx = balances[i] * dx_perc // 10**4
 
     expected_dy = vyper_cryptopool.get_dy(i, j, dx)
     dy = pool.get_dy(i, j, dx)
 
     assert dy == expected_dy
 
-    expected_balances = [vyper_cryptopool.balances(i) for i in range(2)]
+    expected_balances = [vyper_cryptopool.balances(i) for i in range(n_coins)]
     assert pool.balances == expected_balances
 
 
