@@ -505,7 +505,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         gamma: int = self.gamma
         D: int = self.D
 
-        y: int = get_y(A, gamma, xp, D, j)
+        y: int = get_y(A, gamma, xp, D, j)[0]
         dy: int = xp[j] - y - 1
         xp[j] = y
         precisions: List[int] = self.precisions

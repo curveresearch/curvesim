@@ -357,6 +357,48 @@ def test_pool_get_y(vyper_tricrypto):
     assert y == expected_y
 
 
+@given(
+    positive_balance,
+    positive_balance,
+    positive_balance,
+    st.integers(min_value=1, max_value=10**4),
+)
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=2,
+    deadline=None,
+)
+def test_get_dy(vyper_tricrypto, tricrypto_math, x0, x1, x2, dx_perc):
+    """Test get_dy calculation against vyper implementation."""
+    assume(0.02 < x0 / x1 < 50)
+    assume(0.02 < x0 / x2 < 50)
+    assume(0.02 < x1 / x2 < 50)
+
+    n_coins = 3
+    xp = [x0, x1, x2]
+
+    precisions = vyper_tricrypto.precisions()
+    price_scale = [vyper_tricrypto.price_scale(i) for i in range(n_coins - 1)]
+    balances = get_real_balances(xp, precisions, price_scale)
+
+    vyper_tricrypto.eval(f"self.balances={balances}")
+    update_cached_values(vyper_tricrypto, tricrypto_math)
+    pool = initialize_pool(vyper_tricrypto)
+
+    for pair in permutations([0, 1, 2], 2):
+        i, j = pair
+
+        dx = balances[i] * dx_perc // 10**4
+
+        expected_dy = vyper_tricrypto.get_dy(i, j, dx)
+        dy = pool.get_dy(i, j, dx)
+
+        assert dy == expected_dy
+
+        expected_balances = [vyper_tricrypto.balances(i) for i in range(n_coins)]
+        assert pool.balances == expected_balances
+
+
 @given(st.integers(min_value=-42139678854452767551, max_value=135305999368893231588))
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
