@@ -61,11 +61,17 @@ def newton_D(A: int, gamma: int, xp: List[int], K0_prev: int = 0) -> int:
 
 
 def get_y(A: int, gamma: int, xp: List[int], D: int, j: int) -> List[int]:
-    n_coins = len(xp)
+    """
+    Compute an xp[j] that satisfies the Cryptoswap invariant.
+
+    newton_y (for n = 2) and get_y (for n = 3) results may differ by
+    2 wei or so as their computational approaches are vastly different.
+    """
+    n_coins: int = len(xp)
     if n_coins == 2:
-        y_out = [factory_2_coin.newton_y(A, gamma, xp, D, j), 0]
+        y_out: List[int] = [factory_2_coin.newton_y(A, gamma, xp, D, j), 0]
     elif n_coins == 3:
-        y_out = tricrypto_ng.get_y(A, gamma, xp, D, j)
+        y_out: List[int] = tricrypto_ng.get_y(A, gamma, xp, D, j)
     else:
         raise CurvesimValueError("More than 3 coins is not supported.")
 

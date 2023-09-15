@@ -256,7 +256,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
 
         Note
         -----
-        This intentionally always return a new copy of the balances.
+        This intentionally always returns a new copy of the balances.
         """
         precisions = self.precisions
         price_scale = self.price_scale
@@ -501,11 +501,11 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         xp[i] += dx
         xp = self._xp_mem(xp)
 
-        A = self.A
-        gamma = self.gamma
+        A: int = self.A
+        gamma: int = self.gamma
         D: int = self.D
 
-        y: int = factory_2_coin.newton_y(A, gamma, xp, D, j)
+        y: int = get_y(A, gamma, xp, D, j)
         dy: int = xp[j] - y - 1
         xp[j] = y
         precisions: List[int] = self.precisions
@@ -575,10 +575,10 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
             )
         else:
             _sum_xp: int = sum(xp)
-            K = 10**18
+            K: int = 10**18
             for _x in xp:
                 K = K * n_coins * _x // _sum_xp
-            f = fee_gamma * 10**18 // (fee_gamma + 10**18 - K)
+            f: int = fee_gamma * 10**18 // (fee_gamma + 10**18 - K)
         return (self.mid_fee * f + self.out_fee * (10**18 - f)) // 10**18
 
     # pylint: disable-next=too-many-locals
