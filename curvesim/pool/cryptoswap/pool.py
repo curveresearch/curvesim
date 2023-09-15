@@ -977,14 +977,14 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         This is a "view" function; it doesn't change the state of the pool.
         """
         if self.n == 2:
-            virtual_price = self.virtual_price
-            price_oracle = self.internal_price_oracle()
-            price = factory_2_coin.lp_price(virtual_price, price_oracle)
+            virtual_price: int = self.virtual_price
+            price_oracle: List[int] = self.internal_price_oracle()
+            price: int = factory_2_coin.lp_price(virtual_price, price_oracle)
         elif self.n == 3:
             # 3-coin vyper contract uses cached packed oracle prices instead of internal_price_oracle()
-            virtual_price = self.virtual_price
-            price_oracle = self._price_oracle
-            price = tricrypto_ng.lp_price(virtual_price, price_oracle)
+            virtual_price: int = self.virtual_price
+            price_oracle: List[int] = self._price_oracle
+            price: int = tricrypto_ng.lp_price(virtual_price, price_oracle)
         else:
             raise CalculationError("LP price calc doesn't support more than 3 coins")
 
@@ -994,7 +994,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         """
         Return the value of the EMA price oracle.
         """
-        price_oracle: int = self._price_oracle
+        price_oracle: List[int] = self._price_oracle
         last_prices_timestamp: int = self.last_prices_timestamp
 
         block_timestamp: int = self._block_timestamp

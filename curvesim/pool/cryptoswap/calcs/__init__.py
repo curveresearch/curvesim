@@ -74,7 +74,7 @@ def get_y(A: int, gamma: int, xp: List[int], D: int, j: int) -> List[int]:
 
 def get_alpha(
     ma_half_time: int, block_timestamp: int, last_prices_timestamp: int, n_coins: int
-):
+) -> int:
     if n_coins == 2:
         alpha: int = halfpow(
             (block_timestamp - last_prices_timestamp) * 10**18 // ma_half_time
