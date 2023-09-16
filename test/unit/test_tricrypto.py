@@ -142,6 +142,95 @@ def update_cached_values(vyper_tricrypto, tricrypto_math):
     )
 
 
+def balanced_vyper_pool(vyper_tricrypto, tricrypto_math, A, gamma, balances):
+    """
+    Initializes a balanced, newly created pool with 0 profit or loss.
+    Overrides the vyper_tricrypto fixture.
+    """
+    # USDT, WBTC, WETH
+    decimals = [6, 8, 18]
+    precisions = [10 ** (18 - d) for d in decimals]
+
+    xp = balances
+
+    packed_A_gamma = pack_A_gamma(A, gamma)
+    vyper_tricrypto.eval(f"self.initial_A_gamma = {packed_A_gamma}")
+    vyper_tricrypto.eval(f"self.future_A_gamma = {packed_A_gamma}")
+
+    vyper_tricrypto.eval(f"self.balances = {xp}")
+
+    # assume newly created pool with balanced reserves
+    price_scale = [
+        (xp[0] * precisions[0] * PRECISION) // (xp[i] * precisions[i])
+        for i in range(1, len(xp))
+    ]
+    packed_prices = pack_prices(price_scale)
+    vyper_tricrypto.eval(f"self.price_scale_packed = {packed_prices}")
+    vyper_tricrypto.eval(f"self.price_oracle_packed = {packed_prices}")
+    vyper_tricrypto.eval(f"self.last_prices_packed = {packed_prices}")
+
+    normalized = [xp[0] * precisions[0]] + [
+        xp[i] * precisions[i] * price_scale[i - 1] // PRECISION
+        for i in range(1, len(xp))
+    ]
+
+    D = tricrypto_math.newton_D(A, gamma, normalized)
+    vyper_tricrypto.eval(f"self.D = {D}")
+
+    # assume newly created pool with 0 profit or loss
+    vyper_tricrypto.eval("self.xcp_profit = 10**18")
+    vyper_tricrypto.eval("self.xcp_profit_a = 10**18")
+    xcp = vyper_tricrypto.internal.get_xcp(D)
+    vyper_tricrypto.eval(f"self.totalSupply = {xcp}")
+    vyper_tricrypto.eval("self.virtual_price = 10**18")
+
+    return vyper_tricrypto
+
+
+def balanced_python_pool(vyper_tricrypto, A, gamma, balances):
+    """
+    Initializes a balanced, newly created pool with 0 profit or loss.
+    Overrides a CurveCryptoPool initialized from the vyper_tricrypto fixture.
+    """
+    pool = initialize_pool(vyper_tricrypto)
+
+    # USDT, WBTC, WETH
+    decimals = [6, 8, 18]
+    precisions = [10 ** (18 - d) for d in decimals]
+
+    xp = balances
+
+    pool.A = A
+    pool.gamma = gamma
+
+    pool.balances = xp
+
+    # assume newly created pool with balanced reserves
+    price_scale = [
+        (xp[0] * precisions[0] * PRECISION) // (xp[i] * precisions[i])
+        for i in range(1, len(xp))
+    ]
+    pool.price_scale = price_scale.copy()
+    pool._price_oracle = price_scale.copy()
+    pool.last_prices = price_scale.copy()
+
+    normalized = [xp[0] * precisions[0]] + [
+        xp[i] * precisions[i] * price_scale[i - 1] // PRECISION
+        for i in range(1, len(xp))
+    ]
+    D = newton_D(A, gamma, normalized)
+    pool.D = D
+
+    # assume newly created pool with 0 profit or loss
+    pool.xcp_profit = 10**18
+    pool.xcp_profit_a = 10**18
+    xcp = pool._get_xcp(D)
+    pool.tokens = xcp
+    pool.virtual_price = 10**18
+
+    return pool
+
+
 D_UNIT = 10**18
 positive_balance = st.integers(min_value=10**5 * D_UNIT, max_value=10**11 * D_UNIT)
 amplification_coefficient = st.integers(min_value=MIN_A, max_value=MAX_A)
@@ -483,6 +572,71 @@ def test_dydxfee(vyper_tricrypto):
         dx *= precisions[i]
         dy *= precisions[j]
         assert abs(dydx - dy / dx) / (dy / dx) < 1e-4
+
+
+@given(
+    amplification_coefficient,
+    gamma_coefficient,
+    positive_balance,
+    st.floats(min_value=0.021, max_value=49.999),
+    st.floats(min_value=0.021, max_value=49.999),
+    st.integers(min_value=1, max_value=100),
+)
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=3,
+    deadline=None,
+)
+def test_dydxfee_with_size(vyper_tricrypto, A, gamma, x0, x1, x2, dx_perc):
+    """
+    Test spot price formula against execution price for 1-100 bps volume trades on a
+    balanced pool with 0 PnL. % Lower bound on error for 200,000 examples is ~ (bps traded) + 6 bps.
+    Overrides vyper_tricrypto's init from Python for greater efficiency.
+    """
+    x1 = int(x1 * D_UNIT * x0 // D_UNIT)
+    x2 = int(x2 * D_UNIT * x0 // D_UNIT)
+
+    balances = [x0, x1, x2]
+
+    # USDT, WBTC, WETH
+    decimals = [6, 8, 18]
+    balances = [x * 10 ** decimals[i] // D_UNIT for i, x in enumerate(balances)]
+
+    pool = balanced_python_pool(vyper_tricrypto, A, gamma, balances)
+
+    for pair in permutations([0, 1, 2], 2):
+        i, j = pair
+
+        # D_UNIT precision to mitigate floating point arithmetic error
+        dydx = pool.dydxfee(i, j) * D_UNIT
+        # basis points increase in dollar (token 0) amount
+        if i > 0:
+            dx = (
+                (pool.balances[i] * pool.precisions[i] * pool.price_scale[i - 1])
+                * dx_perc
+                // 10000
+                // pool.price_scale[i - 1]
+                // pool.precisions[i]
+            )
+        else:
+            dx = (
+                (pool.balances[i] * pool.precisions[i])
+                * dx_perc
+                // 10000
+                // pool.precisions[i]
+            )
+
+        dy = pool.exchange(i, j, dx, 0)[0]
+
+        dx *= pool.precisions[i]
+        dy *= pool.precisions[j]
+        discretized = dy * D_UNIT // dx
+        # lower bound on error is close to (bps traded) + 6 bps for 200,000 examples
+        TOLERANCE = 6  # bps
+        assert (
+            abs(dydx - discretized) * D_UNIT // discretized
+            < (dx_perc + TOLERANCE) * D_UNIT // 10000
+        )
 
 
 @given(bps_change, bps_change, bps_change)
