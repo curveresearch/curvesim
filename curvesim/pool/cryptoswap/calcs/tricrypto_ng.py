@@ -335,7 +335,7 @@ def lp_price(virtual_price: int, price_oracle: List[int]) -> int:
     """
     p_0: int = price_oracle[0]
     p_1: int = price_oracle[1]
-    
+
     return 3 * virtual_price * _cbrt(p_0 * p_1) // 10**24
 
 
