@@ -216,6 +216,14 @@ def pack_3_uint64s(nums):
     return (nums[0] << 128) | (nums[1] << 64) | nums[0]
 
 
+def unpack_prices(packed_prices):
+    mask = 2**128 - 1
+    return [
+        packed_prices & mask,
+        (packed_prices >> 128) & mask,
+    ]
+
+
 def pack_prices(prices):
     return (prices[1] << 128) | prices[0]
 

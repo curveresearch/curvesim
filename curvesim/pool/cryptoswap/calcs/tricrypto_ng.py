@@ -314,16 +314,29 @@ def geometric_mean(x: List[int]) -> int:
     return _cbrt(prod)
 
 
-def lp_price(virtual_price, price_oracle) -> int:
+def lp_price(virtual_price: int, price_oracle: List[int]) -> int:
     """
-    Returns an LP token price approximating behavior as a constant-product AMM.
+    Returns the price of an LP token in units of token 0.
+
+    Derived from the equilibrium point of a constant-product AMM
+    that approximates Cryptoswap's behavior.
+
+    Parameters
+    ----------
+    virtual_price: int
+        Amount of XCP invariant per LP token in units of `D`.
+    price_oracle: List[int]
+        Price oracle value for the pool.
+
+    Returns
+    -------
+    int
+        Liquidity redeemable per LP token in units of token 0.
     """
-    # TODO: find/implement integer cube root function
-    # price_oracle = self.internal_price_oracle()
-    # return (
-    #     3 * self.virtual_price * icbrt(price_oracle[0] * price_oracle[1])
-    # ) // 10**24
-    raise CalculationError("LP price calc doesn't support more than 3 coins")
+    p_0: int = price_oracle[0]
+    p_1: int = price_oracle[1]
+
+    return 3 * virtual_price * _cbrt(p_0 * p_1) // 10**24
 
 
 def get_p(

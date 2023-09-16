@@ -78,7 +78,9 @@ def get_y(A: int, gamma: int, xp: List[int], D: int, j: int) -> List[int]:
     return y_out
 
 
-def get_alpha(ma_half_time, block_timestamp, last_prices_timestamp, n_coins):
+def get_alpha(
+    ma_half_time: int, block_timestamp: int, last_prices_timestamp: int, n_coins: int
+) -> int:
     if n_coins == 2:
         alpha: int = halfpow(
             (block_timestamp - last_prices_timestamp) * 10**18 // ma_half_time
@@ -89,7 +91,7 @@ def get_alpha(ma_half_time, block_timestamp, last_prices_timestamp, n_coins):
         #
         # Note ln(2) = 0.693147... but the approx actually used is 694 / 1000.
         #
-        # CAUTION: neeed to be wary of off-by-one errors from integer division.
+        # CAUTION: need to be wary of off-by-one errors from integer division.
         ma_half_time = ceil(ma_half_time * 1000 / 694)
         alpha: int = tricrypto_ng.wad_exp(
             -1 * ((block_timestamp - last_prices_timestamp) * 10**18 // ma_half_time)
