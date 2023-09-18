@@ -1,6 +1,9 @@
 from abc import ABC, abstractmethod
+from typing import Optional, Type
 
 from curvesim.logging import get_logger
+from curvesim.metrics.state_log.log import StateLog
+from curvesim.templates.trader import Trader
 
 logger = get_logger(__name__)
 
@@ -26,8 +29,8 @@ class Strategy(ABC):
 
     # These classes should be injected in child classes
     # to create the desired behavior.
-    trader_class = None
-    state_log_class = None
+    trader_class: Optional[Type[Trader]] = None
+    state_log_class: Optional[Type[StateLog]] = None
 
     def __init__(self, metrics):
         """

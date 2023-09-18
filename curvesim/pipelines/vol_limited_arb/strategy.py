@@ -1,7 +1,10 @@
+from typing import Type
+
 from curvesim.logging import get_logger
 from curvesim.metrics.state_log import StateLog
 from curvesim.pipelines.vol_limited_arb.trader import VolumeLimitedArbitrageur
 from curvesim.templates import Strategy
+from curvesim.templates.trader import Trader
 
 logger = get_logger(__name__)
 
@@ -11,8 +14,8 @@ class VolumeLimitedStrategy(Strategy):
     Computes and executes volume-limited arbitrage trades at each timestep.
     """
 
-    trader_class = VolumeLimitedArbitrageur
-    state_log_class = StateLog
+    trader_class: Type[Trader] = VolumeLimitedArbitrageur
+    state_log_class: Type[StateLog] = StateLog
 
     def __init__(self, metrics, vol_mult):
         """
