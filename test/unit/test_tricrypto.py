@@ -20,7 +20,7 @@ from curvesim.pool.cryptoswap.calcs.tricrypto_ng import (
     _newton_y,
     wad_exp,
 )
-from ..fixtures.pool import pack_prices, unpack_prices
+from ..fixtures.pool import pack_prices, unpack_prices, pack_A_gamma
 
 
 def initialize_pool(vyper_tricrypto):
