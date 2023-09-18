@@ -22,7 +22,7 @@ def initialize_pool(vyper_cryptopool):
     Initialize python-based pool from the state variables of the
     vyper-based implementation.
     """
-    A_gamma_packed = vyper_cryptopool.eval("self.initial_A_gamma")
+    A_gamma_packed = vyper_cryptopool.eval("self.future_A_gamma")
     A_gamma = unpack_A_gamma(A_gamma_packed)
     A = A_gamma[0]
     gamma = A_gamma[1]
