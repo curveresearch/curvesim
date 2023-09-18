@@ -3,7 +3,7 @@ Mainly a module to house the `CurveCryptoPool`, a cryptoswap implementation in P
 """
 import time
 from math import isqrt, prod
-from typing import List, Type
+from typing import List, Tuple, Type
 
 from curvesim.exceptions import CalculationError, CryptoPoolError, CurvesimValueError
 from curvesim.logging import get_logger
@@ -81,7 +81,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         xcp_profit=10**18,
         xcp_profit_a=10**18,
         virtual_price=None,
-    ):
+    ) -> None:
         """
         Parameters
         ----------
@@ -279,7 +279,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         ]
         return geometric_mean(x)
 
-    def _increment_timestamp(self, blocks=1, timestamp=None):
+    def _increment_timestamp(self, blocks=1, timestamp=None) -> None:
         """Update the internal clock used to mimic the block timestamp."""
         if timestamp:
             self._block_timestamp = timestamp
@@ -297,7 +297,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         p_i: int,
         new_D: int,
         K0_prev: int = 0,
-    ):
+    ) -> None:
         """
         Applies several kinds of updates:
             - EMA price update: price_oracle
@@ -444,7 +444,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         self.D = D_unadjusted
         self.virtual_price = virtual_price
 
-    def _claim_admin_fees(self):
+    def _claim_admin_fees(self) -> None:
         # no gulping logic needed for the python code
         xcp_profit: int = self.xcp_profit
         xcp_profit_a: int = self.xcp_profit_a
@@ -518,7 +518,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
 
         return dy
 
-    def get_y(self, i, j, x, xp):
+    def get_y(self, i: int, j: int, x: int, xp: List[int]) -> int:
         r"""
         Calculate x[j] if one makes x[i] = x.
 
@@ -578,7 +578,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
             K: int = 10**18
             for _x in xp:
                 K = K * n_coins * _x // _sum_xp
-            f: int = fee_gamma * 10**18 // (fee_gamma + 10**18 - K)
+            f = fee_gamma * 10**18 // (fee_gamma + 10**18 - K)
         return (self.mid_fee * f + self.out_fee * (10**18 - f)) // 10**18
 
     # pylint: disable-next=too-many-locals
@@ -588,7 +588,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         j: int,
         dx: int,
         min_dy: int,
-    ) -> int:
+    ) -> Tuple[int, int]:
         assert i != j, "Indices must be different"
         assert i < self.n, "Index out of bounds"
         assert j < self.n, "Index out of bounds"
@@ -657,7 +657,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         j: int,
         dx: int,
         min_dy: int = 0,
-    ) -> int:
+    ) -> Tuple[int, int]:
         """
         Swap `dx` amount of the `i`-th coin for the `j`-th coin.
 
@@ -689,7 +689,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         j: int,
         dx: int,
         min_dy: int = 0,
-    ) -> int:
+    ) -> Tuple[int, int]:
         """
         In the vyper contract, this exchanges using ETH instead of WETH.
         In Curvesim, this is the same as `exchange`.
@@ -889,7 +889,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         i: int,
         update_D: bool,
         calc_price: bool,
-    ) -> (int, int, int, List[int]):
+    ) -> Tuple[int, int, int, List[int]]:
         token_supply: int = self.tokens
         assert token_amount <= token_supply  # dev: token amount more than supply
         assert i < self.n  # dev: coin out of range
@@ -915,9 +915,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         if i == 0:
             dy: int = (xp[i] - y) // precisions[i]
         else:
-            dy: int = (
-                (xp[i] - y) * PRECISION // (precisions[i] * self.price_scale[i - 1])
-            )
+            dy = (xp[i] - y) * PRECISION // (precisions[i] * self.price_scale[i - 1])
         xp[i] = y
 
         # FIXME: update for n coins
@@ -982,9 +980,9 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
             price: int = factory_2_coin.lp_price(virtual_price, price_oracle)
         elif self.n == 3:
             # 3-coin vyper contract uses cached packed oracle prices instead of internal_price_oracle()
-            virtual_price: int = self.virtual_price
-            price_oracle: List[int] = self._price_oracle
-            price: int = tricrypto_ng.lp_price(virtual_price, price_oracle)
+            virtual_price = self.virtual_price
+            price_oracle = self._price_oracle
+            price = tricrypto_ng.lp_price(virtual_price, price_oracle)
         else:
             raise CalculationError("LP price calc doesn't support more than 3 coins")
 
@@ -1004,7 +1002,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
                 last_prices: List[int] = self.last_prices
             elif self.n == 3:
                 # 3-coin vyper contract caps every "last price" that gets fed to the EMA
-                last_prices: List[int] = self.last_prices.copy()
+                last_prices = self.last_prices.copy()
                 price_scale: List[int] = self.price_scale
                 last_prices = [
                     min(last_p, 2 * storage_p)
