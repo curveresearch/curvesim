@@ -36,7 +36,7 @@ pools = [
     },
     # # frax3CRV"
     {
-        "address": "0xd632f22692FaC7611d2AA1C0D552930D43CAEd3B",
+        "address": "0xd632f22692fac7611d2aa1c0d552930d43caed3b",
         "end_timestamp": 1643673600,
         "params": TEST_PARAMS,
     },
