@@ -1,3 +1,5 @@
+from typing import Iterator
+
 from curvesim.logging import get_logger
 from curvesim.price_data import get
 from curvesim.templates.price_samplers import PriceSample, PriceSampler
@@ -68,7 +70,7 @@ class PriceVolume(PriceSampler):
         self.volumes = volumes.set_axis(assets.symbol_pairs, axis="columns")
 
     @override
-    def __iter__(self) -> PriceVolumeSample:
+    def __iter__(self) -> Iterator[PriceVolumeSample]:
         """
         Yields
         -------
@@ -86,7 +88,7 @@ class PriceVolume(PriceSampler):
             prices = prices.to_dict()
             volumes = volumes.to_dict()
 
-            yield PriceVolumeSample(price_timestamp, prices, volumes)
+            yield PriceVolumeSample(price_timestamp, prices, volumes)  # type:ignore
 
     def total_volumes(self):
         """
