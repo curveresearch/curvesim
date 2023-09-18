@@ -2,8 +2,7 @@ from typing import Type
 
 from curvesim.logging import get_logger
 from curvesim.metrics.state_log import StateLog
-from curvesim.templates import Strategy
-from curvesim.templates.trader import Trader
+from curvesim.templates import Log, Strategy, Trader
 
 from .trader import SimpleArbitrageur
 
@@ -21,7 +20,7 @@ class SimpleStrategy(Strategy):  # pylint: disable=too-few-public-methods
     """
 
     trader_class: Type[Trader] = SimpleArbitrageur
-    state_log_class: Type[StateLog] = StateLog
+    log_class: Type[Log] = StateLog
 
     def _get_trader_inputs(self, sample):
         return (sample.prices,)

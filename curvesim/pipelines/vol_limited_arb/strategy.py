@@ -1,10 +1,9 @@
 from typing import Type
 
 from curvesim.logging import get_logger
-from curvesim.metrics.state_log import StateLog
+from curvesim.metrics.state_log.log import StateLog
 from curvesim.pipelines.vol_limited_arb.trader import VolumeLimitedArbitrageur
-from curvesim.templates import Strategy
-from curvesim.templates.trader import Trader
+from curvesim.templates import Log, Strategy, Trader
 
 logger = get_logger(__name__)
 
@@ -15,7 +14,7 @@ class VolumeLimitedStrategy(Strategy):
     """
 
     trader_class: Type[Trader] = VolumeLimitedArbitrageur
-    state_log_class: Type[StateLog] = StateLog
+    log_class: Type[Log] = StateLog
 
     def __init__(self, metrics, vol_mult):
         """
