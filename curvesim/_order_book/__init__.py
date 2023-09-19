@@ -9,6 +9,7 @@ from pandas import DataFrame
 from curvesim.pool import CurveMetaPool
 
 
+# pylint: disable=too-many-locals
 def order_book(pool, i, j, *, width=0.1, resolution=10**23, use_fee=True, show=True):
     """
     Computes and optionally plots an orderbook representation of exchange rates

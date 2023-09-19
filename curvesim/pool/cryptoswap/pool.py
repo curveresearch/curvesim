@@ -58,7 +58,8 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         "not_adjusted",
     )
 
-    def __init__(  # pylint: disable=too-many-locals,too-many-arguments
+    # pylint: disable-next=too-many-locals,too-many-arguments,too-many-branches
+    def __init__(
         self,
         A: int,
         gamma: int,
