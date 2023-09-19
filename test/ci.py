@@ -91,7 +91,9 @@ def main(generate=False, ncpu=None):
         }
 
         for key in test_functions:
-            f_name = os.path.join(data_dir, f"{pool_address}-results_{key}.pickle")
+            f_name = os.path.join(
+                data_dir, f"{pool_address.lower()}-results_{key}.pickle"
+            )
 
             if generate:
                 with open(f_name, "wb") as f:

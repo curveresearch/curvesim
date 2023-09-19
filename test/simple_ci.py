@@ -90,7 +90,7 @@ def main(generate=False, ncpu=None):
 
         for key in test_functions:
             f_name = os.path.join(
-                data_dir, f"{pool_address}-simple_results_{key}.pickle"
+                data_dir, f"{pool_address.lower()}-simple_results_{key}.pickle"
             )
 
             if generate:
