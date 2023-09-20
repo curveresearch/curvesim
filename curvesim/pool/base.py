@@ -4,7 +4,9 @@ in the Curvesim Framework.
 """
 
 
-from curvesim.pool.snapshot import SnapshotMixin
+from typing import Optional, Type
+
+from curvesim.pool.snapshot import Snapshot, SnapshotMixin
 
 
 class Pool(SnapshotMixin):
@@ -21,7 +23,7 @@ class Pool(SnapshotMixin):
 
     # need to configure in derived class otherwise the
     # snapshotting will not work
-    snapshot_class = None
+    snapshot_class: Optional[Type[Snapshot]] = None
 
     @property
     def name(self):

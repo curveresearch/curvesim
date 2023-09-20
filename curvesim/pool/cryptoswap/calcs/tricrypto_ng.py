@@ -51,11 +51,11 @@ def get_y(  # noqa: complexity: 18
     assert 10**17 <= D <= 10**15 * 10**18
 
     frac: int = 0
-    for k in range(3):
-        if k != i:
-            frac = x[k] * 10**18 // D
+    for _k in range(3):
+        if _k != i:
+            frac = x[_k] * 10**18 // D
             assert 10**16 <= frac <= 10**20, "Unsafe values x[i]"
-            # if above conditions are met, x[k] > 0
+            # if above conditions are met, x[_k] > 0
 
     j: int = 0
     k: int = 0
@@ -99,7 +99,7 @@ def get_y(  # noqa: complexity: 18
         _c: int = gamma2 * (-1 * _c_neg) // D * ANN // 27 // A_MULTIPLIER
         _c *= -1
     else:
-        _c: int = gamma2 * _c_neg // D * ANN // 27 // A_MULTIPLIER
+        _c = gamma2 * _c_neg // D * ANN // 27 // A_MULTIPLIER
     c += _c
 
     # (10**18 + gamma)**2/27
@@ -151,19 +151,19 @@ def get_y(  # noqa: complexity: 18
     if b_is_neg:
         delta0: int = -(_3ac // -b) - b
     else:
-        delta0: int = _3ac // b - b
+        delta0 = _3ac // b - b
 
     # 9*a*c/b - 2*b - 27*a**2/b*d/b
     if b_is_neg:
         delta1: int = -(3 * _3ac // -b) - 2 * b - 27 * a**2 // -b * d // -b
     else:
-        delta1: int = 3 * _3ac // b - 2 * b - 27 * a**2 // b * d // b
+        delta1 = 3 * _3ac // b - 2 * b - 27 * a**2 // b * d // b
 
     # delta1**2 + 4*delta0**2/b*delta0
     if b_is_neg:
         sqrt_arg: int = delta1**2 - (4 * delta0**2 // -b * delta0)
     else:
-        sqrt_arg: int = delta1**2 + 4 * delta0**2 // b * delta0
+        sqrt_arg = delta1**2 + 4 * delta0**2 // b * delta0
 
     sqrt_val: int = 0
     if sqrt_arg > 0:
@@ -187,13 +187,13 @@ def get_y(  # noqa: complexity: 18
     if second_cbrt < 0:
         C1: int = -(b_cbrt * b_cbrt // 10**18 * -second_cbrt // 10**18)
     else:
-        C1: int = b_cbrt * b_cbrt // 10**18 * second_cbrt // 10**18
+        C1 = b_cbrt * b_cbrt // 10**18 * second_cbrt // 10**18
 
     # (b + b*delta0/C1 - C1)/3
     if sign(b * delta0) != sign(C1):
         root_K0: int = (b + -(b * delta0 // -C1) - C1) // 3
     else:
-        root_K0: int = (b + b * delta0 // C1 - C1) // 3
+        root_K0 = (b + b * delta0 // C1 - C1) // 3
 
     # D*D/27/x_k*D/x_j*root_K0/a
     root: int = D * D // 27 // x_k * D // x_j * root_K0 // a
@@ -293,7 +293,7 @@ def _newton_y(  # noqa: complexity: 11  # pylint: disable=duplicate-code,too-man
 
         diff: int = abs(y - y_prev)
         if diff < max(convergence_limit, y // 10**14):
-            frac: int = y * 10**18 // D
+            frac = y * 10**18 // D
             assert 10**16 <= frac <= 10**20  # dev: unsafe value for y
             return int(y)
 
@@ -447,9 +447,6 @@ def newton_D(  # pylint: disable=too-many-locals
     D_minus: int = 0
     D_prev: int = 0
 
-    diff: int = 0
-    frac: int = 0
-
     D = mpz(D)
 
     for _ in range(255):
@@ -466,7 +463,7 @@ def newton_D(  # pylint: disable=too-many-locals
         _g1k0 = gamma + 10**18  # <--------- safe to do unsafe_add.
 
         # The following operations can safely be unsafe.
-        _g1k0: int = abs(_g1k0 - K0) + 1
+        _g1k0 = abs(_g1k0 - K0) + 1
 
         # D / (A * N**N) * _g1k0**2 / gamma**2
         # mul1 = 10**18 * D / gamma * _g1k0 / gamma * _g1k0 * A_MULTIPLIER / ANN
@@ -516,7 +513,7 @@ def newton_D(  # pylint: disable=too-many-locals
         else:
             D = (D_minus - D_plus) // 2
 
-        diff = abs(D - D_prev)
+        diff: int = abs(D - D_prev)
         # Could reduce precision for gas efficiency here:
         if diff * 10**14 < max(10**16, D):
             # Test that we are safe with the next get_y

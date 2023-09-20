@@ -3,6 +3,7 @@ Functions and interfaces used in the simulation pipeline framework.
 """
 
 __all__ = [
+    "Log",
     "Trader",
     "Strategy",
     "SimAssets",
@@ -14,6 +15,7 @@ __all__ = [
     "PriceSampler",
 ]
 
+from .log import Log
 from .param_samplers import ParameterSampler
 from .price_samplers import PriceSample, PriceSampler
 from .sim_assets import SimAssets

@@ -1,7 +1,45 @@
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
+from typing import Optional, Type
 
 from curvesim.exceptions import SnapshotError
+
+
+class Snapshot(ABC):
+    """
+    This class allows customization of snapshot logic, i.e.
+    controls how partial states are produced and restored.
+    """
+
+    @classmethod
+    @abstractmethod
+    def create(cls, pool):
+        """
+        Create a snapshot of the pool's state.
+
+        Parameters
+        -----------
+        pool: object
+            The object whose state we are saving as a snapshot.
+
+        Returns
+        -------
+        Snapshot
+            The saved data from the pool state.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def restore(self, pool):
+        """
+        Update the pool's state using the snapshot data.
+
+        Parameters
+        -----------
+        pool: object
+            The object whose state we have saved as a snapshot.
+        """
+        raise NotImplementedError
 
 
 class SnapshotMixin:
@@ -13,7 +51,7 @@ class SnapshotMixin:
     implements the `Snapshot` interface.
     """
 
-    snapshot_class = None
+    snapshot_class: Optional[Type[Snapshot]] = None
 
     def get_snapshot(self):
         """Saves the pool's partial state."""
@@ -56,43 +94,6 @@ class SnapshotMixin:
             yield snapshot
         finally:
             self.revert_to_snapshot(snapshot)
-
-
-class Snapshot(ABC):
-    """
-    This class allows customization of snapshot logic, i.e.
-    controls how partial states are produced and restored.
-    """
-
-    @classmethod
-    @abstractmethod
-    def create(cls, pool):
-        """
-        Create a snapshot of the pool's state.
-
-        Parameters
-        -----------
-        pool: object
-            The object whose state we are saving as a snapshot.
-
-        Returns
-        -------
-        Snapshot
-            The saved data from the pool state.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def restore(self, pool):
-        """
-        Update the pool's state using the snapshot data.
-
-        Parameters
-        -----------
-        pool: object
-            The object whose state we have saved as a snapshot.
-        """
-        raise NotImplementedError
 
 
 class CurvePoolBalanceSnapshot(Snapshot):

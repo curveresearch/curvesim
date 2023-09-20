@@ -9,6 +9,7 @@ import multiprocessing as mp
 import os
 from contextlib import contextmanager
 from logging.handlers import QueueHandler, QueueListener
+from typing import Dict, List
 
 # -- convenient parameters to adjust for debugging -- #
 DEFAULT_LEVEL = "info"
@@ -41,7 +42,7 @@ MULTIPROCESS_LOGGING_FORMAT = (
 # FIXME: need a function to update the config after module initialization
 HANDLERS = ["console", "file"] if USE_LOG_FILE else ["console"]
 
-CUSTOM_LOGGING_CONFIG = {
+CUSTOM_LOGGING_CONFIG: dict = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
@@ -74,8 +75,8 @@ CUSTOM_LOGGING_CONFIG = {
 }
 
 # 3rd party loggers that we want to largely ignore
-silenced_loggers = ["matplotlib", "asyncio", "rlp", "parso", "web3"]
-configured_loggers = CUSTOM_LOGGING_CONFIG["loggers"]
+silenced_loggers: List[str] = ["matplotlib", "asyncio", "rlp", "parso", "web3"]
+configured_loggers: Dict[str, dict] = CUSTOM_LOGGING_CONFIG["loggers"]
 for name in silenced_loggers:
     configured_loggers[name] = {
         "handlers": HANDLERS,

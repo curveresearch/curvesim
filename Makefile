@@ -121,6 +121,14 @@ pylint:
 	@echo ""
 	@echo "pylint passed ⚙️"
 
+.PHONY: type
+type:
+	@echo "$(REVERSE)Running$(RESET) $(BOLD)mypy$(RESET)..."
+	@mypy --version
+	@mypy curvesim
+	@echo ""
+	@echo "Type checks passed 🏆"
+
 .PHONY: coverage
 coverage:
 	pytest --cov -n auto --cov-report=

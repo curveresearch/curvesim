@@ -71,7 +71,7 @@ def get_y(A: int, gamma: int, xp: List[int], D: int, j: int) -> List[int]:
     if n_coins == 2:
         y_out: List[int] = [factory_2_coin.newton_y(A, gamma, xp, D, j), 0]
     elif n_coins == 3:
-        y_out: List[int] = tricrypto_ng.get_y(A, gamma, xp, D, j)
+        y_out = tricrypto_ng.get_y(A, gamma, xp, D, j)
     else:
         raise CurvesimValueError("More than 3 coins is not supported.")
 
@@ -93,7 +93,7 @@ def get_alpha(
         #
         # CAUTION: need to be wary of off-by-one errors from integer division.
         ma_half_time = ceil(ma_half_time * 1000 / 694)
-        alpha: int = tricrypto_ng.wad_exp(
+        alpha = tricrypto_ng.wad_exp(
             -1 * ((block_timestamp - last_prices_timestamp) * 10**18 // ma_half_time)
         )
     else:

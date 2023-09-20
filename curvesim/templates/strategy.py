@@ -1,6 +1,10 @@
 from abc import ABC, abstractmethod
+from typing import Optional, Type
 
 from curvesim.logging import get_logger
+
+from .log import Log
+from .trader import Trader
 
 logger = get_logger(__name__)
 
@@ -9,14 +13,14 @@ class Strategy(ABC):
     """
     A Strategy defines the trading approach used during each step of a simulation.
     It executes the trades using an injected `Trader` class and then logs the
-    changes using the injected `StateLog` class.
+    changes using the injected `Log` class.
 
     Class Attributes
     ----------------
-    trader_class : :class:`~curvesim.pipelines.templates.Trader`
+    trader_class : :class:`~curvesim.templates.Trader`
         Class for creating trader instances.
-    state_log_class : :class:`~curvesim.metrics.StateLog`
-        Class for creating state logger instances.
+    log_class : :class:`~curvesim.templates.Log`
+        Class for creating log instances.
 
     Attributes
     ----------
@@ -26,8 +30,8 @@ class Strategy(ABC):
 
     # These classes should be injected in child classes
     # to create the desired behavior.
-    trader_class = None
-    state_log_class = None
+    trader_class: Optional[Type[Trader]] = None
+    log_class: Optional[Type[Log]] = None
 
     def __init__(self, metrics):
         """
@@ -63,7 +67,7 @@ class Strategy(ABC):
         """
         # pylint: disable=not-callable
         trader = self.trader_class(pool)
-        state_log = self.state_log_class(pool, self.metrics)
+        log = self.log_class(pool, self.metrics)
 
         parameters = parameters or "no parameter changes"
         logger.info("[%s] Simulating with %s", pool.symbol, parameters)
@@ -74,9 +78,9 @@ class Strategy(ABC):
             pool.prepare_for_trades(sample.timestamp)
             trader_args = self._get_trader_inputs(sample)
             trade_data = trader.process_time_sample(*trader_args)
-            state_log.update(price_sample=sample, trade_data=trade_data)
+            log.update(price_sample=sample, trade_data=trade_data)
 
-        return state_log.compute_metrics()
+        return log.compute_metrics()
 
     @abstractmethod
     def _get_trader_inputs(self, sample):

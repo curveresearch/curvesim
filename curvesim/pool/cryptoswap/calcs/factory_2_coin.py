@@ -79,9 +79,8 @@ def lp_price(virtual_price: int, price_oracle: List[int]) -> int:
     int
         Liquidity redeemable per LP token in units of token 0.
     """
-    price_oracle: int = price_oracle[0]
-
-    return 2 * virtual_price * _sqrt_int(price_oracle) // 10**18
+    p: int = price_oracle[0]
+    return 2 * virtual_price * _sqrt_int(p) // 10**18
 
 
 # pylint: disable-next=too-many-locals
@@ -108,10 +107,6 @@ def newton_y(  # noqa: complexity: 11
         if k != i:
             frac: int = x[k] * 10**18 // D
             assert 10**16 <= frac <= 10**20
-
-    y: int = D // n_coins
-    K0_i: int = 10**18
-    S_i: int = 0
 
     x_sorted: List[int] = x.copy()
     x_sorted[i] = 0
@@ -164,7 +159,7 @@ def newton_y(  # noqa: complexity: 11
 
         diff: int = abs(y - y_prev)
         if diff < max(convergence_limit, y // 10**14):
-            frac: int = y * 10**18 // D
+            frac = y * 10**18 // D
             assert 10**16 <= frac <= 10**20  # dev: unsafe value for y
             return int(y)
 
@@ -176,7 +171,7 @@ def newton_D(  # noqa: complexity: 13
     ANN: int,
     gamma: int,
     x_unsorted: List[int],
-) -> List[int]:
+) -> int:
     """
     Finding the `D` invariant using Newton's method.
 
@@ -239,7 +234,7 @@ def newton_D(  # noqa: complexity: 13
         if diff * 10**14 < max(10**16, D):
             # Test that we are safe with the next newton_y
             for _x in x:
-                frac: int = _x * 10**18 // D
+                frac = _x * 10**18 // D
                 if frac < 10**16 or frac > 10**20:
                     raise CalculationError("Unsafe value for x[i]")
             return int(D)

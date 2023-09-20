@@ -5,12 +5,14 @@ during simulations.
 from pandas import DataFrame, concat
 
 from curvesim.metrics.base import PoolMetric
+from curvesim.templates import Log
+from curvesim.utils import override
 
 from .pool_parameters import get_pool_parameters
 from .pool_state import get_pool_state
 
 
-class StateLog:
+class StateLog(Log):
     """
     Logger that records simulation/pool state throughout each simulation run and
     computes metrics at the end of each run.
@@ -29,6 +31,7 @@ class StateLog:
         self.state_per_run = get_pool_parameters(pool)
         self.state_per_trade = []
 
+    @override
     def update(self, **kwargs):
         """Records pool state and any keyword arguments provided."""
 
@@ -47,6 +50,7 @@ class StateLog:
             **state_per_trade,
         }
 
+    @override
     def compute_metrics(self):
         """Computes metrics from the accumulated log data."""
 
