@@ -295,7 +295,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         gamma: int,
         _xp: List[int],
         i: int,
-        p_i: int,
+        p_i: Optional[int],
         new_D: int,
         K0_prev: int = 0,
     ) -> None:
@@ -304,11 +304,11 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
             - EMA price update: price_oracle
             - Profit counters: D, virtual_price, xcp_profit
             - price adjustment: price_scale
+                - If p_i is None, the spot price will be used as the last price
 
         Also claims admin fees if appropriate (enough profit and price scale
         and oracle is close enough).
         """
-
         price_oracle: List[int] = self._price_oracle
         last_prices: List[int] = self.last_prices
         price_scale: List[int] = self.price_scale
@@ -346,15 +346,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         if new_D == 0:
             D_unadjusted = newton_D(A, gamma, _xp, K0_prev)
 
-        if p_i > 0:
-            # Save the last price
-            if i > 0:
-                last_prices[i - 1] = p_i
-            else:
-                # If 0th price changed - change all prices instead
-                for k in range(n_coins - 1):
-                    last_prices[k] = last_prices[k] * 10**18 // p_i
-        else:
+        if p_i is None:
             if n_coins == 2:
                 # calculate real prices
                 __xp: List[int] = _xp.copy()
@@ -375,6 +367,16 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
                     last_p * p // 10**18
                     for last_p, p in zip(last_prices, price_scale)
                 ]
+        elif p_i > 0:
+            # Save the last price
+            if i > 0:
+                last_prices[i - 1] = p_i
+            else:
+                # If 0th price changed - change all prices instead
+                for k in range(n_coins - 1):
+                    last_prices[k] = last_prices[k] * 10**18 // p_i
+        else:
+            raise CalculationError(f"p_i (last price) cannot be {p_i}.")
 
         self.last_prices = last_prices
 
@@ -632,7 +634,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
             y = y * price_scale // PRECISION
         xp[j] = y
 
-        p: int = 0
+        p: Optional[int] = None
         K0_prev: int = 0
         if self.n == 2:
             if dx > 10**5 and dy > 10**5:
@@ -755,7 +757,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
             # p_i * (dx_i - dtoken / token_supply * xx_i)
             # = sum{k!=i}(p_k * (dtoken / token_supply * xx_k - dx_k))
             # only ix is nonzero
-            p: int = 0
+            p: Optional[int] = None
             ix: int = -1
             if d_token > 10**5:
                 nonzero_indices = [i for i, a in enumerate(amounts) if a != 0]
@@ -867,7 +869,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
 
         dy: int = 0
         D: int = 0
-        p: int = 0
+        p: Optional[int] = None
         xp = [0] * self.n
         dy, p, D, xp = self._calc_withdraw_one_coin(
             A, gamma, token_amount, i, False, True
