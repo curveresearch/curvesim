@@ -908,12 +908,12 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         update_D: bool
             Switch for recomputing `D` during calculation.
         calc_price: bool
-            Switch for recomputing the price of token `i` after simulating a 
+            Switch for recomputing the price of token `i` after simulating a
             withdrawal. Only does something if `n` = 2.
 
         Returns
         -------
-        int 
+        int
             Output amount of the `i`-th coin.
         Optional[int]
             Price of the `i`-th coin after the withdrawal.
@@ -924,8 +924,8 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
 
         Note
         ----
-        The 3-coin pool contract doesn't have calc_price even though the 2-coin one 
-        does, so the price value returned is `None` when the price calculation doesn't 
+        The 3-coin pool contract doesn't have calc_price even though the 2-coin one
+        does, so the price value returned is `None` when the price calculation doesn't
         occur.
 
         This is a "view" function; it doesn't change the state of the pool.
@@ -951,7 +951,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
             fee: int = self._fee(xp)
         elif self.n == 3:
             # For n = 3, charge max fee if xp_correction > xp_imprecise[i]
-            # Specifically, if % of xp[i] withdrawn > 1/n = 1/3 
+            # Specifically, if % of xp[i] withdrawn > 1/n = 1/3
             # Otherwise, _fee() underflows
             n_coins: int = self.n
             xp_imprecise: List[int] = xp.copy()
@@ -963,13 +963,15 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
             else:
                 fee = self.out_fee
         else:
-            raise CalculationError("_calc_withdraw_one_coin doesn't support more than \
-            3 coins")
+            raise CalculationError(
+                "_calc_withdraw_one_coin doesn't support more than \
+            3 coins"
+            )
 
         # Charge fee on D, not on y, e.g. reducing invariant LESS than charging user
         dD: int = token_amount * D // token_supply
         D_fee: int = fee * dD // (2 * 10**10) + 1
-        D -= (dD - D_fee)
+        D -= dD - D_fee
         y: int = get_y(A, gamma, xp, D, i)[0]
         if i == 0:
             dy: int = (xp[i] - y) // precisions[i]
@@ -1012,7 +1014,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         -------
         int
             Output amount of the `i`-th coin.
-        
+
         Note
         ----
         This is a "view" function; it doesn't change the state of the pool.

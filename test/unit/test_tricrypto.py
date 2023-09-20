@@ -144,6 +144,7 @@ def update_cached_values(vyper_tricrypto, tricrypto_math):
 
 D_UNIT = 10**18
 positive_balance = st.integers(min_value=10**5 * D_UNIT, max_value=10**11 * D_UNIT)
+lp_tokens = st.integers(min_value=1 * D_UNIT, max_value=4 * 10**4 * D_UNIT)
 amplification_coefficient = st.integers(min_value=MIN_A, max_value=MAX_A)
 gamma_coefficient = st.integers(min_value=MIN_GAMMA, max_value=MAX_GAMMA)
 price = st.integers(min_value=10**12, max_value=10**25)
@@ -556,3 +557,28 @@ def test_price_oracle(vyper_tricrypto, price_oracle, last_prices, time_delta):
     assert pool.price_oracle() == [
         vyper_tricrypto.price_oracle(i) for i in range(n_coins - 1)
     ]
+
+
+@given(lp_tokens, st.integers(min_value=0, max_value=2))
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=25,
+    deadline=None,
+)
+def test_calc_withdraw_one_coin(vyper_tricrypto, amount, i):
+    """Test `calc_withdraw_one_coin` against vyper implementation."""
+    assume(amount < vyper_tricrypto.totalSupply())
+
+    n_coins = 3
+
+    pool = initialize_pool(vyper_tricrypto)
+
+    A_gamma = vyper_tricrypto.internal._A_gamma()
+    expected_dy = vyper_tricrypto.internal._calc_withdraw_one_coin(
+        A_gamma, amount, i, True
+    )[0]
+    dy = pool.calc_withdraw_one_coin(amount, i)
+    assert dy == expected_dy
+
+    expected_balances = [vyper_tricrypto.balances(i) for i in range(n_coins)]
+    assert pool.balances == expected_balances

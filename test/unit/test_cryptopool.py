@@ -620,13 +620,15 @@ def test_calc_withdraw_one_coin(vyper_cryptopool, amount, i):
     """Test `calc_withdraw_one_coin` against vyper implementation."""
     assume(amount < vyper_cryptopool.totalSupply())
 
+    n_coins = 2
+
     pool = initialize_pool(vyper_cryptopool)
 
     expected_dy = vyper_cryptopool.calc_withdraw_one_coin(amount, i)
     dy = pool.calc_withdraw_one_coin(amount, i)
     assert dy == expected_dy
 
-    expected_balances = [vyper_cryptopool.balances(i) for i in range(2)]
+    expected_balances = [vyper_cryptopool.balances(i) for i in range(n_coins)]
     assert pool.balances == expected_balances
 
 
