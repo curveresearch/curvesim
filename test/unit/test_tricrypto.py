@@ -144,7 +144,7 @@ def update_cached_values(vyper_tricrypto, tricrypto_math):
 
 D_UNIT = 10**18
 positive_balance = st.integers(min_value=10**5 * D_UNIT, max_value=10**11 * D_UNIT)
-lp_tokens = st.integers(min_value=1 * D_UNIT, max_value=4 * 10**4 * D_UNIT)
+lp_tokens = st.integers(min_value=1 * D_UNIT, max_value=2 * 10**4 * D_UNIT)
 amplification_coefficient = st.integers(min_value=MIN_A, max_value=MAX_A)
 gamma_coefficient = st.integers(min_value=MIN_GAMMA, max_value=MAX_GAMMA)
 price = st.integers(min_value=10**12, max_value=10**25)

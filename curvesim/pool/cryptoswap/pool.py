@@ -3,7 +3,7 @@ Mainly a module to house the `CurveCryptoPool`, a cryptoswap implementation in P
 """
 import time
 from math import isqrt, prod
-from typing import List, Tuple, Type, Optional
+from typing import List, Optional, Tuple, Type
 
 from curvesim.exceptions import CalculationError, CryptoPoolError, CurvesimValueError
 from curvesim.logging import get_logger
