@@ -14,6 +14,7 @@ from curvesim.pool.cryptoswap.calcs.factory_2_coin import (
     _sqrt_int,
     geometric_mean,
 )
+from ..fixtures.pool import pack_A_gamma, unpack_A_gamma
 
 
 def initialize_pool(vyper_cryptopool):
@@ -21,8 +22,10 @@ def initialize_pool(vyper_cryptopool):
     Initialize python-based pool from the state variables of the
     vyper-based implementation.
     """
-    A = vyper_cryptopool.A()
-    gamma = vyper_cryptopool.gamma()
+    A_gamma_packed = vyper_cryptopool.eval("self.future_A_gamma")
+    A_gamma = unpack_A_gamma(A_gamma_packed)
+    A = A_gamma[0]
+    gamma = A_gamma[1]
     n_coins = vyper_cryptopool.N_COINS()
     precisions = vyper_cryptopool.eval("self._get_precisions()")
     mid_fee = vyper_cryptopool.mid_fee()
@@ -66,8 +69,8 @@ def initialize_pool(vyper_cryptopool):
         xcp_profit_a=xcp_profit_a,
     )
 
-    assert pool.A == vyper_cryptopool.A()
-    assert pool.gamma == vyper_cryptopool.gamma()
+    assert pool.A == A_gamma[0]
+    assert pool.gamma == A_gamma[1]
     assert pool.balances == balances
     assert pool.price_scale == [price_scale]
     assert pool._price_oracle == [price_oracle]  # pylint: disable=protected-access
@@ -123,16 +126,6 @@ def sync_ema_logic(
     last_prices_timestamp = vm_timestamp - 120
     vyper_cryptopool.eval(f"self.last_prices_timestamp={last_prices_timestamp}")
     pool.last_prices_timestamp = last_prices_timestamp
-
-
-def pack_A_gamma(A, gamma):
-    """
-    Need this to set A and gamma in the smart contract since they
-    are stored in packed format.
-    """
-    A_gamma = A << 128
-    A_gamma = A_gamma | gamma
-    return A_gamma
 
 
 def get_real_balances(virtual_balances, precisions, price_scale):

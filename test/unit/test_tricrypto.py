@@ -20,7 +20,7 @@ from curvesim.pool.cryptoswap.calcs.tricrypto_ng import (
     _newton_y,
     wad_exp,
 )
-from ..fixtures.pool import pack_prices, unpack_prices
+from ..fixtures.pool import pack_prices, unpack_prices, unpack_A_gamma
 
 
 def initialize_pool(vyper_tricrypto):
@@ -28,8 +28,10 @@ def initialize_pool(vyper_tricrypto):
     Initialize python-based pool from the state variables of the
     vyper-based implementation.
     """
-    A = vyper_tricrypto.A()
-    gamma = vyper_tricrypto.gamma()
+    A_gamma_packed = vyper_tricrypto.eval("self.future_A_gamma")
+    A_gamma = unpack_A_gamma(A_gamma_packed)
+    A = A_gamma[0]
+    gamma = A_gamma[1]
     n_coins = 3
     precisions = vyper_tricrypto.precisions()
     mid_fee = vyper_tricrypto.mid_fee()
@@ -80,8 +82,8 @@ def initialize_pool(vyper_tricrypto):
         xcp_profit_a=xcp_profit_a,
     )
 
-    assert pool.A == vyper_tricrypto.A()
-    assert pool.gamma == vyper_tricrypto.gamma()
+    assert pool.A == A_gamma[0]
+    assert pool.gamma == A_gamma[1]
     assert pool.balances == balances
     assert pool.price_scale == price_scale
     assert pool._price_oracle == price_oracle  # pylint: disable=protected-access

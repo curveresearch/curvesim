@@ -228,6 +228,25 @@ def pack_prices(prices):
     return (prices[1] << 128) | prices[0]
 
 
+def unpack_A_gamma(packed_A_gamma):
+    """Unpack A and gamma from packed format and return as a list."""
+    mask = 2**128 - 1
+    return [
+        (packed_A_gamma >> 128) & mask,
+        packed_A_gamma & mask,
+    ]
+
+
+def pack_A_gamma(A, gamma):
+    """
+    Need this to set A and gamma in the smart contract since they
+    are stored in packed format.
+    """
+    A_gamma = A << 128
+    A_gamma = A_gamma | gamma
+    return A_gamma
+
+
 @pytest.fixture(scope="session")
 def _tricrypto_math():
     """
