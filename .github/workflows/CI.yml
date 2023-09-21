@@ -88,6 +88,10 @@ jobs:
           name: test-data
           path: test/data
 
+      - name: Hello world test
+        run: |
+          python3 -m curvesim
+
       - name: End-to-end tests
         run: |
           python3 -m test.simple_ci
