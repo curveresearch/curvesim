@@ -9,7 +9,7 @@ Nomics data is deprecated.
 
 from curvesim.exceptions import NetworkError
 
-from .sources import coingecko, local
+from .sources import coingecko
 
 
 def get(
@@ -60,6 +60,6 @@ def get(
         raise NetworkError("Nomics data is no longer supported.")
 
     elif src == "local":
-        prices, volumes, pzero = local(coins, data_dir=data_dir, end=end)
+        raise NetworkError("Local data currently not supported.")
 
     return prices, volumes, pzero
