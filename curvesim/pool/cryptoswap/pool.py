@@ -966,8 +966,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
                 fee = self.out_fee
         else:
             raise CalculationError(
-                "_calc_withdraw_one_coin doesn't support more than \
-            3 coins"
+                "_calc_withdraw_one_coin doesn't support more than 3 coins"
             )
 
         # Charge fee on D, not on y, e.g. reducing invariant LESS than charging user
