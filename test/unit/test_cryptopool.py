@@ -14,6 +14,7 @@ from curvesim.pool.cryptoswap.calcs.factory_2_coin import (
     _sqrt_int,
     geometric_mean,
 )
+from curvesim.exceptions import CalculationError
 
 
 def initialize_pool(vyper_cryptopool):
@@ -387,6 +388,10 @@ def test_tweak_price(
     old_oracle = pool._price_oracle
 
     # pylint: disable=protected-access
+    try:
+        pool._tweak_price(A, gamma, xp, 1, 0, 0)
+    except Exception as err:
+        assert isinstance(err, CalculationError)
     pool._tweak_price(A, gamma, xp, 1, last_price, 0)
     vyper_cryptopool.eval(f"self.tweak_price({A_gamma}, {xp}, {last_price}, 0)")
 
@@ -435,7 +440,7 @@ def test_tweak_price(
     xp[0] = xp[0] + pool.allowed_extra_profit // 10
 
     # omitting price will calculate the spot price in `tweak_price`
-    pool._tweak_price(A, gamma, xp, 1, 0, 0)
+    pool._tweak_price(A, gamma, xp, 1, None, 0)
     vyper_cryptopool.eval(f"self.tweak_price({A_gamma}, {xp}, 0, 0)")
 
     assert pool.price_scale == [vyper_cryptopool.price_scale()]
@@ -454,7 +459,7 @@ def test_tweak_price(
     xp[0] = xp[0] * 115 // 100
 
     # omitting price will calculate the spot price in `tweak_price`
-    pool._tweak_price(A, gamma, xp, 1, 0, 0)
+    pool._tweak_price(A, gamma, xp, 1, None, 0)
     vyper_cryptopool.eval(f"self.tweak_price({A_gamma}, {xp}, 0, 0)")
 
     assert pool.price_scale == [vyper_cryptopool.price_scale()]
@@ -620,13 +625,15 @@ def test_calc_withdraw_one_coin(vyper_cryptopool, amount, i):
     """Test `calc_withdraw_one_coin` against vyper implementation."""
     assume(amount < vyper_cryptopool.totalSupply())
 
+    n_coins = 2
+
     pool = initialize_pool(vyper_cryptopool)
 
     expected_dy = vyper_cryptopool.calc_withdraw_one_coin(amount, i)
     dy = pool.calc_withdraw_one_coin(amount, i)
     assert dy == expected_dy
 
-    expected_balances = [vyper_cryptopool.balances(i) for i in range(2)]
+    expected_balances = [vyper_cryptopool.balances(i) for i in range(n_coins)]
     assert pool.balances == expected_balances
 
 

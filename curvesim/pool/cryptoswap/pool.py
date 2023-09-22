@@ -3,7 +3,7 @@ Mainly a module to house the `CurveCryptoPool`, a cryptoswap implementation in P
 """
 import time
 from math import isqrt, prod
-from typing import List, Tuple, Type
+from typing import List, Optional, Tuple, Type
 
 from curvesim.exceptions import CalculationError, CryptoPoolError, CurvesimValueError
 from curvesim.logging import get_logger
@@ -295,7 +295,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         gamma: int,
         _xp: List[int],
         i: int,
-        p_i: int,
+        p_i: Optional[int],
         new_D: int,
         K0_prev: int = 0,
     ) -> None:
@@ -304,11 +304,11 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
             - EMA price update: price_oracle
             - Profit counters: D, virtual_price, xcp_profit
             - price adjustment: price_scale
+                - If p_i is None, the spot price will be used as the last price
 
         Also claims admin fees if appropriate (enough profit and price scale
         and oracle is close enough).
         """
-
         price_oracle: List[int] = self._price_oracle
         last_prices: List[int] = self.last_prices
         price_scale: List[int] = self.price_scale
@@ -346,15 +346,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         if new_D == 0:
             D_unadjusted = newton_D(A, gamma, _xp, K0_prev)
 
-        if p_i > 0:
-            # Save the last price
-            if i > 0:
-                last_prices[i - 1] = p_i
-            else:
-                # If 0th price changed - change all prices instead
-                for k in range(n_coins - 1):
-                    last_prices[k] = last_prices[k] * 10**18 // p_i
-        else:
+        if p_i is None:
             if n_coins == 2:
                 # calculate real prices
                 __xp: List[int] = _xp.copy()
@@ -375,6 +367,16 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
                     last_p * p // 10**18
                     for last_p, p in zip(last_prices, price_scale)
                 ]
+        elif p_i > 0:
+            # Save the last price
+            if i > 0:
+                last_prices[i - 1] = p_i
+            else:
+                # If 0th price changed - change all prices instead
+                for k in range(n_coins - 1):
+                    last_prices[k] = last_prices[k] * 10**18 // p_i
+        else:
+            raise CalculationError(f"p_i (last price) cannot be {p_i}.")
 
         self.last_prices = last_prices
 
@@ -632,7 +634,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
             y = y * price_scale // PRECISION
         xp[j] = y
 
-        p: int = 0
+        p: Optional[int] = None
         K0_prev: int = 0
         if self.n == 2:
             if dx > 10**5 and dy > 10**5:
@@ -755,7 +757,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
             # p_i * (dx_i - dtoken / token_supply * xx_i)
             # = sum{k!=i}(p_k * (dtoken / token_supply * xx_k - dx_k))
             # only ix is nonzero
-            p: int = 0
+            p: Optional[int] = None
             ix: int = -1
             if d_token > 10**5:
                 nonzero_indices = [i for i, a in enumerate(amounts) if a != 0]
@@ -867,7 +869,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
 
         dy: int = 0
         D: int = 0
-        p: int = 0
+        p: Optional[int] = None
         xp = [0] * self.n
         dy, p, D, xp = self._calc_withdraw_one_coin(
             A, gamma, token_amount, i, False, True
@@ -890,7 +892,46 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         i: int,
         update_D: bool,
         calc_price: bool,
-    ) -> Tuple[int, int, int, List[int]]:
+    ) -> Tuple[int, Optional[int], int, List[int]]:
+        """
+        Calculate the output amount from burning `token amount` of LP tokens
+        and receiving entirely in the `i`-th coin.
+
+        Parameters
+        ----------
+        A: int
+            Amplification coefficient equal to `A * n**n` from the whitepaper.
+        gamma: int
+            Gamma coefficient from the whitepaper.
+        token_amount: int
+            Amount of LP tokens to burn.
+        i: int
+            Index of the `out` coin.
+        update_D: bool
+            Switch for recomputing `D` during calculation.
+        calc_price: bool
+            Switch for recomputing the price of token `i` after simulating a
+            withdrawal. Only does something if `n` = 2.
+
+        Returns
+        -------
+        int
+            Output amount of the `i`-th coin.
+        Optional[int]
+            Price of the `i`-th coin after the withdrawal.
+        int
+            `D` after the withdrawal, accounting for fee.
+        List[int]
+            `xp` after the withdrawal, accounting for fee.
+
+        Note
+        ----
+        The 3-coin pool contract doesn't have calc_price even though the 2-coin one
+        does, so the price value returned is `None` when the price calculation doesn't
+        occur.
+
+        This is a "view" function; it doesn't change the state of the pool.
+        """
         token_supply: int = self.tokens
         assert token_amount <= token_supply  # dev: token amount more than supply
         assert i < self.n  # dev: coin out of range
@@ -902,39 +943,59 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         xp: List[int] = self._xp_mem(xx)
 
         if update_D:
-            D0 = factory_2_coin.newton_D(A, gamma, xp)
+            D0 = newton_D(A, gamma, xp)
         else:
             D0 = self.D
 
         D: int = D0
 
+        if self.n == 2:
+            fee: int = self._fee(xp)
+        elif self.n == 3:
+            # For n = 3, charge max fee if xp_correction > xp_imprecise[i]
+            # Specifically, if % of xp[i] withdrawn > 1/n = 1/3
+            # Otherwise, _fee() underflows
+            n_coins: int = self.n
+            xp_imprecise: List[int] = xp.copy()
+            xp_correction: int = xp[i] * n_coins * token_amount // token_supply
+
+            if xp_correction < xp_imprecise[i]:
+                xp_imprecise[i] -= xp_correction
+                fee = self._fee(xp_imprecise)
+            else:
+                fee = self.out_fee
+        else:
+            raise CalculationError(
+                "_calc_withdraw_one_coin doesn't support more than 3 coins"
+            )
+
         # Charge fee on D, not on y, e.g. reducing invariant LESS than charging user
-        fee: int = self._fee(xp)
         dD: int = token_amount * D // token_supply
-        D -= dD - (fee * dD // (2 * 10**10) + 1)
-        y: int = factory_2_coin.newton_y(A, gamma, xp, D, i)
+        D_fee: int = fee * dD // (2 * 10**10) + 1
+        D -= dD - D_fee
+        y: int = get_y(A, gamma, xp, D, i)[0]
         if i == 0:
             dy: int = (xp[i] - y) // precisions[i]
         else:
             dy = (xp[i] - y) * PRECISION // (precisions[i] * self.price_scale[i - 1])
         xp[i] = y
 
-        # FIXME: update for n coins
         # Price calc
-        p: int = 0
-        if calc_price and dy > 10**5 and token_amount > 10**5:
-            # p_i = dD / D0 * sum'(p_k * x_k) / (dy - dD / D0 * y0)
-            S: int = 0
-            precision: int = precisions[0]
-            if i == 1:
-                S = xx[0] * precisions[0]
-                precision = precisions[1]
-            else:
-                S = xx[1] * precisions[1]
-            S = S * dD // D0
-            p = S * PRECISION // (dy * precision - dD * xx[i] * precision // D0)
-            if i == 0:
-                p = (10**18) ** 2 // p
+        p: Optional[int] = None
+        if self.n == 2:
+            if calc_price and dy > 10**5 and token_amount > 10**5:
+                # p_i = dD / D0 * sum'(p_k * x_k) / (dy - dD / D0 * y0)
+                S: int = 0
+                precision: int = precisions[0]
+                if i == 1:
+                    S = xx[0] * precisions[0]
+                    precision = precisions[1]
+                else:
+                    S = xx[1] * precisions[1]
+                S = S * dD // D0
+                p = S * PRECISION // (dy * precision - dD * xx[i] * precision // D0)
+                if i == 0:
+                    p = (10**18) ** 2 // p
 
         return dy, p, D, xp
 
@@ -954,6 +1015,10 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         -------
         int
             Output amount of the `i`-th coin.
+
+        Note
+        ----
+        This is a "view" function; it doesn't change the state of the pool.
         """
         return self._calc_withdraw_one_coin(
             self.A, self.gamma, token_amount, i, True, False
