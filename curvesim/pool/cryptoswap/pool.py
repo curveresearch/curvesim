@@ -954,13 +954,12 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         assert i < self.n  # dev: coin out of range
 
         xx: List[int] = self.balances.copy()
-        D0: int = 0
         precisions: List[int] = self.precisions
 
         xp: List[int] = self._xp_mem(xx)
 
         if update_D:
-            D0 = newton_D(A, gamma, xp)
+            D0: int = newton_D(A, gamma, xp)
         else:
             D0 = self.D
 
