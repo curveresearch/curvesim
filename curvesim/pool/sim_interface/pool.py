@@ -8,6 +8,11 @@ from .asset_indices import AssetIndicesMixin
 
 
 class SimCurvePool(SimPool, AssetIndicesMixin, CurvePool):
+    """
+    Class to enable use of CurvePool in simulations by exposing
+    a generic interface (`SimPool`).
+    """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
