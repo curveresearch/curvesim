@@ -16,7 +16,7 @@ POOL_TEST_METADATA_JSON = """
     "symbol": "3Crv",
     "version": 1,
     "pool_type": "REGISTRY_V1",
-    "params": {"A": 2000, "fee": 1000000, "fee_mul": null},
+    "params": {"A": 2000, "fee": 1000000, "fee_mul": null, "admin_fee": 5000000000},
     "coins": {
         "names": ["DAI", "USDC", "USDT"],
         "addresses": [
@@ -53,7 +53,7 @@ METAPOOL_TEST_METADATA_JSON = """
     "version": 1,
     "pool_type": "STABLE_FACTORY",
     "params": {
-        "A": 1500, "fee": 4000000, "fee_mul": null},
+        "A": 1500, "fee": 4000000, "fee_mul": null, "admin_fee": 5000000000},
         "coins": {
             "names": ["GUSD", "crvFRAX"],
             "addresses": [
@@ -232,6 +232,7 @@ def test_pool():
         "n": 3,
         "fee": 1000000,
         "fee_mul": None,
+        "admin_fee": 5000000000,
         "virtual_price": 1025499623208090719,
     }
     assert metadata.init_kwargs(normalize=False) == {
@@ -244,6 +245,7 @@ def test_pool():
         "n": 3,
         "fee": 1000000,
         "fee_mul": None,
+        "admin_fee": 5000000000,
         "virtual_price": 1025499623208090719,
         "rates": [
             1000000000000000000,
@@ -282,6 +284,7 @@ def test_metapool():
         "n": 2,
         "fee": 4000000,
         "fee_mul": None,
+        "admin_fee": 5000000000,
         "virtual_price": 1002128768748324821,
     }
 
@@ -294,6 +297,7 @@ def test_metapool():
         "n": 2,
         "fee": 4000000,
         "fee_mul": None,
+        "admin_fee": 5000000000,
         "virtual_price": 1002128768748324821,
         "rate_multiplier": 10000000000000000000000000000000000,
     }
