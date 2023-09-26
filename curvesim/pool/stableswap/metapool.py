@@ -45,7 +45,7 @@ class CurveMetaPool(Pool):  # pylint: disable=too-many-instance-attributes
         tokens=None,
         fee=4 * 10**6,
         fee_mul=None,
-        admin_fee=0 * 10**9,
+        admin_fee=5 * 10**9,
         virtual_price=None,
     ):
         """
@@ -73,9 +73,6 @@ class CurveMetaPool(Pool):  # pylint: disable=too-many-instance-attributes
             amount of D invariant per LP token; can be used when
             missing `tokens` value.
         """
-        # FIXME: set admin_fee default back to 5 * 10**9
-        # once sim code is updated.  Right now we use 0
-        # to pass the CI tests.
         self.A = A
         self.n = n
 
