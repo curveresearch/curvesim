@@ -26,11 +26,3 @@ def parse_version(version):
 
 
 __version_info__ = parse_version(__version__)
-
-
-if __name__ == "__main__":
-    print(parse_version("0.3.5"))  # (0, 3, 5, 'release', 0)
-    print(parse_version("0.3.5.release"))  # (0, 3, 5, release, 0)
-    print(parse_version("0.3.5.rc3"))  # (0, 3, 5, rc, 3)
-    print(parse_version("0.3.5.rc0"))  # (0, 3, 5, rc, 0)
-    print(parse_version("0.3.5.a12"))  # (0, 3, 5, a, 12)
