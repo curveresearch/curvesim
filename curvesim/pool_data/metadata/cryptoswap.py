@@ -35,9 +35,9 @@ class CryptoswapMetaData(PoolMetaDataBase):
             kwargs["precisions"] = [1] * n
 
         if normalize:
-            coin_balances = data["reserves"]["by_coin"]
+            coin_balances = data["reserves"]["normalized"]
         else:
-            coin_balances = data["reserves"]["unnormalized_by_coin"]
+            coin_balances = data["reserves"]["unnormalized"]
         kwargs["balances"] = coin_balances
 
         return kwargs

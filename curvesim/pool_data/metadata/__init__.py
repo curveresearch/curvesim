@@ -39,7 +39,7 @@ def PoolMetaData(metadata_dict):
     ----------
     metadata_dict : dict
         Pool metadata in the format returned by
-        :func:`curvesim.network.subgraph.pool_snapshot`.
+        :func:`curvesim.pool_data.from_address`.
 
     Returns
     -------

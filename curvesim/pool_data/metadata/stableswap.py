@@ -19,9 +19,9 @@ class StableswapMetaData(PoolMetaDataBase):
             }
 
             if normalize:
-                coin_balances = data["reserves"]["by_coin"]
+                coin_balances = data["reserves"]["normalized"]
             else:
-                coin_balances = data["reserves"]["unnormalized_by_coin"]
+                coin_balances = data["reserves"]["unnormalized"]
 
                 if data["basepool"]:
                     d = data["coins"]["decimals"][0]

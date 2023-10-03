@@ -4,9 +4,9 @@ Parameter overrides for cases that need special handling.
 from copy import deepcopy
 
 subgraph_overrides = {
-    "pool_snapshot": {
+    "_get_pool_info": {
         ("0xA5407eAE9Ba41422680e2e00537571bcC53efBfD", "mainnet"): {
-            "pool_type": "REGISTRY_V1"
+            "poolType": "REGISTRY_V1"
         }
     }
 }

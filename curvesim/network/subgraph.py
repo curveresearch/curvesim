@@ -4,7 +4,6 @@ Network connector for subgraphs
 
 from asyncio import gather
 from datetime import datetime, timedelta, timezone
-from decimal import Decimal
 
 import pandas as pd
 from eth_utils import to_checksum_address
@@ -53,8 +52,13 @@ STAGING_CONVEX_COMMUNITY_URL = (
     "https://api.thegraph.com/subgraphs/name/convex-community/volume-%s-staging"
 )
 
+CHAIN_ALIASES = {"ethereum": "mainnet"}
+
 
 def _get_subgraph_url(chain, env="prod"):
+    if chain in CHAIN_ALIASES:
+        chain = CHAIN_ALIASES[chain]
+
     if env.lower() == "prod":
         url = CONVEX_COMMUNITY_URL % chain
     elif env.lower() == "staging":
@@ -126,22 +130,15 @@ async def symbol_address(symbol, chain, env="prod"):
         Pool address.
 
     """
-    # pylint: disable=consider-using-f-string
-    q = (
-        """
-        {
-          pools(
-            where:
-              {symbol_starts_with_nocase: "%s"}
-          )
-          {
+    q = f"""
+        {{
+          pools(where: {{symbol_starts_with_nocase: "{symbol}"}})
+          {{
             symbol
             address
-          }
-        }
+          }}
+        }}
     """
-        % symbol
-    )
 
     data = await convex(chain, q, env)
 
@@ -246,26 +243,12 @@ async def volume(addresses, chain, env="prod", days=60, end=None):
     return vol
 
 
-async def _pool_snapshot(address, chain, env, end_ts=None):
-    if not end_ts:
-        end_date = datetime.now(timezone.utc)
-        end_ts = int(end_date.timestamp())
+async def _get_pool_info(address, chain, env="prod"):
 
-    # pylint: disable=consider-using-f-string
-    q = """
-        {
-          dailyPoolSnapshots(
-            orderBy: timestamp,
-            orderDirection: desc,
-            first: 1,
-            where:
-              {
-                pool: "%s"
-                timestamp_lte: %d
-              }
-          )
-          {
-            pool {
+    q = f"""
+        {{
+          pools(where: {{address: "{address.lower()}"}})
+          {{
               name
               address
               symbol
@@ -276,186 +259,58 @@ async def _pool_snapshot(address, chain, env, end_ts=None):
               coinDecimals
               poolType
               isV2
-            }
+          }}
+        }}
+    """
 
-            A
-            fee
-            adminFee
-            offPegFeeMultiplier
+    r = await convex(chain, q, env)
+    try:
+        data = r["pools"][0]
+    except IndexError as e:
+        raise SubgraphResultError(
+            f"No pool info returned for pool: {address}, {chain}"
+        ) from e
+
+    return override_subgraph_data(data, "_get_pool_info", (address, chain))
+
+
+async def _get_pool_reserves(address, chain, end_ts=None, env="prod"):
+    end_ts = end_ts or int(datetime.now(timezone.utc).timestamp())
+
+    q = f"""
+        {{
+          dailyPoolSnapshots(
+            orderBy: timestamp,
+            orderDirection: desc,
+            first: 1,
+            where: {{pool: "{address.lower()}", timestamp_lte: {end_ts}}}
+          )
+
+          {{
             reserves
             normalizedReserves
             virtualPrice
             timestamp
-
-            gamma
-            midFee
-            outFee
-            feeGamma
-            allowedExtraProfit
-            adjustmentStep
-            maHalfTime
-            priceScale
-            priceOracle
-            lastPrices
-            lastPricesTimestamp
-            xcpProfit
-            xcpProfitA
-          }
-        }
-    """ % (
-        address.lower(),
-        end_ts,
-    )
-
+          }}
+        }}
+    """
     r = await convex(chain, q, env)
     try:
-        r = r["dailyPoolSnapshots"][0]
+        data = r["dailyPoolSnapshots"][0]
     except IndexError as e:
         raise SubgraphResultError(
-            f"No daily snapshot for this pool: {address}, {chain}"
+            f"No pool reserves returned for pool: {address}, {chain}"
         ) from e
 
-    return r
+    return data
 
 
-# pylint: disable-next=too-many-locals
-async def pool_snapshot(address, chain, env="prod", end_ts=None):
-    """
-    Async function to pull pool state and metadata from daily snapshots.
-
-    Parameters
-    ----------
-    address : str
-        The pool address.
-
-    chain : str
-        The blockchain the pool is on.
-
-    Returns
-    -------
-    dict
-        A formatted dict of pool state/metadata information.
-
-    """
-    r = await _pool_snapshot(address, chain, env, end_ts)
-    logger.debug("Pool snapshot: %s", r)
-
-    # Flatten
-    pool = r.pop("pool")
-    r.update(pool)
-
-    # Version
-    if r["isV2"]:
-        version = 2
-    else:
-        version = 1
-
-    # Fee_mul
-    if r["offPegFeeMultiplier"] == "0":
-        fee_mul = None
-    else:
-        fee_mul = int(r["offPegFeeMultiplier"]) * 10**10
-
-    # Coins
-    names = r["coinNames"]
-    addrs = [to_checksum_address(c) for c in r["coins"]]
-    decimals = [int(d) for d in r["coinDecimals"]]
-
-    coins = {"names": names, "addresses": addrs, "decimals": decimals}
-
-    # Reserves
-    normalized_reserves = [int(r) for r in r["normalizedReserves"]]
-    unnormalized_reserves = [int(r) for r in r["reserves"]]
-
-    # Basepool
-    if r["metapool"]:
-        basepool = await pool_snapshot(r["basePool"], chain, env, end_ts)
-    else:
-        basepool = None
-
-    # Output
-    if version == 1:
-        data = {
-            "name": r["name"],
-            "address": to_checksum_address(r["address"]),
-            "chain": chain,
-            "symbol": r["symbol"].strip(),
-            "version": version,
-            "pool_type": r["poolType"],
-            "params": {
-                "A": int(r["A"]),
-                "fee": int(Decimal(r["fee"]) * 10**10),
-                "fee_mul": fee_mul,
-                "admin_fee": int(Decimal(r["adminFee"]) * 10**10),
-            },
-            "coins": coins,
-            "reserves": {
-                "by_coin": normalized_reserves,
-                "unnormalized_by_coin": unnormalized_reserves,
-                "virtual_price": int(r["virtualPrice"]),
-            },
-            "basepool": basepool,
-            "timestamp": int(r["timestamp"]),
-        }
-    else:
-        # Until mainnet subgraph is fixed (or we use the new curve-prices API),
-        # 2-coin crypto pools will have an integer instead of list and
-        # 3-coin crypto pools actually return a zero.
-        #
-        # So we fix the outer type here.
-        if not isinstance(r["priceScale"], list):
-            r["priceScale"] = [r["priceScale"]]
-        if not isinstance(r["priceOracle"], list):
-            r["priceOracle"] = [r["priceOracle"]]
-        if not isinstance(r["lastPrices"], list):
-            r["lastPrices"] = [r["lastPrices"]]
-
-        ma_half_time = r["maHalfTime"]
-        if ma_half_time:  # subgraph bug returns None
-            ma_half_time = int(ma_half_time)
-
-        data = {
-            "name": r["name"],
-            "address": to_checksum_address(r["address"]),
-            "chain": chain,
-            "symbol": r["symbol"].strip(),
-            "version": version,
-            "pool_type": r["poolType"],
-            "params": {
-                "A": int(r["A"]),
-                "gamma": int(r["gamma"]),
-                "fee_gamma": int(r["feeGamma"]),
-                "mid_fee": int(r["midFee"]),
-                "out_fee": int(r["outFee"]),
-                "allowed_extra_profit": int(r["allowedExtraProfit"]),
-                "adjustment_step": int(r["adjustmentStep"]),
-                "ma_half_time": ma_half_time,
-                "price_scale": [int(p) for p in r["priceScale"]],
-                "price_oracle": [int(p) for p in r["priceOracle"]],
-                "last_prices": [int(p) for p in r["lastPrices"]],
-                "last_prices_timestamp": int(r["lastPricesTimestamp"]),
-                "admin_fee": int(Decimal(r["adminFee"]) * 10**10),
-                "xcp_profit": int(r["xcpProfit"]),
-                "xcp_profit_a": int(r["xcpProfitA"]),
-            },
-            "coins": coins,
-            "reserves": {
-                "by_coin": normalized_reserves,
-                "unnormalized_by_coin": unnormalized_reserves,
-                "virtual_price": int(r["virtualPrice"]),
-            },
-            "basepool": basepool,
-            "timestamp": int(r["timestamp"]),
-        }
-
-    return override_subgraph_data(data, "pool_snapshot", (address, chain))
-
+get_pool_info = sync(_get_pool_info)
+get_pool_reserves = sync(_get_pool_reserves)
 
 convex_sync = sync(convex)
 symbol_address_sync = sync(symbol_address)
 volume_sync = sync(volume)
-pool_snapshot_sync = sync(pool_snapshot)
-
 
 # Reflexer Subgraph
 RAI_ADDR = ("0x618788357D0EBd8A37e763ADab3bc575D54c2C7d", "mainnet")
