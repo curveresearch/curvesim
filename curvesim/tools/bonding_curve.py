@@ -4,6 +4,7 @@ curve and current reserves for each pair of coins and optionally
 plots the curves using Matplotlib.
 """
 from itertools import combinations
+from typing import Dict, List, Tuple, Union
 
 import matplotlib.pyplot as plt
 from numpy import linspace
@@ -11,12 +12,14 @@ from numpy import linspace
 from curvesim.pool import CurveCryptoPool, CurveMetaPool, CurvePool, CurveRaiPool
 
 D_UNIT = 10**18
-STABLESWAP = CurvePool | CurveMetaPool | CurveRaiPool
-CRYPTOSWAP = CurveCryptoPool
+STABLESWAP = Union[CurvePool, CurveMetaPool, CurveRaiPool]
+CRYPTOSWAP = Union[CurveCryptoPool]
 
 
 # pylint: disable-next=too-many-locals
-def bonding_curve(pool, *, truncate=None, resolution=1000, plot=False):  # noqa: C901
+def bonding_curve(  # noqa: C901
+    pool: Union[STABLESWAP, CRYPTOSWAP], *, truncate=None, resolution=1000, plot=False
+) -> Dict[Tuple[int, int], List[Tuple[float, float]]]:
     """
     Computes and optionally plots a pool's bonding curve and current reserves.
 
@@ -52,14 +55,14 @@ def bonding_curve(pool, *, truncate=None, resolution=1000, plot=False):  # noqa:
     """
 
     if isinstance(pool, CurveMetaPool):
-        combos = [(0, 1)]
+        combos: List[Tuple[int, int]] = [(0, 1)]
     else:
-        combos = combinations(range(pool.n), 2)
+        combos = list(combinations(range(pool.n), 2))
 
-    xp = pool._xp()  # pylint: disable=protected-access
+    xp: List[int] = pool._xp()  # pylint: disable=protected-access
 
-    if isinstance(pool, STABLESWAP):
-        D = pool.D()
+    if isinstance(pool, STABLESWAP):  # type: ignore[misc, arg-type]
+        D: int = pool.D()  # type: ignore[assignment]
         if truncate is None:
             """
             This default value works for Stableswap, but will break Cryptoswap.
@@ -68,7 +71,7 @@ def bonding_curve(pool, *, truncate=None, resolution=1000, plot=False):  # noqa:
             almost 100% of pool assets.
             """
             truncate = 0.0005
-    elif isinstance(pool, CRYPTOSWAP):
+    elif isinstance(pool, CRYPTOSWAP):  # type: ignore[misc, arg-type]
         D = pool.D  # Don't recalcuate D - it will rebalance the bonding curve(s)
         if truncate is None:
             """
@@ -81,61 +84,63 @@ def bonding_curve(pool, *, truncate=None, resolution=1000, plot=False):  # noqa:
     else:
         raise TypeError(f"Bonding curve calculation not supported for {type(pool)}")
 
-    pair_to_curve = {}
-    current_points = {}
+    pair_to_curve: Dict[Tuple[int, int], List[Tuple[float, float]]] = {}
+    current_points: Dict[Tuple[int, int], Tuple[float, float]] = {}
     for (i, j) in combos:
-        truncated_D = int(D * truncate)
-        x_limit = pool.get_y(j, i, truncated_D, xp)
-        xs = linspace(truncated_D, x_limit, resolution).round()
+        truncated_D: int = int(D * truncate)
+        x_limit: int = pool.get_y(j, i, truncated_D, xp)
+        xs: List[int] = list(linspace(truncated_D, x_limit, resolution).round())
 
-        curve = []
+        curve: List[Tuple[float, float]] = []
         for x in xs:
-            y = pool.get_y(i, j, int(x), xp)
+            x_float: float = x / D_UNIT
+            y_float: float = pool.get_y(i, j, int(x), xp) / D_UNIT
 
-            x = x / D_UNIT
-            y = y / D_UNIT
-
-            if isinstance(pool, CRYPTOSWAP):
+            if isinstance(pool, CRYPTOSWAP):  # type: ignore[misc, arg-type]
                 if i > 0:
-                    x = x * D_UNIT / pool.price_scale[i - 1]
+                    x_float = x_float * D_UNIT / pool.price_scale[i - 1]  # type: ignore[union-attr]
 
                 if j > 0:
-                    y = y * D_UNIT / pool.price_scale[j - 1]
+                    y_float = y_float * D_UNIT / pool.price_scale[j - 1]  # type: ignore[union-attr]
 
-            curve.append((x, y))
+            curve.append((x_float, y_float))
 
         pair_to_curve[(i, j)] = curve
 
-        current_x = xp[i] / D_UNIT
-        current_y = xp[j] / D_UNIT
+        current_x: float = xp[i] / D_UNIT
+        current_y: float = xp[j] / D_UNIT
 
-        if isinstance(pool, CRYPTOSWAP):
+        if isinstance(pool, CRYPTOSWAP):  # type: ignore[misc, arg-type]
             if i > 0:
-                current_x = current_x * D_UNIT / pool.price_scale[i - 1]
+                current_x = current_x * D_UNIT / pool.price_scale[i - 1]  # type: ignore[union-attr]
 
             if j > 0:
-                current_y = current_y * D_UNIT / pool.price_scale[j - 1]
+                current_y = current_y * D_UNIT / pool.price_scale[j - 1]  # type: ignore[union-attr]
 
         current_points[(i, j)] = (current_x, current_y)
 
     if plot:
-        labels = pool.coin_names
+        labels: List[str] = pool.coin_names
         if not labels:
             labels = [f"Coin {str(label)}" for label in range(pool.n)]
 
-        _plot_bonding_curve(pair_to_curve, current_points, labels, xp)
+        _plot_bonding_curve(pair_to_curve, current_points, labels)
 
     return pair_to_curve
 
 
-def _plot_bonding_curve(pair_to_curve, current_points, labels, xp):
-    n = len(pair_to_curve)
+def _plot_bonding_curve(
+    pair_to_curve: Dict[Tuple[int, int], List[Tuple[float, float]]],
+    current_points: Dict[Tuple[int, int], Tuple[float, float]],
+    labels: List[str],
+) -> None:
+    n: int = len(pair_to_curve)
     _, axs = plt.subplots(1, n, constrained_layout=True)
     if n == 1:
         axs = [axs]
 
     for pair, ax in zip(pair_to_curve, axs):
-        curve = pair_to_curve[pair]
+        curve: List[Tuple[float, float]] = pair_to_curve[pair]
         xs, ys = zip(*curve)
         ax.plot(xs, ys, color="black")  # the entire bonding curve
 
