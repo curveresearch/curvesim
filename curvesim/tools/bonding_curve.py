@@ -16,7 +16,7 @@ STABLESWAP = Union[CurvePool, CurveMetaPool, CurveRaiPool]
 CRYPTOSWAP = Union[CurveCryptoPool]
 
 
-# pylint: disable-next=too-many-locals
+# pylint: disable-next=too-many-locals, too-many-branches
 def bonding_curve(  # noqa: C901
     pool: Union[STABLESWAP, CRYPTOSWAP], *, truncate=None, resolution=1000, plot=False
 ) -> Dict[Tuple[int, int], List[Tuple[float, float]]]:
@@ -64,6 +64,7 @@ def bonding_curve(  # noqa: C901
     if isinstance(pool, STABLESWAP):  # type: ignore[misc, arg-type]
         D: int = pool.D()  # type: ignore[assignment]
         if truncate is None:
+            # pylint: disable=pointless-string-statement
             """
             This default value works for Stableswap, but will break Cryptoswap.
             At this value, the graph usually cuts off cleanly around the points where
@@ -74,6 +75,7 @@ def bonding_curve(  # noqa: C901
     elif isinstance(pool, CRYPTOSWAP):  # type: ignore[misc, arg-type]
         D = pool.D  # Don't recalcuate D - it will rebalance the bonding curve(s)
         if truncate is None:
+            # pylint: disable=pointless-string-statement
             """
             A 1.0 value for Cryptoswap means "extend the graph to the point where each
             x axis' max. balance is equal to total deposits D at the current price
@@ -98,10 +100,12 @@ def bonding_curve(  # noqa: C901
 
             if isinstance(pool, CRYPTOSWAP):  # type: ignore[misc, arg-type]
                 if i > 0:
-                    x_float = x_float * D_UNIT / pool.price_scale[i - 1]  # type: ignore[union-attr]
+                    # type: ignore[union-attr]
+                    x_float = x_float * D_UNIT / pool.price_scale[i - 1]
 
                 if j > 0:
-                    y_float = y_float * D_UNIT / pool.price_scale[j - 1]  # type: ignore[union-attr]
+                    # type: ignore[union-attr]
+                    y_float = y_float * D_UNIT / pool.price_scale[j - 1]
 
             curve.append((x_float, y_float))
 
@@ -112,10 +116,12 @@ def bonding_curve(  # noqa: C901
 
         if isinstance(pool, CRYPTOSWAP):  # type: ignore[misc, arg-type]
             if i > 0:
-                current_x = current_x * D_UNIT / pool.price_scale[i - 1]  # type: ignore[union-attr]
+                # type: ignore[union-attr]
+                current_x = current_x * D_UNIT / pool.price_scale[i - 1]
 
             if j > 0:
-                current_y = current_y * D_UNIT / pool.price_scale[j - 1]  # type: ignore[union-attr]
+                # type: ignore[union-attr]
+                current_y = current_y * D_UNIT / pool.price_scale[j - 1]
 
         current_points[(i, j)] = (current_x, current_y)
 
