@@ -78,3 +78,69 @@ def test_bonding_curve_metapool():
     }
 
     assert pair_to_curve == expected_result
+
+
+def test_bonding_curve_cryptoswap():
+    """
+    Simple test of the bonding curve for a regular cryptoswap.
+
+    Parameters taken from 0xd51a44d3fae010294c616388b506acda1bfaae46
+    (Tricrypto-2 pool) on Oct. 10, 2023, ~4 PM EDT.
+    """
+    A = 1707629
+    gamma = 11809167828997
+    n = 3
+    precisions = [1000000000000, 10000000000, 1]
+    mid_fee = 3000000
+    out_fee = 30000000
+    allowed_extra_profit = 2000000000000
+    fee_gamma = 500000000000000
+    adjustment_step = 490000000000000
+    ma_half_time = 600
+    price_scale = [27823549548207248490238, 1580164282540758832038]
+    balances = [21282026780687, 77735630688, 13482330187707402680192]
+    D = 64214523455757010937592598
+
+    pool = curvesim.pool.CurveCryptoPool(
+        A,
+        gamma,
+        n,
+        precisions,
+        mid_fee,
+        out_fee,
+        allowed_extra_profit,
+        fee_gamma,
+        adjustment_step,
+        ma_half_time,
+        price_scale,
+        balances=balances,
+        D=D,
+    )
+
+    pair_to_curve = bonding_curve(pool, resolution=5)
+
+    expected_result = {
+        (0, 1): [
+            (64214523.455757014, 257.0830793764587),
+            (49949133.541076906, 330.6293390019353),
+            (35683743.626396805, 463.0556701281358),
+            (21418353.711716697, 772.4361029340507),
+            (7152963.7970365975, 2307.919891547214),
+        ],
+        (0, 2): [
+            (64214523.455757014, 4458.778590637991),
+            (49922293.25998866, 5737.424624762622),
+            (35630063.064220294, 8043.197113798094),
+            (21337832.868451938, 13447.046511020473),
+            (7045602.672683579, 40637.87807714901),
+        ],
+        (1, 2): [
+            (2307.9198915472143, 4531.460155851949),
+            (1795.277966845345, 5827.600890376515),
+            (1282.6360421434754, 8161.168801564149),
+            (769.9941174416057, 13611.63199329776),
+            (257.3521927397361, 40637.87807714902),
+        ],
+    }
+
+    assert pair_to_curve == expected_result

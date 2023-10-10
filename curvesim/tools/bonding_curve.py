@@ -25,7 +25,7 @@ def bonding_curve(  # noqa: C901
 
     Parameters
     ----------
-    pool : CurvePool or CurveMetaPool
+    pool : CurvePool, CurveMetaPool, CurveRaiPool, or CurveCryptoPool
         The pool object for which the bonding curve is computed.
 
     truncate : Optional[float], optional (default=None)
@@ -77,10 +77,10 @@ def bonding_curve(  # noqa: C901
         if truncate is None:
             # pylint: disable=pointless-string-statement
             """
-            A 1.0 value for Cryptoswap means "extend the graph to the point where each
-            x axis' max. balance is equal to total deposits D at the current price
-            scale". The further away from (1 / pool.n) truncate is, the more imbalanced
-            the pool is before we manage to rebalance (likely more slippage and losses).
+            A 1.0 value for Cryptoswap extends the graph to a point at which the pool
+            would incur massive losses if it were to rebalance. The further away from
+            (1 / pool.n) truncate is, the more imbalanced the pool is at the end of the
+            graph before rebalancing, if profit is high enough to rebalance.
             """
             truncate = 1.0
     else:
