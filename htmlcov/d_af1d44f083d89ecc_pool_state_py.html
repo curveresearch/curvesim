@@ -66,8 +66,8 @@
             <a id="indexLink" class="nav" href="index.html">&Hat; index</a> &nbsp; &nbsp;
             <a id="nextFileLink" class="nav" href="d_7485e330971eb008_coingecko_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
-            <a class="nav" href="https://coverage.readthedocs.io/en/7.3.1">coverage.py v7.3.1</a>,
-            created at 2023-09-26 14:36 +0000
+            <a class="nav" href="https://coverage.readthedocs.io/en/7.3.2">coverage.py v7.3.2</a>,
+            created at 2023-10-11 18:29 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"/>
@@ -109,13 +109,13 @@
     <p class="pln"><span class="n"><a id="t25" href="#t25">25</a></span><span class="t">    <span class="str">"""Returns pool state for stableswap non-meta pools."""</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t26" href="#t26">26</a></span><span class="t">    <span class="key">return</span> <span class="op">{</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t27" href="#t27">27</a></span><span class="t">        <span class="str">"D"</span><span class="op">:</span> <span class="nam">pool</span><span class="op">.</span><span class="nam">D</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t28" href="#t28">28</a></span><span class="t">        <span class="str">"balances"</span><span class="op">:</span> <span class="nam">pool</span><span class="op">.</span><span class="nam">balances</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t28" href="#t28">28</a></span><span class="t">        <span class="str">"balances"</span><span class="op">:</span> <span class="nam">pool</span><span class="op">.</span><span class="nam">balances</span><span class="op">.</span><span class="nam">copy</span><span class="op">(</span><span class="op">)</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t29" href="#t29">29</a></span><span class="t">        <span class="str">"tokens"</span><span class="op">:</span> <span class="nam">pool</span><span class="op">.</span><span class="nam">tokens</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t30" href="#t30">30</a></span><span class="t">        <span class="str">"price_scale"</span><span class="op">:</span> <span class="nam">pool</span><span class="op">.</span><span class="nam">price_scale</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t31" href="#t31">31</a></span><span class="t">        <span class="str">"_price_oracle"</span><span class="op">:</span> <span class="nam">pool</span><span class="op">.</span><span class="nam">_price_oracle</span><span class="op">,</span>  <span class="com"># pylint: disable=protected-access</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t30" href="#t30">30</a></span><span class="t">        <span class="str">"price_scale"</span><span class="op">:</span> <span class="nam">pool</span><span class="op">.</span><span class="nam">price_scale</span><span class="op">.</span><span class="nam">copy</span><span class="op">(</span><span class="op">)</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t31" href="#t31">31</a></span><span class="t">        <span class="str">"_price_oracle"</span><span class="op">:</span> <span class="nam">pool</span><span class="op">.</span><span class="nam">_price_oracle</span><span class="op">.</span><span class="nam">copy</span><span class="op">(</span><span class="op">)</span><span class="op">,</span>  <span class="com"># pylint: disable=protected-access</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t32" href="#t32">32</a></span><span class="t">        <span class="str">"xcp_profit"</span><span class="op">:</span> <span class="nam">pool</span><span class="op">.</span><span class="nam">xcp_profit</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t33" href="#t33">33</a></span><span class="t">        <span class="str">"xcp_profit_a"</span><span class="op">:</span> <span class="nam">pool</span><span class="op">.</span><span class="nam">xcp_profit_a</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t34" href="#t34">34</a></span><span class="t">        <span class="str">"last_prices"</span><span class="op">:</span> <span class="nam">pool</span><span class="op">.</span><span class="nam">last_prices</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t34" href="#t34">34</a></span><span class="t">        <span class="str">"last_prices"</span><span class="op">:</span> <span class="nam">pool</span><span class="op">.</span><span class="nam">last_prices</span><span class="op">.</span><span class="nam">copy</span><span class="op">(</span><span class="op">)</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t35" href="#t35">35</a></span><span class="t">        <span class="str">"last_prices_timestamp"</span><span class="op">:</span> <span class="nam">pool</span><span class="op">.</span><span class="nam">last_prices_timestamp</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t36" href="#t36">36</a></span><span class="t">        <span class="str">"not_adjusted"</span><span class="op">:</span> <span class="nam">pool</span><span class="op">.</span><span class="nam">not_adjusted</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t37" href="#t37">37</a></span><span class="t">    <span class="op">}</span>&nbsp;</span><span class="r"></span></p>
@@ -124,9 +124,9 @@
     <p class="run"><span class="n"><a id="t40" href="#t40">40</a></span><span class="t"><span class="key">def</span> <span class="nam">get_stableswap_pool_state</span><span class="op">(</span><span class="nam">pool</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t41" href="#t41">41</a></span><span class="t">    <span class="str">"""Returns pool state for stableswap non-meta pools."""</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t42" href="#t42">42</a></span><span class="t">    <span class="key">return</span> <span class="op">{</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t43" href="#t43">43</a></span><span class="t">        <span class="str">"balances"</span><span class="op">:</span> <span class="nam">pool</span><span class="op">.</span><span class="nam">balances</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t43" href="#t43">43</a></span><span class="t">        <span class="str">"balances"</span><span class="op">:</span> <span class="nam">pool</span><span class="op">.</span><span class="nam">balances</span><span class="op">.</span><span class="nam">copy</span><span class="op">(</span><span class="op">)</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t44" href="#t44">44</a></span><span class="t">        <span class="str">"tokens"</span><span class="op">:</span> <span class="nam">pool</span><span class="op">.</span><span class="nam">tokens</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t45" href="#t45">45</a></span><span class="t">        <span class="str">"admin_balances"</span><span class="op">:</span> <span class="nam">pool</span><span class="op">.</span><span class="nam">admin_balances</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t45" href="#t45">45</a></span><span class="t">        <span class="str">"admin_balances"</span><span class="op">:</span> <span class="nam">pool</span><span class="op">.</span><span class="nam">admin_balances</span><span class="op">.</span><span class="nam">copy</span><span class="op">(</span><span class="op">)</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t46" href="#t46">46</a></span><span class="t">    <span class="op">}</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t47" href="#t47">47</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t48" href="#t48">48</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
@@ -153,8 +153,8 @@
             <a id="indexLink" class="nav" href="index.html">&Hat; index</a> &nbsp; &nbsp;
             <a id="nextFileLink" class="nav" href="d_7485e330971eb008_coingecko_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
-            <a class="nav" href="https://coverage.readthedocs.io/en/7.3.1">coverage.py v7.3.1</a>,
-            created at 2023-09-26 14:36 +0000
+            <a class="nav" href="https://coverage.readthedocs.io/en/7.3.2">coverage.py v7.3.2</a>,
+            created at 2023-10-11 18:29 +0000
         </p>
     </div>
 </footer>
