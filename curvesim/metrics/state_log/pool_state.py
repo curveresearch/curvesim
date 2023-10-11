@@ -25,13 +25,13 @@ def get_cryptoswap_pool_state(pool):
     """Returns pool state for stableswap non-meta pools."""
     return {
         "D": pool.D,
-        "balances": pool.balances,
+        "balances": pool.balances.copy(),
         "tokens": pool.tokens,
-        "price_scale": pool.price_scale,
-        "_price_oracle": pool._price_oracle,  # pylint: disable=protected-access
+        "price_scale": pool.price_scale.copy(),
+        "_price_oracle": pool._price_oracle.copy(),  # pylint: disable=protected-access
         "xcp_profit": pool.xcp_profit,
         "xcp_profit_a": pool.xcp_profit_a,
-        "last_prices": pool.last_prices,
+        "last_prices": pool.last_prices.copy(),
         "last_prices_timestamp": pool.last_prices_timestamp,
         "not_adjusted": pool.not_adjusted,
     }
@@ -40,9 +40,9 @@ def get_cryptoswap_pool_state(pool):
 def get_stableswap_pool_state(pool):
     """Returns pool state for stableswap non-meta pools."""
     return {
-        "balances": pool.balances,
+        "balances": pool.balances.copy(),
         "tokens": pool.tokens,
-        "admin_balances": pool.admin_balances,
+        "admin_balances": pool.admin_balances.copy(),
     }
 
 
