@@ -15,6 +15,7 @@ class StableswapMetaData(PoolMetaDataBase):
                 "n": len(data["coins"]["names"]),
                 "fee": data["params"]["fee"],
                 "fee_mul": data["params"]["fee_mul"],
+                "admin_fee": data["params"]["admin_fee"],
                 "virtual_price": data["reserves"]["virtual_price"],
             }
 
