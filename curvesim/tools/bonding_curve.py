@@ -12,14 +12,19 @@ from numpy import linspace
 from curvesim.pool import CurveCryptoPool, CurveMetaPool, CurvePool, CurveRaiPool
 
 D_UNIT = 10**18
-STABLESWAP = Union[CurvePool, CurveMetaPool, CurveRaiPool]
-CRYPTOSWAP = Union[CurveCryptoPool]
+
+Stableswap = Union[CurvePool, CurveMetaPool, CurveRaiPool]
+Cryptoswap = Union[CurveCryptoPool]
+
+IndexPair = Tuple[int, int]
+NormalizedPoint = Tuple[int, int]
+Point = Tuple[float, float]
 
 
-# pylint: disable-next=too-many-locals, too-many-branches
+# pylint: disable-next=too-many-locals
 def bonding_curve(  # noqa: C901
-    pool: Union[STABLESWAP, CRYPTOSWAP], *, truncate=None, resolution=1000, plot=False
-) -> Dict[Tuple[int, int], List[Tuple[float, float]]]:
+    pool: Union[Stableswap, Cryptoswap], *, truncate=None, resolution=1000, plot=False
+) -> Dict[IndexPair, List[Point]]:
     """
     Computes and optionally plots a pool's bonding curve and current reserves.
 
@@ -28,10 +33,10 @@ def bonding_curve(  # noqa: C901
     pool : CurvePool, CurveMetaPool, CurveRaiPool, or CurveCryptoPool
         The pool object for which the bonding curve is computed.
 
-    truncate : Optional[float], optional (default=None)
+    truncate : float, int, or None, optional (default=None)
         Determines where to truncate the bonding curve. The truncation point is given
         by D*truncate, where D is the total supply of tokens in the pool. Stableswap
-        pools apply 0.0005 by default, and Cryptoswap pools apply 1.0 by default.
+        pools apply 0.0005 by default, and Cryptoswap pools apply 1 by default.
 
     resolution : int, optional (default=1000)
         The number of points to compute along the bonding curve.
@@ -53,77 +58,62 @@ def bonding_curve(  # noqa: C901
     >>> pool = curvesim.pool.get(pool_address)
     >>> pair_to_curve = curvesim.bonding_curve(pool, plot=True)
     """
-
     if isinstance(pool, CurveMetaPool):
-        combos: List[Tuple[int, int]] = [(0, 1)]
+        combos: List[IndexPair] = [(0, 1)]
     else:
         combos = list(combinations(range(pool.n), 2))
 
     xp: List[int] = pool._xp()  # pylint: disable=protected-access
 
-    if isinstance(pool, STABLESWAP):  # type: ignore[misc, arg-type]
-        D: int = pool.D()  # type: ignore[assignment]
+    if isinstance(pool, (CurveMetaPool, CurvePool, CurveRaiPool)):
+        D: int = pool.D()
         if truncate is None:
-            # pylint: disable=pointless-string-statement
-            """
-            This default value works for Stableswap, but will break Cryptoswap.
-            At this value, the graph usually cuts off cleanly around the points where
-            the Stableswap pool would depeg, as one stablecoin balance has reached
-            almost 100% of pool assets.
-            """
+            # This default value works for Stableswap, but will break Cryptoswap.
+            # At this value, the graph usually cuts off cleanly around the points where
+            # the Stableswap pool would depeg, as one stablecoin balance has reached
+            # almost 100% of pool assets.
+
             truncate = 0.0005
-    elif isinstance(pool, CRYPTOSWAP):  # type: ignore[misc, arg-type]
+    elif isinstance(pool, CurveCryptoPool):
         D = pool.D  # Don't recalcuate D - it will rebalance the bonding curve(s)
         if truncate is None:
-            # pylint: disable=pointless-string-statement
-            """
-            A 1.0 value for Cryptoswap extends the graph to a point at which the pool
-            would incur massive losses if it were to rebalance. The further away from
-            (1 / pool.n) truncate is, the more imbalanced the pool is at the end of the
-            graph before rebalancing, if profit is high enough to rebalance.
-            """
-            truncate = 1.0
+            # 1 (int) "just works" for Cryptoswap. It extends the graph to the
+            # point at which one coin, when valued at the price scale around which
+            # liquidity is centered, is pushed to 100% of deposits `D` after starting
+            # at (1 / pool.n) from the most recent rebalance. That should cover a
+            # sufficient domain. The further away from (1 / pool.n) truncate is, the
+            # more imbalanced the pool is at the ends of the graph.
+
+            truncate = 1
     else:
         raise TypeError(f"Bonding curve calculation not supported for {type(pool)}")
 
-    pair_to_curve: Dict[Tuple[int, int], List[Tuple[float, float]]] = {}
-    current_points: Dict[Tuple[int, int], Tuple[float, float]] = {}
+    pair_to_curve: Dict[IndexPair, List[Point]] = {}
+    current_points: Dict[IndexPair, Point] = {}
     for (i, j) in combos:
         truncated_D: int = int(D * truncate)
         x_limit: int = pool.get_y(j, i, truncated_D, xp)
-        xs: List[int] = list(linspace(truncated_D, x_limit, resolution).round())
+        xs: List[int] = list(
+            map(int, linspace(truncated_D, x_limit, resolution).round())
+        )
 
-        curve: List[Tuple[float, float]] = []
+        curve: List[Point] = []
         for x in xs:
-            x_float: float = x / D_UNIT
-            y_float: float = pool.get_y(i, j, int(x), xp) / D_UNIT
-
-            if isinstance(pool, CRYPTOSWAP):  # type: ignore[misc, arg-type]
-                if i > 0:
-                    # type: ignore[union-attr]
-                    x_float = x_float * D_UNIT / pool.price_scale[i - 1]
-
-                if j > 0:
-                    # type: ignore[union-attr]
-                    y_float = y_float * D_UNIT / pool.price_scale[j - 1]
+            y: int = pool.get_y(i, j, x, xp)
+            x_float, y_float = _denormalize((x, y), (i, j), pool)
 
             curve.append((x_float, y_float))
 
         pair_to_curve[(i, j)] = curve
 
-        current_x: float = xp[i] / D_UNIT
-        current_y: float = xp[j] / D_UNIT
+        current_x: int = xp[i]
+        current_y: int = xp[j]
 
-        if isinstance(pool, CRYPTOSWAP):  # type: ignore[misc, arg-type]
-            if i > 0:
-                # type: ignore[union-attr]
-                current_x = current_x * D_UNIT / pool.price_scale[i - 1]
+        current_x_float, current_y_float = _denormalize(
+            (current_x, current_y), (i, j), pool
+        )
 
-            if j > 0:
-                # type: ignore[union-attr]
-                current_y = current_y * D_UNIT / pool.price_scale[j - 1]
-
-        current_points[(i, j)] = (current_x, current_y)
+        current_points[(i, j)] = (current_x_float, current_y_float)
 
     if plot:
         labels: List[str] = pool.coin_names
@@ -135,9 +125,37 @@ def bonding_curve(  # noqa: C901
     return pair_to_curve
 
 
+def _denormalize(
+    normalized_point: NormalizedPoint,
+    index_pair: IndexPair,
+    pool: Union[Stableswap, Cryptoswap],
+) -> Point:
+    """
+    Converts a point made of integer balances (as if following EVM rules) to
+    human-readable float form.
+    """
+    x, y = normalized_point
+    i, j = index_pair
+
+    assert i != j  # dev: x and y axes must use coins of different indices
+
+    if isinstance(pool, (CurveMetaPool, CurvePool, CurveRaiPool)):
+        x_factor: int = D_UNIT
+        y_factor: int = D_UNIT
+    elif isinstance(pool, CurveCryptoPool):
+        x_factor = D_UNIT if i == 0 else pool.price_scale[i - 1]
+        y_factor = D_UNIT if j == 0 else pool.price_scale[j - 1]
+
+    x_float: float = x / x_factor
+    y_float: float = y / y_factor
+    point: Point = (x_float, y_float)
+
+    return point
+
+
 def _plot_bonding_curve(
-    pair_to_curve: Dict[Tuple[int, int], List[Tuple[float, float]]],
-    current_points: Dict[Tuple[int, int], Tuple[float, float]],
+    pair_to_curve: Dict[IndexPair, List[Point]],
+    current_points: Dict[IndexPair, Point],
     labels: List[str],
 ) -> None:
     n: int = len(pair_to_curve)
@@ -146,7 +164,7 @@ def _plot_bonding_curve(
         axs = [axs]
 
     for pair, ax in zip(pair_to_curve, axs):
-        curve: List[Tuple[float, float]] = pair_to_curve[pair]
+        curve: List[Point] = pair_to_curve[pair]
         xs, ys = zip(*curve)
         ax.plot(xs, ys, color="black")  # the entire bonding curve
 
