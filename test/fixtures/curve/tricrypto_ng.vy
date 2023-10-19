@@ -1211,11 +1211,16 @@ def _claim_admin_fees():
     #         `self.balances` yet: pool balances only account for incoming and
     #                  outgoing tokens excluding fees. Following 'gulps' fees:
 
-    for i in range(N_COINS):
-        if coins[i] == WETH20:
-            self.balances[i] = self.balance
-        else:
-            self.balances[i] = ERC20(coins[i]).balanceOf(self)
+    # curvesim: commented out this for loop to avoid overwriting balances to 
+    # empty(uint256[N_COINS]) since we aren't going to instantiate the ERC20 contracts
+    # for the coins in this pool, which would make testing cumbersome. Also, the Python 
+    # pool doesn't gulp.
+
+    # for i in range(N_COINS):
+    #     if coins[i] == WETH20:
+    #         self.balances[i] = self.balance
+    #     else:
+    #         self.balances[i] = ERC20(coins[i]).balanceOf(self)
 
     #            If the pool has made no profits, `xcp_profit == xcp_profit_a`
     #                         and the pool gulps nothing in the previous step.
