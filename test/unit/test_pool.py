@@ -283,3 +283,58 @@ def test_remove_liquidity_one_coin(vyper_3pool, amount, i):
 
     assert coin_balance == expected_coin_balance
     assert lp_supply == expected_lp_supply
+
+
+@given(positive_balance)
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=5,
+    deadline=None,
+)
+def test_remove_liquidity(vyper_3pool, amount):
+    """Test `remove_liquidity` against vyper implementation."""
+    assume(amount < vyper_3pool.totalSupply())
+
+    pool = initialize_pool(vyper_3pool)
+
+    vyper_3pool.remove_liquidity(amount, [0] * pool.n)
+    expected_balances = [vyper_3pool.balances(i) for i in range(3)]
+    expected_lp_supply = vyper_3pool.totalSupply()
+    expected_D = vyper_3pool.D()
+
+    pool.remove_liquidity(amount)
+
+    assert pool.balances == expected_balances
+    assert pool.tokens == expected_lp_supply
+    assert pool.D() == expected_D
+
+
+@given(positive_balance, positive_balance, positive_balance)
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=5,
+    deadline=None,
+)
+def test_remove_liquidity_imbalance(vyper_3pool, x0, x1, x2):
+    """Test `remove_liquidity_imbalance` against vyper implementation."""
+
+    _balances = [x0, x1, x2]
+    rates = [vyper_3pool.rates(i) for i in range(len(_balances))]
+    amounts = [b * 10**18 // r for b, r in zip(_balances, rates)]
+
+    assume(amounts[0] < vyper_3pool.balances(0))
+    assume(amounts[1] < vyper_3pool.balances(1))
+    assume(amounts[2] < vyper_3pool.balances(2))
+
+    pool = initialize_pool(vyper_3pool)
+
+    vyper_3pool.remove_liquidity_imbalance(amounts, 2**256 - 1)
+    expected_balances = [vyper_3pool.balances(i) for i in range(3)]
+    expected_lp_supply = vyper_3pool.totalSupply()
+    expected_D = vyper_3pool.D()
+
+    pool.remove_liquidity_imbalance(amounts)
+
+    assert pool.balances == expected_balances
+    assert pool.tokens == expected_lp_supply
+    assert pool.D() == expected_D

@@ -507,6 +507,103 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: uint256) -> (uint256, uin
 def calc_withdraw_one_coin(_token_amount: uint256, i: uint256) -> uint256:
     return self._calc_withdraw_one_coin(_token_amount, i)[0]
 
+@external
+@nonreentrant('lock')
+def remove_liquidity(_burn_amount: uint256, _min_amounts: uint256[N_COINS]):
+    """
+    This withdrawal method is very safe, does no complex math
+    """
+    total_supply: uint256 = self.token.totalSupply()
+    amounts: uint256[N_COINS] = empty(uint256[N_COINS])
+    amount: uint256 =  _burn_amount - 1 # favor LPs a little bit
+
+    for i in range(N_COINS):
+        old_balance: uint256 = self.balances[i]
+        value: uint256 = old_balance * amount / total_supply
+        assert value >= _min_amounts[i], "Withdrawal resulted in fewer coins than expected"
+        self.balances[i] = old_balance - value
+        amounts[i] = value
+        # sim: comment-out the interaction with coin
+        # ----------------------------------------------------------
+        # response: Bytes[32] = raw_call(
+        #     self.coins[i],
+        #     concat(
+        #         method_id("transfer(address,uint256)"),
+        #         convert(_receiver, bytes32),
+        #         convert(value, bytes32),
+        #     ),
+        #     max_outsize=32,
+        # )
+        # if len(response) > 0:
+        #     assert convert(response, bool)
+
+    total_supply -= _burn_amount
+    self.token.burnFrom(msg.sender, _burn_amount)  # dev: insufficient funds
+
+    log RemoveLiquidity(msg.sender, amounts, empty(uint256[N_COINS]), total_supply)
+
+@external
+@nonreentrant('lock')
+def remove_liquidity_imbalance(
+    _amounts: uint256[N_COINS],
+    _max_burn_amount: uint256,
+) -> uint256:
+    """
+    Remove an imbalanced amount of coins from the pool.
+    """
+    amp: uint256 = self._A()
+    rates: uint256[N_COINS] = RATES
+    old_balances: uint256[N_COINS] = self.balances
+    D0: uint256 = self.get_D_mem(old_balances, amp)
+
+    new_balances: uint256[N_COINS] = old_balances
+    for i in range(N_COINS):
+        amount: uint256 = _amounts[i]
+        if amount != 0:
+            # print(new_balances[i])
+            # print(amount)
+            assert new_balances[i] > amount, 'Foo'
+            new_balances[i] -= amount
+            # sim: comment-out the interaction with coin
+            # ----------------------------------------------------------
+            # response: Bytes[32] = raw_call(
+            #     self.coins[i],
+            #     concat(
+            #         method_id("transfer(address,uint256)"),
+            #         convert(_receiver, bytes32),
+            #         convert(amount, bytes32),
+            #     ),
+            #     max_outsize=32,
+            # )
+            # if len(response) > 0:
+            #     assert convert(response, bool)
+    D1: uint256 = self.get_D_mem(new_balances, amp)
+
+    fees: uint256[N_COINS] = empty(uint256[N_COINS])
+    base_fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
+    for i in range(N_COINS):
+        ideal_balance: uint256 = D1 * old_balances[i] / D0
+        difference: uint256 = 0
+        new_balance: uint256 = new_balances[i]
+        if ideal_balance > new_balance:
+            difference = ideal_balance - new_balance
+        else:
+            difference = new_balance - ideal_balance
+        fees[i] = base_fee * difference / FEE_DENOMINATOR
+        self.balances[i] = new_balance - (fees[i] * self.admin_fee / FEE_DENOMINATOR)
+        new_balances[i] -= fees[i]
+    D2: uint256 = self.get_D_mem(new_balances, amp)
+
+    total_supply: uint256 = self.token.totalSupply()
+    burn_amount: uint256 = ((D0 - D2) * total_supply / D0) + 1
+    assert burn_amount > 1  # dev: zero tokens burned
+    assert burn_amount <= _max_burn_amount
+
+    total_supply -= burn_amount
+    self.token.burnFrom(msg.sender, burn_amount)  # dev: insufficient funds
+    log RemoveLiquidityImbalance(msg.sender, _amounts, fees, D1, total_supply)
+
+    return burn_amount
 
 @external
 @nonreentrant('lock')

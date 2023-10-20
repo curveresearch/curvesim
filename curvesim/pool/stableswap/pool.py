@@ -479,6 +479,86 @@ class CurvePool(Pool):  # pylint: disable=too-many-instance-attributes
         self.tokens -= token_amount
         return dy, dy_fee
 
+    def remove_liquidity(self, _amount, min_amounts=None):
+        """
+        Remove liquidity (burn LP tokens) to receive back part (or all) of
+        the deposited funds.
+
+        Parameters
+        ----------
+        _amount: int
+            Amount LP tokens to burn.
+        min_amounts: List[int], optional
+            Minimum required amounts for each coin.  Default is 0 each.
+
+        Note
+        ----
+        "This withdrawal method is very safe, does no complex math"
+        """
+        min_amounts = min_amounts or [0] * self.n
+
+        total_supply = self.tokens
+        self.tokens -= _amount
+        balances = self.balances
+        amount = _amount - 1  # Make rounding errors favoring other LPs a tiny bit
+
+        for i in range(self.n):
+            d_balance = balances[i] * amount // total_supply
+            assert d_balance >= min_amounts[i]
+            self.balances[i] = balances[i] - d_balance
+
+    # pylint: disable-next=too-many-locals
+    def remove_liquidity_imbalance(self, amounts, max_burn_amount=None):
+        """
+        Withdraw an imbalanced amount of tokens from the pool. Accounts for fees.
+
+        Parameters
+        ----------
+        amounts: list of int
+            Amounts of tokens to withdraw (positive ints)
+        max_burn_amount: int, optional
+            Maximum amount of LP tokens to burn
+
+        Returns
+        -------
+        burn_amount: int
+            Amount of LP token burned in the withdrawal
+        fees: list of int
+            Amount of fees paid
+        """
+        A = self.A
+        old_balances = self.balances
+        D0 = self.get_D_mem(old_balances, A)
+
+        new_balances = self.balances[:]
+        for i in range(self.n):
+            amount = amounts[i]
+            assert amount >= 0  # must input positive ints
+            new_balances[i] -= amount
+        D1 = self.get_D_mem(new_balances, A)
+
+        fees = [0] * self.n
+        _fee = self.fee * self.n // (4 * (self.n - 1))
+        for i in range(self.n):
+            ideal_balance = D1 * old_balances[i] // D0
+            difference = abs(ideal_balance - new_balances[i])
+            fees[i] = _fee * difference // 10**10
+            admin_fee = fees[i] * self.admin_fee // 10**10
+            self.admin_balances[i] += admin_fee
+            self.balances[i] = new_balances[i] - admin_fee  # sans admin fees
+            new_balances[i] -= fees[i]
+
+        D2 = self.get_D_mem(new_balances, A)
+
+        burn_amount = self.tokens * (D0 - D2) // D0 + 1  # should be positive
+        if max_burn_amount:
+            assert burn_amount <= max_burn_amount
+        assert burn_amount >= 0
+
+        self.tokens -= burn_amount
+
+        return burn_amount, fees
+
     # pylint: disable-next=too-many-locals
     def calc_token_amount(self, amounts, use_fee=False):
         """
