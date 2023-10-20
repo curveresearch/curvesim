@@ -448,6 +448,14 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         self.virtual_price = virtual_price
 
     def _claim_admin_fees(self) -> None:
+        """
+        If the pool's profit has increased since the last fee claim, update profit,
+        pool value, and LP token supply to reflect the admin taking its share of the
+        fees by minting itself LP tokens. Otherwise, change nothing.
+
+        Tricrypto-NG and Cryptopool implement this functionality differently, so we
+        copy only Tricrypto-NG's way in this class for consistency.
+        """
         # no gulping logic needed for the python code
         A: int = self.A
         gamma: int = self.gamma
@@ -892,7 +900,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
 
         return dy
 
-    # pylint: disable-next=too-many-locals,too-many-arguments
+    # pylint: disable-next=too-many-locals,too-many-arguments, too-many-branches
     def _calc_withdraw_one_coin(
         self,
         A: int,
@@ -1054,7 +1062,8 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
             price_oracle: List[int] = self.internal_price_oracle()
             price: int = factory_2_coin.lp_price(virtual_price, price_oracle)
         elif self.n == 3:
-            # 3-coin vyper contract uses cached packed oracle prices instead of internal_price_oracle()
+            # 3-coin vyper contract uses cached packed oracle prices instead of
+            # internal_price_oracle()
             virtual_price = self.virtual_price
             price_oracle = self._price_oracle
             price = tricrypto_ng.lp_price(virtual_price, price_oracle)
