@@ -500,10 +500,9 @@ class CurvePool(Pool):  # pylint: disable=too-many-instance-attributes
         total_supply = self.tokens
         self.tokens -= _amount
         balances = self.balances
-        amount = _amount - 1  # Make rounding errors favoring other LPs a tiny bit
 
         for i in range(self.n):
-            d_balance = balances[i] * amount // total_supply
+            d_balance = balances[i] * _amount // total_supply
             assert d_balance >= min_amounts[i]
             self.balances[i] = balances[i] - d_balance
 
@@ -514,7 +513,7 @@ class CurvePool(Pool):  # pylint: disable=too-many-instance-attributes
 
         Parameters
         ----------
-        amounts: list of int
+        amounts: List[int]
             Amounts of tokens to withdraw (positive ints)
         max_burn_amount: int, optional
             Maximum amount of LP tokens to burn
@@ -523,7 +522,7 @@ class CurvePool(Pool):  # pylint: disable=too-many-instance-attributes
         -------
         burn_amount: int
             Amount of LP token burned in the withdrawal
-        fees: list of int
+        fees: List[int]
             Amount of fees paid
         """
         A = self.A

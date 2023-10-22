@@ -515,11 +515,10 @@ def remove_liquidity(_burn_amount: uint256, _min_amounts: uint256[N_COINS]):
     """
     total_supply: uint256 = self.token.totalSupply()
     amounts: uint256[N_COINS] = empty(uint256[N_COINS])
-    amount: uint256 =  _burn_amount - 1 # favor LPs a little bit
 
     for i in range(N_COINS):
         old_balance: uint256 = self.balances[i]
-        value: uint256 = old_balance * amount / total_supply
+        value: uint256 = old_balance * _burn_amount / total_supply
         assert value >= _min_amounts[i], "Withdrawal resulted in fewer coins than expected"
         self.balances[i] = old_balance - value
         amounts[i] = value
@@ -547,7 +546,7 @@ def remove_liquidity(_burn_amount: uint256, _min_amounts: uint256[N_COINS]):
 def remove_liquidity_imbalance(
     _amounts: uint256[N_COINS],
     _max_burn_amount: uint256,
-) -> uint256:
+):
     """
     Remove an imbalanced amount of coins from the pool.
     """
@@ -558,25 +557,7 @@ def remove_liquidity_imbalance(
 
     new_balances: uint256[N_COINS] = old_balances
     for i in range(N_COINS):
-        amount: uint256 = _amounts[i]
-        if amount != 0:
-            # print(new_balances[i])
-            # print(amount)
-            assert new_balances[i] > amount, 'Foo'
-            new_balances[i] -= amount
-            # sim: comment-out the interaction with coin
-            # ----------------------------------------------------------
-            # response: Bytes[32] = raw_call(
-            #     self.coins[i],
-            #     concat(
-            #         method_id("transfer(address,uint256)"),
-            #         convert(_receiver, bytes32),
-            #         convert(amount, bytes32),
-            #     ),
-            #     max_outsize=32,
-            # )
-            # if len(response) > 0:
-            #     assert convert(response, bool)
+        new_balances[i] -= _amounts[i]
     D1: uint256 = self.get_D_mem(new_balances, amp)
 
     fees: uint256[N_COINS] = empty(uint256[N_COINS])
@@ -601,9 +582,25 @@ def remove_liquidity_imbalance(
 
     total_supply -= burn_amount
     self.token.burnFrom(msg.sender, burn_amount)  # dev: insufficient funds
-    log RemoveLiquidityImbalance(msg.sender, _amounts, fees, D1, total_supply)
 
-    return burn_amount
+    # sim: comment-out the interaction with coin
+    # ----------------------------------------------------------
+    # for i in range(N_COINS):
+    #     amount: uint256 = _amounts[i]
+    #     if amount != 0:
+    #         response: Bytes[32] = raw_call(
+    #             self.coins[i],
+    #             concat(
+    #                 method_id("transfer(address,uint256)"),
+    #                 convert(msg.sender, bytes32),
+    #                 convert(amount, bytes32),
+    #             ),
+    #             max_outsize=32,
+    #         ) # dev: failed transfer
+    #         if len(response) > 0:
+    #             assert convert(response, bool)
+
+    log RemoveLiquidityImbalance(msg.sender, _amounts, fees, D1, total_supply)
 
 @external
 @nonreentrant('lock')
