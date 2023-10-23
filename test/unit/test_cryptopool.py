@@ -337,6 +337,7 @@ def test_get_y(vyper_cryptopool, A, gamma, x0, x1, i, delta_perc):
 def test_tweak_price(
     vyper_cryptopool, cryptopool_lp_token, A, gamma, x0, x_perc, price_perc
 ):
+    """Test _tweak_price against vyper implementation."""
     # def test_tweak_price(vyper_cryptopool, cryptopool_lp_token):
     #     A = 4196
     #     gamma = 10000050055
@@ -392,7 +393,7 @@ def test_tweak_price(
         pool._tweak_price(A, gamma, xp, 1, 0, 0)
     except Exception as err:
         assert isinstance(err, CalculationError)
-    pool._tweak_price(A, gamma, xp, 1, last_price, 0)
+    pool._tweak_price(A, gamma, xp, 1, last_price, None)
     vyper_cryptopool.eval(f"self.tweak_price({A_gamma}, {xp}, {last_price}, 0)")
 
     assert pool.price_scale == [vyper_cryptopool.price_scale()]
@@ -412,7 +413,7 @@ def test_tweak_price(
     old_scale = pool.price_scale
     old_virtual_price = pool.virtual_price
 
-    pool._tweak_price(A, gamma, xp, 1, last_price, 0)
+    pool._tweak_price(A, gamma, xp, 1, last_price, None)
     vyper_cryptopool.eval(f"self.tweak_price({A_gamma}, {xp}, {last_price}, 0)")
 
     # check the pools are the same
@@ -440,7 +441,7 @@ def test_tweak_price(
     xp[0] = xp[0] + pool.allowed_extra_profit // 10
 
     # omitting price will calculate the spot price in `tweak_price`
-    pool._tweak_price(A, gamma, xp, 1, None, 0)
+    pool._tweak_price(A, gamma, xp, 1, None, None)
     vyper_cryptopool.eval(f"self.tweak_price({A_gamma}, {xp}, 0, 0)")
 
     assert pool.price_scale == [vyper_cryptopool.price_scale()]
@@ -459,7 +460,7 @@ def test_tweak_price(
     xp[0] = xp[0] * 115 // 100
 
     # omitting price will calculate the spot price in `tweak_price`
-    pool._tweak_price(A, gamma, xp, 1, None, 0)
+    pool._tweak_price(A, gamma, xp, 1, None, None)
     vyper_cryptopool.eval(f"self.tweak_price({A_gamma}, {xp}, 0, 0)")
 
     assert pool.price_scale == [vyper_cryptopool.price_scale()]

@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 """
 Mainly a module to house the `CurveCryptoPool`, a cryptoswap implementation in Python.
 """
@@ -294,9 +295,9 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         A: int,
         gamma: int,
         _xp: List[int],
-        i: int,
+        i: Optional[int],
         p_i: Optional[int],
-        new_D: int,
+        new_D: Optional[int],
         K0_prev: int = 0,
     ) -> None:
         """
@@ -304,10 +305,16 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
             - EMA price update: price_oracle
             - Profit counters: D, virtual_price, xcp_profit
             - price adjustment: price_scale
-                - If p_i is None, the spot price will be used as the last price
 
         Also claims admin fees if appropriate (enough profit and price scale
-        and oracle is close enough).
+        and oracle are close enough).
+
+        Note
+        -----
+        - Always pass in p_i and i as None if self.n == 3. i and p_i are only
+        meaningful when self.n == 2 because all last prices are calculated at once when
+        self.n == 3.
+        - If p_i is None, the spot price(s) will be used as the last price(s).
         """
         price_oracle: List[int] = self._price_oracle
         last_prices: List[int] = self.last_prices
@@ -342,9 +349,12 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
             self._price_oracle = price_oracle
             self.last_prices_timestamp = block_timestamp
 
-        D_unadjusted: int = new_D  # Withdrawal methods know new D already
-        if new_D == 0:
-            D_unadjusted = newton_D(A, gamma, _xp, K0_prev)
+        if new_D is None:
+            D_unadjusted: int = newton_D(A, gamma, _xp, K0_prev)
+        elif new_D > 0:
+            D_unadjusted = new_D  # Withdrawal methods know new D already
+        else:
+            raise CalculationError(f"new_D cannot be {new_D}.")
 
         if p_i is None:
             if n_coins == 2:
@@ -361,20 +371,29 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
                     )
                     for k in range(1, n_coins)
                 ]
-            else:
+            elif n_coins == 3:
                 last_prices = get_p(_xp, D_unadjusted, A, gamma)
                 last_prices = [
                     last_p * p // 10**18
                     for last_p, p in zip(last_prices, price_scale)
                 ]
         elif p_i > 0:
-            # Save the last price
-            if i > 0:
-                last_prices[i - 1] = p_i
-            else:
-                # If 0th price changed - change all prices instead
-                for k in range(n_coins - 1):
-                    last_prices[k] = last_prices[k] * 10**18 // p_i
+            if n_coins == 2:
+                if i is None:
+                    raise CalculationError(
+                        "i cannot be None when p_i is provided for 2-coin pools."
+                    )
+                if i > 0:
+                    # Save the last price
+                    last_prices[i - 1] = p_i
+                else:
+                    # If 0th price changed - change all prices instead
+                    for k in range(n_coins - 1):
+                        last_prices[k] = last_prices[k] * 10**18 // p_i
+            elif n_coins == 3:
+                raise CalculationError(
+                    "Always pass p_i (last price) as None for 3-coin pools."
+                )
         else:
             raise CalculationError(f"p_i (last price) cannot be {p_i}.")
 
@@ -396,6 +415,10 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
             virtual_price = 10**18 * xcp // total_supply
 
             if virtual_price < old_virtual_price:
+                raise CryptoPoolError("Loss")
+
+            # 3-coin cryptopool does this, but 2-coin cryptopool doesn't
+            if n_coins == 3 and virtual_price == old_virtual_price:
                 raise CryptoPoolError("Loss")
 
             xcp_profit = old_xcp_profit * virtual_price // old_virtual_price
@@ -610,7 +633,6 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         A = self.A
         gamma = self.gamma
         xp: List[int] = self.balances.copy()
-        ix: int = j
 
         y: int = xp[j]
         xp[i] += dx
@@ -645,14 +667,14 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         xp[j] = y
 
         p: Optional[int] = None
+        ix: Optional[int] = None
         K0_prev: int = 0
         if self.n == 2:
             if dx > 10**5 and dy > 10**5:
+                ix = j
                 _dx: int = dx * prec_i
                 _dy: int = dy * prec_j
-                if i != 0 and j != 0:
-                    p = self.last_prices[i - 1] * _dx // _dy
-                elif i == 0:
+                if i == 0:
                     p = _dx * 10**18 // _dy
                 else:  # j == 0
                     p = _dy * 10**18 // _dx
@@ -660,7 +682,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         else:
             K0_prev = y_out[1]
 
-        self._tweak_price(A, gamma, xp, ix, p, 0, K0_prev)
+        self._tweak_price(A, gamma, xp, ix, p, None, K0_prev)
 
         return dy, fee
 
@@ -765,7 +787,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
             self.tokens += d_token
 
             p: Optional[int] = None
-            ix: int = -1
+            ix: Optional[int] = None
             if n_coins == 2 and d_token > 10**5:
                 nonzero_indices = [i for i, a in enumerate(amounts) if a != 0]
                 if len(nonzero_indices) == 1:
@@ -913,7 +935,11 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         self.balances[i] -= dy
         self.tokens -= token_amount
 
-        self._tweak_price(A, gamma, xp, i, p, D)
+        ix: Optional[int] = None
+        if self.n == 2:
+            ix = i
+
+        self._tweak_price(A, gamma, xp, ix, p, D)
 
         return dy
 
