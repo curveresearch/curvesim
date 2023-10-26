@@ -89,12 +89,3 @@ class PriceVolume(PriceSampler):
             volumes = volumes.to_dict()
 
             yield PriceVolumeSample(price_timestamp, prices, volumes)  # type:ignore
-
-    def total_volumes(self):
-        """
-        Returns
-        -------
-        pandas.Series
-            Total volume for each pairwise coin combination, summed accross timestamps.
-        """
-        return self.volumes.sum().to_dict()
