@@ -4,7 +4,7 @@ Functions to get historical volume for Curve pools.
 
 from datetime import datetime, timezone
 from math import comb
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 from pandas import DataFrame, Series
 
@@ -13,27 +13,33 @@ from curvesim.network.curve_prices import get_pool_pair_volume_sync
 from curvesim.pool_data.metadata import PoolMetaDataInterface
 from curvesim.utils import get_event_loop, get_pairs
 
+from .metadata import get_metadata
+
 logger = get_logger(__name__)
 
 
 def get_pool_volume(
-    pool_metadata: PoolMetaDataInterface,
+    metadata_or_address: Union[PoolMetaDataInterface, str],
     days: int = 60,
     end: Optional[int] = None,
+    chain: Optional[str] = "mainnet",
 ) -> DataFrame:
     """
     Gets historical daily volume for each pair of coins traded in a Curve pool.
 
     Parameters
     ----------
-    pool_metadata: PoolMetaDataInterface
-        Pool metadata for the pool of interest.
+    metadata_or_address: PoolMetaDataInterface or str
+        Pool metadata or pool address to fetch metadata.
 
     days: int, defaults to 60
         Number of days to pull volume data for.
 
     end: int, defaults to start of current date
         Posix timestamp of the last time to pull data for.
+
+    chain: str, default "mainnet"
+        Chain to use if pool address is provided to fetch metadata.
 
     Returns
     -------
@@ -43,6 +49,11 @@ def get_pool_volume(
     """
 
     logger.info("Fetching historical pool volume...")
+
+    if isinstance(metadata_or_address, str):
+        pool_metadata: PoolMetaDataInterface = get_metadata(metadata_or_address, chain)
+    else:
+        pool_metadata = metadata_or_address
 
     pair_data = _get_pair_data(pool_metadata)
     start_ts, end_ts = _process_timestamps(days, end)

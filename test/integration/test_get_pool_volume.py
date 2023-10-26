@@ -1,4 +1,4 @@
-from curvesim.pipelines.vol_limited_arb.pool_volume import get_pool_volume
+from curvesim.pool_data import get_pool_volume
 from curvesim.pool_data.metadata import PoolMetaData
 from curvesim.utils import get_pairs
 
@@ -21,6 +21,17 @@ def test_get_pool_volume():
 
     for metadata in metadata_list:
         pool_metadata = PoolMetaData(metadata)
-        volumes = get_pool_volume(pool_metadata, days=2, end=1698292800)
-        assert len(volumes) == 2
-        assert volumes.columns.to_list() == get_pairs(pool_metadata.coin_names)
+
+        # Test using metadata
+        volumes1 = get_pool_volume(pool_metadata, days=2, end=1698292800)
+        assert len(volumes1) == 2
+        assert volumes1.columns.to_list() == get_pairs(pool_metadata.coin_names)
+
+        # Test using address and chain
+        address = pool_metadata.address
+        chain = pool_metadata.chain
+        volumes2 = get_pool_volume(address, chain=chain, days=2, end=1698292800)
+        assert len(volumes2) == 2
+        assert volumes2.columns.to_list() == get_pairs(pool_metadata.coin_names)
+
+        assert all(volumes1 == volumes2)

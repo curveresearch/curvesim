@@ -1,6 +1,6 @@
 from math import comb
 
-from curvesim.pipelines.vol_limited_arb.pool_volume import _get_pair_data
+from curvesim.pool_data.queries.pool_volume import _get_pair_data
 
 
 class DummyMetadata:

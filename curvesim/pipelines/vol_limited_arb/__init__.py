@@ -9,10 +9,10 @@ from curvesim.iterators.price_samplers import PriceVolume
 from curvesim.logging import get_logger
 from curvesim.metrics import init_metrics, make_results
 from curvesim.pool import get_sim_pool
+from curvesim.pool_data import get_pool_volume
 
 from .. import run_pipeline
 from ..common import DEFAULT_METRICS
-from .pool_volume import get_pool_volume
 from .strategy import VolumeLimitedStrategy
 
 logger = get_logger(__name__)
