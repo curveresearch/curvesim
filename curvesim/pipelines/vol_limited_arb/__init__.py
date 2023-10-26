@@ -9,7 +9,6 @@ from curvesim.iterators.price_samplers import PriceVolume
 from curvesim.logging import get_logger
 from curvesim.metrics import init_metrics, make_results
 from curvesim.pool import get_sim_pool
-from curvesim.pool_data.cache import PoolDataCache
 
 from .. import run_pipeline
 from ..common import DEFAULT_METRICS
@@ -22,7 +21,6 @@ logger = get_logger(__name__)
 # pylint: disable-next=too-many-locals
 def pipeline(
     pool_metadata,
-    pool_data_cache=None,
     *,
     variable_params=None,
     fixed_params=None,
@@ -93,10 +91,7 @@ def pipeline(
         cpu_count = os.cpu_count()
         ncpu = cpu_count if cpu_count is not None else 1
 
-    if pool_data_cache is None:
-        pool_data_cache = PoolDataCache(pool_metadata, days=days, end=end)
-
-    pool = get_sim_pool(pool_metadata, pool_data_cache=pool_data_cache)
+    pool = get_sim_pool(pool_metadata)
 
     # pylint: disable-next=abstract-class-instantiated
     param_sampler = ParameterizedPoolIterator(pool, variable_params, fixed_params)

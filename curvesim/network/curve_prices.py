@@ -112,8 +112,8 @@ async def get_pool_pair_volume(
 
 
 def _chain_from_alias(chain):
-    if chain in CHAIN_ALIASES:
-        chain = CHAIN_ALIASES.get(chain, chain)
+    if chain in CHAIN_ALIASES:  # pylint: disable=consider-using-get
+        chain = CHAIN_ALIASES[chain]
 
     if chain != "ethereum":
         raise CurvesimValueError(

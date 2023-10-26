@@ -5,6 +5,7 @@ Removed
 - Removed PriceVolume.total_volumes()
 - Removed volume from PoolDataCache
 - Removed convex subgraph volume query
+- Removed PoolDataCache
 
 Added
 -----
