@@ -9,7 +9,10 @@ class DummyMetadata:
         self.coin_names = coin_names
         self.coins = coin_addresses
         self.n = n
-        self._dict = {"basepool": {"address": basepool_address}}
+        self._dict = {
+            "basepool": {"address": basepool_address},
+            "coins": coin_addresses,
+        }
 
 
 def make_dummy_metadata(n):

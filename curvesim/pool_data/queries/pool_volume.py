@@ -76,14 +76,23 @@ def get_pool_volume(
 
 
 def _get_pair_data(pool_metadata) -> List[Tuple[str, Tuple[str, str], Tuple[str, str]]]:
+    coin_addresses = _get_coin_addresses(pool_metadata)
     pair_symbols = get_pairs(pool_metadata.coin_names)
-    pair_addresses = get_pairs(pool_metadata.coins)
+    pair_addresses = get_pairs(coin_addresses)
 
     if isinstance(pool_metadata.n, list):
         pool_addresses = _get_metapool_addresses(pool_metadata)
     else:
         pool_addresses = [pool_metadata.address] * comb(pool_metadata.n, 2)
     return list(zip(pool_addresses, pair_addresses, pair_symbols))
+
+
+def _get_coin_addresses(pool_metadata) -> List[str]:
+    # pylint: disable=protected-access
+    if "wrapper" in pool_metadata._dict["coins"]:
+        return pool_metadata._dict["coins"]["wrapper"]["addresses"]
+
+    return pool_metadata.coins
 
 
 def _get_metapool_addresses(pool_metadata) -> List[str]:
