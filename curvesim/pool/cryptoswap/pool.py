@@ -448,31 +448,41 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         self.virtual_price = virtual_price
 
     def _claim_admin_fees(self) -> None:
+        """
+        If the pool's profit has increased since the last fee claim, update profit,
+        pool value, and LP token supply to reflect the admin taking its share of the
+        fees by minting itself LP tokens. Otherwise, change nothing.
+
+        Tricrypto-NG and Cryptopool implement this functionality differently, so we
+        copy only Tricrypto-NG's way in this class for consistency.
+        """
         # no gulping logic needed for the python code
+        A: int = self.A
+        gamma: int = self.gamma
+
         xcp_profit: int = self.xcp_profit
         xcp_profit_a: int = self.xcp_profit_a
+        total_supply: int = self.tokens
+
+        if xcp_profit <= xcp_profit_a or total_supply < 10**18:
+            return
 
         vprice: int = self.virtual_price
 
-        if xcp_profit > xcp_profit_a:
-            fees: int = (xcp_profit - xcp_profit_a) * self.admin_fee // (2 * 10**10)
-            if fees > 0:
-                frac: int = vprice * 10**18 // (vprice - fees) - 10**18
-                d_supply = self.tokens * frac // 10**18
-                self.tokens += d_supply
-                xcp_profit -= fees * 2
-                self.xcp_profit = xcp_profit
+        fees: int = (xcp_profit - xcp_profit_a) * self.admin_fee // (2 * 10**10)
 
-        A = self.A
-        gamma = self.gamma
-        totalSupply = self.tokens
+        if fees > 0:
+            frac: int = vprice * 10**18 // (vprice - fees) - 10**18
+            d_supply: int = total_supply * frac // 10**18
+            self.tokens += d_supply
+            xcp_profit -= fees * 2
+            self.xcp_profit = xcp_profit
 
-        D: int = factory_2_coin.newton_D(A, gamma, self._xp())
+        D: int = newton_D(A, gamma, self._xp())
         self.D = D
-        self.virtual_price = 10**18 * self._get_xcp(D) // totalSupply
 
-        if xcp_profit > xcp_profit_a:
-            self.xcp_profit_a = xcp_profit
+        self.virtual_price = 10**18 * self._get_xcp(D) // self.tokens
+        self.xcp_profit_a = xcp_profit
 
     def get_dy(self, i: int, j: int, dx: int) -> int:
         """
@@ -797,6 +807,8 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
 
         assert d_token >= min_mint_amount, "Slippage"
 
+        self._claim_admin_fees()
+
         return d_token
 
     def _calc_token_fee(self, amounts: List[int], xp: List[int]) -> int:
@@ -829,6 +841,8 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         "This withdrawal method is very safe, does no complex math"
         """
         min_amounts = min_amounts or [0, 0]
+
+        self._claim_admin_fees()
 
         total_supply: int = self.tokens
         self.tokens -= _amount
@@ -871,6 +885,9 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         D: int = 0
         p: Optional[int] = None
         xp = [0] * self.n
+
+        self._claim_admin_fees()
+
         dy, p, D, xp = self._calc_withdraw_one_coin(
             A, gamma, token_amount, i, False, True
         )
@@ -883,7 +900,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
 
         return dy
 
-    # pylint: disable-next=too-many-locals,too-many-arguments
+    # pylint: disable-next=too-many-locals,too-many-arguments, too-many-branches
     def _calc_withdraw_one_coin(
         self,
         A: int,
@@ -1045,7 +1062,8 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
             price_oracle: List[int] = self.internal_price_oracle()
             price: int = factory_2_coin.lp_price(virtual_price, price_oracle)
         elif self.n == 3:
-            # 3-coin vyper contract uses cached packed oracle prices instead of internal_price_oracle()
+            # 3-coin vyper contract uses cached packed oracle prices instead of
+            # internal_price_oracle()
             virtual_price = self.virtual_price
             price_oracle = self._price_oracle
             price = tricrypto_ng.lp_price(virtual_price, price_oracle)

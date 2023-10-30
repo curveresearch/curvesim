@@ -582,3 +582,63 @@ def test_calc_withdraw_one_coin(vyper_tricrypto, amount, i):
 
     expected_balances = [vyper_tricrypto.balances(i) for i in range(n_coins)]
     assert pool.balances == expected_balances
+
+
+def test_claim_admin_fees(vyper_tricrypto, tricrypto_math):
+    """Test admin fee claim against vyper implementation."""
+    update_cached_values(vyper_tricrypto, tricrypto_math)
+    pool = initialize_pool(vyper_tricrypto)
+
+    # vyper_tricrypto's xcp_profit starts out > xcp_profit_a
+    actual_xcp_profit = pool.xcp_profit
+    xcp_profit_a = pool.xcp_profit_a
+    D = pool.D
+    tokens = pool.tokens
+    vprice = pool.virtual_price
+
+    reduced_xcp_profit = pool.xcp_profit_a - 1
+    vyper_tricrypto.eval(f"self.xcp_profit = {reduced_xcp_profit}")
+    pool.xcp_profit = reduced_xcp_profit
+
+    vyper_tricrypto.claim_admin_fees()
+    pool._claim_admin_fees()
+
+    # shouldn't have enough profit to claim admin fees
+    assert (
+        pool.xcp_profit <= pool.xcp_profit_a
+        and vyper_tricrypto.xcp_profit() <= vyper_tricrypto.xcp_profit_a()
+    )
+    assert D == pool.D == vyper_tricrypto.D()
+    assert tokens == pool.tokens == vyper_tricrypto.totalSupply()
+    assert reduced_xcp_profit == pool.xcp_profit == vyper_tricrypto.xcp_profit()
+    assert xcp_profit_a == pool.xcp_profit_a == vyper_tricrypto.xcp_profit_a()
+    assert vprice == pool.virtual_price == vyper_tricrypto.virtual_price()
+
+    vyper_tricrypto.eval(f"self.xcp_profit = {actual_xcp_profit}")
+    pool.xcp_profit = actual_xcp_profit
+
+    # should have enough profit to claim admin fees
+    assert (
+        pool.xcp_profit > pool.xcp_profit_a
+        and vyper_tricrypto.xcp_profit() > vyper_tricrypto.xcp_profit_a()
+    )
+
+    expected_fees = (
+        (pool.xcp_profit - pool.xcp_profit_a) * pool.admin_fee // (2 * 10**10)
+    )
+    expected_token_frac = vprice * 10**18 // (vprice - expected_fees) - 10**18
+    expected_token_supply = pool.tokens + (
+        pool.tokens * expected_token_frac // 10**18
+    )
+
+    expected_xcp_profit = pool.xcp_profit - expected_fees * 2
+    expected_vprice = 10**18 * pool._get_xcp(pool.D) // expected_token_supply
+
+    vyper_tricrypto.claim_admin_fees()
+    pool._claim_admin_fees()
+
+    assert D == pool.D == vyper_tricrypto.D()  # D shouldn't change
+    assert expected_token_supply == pool.tokens == vyper_tricrypto.totalSupply()
+    assert expected_xcp_profit == pool.xcp_profit == vyper_tricrypto.xcp_profit()
+    assert expected_xcp_profit == pool.xcp_profit_a == vyper_tricrypto.xcp_profit_a()
+    assert expected_vprice == pool.virtual_price == vyper_tricrypto.virtual_price()
