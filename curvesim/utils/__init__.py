@@ -7,6 +7,9 @@ __all__ = [
     "cache",
     "override",
     "datetime",
+    "is_address",
+    "to_address",
+    "Address",
 ]
 
 import asyncio
@@ -19,6 +22,7 @@ from dotenv import load_dotenv
 
 from curvesim.exceptions import MissingEnvVarError
 
+from .address import Address, is_address, to_address
 from .decorators import cache, override
 
 load_dotenv()
