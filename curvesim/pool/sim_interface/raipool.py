@@ -3,6 +3,7 @@ from curvesim.pool.stableswap.raipool import CurveRaiPool
 from .metapool import SimCurveMetaPool
 
 
+# pylint: disable=too-many-ancestors
 class SimCurveRaiPool(CurveRaiPool, SimCurveMetaPool):
     """Sim interface for Curve RAI metapool"""
 
