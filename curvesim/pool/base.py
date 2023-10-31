@@ -25,6 +25,8 @@ class Pool(SnapshotMixin):
     # snapshotting will not work
     snapshot_class: Optional[Type[Snapshot]] = None
 
+    __slots__ = ("metadata",)
+
     @property
     def name(self):
         """Descriptive name for this pool"""
