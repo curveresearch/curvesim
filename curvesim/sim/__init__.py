@@ -23,7 +23,6 @@ def autosim(
     pool=None,
     chain="mainnet",
     pool_metadata=None,
-    pool_data_cache=None,
     env="prod",
     **kwargs,
 ):
@@ -55,10 +54,6 @@ def autosim(
 
         .. note::
             Either `pool` or `pool_metadata` must be provided.
-
-    pool_data_cache: PoolDataCache, optional
-        Cached data used in sims.  Useful for replication of results and
-        avoiding re-fetches of data.
 
     A: int or iterable of int, optional
         Amplification coefficient.  This controls the curvature of the
@@ -149,7 +144,6 @@ def autosim(
 
     results = volume_limited_arbitrage(
         pool_metadata,
-        pool_data_cache,
         variable_params=p_var,
         fixed_params=p_fixed,
         **kwargs,

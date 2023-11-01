@@ -210,7 +210,6 @@ def get_sim_pool(
     balanced=True,
     balanced_base=True,
     custom_kwargs=None,
-    pool_data_cache=None,
     end_ts=None,
     env="prod",
 ):
@@ -238,10 +237,6 @@ def get_sim_pool(
 
     custom_kwargs: dict, optional
         Used for passing additional kwargs to the pool's `__init__`.
-
-    pool_data_cache: PoolDataCache, optional
-        Pass in custom type that pulls/holds market prices and volume.
-        This will be deprecated in the future.
 
     Returns
     -------
@@ -281,7 +276,7 @@ def get_sim_pool(
     custom_keys = POOL_TYPE_TO_CUSTOM_KWARGS.get(pool_type, [])
     for key in custom_keys:
         try:
-            init_kwargs[key] = custom_kwargs.get(key) or getattr(pool_data_cache, key)
+            init_kwargs[key] = custom_kwargs.get(key)
         except KeyError as e:
             raise CurvesimValueError(f"'{pool_type.__name__}' needs '{key}'.") from e
 

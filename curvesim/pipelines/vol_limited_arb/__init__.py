@@ -9,11 +9,10 @@ from curvesim.iterators.price_samplers import PriceVolume
 from curvesim.logging import get_logger
 from curvesim.metrics import init_metrics, make_results
 from curvesim.pool import get_sim_pool
-from curvesim.pool_data.cache import PoolDataCache
+from curvesim.pool_data import get_pool_volume
 
 from .. import run_pipeline
 from ..common import DEFAULT_METRICS
-from ..utils import compute_volume_multipliers
 from .strategy import VolumeLimitedStrategy
 
 logger = get_logger(__name__)
@@ -22,7 +21,6 @@ logger = get_logger(__name__)
 # pylint: disable-next=too-many-locals
 def pipeline(
     pool_metadata,
-    pool_data_cache=None,
     *,
     variable_params=None,
     fixed_params=None,
@@ -31,7 +29,6 @@ def pipeline(
     src="coingecko",
     data_dir="data",
     vol_mult=None,
-    vol_mode=1,
     ncpu=None,
     end=None,
 ):
@@ -83,16 +80,6 @@ def pipeline(
 
             {('DAI', 'USDC'): 0.1, ('DAI', 'USDT'): 0.1, ('USDC', 'USDT'): 0.1}
 
-
-    vol_mode : int, default=1
-        Modes for limiting trade volume.
-
-        1: limits trade volumes proportionally to market volume for each pair
-
-        2: limits trade volumes equally across pairs
-
-        3: mode 2 for trades with meta-pool asset, mode 1 for basepool-only trades
-
     ncpu : int, default=os.cpu_count()
         Number of cores to use.
 
@@ -104,10 +91,7 @@ def pipeline(
         cpu_count = os.cpu_count()
         ncpu = cpu_count if cpu_count is not None else 1
 
-    if pool_data_cache is None:
-        pool_data_cache = PoolDataCache(pool_metadata, days=days, end=end)
-
-    pool = get_sim_pool(pool_metadata, pool_data_cache=pool_data_cache)
+    pool = get_sim_pool(pool_metadata)
 
     # pylint: disable-next=abstract-class-instantiated
     param_sampler = ParameterizedPoolIterator(pool, variable_params, fixed_params)
@@ -116,15 +100,10 @@ def pipeline(
     )
 
     if vol_mult is None:
-        total_pool_volume = pool_data_cache.volume
-        total_market_volume = price_sampler.total_volumes()
-        vol_mult = compute_volume_multipliers(
-            total_pool_volume,
-            total_market_volume,
-            pool_metadata.n,
-            pool_metadata.pool_type,
-            mode=vol_mode,
-        )
+        pool_volume = get_pool_volume(pool_metadata, days=days, end=end)
+        vol_mult = pool_volume.sum() / price_sampler.volumes.sum()
+        logger.info("Volume Multipliers:\n%s", vol_mult.to_string())
+        vol_mult = vol_mult.to_dict()
 
     metrics = metrics or DEFAULT_METRICS
     metrics = init_metrics(metrics, pool=pool)

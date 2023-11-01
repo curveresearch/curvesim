@@ -1,7 +1,10 @@
+"""
+Functions to get pool metadata for Curve pools.
+"""
+from curvesim.network.subgraph import pool_snapshot_sync, symbol_address_sync
+from curvesim.network.web3 import underlying_coin_info_sync
+from curvesim.pool_data.metadata import PoolMetaData
 from curvesim.utils import get_event_loop
-
-from ..network.subgraph import pool_snapshot_sync, symbol_address_sync
-from ..network.web3 import underlying_coin_info_sync
 
 
 def from_address(address, chain, env="prod", end_ts=None):
@@ -50,3 +53,32 @@ def from_symbol(symbol, chain, env):
     data = from_address(address, chain, env)
 
     return data
+
+
+def get_metadata(
+    address,
+    chain="mainnet",
+    env="prod",
+    end_ts=None,
+):
+    """
+    Pulls pool state and metadata from daily snapshot.
+
+    Parameters
+    ----------
+    address : str
+        Pool address prefixed with “0x”.
+
+    chain : str
+        Chain/layer2 identifier, e.g. “mainnet”, “arbitrum”, “optimism".
+
+    Returns
+    -------
+    :class:`~curvesim.pool_data.metadata.PoolMetaDataInterface`
+
+    """
+    # TODO: validate function arguments
+    metadata_dict = from_address(address, chain, env=env, end_ts=end_ts)
+    metadata = PoolMetaData(metadata_dict)
+
+    return metadata

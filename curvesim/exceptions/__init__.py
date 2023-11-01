@@ -59,6 +59,10 @@ class NetworkError(CurvesimException):
     """Error for network subpackage."""
 
 
+class ApiResultError(NetworkError):
+    """Raised when API results aren't as expected."""
+
+
 class SimPoolError(CurvesimException):
     """Error in a SimPool operation."""
 

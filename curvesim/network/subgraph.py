@@ -2,7 +2,6 @@
 Network connector for subgraphs
 """
 
-from asyncio import gather
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
@@ -159,91 +158,6 @@ async def symbol_address(symbol, chain, env="prod"):
     addr = to_checksum_address(data["pools"][0]["address"])
 
     return addr
-
-
-async def _volume(address, chain, env, days=60, end=None):
-    if end is None:
-        t_end = datetime.now(timezone.utc).replace(
-            hour=0, minute=0, second=0, microsecond=0
-        )
-    else:
-        t_end = datetime.fromtimestamp(end, tz=timezone.utc)
-    logger.info("Volume end date: %s", t_end)
-    t_start = t_end - timedelta(days=days)
-
-    # pylint: disable=consider-using-f-string
-    q = """
-        {
-          swapVolumeSnapshots(
-            orderBy: timestamp,
-            orderDirection: desc,
-            where:
-              {
-                pool: "%s"
-                period: "86400"
-                timestamp_gte: %d
-                timestamp_lt: %d
-              }
-          )
-          {
-            volume
-            timestamp
-          }
-        }
-    """ % (
-        address.lower(),
-        int(t_start.timestamp()),
-        int(t_end.timestamp()),
-    )
-
-    data = await convex(chain, q, env)
-    snapshots = data["swapVolumeSnapshots"]
-    num_snapshots = len(snapshots)
-
-    if num_snapshots < days:
-        logger.warning("Only %s/%s days of pool volume returned.", num_snapshots, days)
-
-    return snapshots
-
-
-async def volume(addresses, chain, env="prod", days=60, end=None):
-    """
-    Retrieves historical volume for a pool or multiple pools.
-
-    Parameters
-    ----------
-    addresses : str or iterable of str
-        The pool address(es).
-
-    chain : str
-        The blockchain the pool or pools are on.
-
-    days : int, default=60
-        Number of days to fetch data for.
-
-    Returns
-    -------
-    list of float
-        A list of total volumes for each day.
-
-    """
-    if isinstance(addresses, str):
-        r = await _volume(addresses, chain, env, days=days, end=end)
-        vol = [float(e["volume"]) for e in r]
-
-    else:
-        tasks = []
-        for addr in addresses:
-            tasks.append(_volume(addr, chain, env, days=days, end=end))
-
-        r = await gather(*tasks)
-
-        vol = []
-        for _r in r:
-            _vol = [float(e["volume"]) for e in _r]
-            vol.append(_vol)
-
-    return vol
 
 
 async def _pool_snapshot(address, chain, env, end_ts=None):
@@ -453,7 +367,6 @@ async def pool_snapshot(address, chain, env="prod", end_ts=None):
 
 convex_sync = sync(convex)
 symbol_address_sync = sync(symbol_address)
-volume_sync = sync(volume)
 pool_snapshot_sync = sync(pool_snapshot)
 
 
@@ -564,6 +477,3 @@ if __name__ == "__main__":
     print("Symbol:", symbol)
     address = symbol_address_sync(symbol, chain)
     print("Address:", address)
-    _volume_sync = sync(_volume)
-    volumes = _volume_sync(address, chain, days=2)
-    print("Volumes:", volumes)
