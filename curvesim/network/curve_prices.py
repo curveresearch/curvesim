@@ -19,8 +19,8 @@ CHAIN_ALIASES = {"mainnet": "ethereum"}
 
 async def _get_pool_pair_volume(
     pool_address,
-    base_token_address,
-    quote_token_address,
+    main_token_address,
+    reference_token_address,
     start_ts,
     end_ts,
     *,
@@ -29,11 +29,13 @@ async def _get_pool_pair_volume(
 ):
     chain = _chain_from_alias(chain)
     pool_address = to_checksum_address(pool_address)
+    main_token_address = to_checksum_address(main_token_address)
+    reference_token_address = to_checksum_address(reference_token_address)
 
     url = URL + f"volume/{chain}/{pool_address}"
     params = {
-        "main_token": quote_token_address,
-        "reference_token": base_token_address,
+        "main_token": main_token_address,
+        "reference_token": reference_token_address,
         "start": start_ts,
         "end": end_ts,
         "interval": interval,
@@ -46,7 +48,8 @@ async def _get_pool_pair_volume(
         raise ApiResultError(
             "No historical volume returned for\n"
             f"Pool: '{pool_address}', Chain: '{chain}',\n"
-            f"Tokens: (base: {base_token_address}, quote: {quote_token_address}),\n"
+            f"Tokens: (main: {main_token_address}, "
+            f"reference: {reference_token_address}),\n"
             f"Timestamps: (start: {start_ts}, end: {end_ts})"
         ) from e
 
@@ -55,8 +58,8 @@ async def _get_pool_pair_volume(
 
 async def get_pool_pair_volume(
     pool_address: str,
-    base_token_address: str,
-    quote_token_address: str,
+    main_token_address: str,
+    reference_token_address: str,
     start_ts: int,
     end_ts: int,
     *,
@@ -71,11 +74,11 @@ async def get_pool_pair_volume(
     pool_address: str
         The Curve pool's address.
 
-    base_token_address: str
-        Address for the base token.
+    main_token_address: str
+        Address for the token volume will be denominated in.
 
-    quote_token_address: str
-        Address for the quote token. Volumes are returned in units of
+    reference_token_address: str
+        Address for the second token in the trading pair.
 
     start_ts: int
         Posix timestamp (UTC) for start of query period.
@@ -97,8 +100,8 @@ async def get_pool_pair_volume(
     """
     data: List[dict] = await _get_pool_pair_volume(
         pool_address,
-        base_token_address,
-        quote_token_address,
+        main_token_address,
+        reference_token_address,
         start_ts,
         end_ts,
         chain=chain,
