@@ -15,9 +15,10 @@ pool data such as :class:`~curvesim.pool_data.metadata.PoolMetaDataInterface`;
 instantiates a param_sampler, price_sampler, and strategy; and invokes `run_pipeline`,
 returning its result metrics.
 """
-from abc import ABC
+from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from multiprocessing import Pool as cpu_pool
+from typing import Callable, List, Type
 
 from curvesim.iterators.param_samplers.parameterized_pool_iterator import (
     ParameterizedPoolIterator,
@@ -28,9 +29,16 @@ from curvesim.logging import (
     get_logger,
     multiprocessing_logging_queue,
 )
+from curvesim.metrics import init_metrics
+from curvesim.metrics.base import Metric
 from curvesim.metrics.results import make_results
+from curvesim.metrics.state_log.log import StateLog
 from curvesim.pipelines.common import DEFAULT_METRICS
+from curvesim.pipelines.vol_limited_arb.trader import VolumeLimitedArbitrageur
 from curvesim.pool import get_sim_pool
+from curvesim.pool_data.metadata.base import PoolMetaDataInterface
+from curvesim.templates.log import Log
+from curvesim.templates.trader import Trader
 from curvesim.utils import dataclass
 
 logger = get_logger(__name__)
@@ -96,73 +104,60 @@ class SingleSourceReferenceMarket(ReferenceMarket):
         ...
 
 
-class Pipeline:
+@dataclass
+class RunConfig(ABC):
+    sim_assets: List[SimAsset]
 
-    # These classes should be injected in child classes
-    # to create the desired behavior.
-    reference_market_class = None
-    trader_class: Optional[Type[Trader]] = None
-    log_class: Optional[Type[Log]] = None
 
+@dataclass
+class StrategyConfig(ABC):
+    sim_pool_factory: Callable
+    reference_market_class: Type[ReferenceMarket]
+    trader_class: Type[Trader]
+    log_class: Type[Log]
+    metrics: List[Metric]
+
+
+class VolumeLimitedArbitrageConfig(PipelineConfig):
     sim_pool_factory = get_sim_pool
+    reference_market_class = SingleSourceReferenceMarket
+    trader_class = VolumeLimitedArbitrageur
+    log_class = StateLog
+    metrics = DEFAULT_METRICS
 
-    def __init__(self, pool_metadata, metrics=None):
-        pool = get_sim_pool(pool_metadata)
-        self.pool = pool
-        metrics = metrics or DEFAULT_METRICS
-        self.metrics = init_metrics(metrics, pool=pool)
 
-        self.run_outputs = []
+class Simulation:
+    pass
 
-        trader = self.trader_class(pool)
-        log = self.log_class(pool, self.metrics)
+
+class VolumeLimitedArbitrage(Simulation, VolumeLimitedArbitrageConfig):
+    def __init__(pool_metadata):
+        self.pool_metadata = pool_metadata
 
     def run(self, variable_params, fixed_params, ncpu=4):
-        pool = self.pool
-        strategy = self.strategy
         metrics = self.metrics
         sim_pool_factory = self.sim_pool_factory
         pool_metadata = self.pool_metadata
 
-        reference_market = SingleSourceReferenceMarket(sim_assets, data_source, clock)
+        reference_market = self.reference_market_class(sim_assets, data_source, clock)
         configured_pools = configured_pool_sequence(
-            sim_pool_factory, pool_metadata, variable_params
+            sim_pool_factory, pool_metadata, fixed_params, variable_params
         )
 
         executor = self.execute_run
-        data_per_run, data_per_trade, summary_data = run_pipeline(
-            configured_pools, reference_market, executor, ncpu
-        )
-        self.run_outputs.append((data_per_run, data_per_trade, summary_data))
+
+        output = run_pipeline(configured_pools, reference_market, executor, ncpu)
+
+        data_per_run, data_per_trade, summary_data = output
+        self.run_outputs.append(output)
 
         results = make_results(*output, metrics)
         self.results.append(results)
 
-    def execute_run(self, pool, parameters, reference_market):
-        """
-        Computes and executes trades for all the timesteps in a single run.
-
-        Parameters
-        ----------
-        pool : :class:`~curvesim.pipelines.templates.SimPool`
-            The pool to be traded against.
-
-        parameters : dict
-            Current pool parameters from the param_sampler (only used for
-            logging/display).
-
-        price_sampler : iterable
-            Iterable that for each timestep returns market data used by
-            the trader.
-
-
-        Returns
-        -------
-        metrics : tuple of lists
-
-        """
+    def execute_run(self, pool, parameters, reference_market, clock):
         trader = self.trader_class(pool)
-        log = self.log
+        metrics = init_metrics(self.metrics, pool=pool)
+        log = self.log_class(pool, metrics)
 
         parameters = parameters or "no parameter changes"
         logger.info("[%s] Simulating with %s", pool.symbol, parameters)
@@ -262,8 +257,15 @@ def wrapped_executor(executor, logging_queue, *args):
     return executor(*args)
 
 
-def configured_pool_sequence(sim_pool_factory, pool_metadata, variable_params):
+def configured_pool_sequence(
+    sim_pool_factory,
+    pool_metadata,
+    fixed_params,
+    variable_params,
+):
     parameter_sequence = make_parameter_sequence(variable_params)
     for parameters in parameter_sequence:
-        sim_pool = sim_pool_factory(pool_metadata, parameters)
+        custom_kwargs = fixed_params.copy()
+        custom_kwargs.update(parameters)
+        sim_pool = sim_pool_factory(pool_metadata, custom_kwargs)
         yield sim_pool
