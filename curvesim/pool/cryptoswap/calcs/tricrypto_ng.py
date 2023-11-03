@@ -101,6 +101,7 @@ def get_y(  # noqa: complexity: 18
     else:
         _c = gamma2 * _c_neg // D * ANN // 27 // A_MULTIPLIER
     c += _c
+    c_is_neg = c < 0
 
     # (10**18 + gamma)**2/27
     d: int = (10**18 + gamma) ** 2 // 27
@@ -131,6 +132,8 @@ def get_y(  # noqa: complexity: 18
     additional_prec: int = 0
     if b_is_neg:
         b *= -1
+    if c_is_neg:
+        c *= -1
     if abs(a) > abs(b):
         additional_prec = abs(a // b)
         a = a * additional_prec // divider
@@ -145,6 +148,8 @@ def get_y(  # noqa: complexity: 18
         d = d // additional_prec // divider
     if b_is_neg:
         b *= -1
+    if c_is_neg:
+        c *= -1
     print("python:", a)
     print("python:", b)
     print("python:", c)
