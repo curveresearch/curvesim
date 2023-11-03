@@ -145,13 +145,19 @@ def get_y(  # noqa: complexity: 18
         d = d // additional_prec // divider
     if b_is_neg:
         b *= -1
+    print("python:", a)
+    print("python:", b)
+    print("python:", c)
 
     # 3*a*c/b - b
-    _3ac: int = 3 * a * c
+    _3ac: int = (3 * a) * c
+    print("python:", _3ac)
+    # if sign(_3ac) != sign(b):
     if b_is_neg:
         delta0: int = -(_3ac // -b) - b
     else:
         delta0 = _3ac // b - b
+    print("python:", delta0)
 
     # 9*a*c/b - 2*b - 27*a**2/b*d/b
     if b_is_neg:
@@ -167,8 +173,10 @@ def get_y(  # noqa: complexity: 18
 
     sqrt_val: int = 0
     if sqrt_arg > 0:
+        print("not falling back")
         sqrt_val = isqrt(sqrt_arg)
     else:
+        print("sqrt_arg is negative... falling back to newton_y")
         return [_newton_y(ANN, gamma, x, D, i), 0]
 
     b_cbrt: int = 0
@@ -176,27 +184,32 @@ def get_y(  # noqa: complexity: 18
         b_cbrt = _cbrt(b)
     else:
         b_cbrt = -_cbrt(-b)
+    print("python:", b_cbrt)
 
     second_cbrt: int = 0
     if delta1 > 0:
         second_cbrt = _cbrt((delta1 + sqrt_val) // 2)
     else:
         second_cbrt = -_cbrt(-(delta1 - sqrt_val) // 2)
+    print("python:", second_cbrt)
 
     # b_cbrt*b_cbrt/10**18*second_cbrt/10**18
     if second_cbrt < 0:
         C1: int = -(b_cbrt * b_cbrt // 10**18 * -second_cbrt // 10**18)
     else:
         C1 = b_cbrt * b_cbrt // 10**18 * second_cbrt // 10**18
+    print("python:", C1)
 
     # (b + b*delta0/C1 - C1)/3
     if sign(b * delta0) != sign(C1):
         root_K0: int = (b + -(b * delta0 // -C1) - C1) // 3
     else:
         root_K0 = (b + b * delta0 // C1 - C1) // 3
+    print("python:", root_K0)
 
     # D*D/27/x_k*D/x_j*root_K0/a
     root: int = D * D // 27 // x_k * D // x_j * root_K0 // a
+    print("python:", root)
 
     out: List[int] = [int(root), int(10**18 * root_K0 // a)]
 
