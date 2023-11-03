@@ -156,15 +156,10 @@ def get_y(
         b = unsafe_div(unsafe_div(b, additional_prec), divider)
         c = unsafe_div(unsafe_div(c, additional_prec), divider)
         d = unsafe_div(unsafe_div(d, additional_prec), divider)
-    print("vyper:", a)
-    print("vyper:", b)
-    print("vyper:", c)
 
     # 3*a*c/b - b
     _3ac: int256 = unsafe_mul(3, a) * c
-    print("vyper:", _3ac)
     delta0: int256 = unsafe_div(_3ac, b) - b
-    print("vyper:", delta0)
 
     # 9*a*c/b - 2*b - 27*a**2/b*d/b
     delta1: int256 = (
@@ -190,7 +185,6 @@ def get_y(
         b_cbrt = convert(self._cbrt(convert(b, uint256)), int256)
     else:
         b_cbrt = -convert(self._cbrt(convert(-b, uint256)), int256)
-    print("vyper:", b_cbrt)
 
     second_cbrt: int256 = 0
     if delta1 > 0:
@@ -204,18 +198,15 @@ def get_y(
             self._cbrt(unsafe_div(convert(-(delta1 - sqrt_val), uint256), 2)),
             int256
         )
-    print("vyper:", second_cbrt)
 
     # b_cbrt*b_cbrt/10**18*second_cbrt/10**18
     C1: int256 = unsafe_div(
         unsafe_div(b_cbrt * b_cbrt, 10**18) * second_cbrt,
         10**18
     )
-    print("vyper:", C1)
 
     # (b + b*delta0/C1 - C1)/3
     root_K0: int256 = unsafe_div(b + b * delta0 / C1 - C1, 3)
-    print("vyper:", root_K0)
 
     # D*D/27/x_k*D/x_j*root_K0/a
     root: int256 = unsafe_div(
@@ -225,7 +216,6 @@ def get_y(
         ) * root_K0,
         a
     )
-    print("vyper:", root)
 
     out: uint256[2] = [
         convert(root, uint256),
