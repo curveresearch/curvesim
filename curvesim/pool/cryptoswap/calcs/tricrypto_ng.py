@@ -164,10 +164,14 @@ def get_y(  # noqa: complexity: 18
     print("python:", delta0)
 
     # 9*a*c/b - 2*b - 27*a**2/b*d/b
-    if b_is_neg:
-        delta1: int = -(3 * _3ac // -b) - 2 * b - 27 * a**2 // -b * d // -b
+    if sign(_3ac) != sign(b):
+        delta1: int = -(3 * _3ac // -b) - 2 * b
     else:
-        delta1 = 3 * _3ac // b - 2 * b - 27 * a**2 // b * d // b
+        delta1 = 3 * _3ac // b - 2 * b
+    if b_is_neg:
+        delta1 -= 27 * a**2 // -b * d // -b
+    else:
+        delta1 -= 27 * a**2 // b * d // b
 
     # delta1**2 + 4*delta0**2/b*delta0
     if b_is_neg:
