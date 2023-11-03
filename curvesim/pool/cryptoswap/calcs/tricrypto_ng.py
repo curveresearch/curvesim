@@ -157,8 +157,7 @@ def get_y(  # noqa: complexity: 18
     # 3*a*c/b - b
     _3ac: int = (3 * a) * c
     print("python:", _3ac)
-    # if sign(_3ac) != sign(b):
-    if b_is_neg:
+    if sign(_3ac) != sign(b):
         delta0: int = -(_3ac // -b) - b
     else:
         delta0 = _3ac // b - b
