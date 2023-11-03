@@ -6,6 +6,7 @@ from scipy.optimize import root_scalar
 
 from curvesim.logging import get_logger
 from curvesim.metrics import metrics as Metrics
+from curvesim.templates.trader import ArbTrade
 
 logger = get_logger(__name__)
 DEFAULT_METRICS = [
@@ -55,25 +56,22 @@ def get_arb_trades(pool, prices):
     trades = []
 
     for pair in prices:
-        i, j = pair
+        coin_in, coin_out, target_price = _get_arb_direction(pair, pool, prices[pair])
 
-        if pool.price(i, j) - prices[pair] > 0:
-            price = prices[pair]
-            coin_in, coin_out = i, j
-        elif pool.price(j, i) - 1 / prices[pair] > 0:
-            price = 1 / prices[pair]
-            coin_in, coin_out = j, i
-        else:
-            trades.append((0, pair, prices[pair]))
+        lower_bound = pool.get_min_trade_size(coin_in)
+        profit_per_unit = post_trade_price_error(
+            lower_bound, coin_in, coin_out, target_price
+        )
+        if profit_per_unit <= 0:
+            trades.append(ArbTrade(coin_in, coin_out, 0, target_price))
             continue
 
-        high = pool.get_max_trade_size(coin_in, coin_out)
-        bounds = (0, high)
+        upper_bound = pool.get_max_trade_size(coin_in, coin_out)
         try:
             res = root_scalar(
                 post_trade_price_error,
-                args=(coin_in, coin_out, price),
-                bracket=bounds,
+                args=(coin_in, coin_out, target_price),
+                bracket=(lower_bound, upper_bound),
                 method="brentq",
             )
             size = int(res.root)
@@ -85,11 +83,26 @@ def get_arb_trades(pool, prices):
                 coin_in,
                 coin_out,
                 pool_price,
-                price,
-                pool_price - price,
+                target_price,
+                pool_price - target_price,
             )
             size = 0
 
-        trades.append((size, (coin_in, coin_out), price))
+        trades.append(ArbTrade(coin_in, coin_out, size, target_price))
 
     return trades
+
+
+def _get_arb_direction(pair, pool, market_price):
+    i, j = pair
+    price_error_i = pool.price(i, j) - market_price
+    price_error_j = pool.price(j, i) - 1 / market_price
+
+    if price_error_i >= price_error_j:
+        target_price = market_price
+        coin_in, coin_out = i, j
+    else:
+        target_price = 1 / market_price
+        coin_in, coin_out = j, i
+
+    return coin_in, coin_out, target_price
