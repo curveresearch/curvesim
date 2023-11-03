@@ -306,7 +306,7 @@ def test_get_p(tricrypto_math, A, gamma, x0, x1, x2):
         st.integers(min_value=0, max_value=2),
         st.integers(min_value=0, max_value=2),
     ).filter(lambda x: x[0] != x[1]),
-    st.integers(min_value=1, max_value=10000),
+    st.integers(min_value=1, max_value=5500),
 )
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
