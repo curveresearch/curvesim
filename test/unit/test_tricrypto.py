@@ -6,7 +6,7 @@ Tests are against the tricrypto-ng contract.
 from itertools import permutations
 
 import boa
-from hypothesis import HealthCheck, assume, given, reproduce_failure, settings
+from hypothesis import HealthCheck, assume, given, settings
 from hypothesis import strategies as st
 
 from curvesim.pool import CurveCryptoPool
@@ -296,7 +296,6 @@ def test_get_p(tricrypto_math, A, gamma, x0, x1, x2):
     assert p == expected_p
 
 
-@reproduce_failure("6.54.6", b"AXicY2BgYGAEQjAFIxh8GDlZGBmBbD5G5v8ABlUBcw==")
 @given(
     amplification_coefficient,
     gamma_coefficient,
