@@ -954,13 +954,12 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         assert i < self.n  # dev: coin out of range
 
         xx: List[int] = self.balances.copy()
-        D0: int = 0
         precisions: List[int] = self.precisions
 
         xp: List[int] = self._xp_mem(xx)
 
         if update_D:
-            D0 = newton_D(A, gamma, xp)
+            D0: int = newton_D(A, gamma, xp)
         else:
             D0 = self.D
 
@@ -999,16 +998,12 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
 
         # Price calc
         p: Optional[int] = None
-        if self.n == 2:
-            if calc_price and dy > 10**5 and token_amount > 10**5:
+        if self.n == 2 and calc_price:
+            if dy > 10**5 and token_amount > 10**5:
                 # p_i = dD / D0 * sum'(p_k * x_k) / (dy - dD / D0 * y0)
-                S: int = 0
-                precision: int = precisions[0]
-                if i == 1:
-                    S = xx[0] * precisions[0]
-                    precision = precisions[1]
-                else:
-                    S = xx[1] * precisions[1]
+                j = (i + 1) % 2
+                precision: int = precisions[i]
+                S: int = xx[j] * precisions[j]
                 S = S * dD // D0
                 p = S * PRECISION // (dy * precision - dD * xx[i] * precision // D0)
                 if i == 0:
@@ -1062,8 +1057,8 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
             price_oracle: List[int] = self.internal_price_oracle()
             price: int = factory_2_coin.lp_price(virtual_price, price_oracle)
         elif self.n == 3:
-            # 3-coin vyper contract uses cached packed oracle prices instead of
-            # internal_price_oracle()
+            # 3-coin vyper contract uses cached packed oracle prices
+            # instead of internal_price_oracle()
             virtual_price = self.virtual_price
             price_oracle = self._price_oracle
             price = tricrypto_ng.lp_price(virtual_price, price_oracle)

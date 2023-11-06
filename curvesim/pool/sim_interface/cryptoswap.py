@@ -13,13 +13,12 @@ from ..cryptoswap.calcs.tricrypto_ng import _cbrt
 from .asset_indices import AssetIndicesMixin
 
 
+# pylint: disable-next=too-many-instance-attributes
 class SimCurveCryptoPool(SimPool, AssetIndicesMixin, CurveCryptoPool):
     """
     Class to enable use of CurveCryptoPool in simulations by exposing
     a generic interface (`SimPool`).
     """
-
-    # pylint: disable=too-many-instance-attributes
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
