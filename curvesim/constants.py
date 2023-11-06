@@ -18,7 +18,7 @@ class StrEnum(str, Enum):
         >>> str(Chain.MAINNET)
         'Chain.MAINNET'
 
-        so we need to explicit use the value.
+        so we need to explicitly use the value.
 
         This behaves like the builtin `StrEnum` (available in 3.11).
         """

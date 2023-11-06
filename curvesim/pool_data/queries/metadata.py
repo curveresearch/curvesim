@@ -75,8 +75,9 @@ def get_metadata(
     chain : str, Chain
         Chain/layer2 identifier, e.g. “mainnet”, “arbitrum”, “optimism".
 
-    end_ts : int
-        Posix timestamp
+    end_ts : int, optional
+        Datetime cutoff, given as Unix timestamp, to pull last snapshot before.
+        The default value is current datetime, which will pull the most recent snapshot.
 
     Returns
     -------
