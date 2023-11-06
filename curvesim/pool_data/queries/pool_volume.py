@@ -13,7 +13,7 @@ from curvesim.network.curve_prices import get_pool_pair_volume_sync
 from curvesim.pool_data.metadata import PoolMetaDataInterface
 from curvesim.utils import get_event_loop, get_pairs
 
-from .metadata import get_metadata
+from .metadata import Chain, get_metadata
 
 logger = get_logger(__name__)
 
@@ -22,7 +22,7 @@ def get_pool_volume(
     metadata_or_address: Union[PoolMetaDataInterface, str],
     days: int = 60,
     end: Optional[int] = None,
-    chain: Optional[str] = "mainnet",
+    chain: Union[str, Chain] = "mainnet",
 ) -> DataFrame:
     """
     Gets historical daily volume for each pair of coins traded in a Curve pool.
