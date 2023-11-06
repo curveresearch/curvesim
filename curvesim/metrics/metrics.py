@@ -99,7 +99,7 @@ class ArbMetrics(PricingMetric):
 
         profits = self._compute_profits(prices, trade_data.trades)
         price_error = trade_data.price_errors.apply(
-            lambda errors: sum(abs(e) for e in errors)
+            lambda errors: sum(abs(e) for e in errors.values())
         )
 
         results = concat([profits, price_error], axis=1)
