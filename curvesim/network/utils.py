@@ -1,35 +1,12 @@
 """Common or miscellaneous utility functions"""
+
+__all__ = ["sync"]
+
 import asyncio
 import functools
 from concurrent.futures import ThreadPoolExecutor
 
-from gmpy2 import mpz
-
 from curvesim.utils import get_event_loop
-
-
-def compute_D(xp, A):
-    """Standalone `D` calc neede for some data processing."""
-    A = int(A)
-    xp = list(map(int, xp))
-    n = len(xp)
-    S = sum(xp)
-    Dprev = 0
-    D = S
-    Ann = A * n
-    D = mpz(D)
-    Ann = mpz(Ann)
-    while abs(D - Dprev) > 1:
-        D_P = D
-        for x in xp:
-            D_P = D_P * D // (n * x)
-        Dprev = D
-        D = (Ann * S + D_P * n) * D // ((Ann - 1) * D + (n + 1) * D_P)
-
-    D = int(D)
-
-    return D
-
 
 # "extra" event loop for special but important use-cases,
 # such as running inside a Jupyter Notebook, which already
