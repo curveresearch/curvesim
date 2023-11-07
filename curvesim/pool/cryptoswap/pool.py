@@ -709,7 +709,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         """
         return self.exchange(i, j, dx, min_dy)
 
-    # pylint: disable-next=too-many-locals
+    # pylint: disable-next=too-many-locals, too-many-statements
     def add_liquidity(
         self,
         amounts: List[int],
@@ -730,7 +730,8 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         int
             Amount of LP tokens minted.
         """
-        assert amounts[0] > 0 or amounts[1] > 0  # dev: no coins to add
+        assert all(x >= 0 for x in amounts)
+        assert sum(amounts) > 0
 
         A = self.A
         gamma = self.gamma
@@ -745,7 +746,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         amountsp: List[int] = [xp[i] - xp_old[i] for i in range(n_coins)]
 
         old_D: int = self.D
-        D: int = factory_2_coin.newton_D(A, gamma, xp)
+        D: int = newton_D(A, gamma, xp)
 
         d_token: int = 0
         token_supply: int = self.tokens
@@ -763,16 +764,15 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
             token_supply += d_token
             self.tokens += d_token
 
-            # Calculate price:
-            # p_i * (dx_i - dtoken / token_supply * xx_i)
-            # = sum{k!=i}(p_k * (dtoken / token_supply * xx_k - dx_k))
-            # only ix is nonzero
             p: Optional[int] = None
             ix: int = -1
-            if d_token > 10**5:
+            if n_coins == 2 and d_token > 10**5:
                 nonzero_indices = [i for i, a in enumerate(amounts) if a != 0]
                 if len(nonzero_indices) == 1:
-                    # not reached in current tests, which never have nonzero amounts
+                    # Calculate price for 2 coins:
+                    # p_i * (dx_i - dtoken / token_supply * xx_i)
+                    # = sum{k!=i}(p_k * (dtoken / token_supply * xx_k - dx_k))
+                    # only ix is nonzero
                     prec: List[int] = self.precisions
                     last_prices: List[int] = self.last_prices
                     balances: List[int] = self.balances
@@ -803,6 +803,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
             self.D = D
             self.virtual_price = 10**18
             self.xcp_profit = 10**18
+            self.xcp_profit_a = 10**18
             self.tokens += d_token
 
         assert d_token >= min_mint_amount, "Slippage"

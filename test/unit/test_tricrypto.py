@@ -585,6 +585,38 @@ def test_calc_withdraw_one_coin(vyper_tricrypto, amount, i):
     assert pool.balances == expected_balances
 
 
+@given(positive_balance, positive_balance, positive_balance)
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=5,
+    deadline=None,
+)
+def test_add_liquidity(vyper_tricrypto, x0, x1, x2):
+    n_coins = 3
+    assume(0.02 < x0 / x1 < 50)
+    assume(0.02 < x0 / x2 < 50)
+    assume(0.02 < x1 / x2 < 50)
+    xp = [x0, x1, x2]
+
+    precisions = vyper_tricrypto.precisions()
+    price_scale = [vyper_tricrypto.price_scale(i) for i in range(n_coins - 1)]
+    amounts = get_real_balances(xp, precisions, price_scale)
+
+    pool = initialize_pool(vyper_tricrypto)
+
+    expected_lp_amount = vyper_tricrypto.add_liquidity(amounts, 0)
+    expected_balances = [vyper_tricrypto.balances(i) for i in range(n_coins)]
+    expected_lp_supply = vyper_tricrypto.totalSupply()
+    expected_D = vyper_tricrypto.D()
+
+    lp_amount = pool.add_liquidity(amounts)
+
+    assert lp_amount == expected_lp_amount
+    assert pool.balances == expected_balances
+    assert pool.tokens == expected_lp_supply
+    assert pool.D == expected_D
+
+
 def test_claim_admin_fees(vyper_tricrypto, tricrypto_math):
     """Test admin fee claim against vyper implementation."""
     update_cached_values(vyper_tricrypto, tricrypto_math)

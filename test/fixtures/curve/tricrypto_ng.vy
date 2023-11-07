@@ -582,33 +582,34 @@ def add_liquidity(
 
         if amounts[i] > 0:
 
-            if coins[i] == WETH20:
+            # curvesim: comment out unneeded coin transfer logic
+            # if coins[i] == WETH20:
 
-                self._transfer_in(
-                    coins[i],
-                    amounts[i],
-                    0,  # <-----------------------------------
-                    msg.value,  #                             | No callbacks
-                    empty(address),  # <----------------------| for
-                    empty(bytes32),  # <----------------------| add_liquidity.
-                    msg.sender,  #                            |
-                    empty(address),  # <-----------------------
-                    use_eth
-                )
+            #     self._transfer_in(
+            #         coins[i],
+            #         amounts[i],
+            #         0,  # <-----------------------------------
+            #         msg.value,  #                             | No callbacks
+            #         empty(address),  # <----------------------| for
+            #         empty(bytes32),  # <----------------------| add_liquidity.
+            #         msg.sender,  #                            |
+            #         empty(address),  # <-----------------------
+            #         use_eth
+            #     )
 
-            else:
+            # else:
 
-                self._transfer_in(
-                    coins[i],
-                    amounts[i],
-                    0,
-                    0,  # <----------------- mvalue = 0 if coin is not WETH20.
-                    empty(address),
-                    empty(bytes32),
-                    msg.sender,
-                    empty(address),
-                    False  # <-------- use_eth is False if coin is not WETH20.
-                )
+            #     self._transfer_in(
+            #         coins[i],
+            #         amounts[i],
+            #         0,
+            #         0,  # <----------------- mvalue = 0 if coin is not WETH20.
+            #         empty(address),
+            #         empty(bytes32),
+            #         msg.sender,
+            #         empty(address),
+            #         False  # <-------- use_eth is False if coin is not WETH20.
+            #     )
 
             amountsp[i] = xp[i] - xp_old[i]
 
