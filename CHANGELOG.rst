@@ -1,4 +1,72 @@
 
+.. _changelog-0.5.0.rc0:
+
+0.5.0.rc0 — 2023-11-06
+======================
+
+Removed
+-------
+
+- Removed modes for volume multiplier; changes from the default multipliers
+  must be specified precisely through arguments.
+- Volume query is now done through the new `curve-prices` API instead of the
+  Curve subgraph.  This means currently only Mainnet is supported for this query. 
+- RAI3CRV pool is currently unsupported by simulation pipelines. It will
+  be reimplemented along with Stableswap-NG pools.
+- `PoolDataCache` has been removed.
+
+
+Added
+-----
+
+- Use Curve Prices API for the volume query (Mainnet only).
+- Added `PriceDepth` (liquidity density) metric for Cryptoswap pools.
+
+- Fully enabled 3-coin cryptoswap functionality based on Tricrypto-NG code:
+  - NG oracle behavior
+  - `lp_price`
+  - `get_dy`
+  - `calc_withdraw_one_coin`
+  - `add_liquidity`
+  - `remove_liquidity` (now returns amounts withdrawn)
+  - `remove_liquidity_one_coin`
+
+- Stableswap pools now have:
+  - `remove_liquidity`
+  - `remove_liquidity_imbalance`
+
+- `curvesim.bonding_curve` now handles Cryptoswap pools.
+
+
+Changed
+-------
+
+- Improved liquidity density calculation for robustness across pool types
+
+- Enabled `CurveCryptoPool._claim_admin_fees`. For maintainability, Tricrypto_ng's
+  implementation and usage patterns, which are in `test/fixtures/curve/tricrypto_ng.vy`,
+  are used for both 2-coin and 3-coin Cryptoswap pools.
+
+- Volume multipliers now computed individually for each asset pair
+
+- Arbitrage optimizers exclude trades smaller than a pool's minimum trade size
+  from optimization. This reduces variability in optimization and prevents some
+  potential errors.
+
+- Price error changes:
+  - normalized by target price
+  - now a dict mapping trading pair to each error value
+
+
+Fixed
+-----
+
+- Cryptoswap state snapshotting was updated to include additional price and profit-related
+  attributes.  This is necessary for proper repegging mechanics during simulations.
+- Fixed handling of integer signed division in Tricrypto-NG's `get_y` calc.
+
+
+
 .. _changelog-0.5.0.b2:
 
 0.5.0.b2 — 2023-09-12
