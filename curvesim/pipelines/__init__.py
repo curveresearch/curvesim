@@ -18,7 +18,7 @@ returning its result metrics.
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from multiprocessing import Pool as cpu_pool
-from typing import Callable, List, Type
+from typing import Callable, Dict, List, Type
 
 from curvesim.iterators.param_samplers.parameterized_pool_iterator import (
     ParameterizedPoolIterator,
@@ -70,6 +70,16 @@ class DataSource:
     pass
 
 
+class FileSource:
+    """
+    Loads a given csv or json file containing
+    market data.
+    """
+
+    def __init__(self, filepath):
+        ...
+
+
 class SimAsset:
     pass
 
@@ -105,22 +115,41 @@ class SingleSourceReferenceMarket(ReferenceMarket):
 
 
 @dataclass
+class SimMarketParameters:
+    initial_parameters: Dict
+    run_parameters: List[Dict]
+
+
+@dataclass
 class RunConfig(ABC):
     sim_assets: List[SimAsset]
+    clock: Clock
+    data_sources: List[DataSource]
+    asset_to_source: Dict[SimAsset, DataSource]
+    sim_market_parameters
+
+
+class AutoConfig(RunConfig):
+    """
+    Convenience class to autogenerate the SimAssets from Curve pool metadata.
+    """
+
+    def __init__(self, pool_metadata, source_config):
+        self._pool_metadata = pool_metadata
 
 
 @dataclass
 class StrategyConfig(ABC):
-    sim_pool_factory: Callable
-    reference_market_class: Type[ReferenceMarket]
+    sim_market_factory: Callable
+    reference_market_factory: Type[ReferenceMarket]
     trader_class: Type[Trader]
     log_class: Type[Log]
     metrics: List[Metric]
 
 
-class VolumeLimitedArbitrageConfig(PipelineConfig):
-    sim_pool_factory = get_sim_pool
-    reference_market_class = SingleSourceReferenceMarket
+class VolumeLimitedArbitrageConfig(StrategyConfig):
+    sim_market_factory = get_sim_pool
+    reference_market_factory = SingleSourceReferenceMarket
     trader_class = VolumeLimitedArbitrageur
     log_class = StateLog
     metrics = DEFAULT_METRICS
@@ -130,23 +159,24 @@ class Simulation:
     pass
 
 
-class VolumeLimitedArbitrage(Simulation, VolumeLimitedArbitrageConfig):
-    def __init__(pool_metadata):
-        self.pool_metadata = pool_metadata
-
+class VolumeLimitedArbitrage(Simulation, VolumeLimitedArbitrageConfig, AutoConfig):
     def run(self, variable_params, fixed_params, ncpu=4):
+        # strategy config
         metrics = self.metrics
-        sim_pool_factory = self.sim_pool_factory
-        pool_metadata = self.pool_metadata
+        sim_market_factory = self.sim_market_factory
+        # run config
+        sim_assets = self.sim_assets
+        clock = self.clock
+        data_source = self.data_sources[0]
 
-        reference_market = self.reference_market_class(sim_assets, data_source, clock)
-        configured_pools = configured_pool_sequence(
-            sim_pool_factory, pool_metadata, fixed_params, variable_params
+        reference_market = self.reference_market_factory(sim_assets, data_source, clock)
+        configured_markets = configured_market_sequence(
+            sim_market_factory, sim_market_args, fixed_params, variable_params
         )
 
         executor = self.execute_run
 
-        output = run_pipeline(configured_pools, reference_market, executor, ncpu)
+        output = run_pipeline(configured_markets, reference_market, executor, ncpu)
 
         data_per_run, data_per_trade, summary_data = output
         self.run_outputs.append(output)
@@ -190,7 +220,7 @@ class VolumeLimitedArbitrage(Simulation, VolumeLimitedArbitrageConfig):
         return prices
 
 
-def run_pipeline(configured_pools, price_sampler, executor, ncpu=4):
+def run_pipeline(configured_markets, price_sampler, executor, ncpu=4):
     """
     Core function for running pipelines.
 
@@ -199,7 +229,7 @@ def run_pipeline(configured_pools, price_sampler, executor, ncpu=4):
 
     Parameters
     ----------
-    configured_pools : iterator
+    configured_markets : iterator
         An iterator that returns pool parameters (see :mod:`.param_samplers`).
 
     price_sampler : iterator
@@ -221,7 +251,7 @@ def run_pipeline(configured_pools, price_sampler, executor, ncpu=4):
     if ncpu > 1:
         with multiprocessing_logging_queue() as logging_queue:
             executor_args_list = [
-                (sim_pool, price_sampler) for sim_pool in configured_pools
+                (sim_pool, price_sampler) for sim_pool in configured_markets
             ]
 
             wrapped_args_list = [
@@ -237,7 +267,7 @@ def run_pipeline(configured_pools, price_sampler, executor, ncpu=4):
 
     else:
         results = []
-        for sim_pool in configured_pools:
+        for sim_pool in configured_markets:
             metrics = executor(sim_pool, price_sampler)
             results.append(metrics)
         results = tuple(zip(*results))
@@ -257,9 +287,9 @@ def wrapped_executor(executor, logging_queue, *args):
     return executor(*args)
 
 
-def configured_pool_sequence(
-    sim_pool_factory,
-    pool_metadata,
+def configured_market_sequence(
+    sim_market_factory,
+    sim_market_args,
     fixed_params,
     variable_params,
 ):
@@ -267,5 +297,5 @@ def configured_pool_sequence(
     for parameters in parameter_sequence:
         custom_kwargs = fixed_params.copy()
         custom_kwargs.update(parameters)
-        sim_pool = sim_pool_factory(pool_metadata, custom_kwargs)
+        sim_pool = sim_market_factory(sim_market_args, custom_kwargs)
         yield sim_pool
