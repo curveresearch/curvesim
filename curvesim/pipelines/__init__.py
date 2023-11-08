@@ -44,74 +44,113 @@ from curvesim.utils import dataclass
 logger = get_logger(__name__)
 
 
-class Clock(ABC):
-    pass
+class TimeSequence(ABC, Iterator):
+    """
+    Time-like sequence generator.
 
+    Abstraction to encompass different ways of tracking "time",
+    useful for trading strategies involving a blockchain.
+    This could be timestamps, block times, block numbers, etc.
+    """
 
-@dataclass(frozen=True)
-class TimePeriod(Iterator, Clock):
-    start: int
-    end: int
-
+    @abstractmethod
     def __iter__(self):
         raise NotImplementedError
 
-
-class FrequencyTimePeriod(TimePeriod):
-    freq: str
-
-
-class ReferenceMarket(ABC):
-    def price(self, coin_in, coin_out, timestep):
+    @abstractmethod
+    def __getitem__(self, index):
         raise NotImplementedError
 
 
-class DataSource:
-    pass
+@dataclass(frozen=True)
+class TimestampPeriod(TimeSequence):
+    start: int
+    end: int
+    freq: str
 
 
-class FileSource:
+class DataSource(ABC):
     """
-    Loads a given csv or json file containing
-    market data.
+    Typically, there is a sole data source that aggregates
+    data from a single data provider such as Coingecko or Kaiko.
+
+    However, this abstraction lets us use multiple sources or
+    easily swap one for another.
+
+    A data source may have an underlying API or be as simple
+    as a flat file.
     """
 
-    def __init__(self, filepath):
-        ...
+    @abstractmethod
+    def query(self, params):
+        raise NotImplementedError
+
+
+class AssetSource(ABC):
+    """
+    Pandas Series-like abstraction for a SimAsset's market data.
+
+    The most common indexing and slicing operations should be supported,
+    but it is important to allowed operations should be fairly limited
+    to reduce complexity of dependent code.
+    """
 
 
 class SimAsset:
-    pass
+    id: str
+
+
+class AssetSourceFactory(ABC):
+    """
+    Factory to product an AssetSource from its main components.
+
+    Specific creation strategies for data sourcing/loading
+    can be handled by subclassing this factory and choosing
+    custom data sources.
+    """
+
+    def create(
+        self,
+        asset: SimAsset,
+        time_sequence: TimeSequence,
+        data_source: DataSource = None,
+    ) -> AssetSource:
+        raise NotImplementedError
 
 
 @dataclass
-class TokenPair(SimAsset):
+class CurrencyPair(SimAsset):
     base_symbol: str
     quote_symbol: str
 
 
 @dataclass
-class PoolPair(TokenPair):
+class PoolPair(CurrencyPair):
     pool_address: str
     base_coin_address: str
     quote_coin_address: str
 
 
-class SingleSourceReferenceMarket(ReferenceMarket):
-    """
-    The sole data source is typically aggregated data
-    from a data provider such as Coingecko or Kaiko.
+class ReferenceMarket(ABC):
+    @abstractmethod
+    def price(self, sim_asset: SimAsset, timestep):
+        """
+        This signature supposes:
+        - an infinite-depth external venue, i.e. we can trade at any size
+          at the given price without market impact.
+        - the "orderbook" is symmetric, i.e. trade direction doesn't matter.
+        """
+        raise NotImplementedError
 
-    This reference market simulates an infinite-depth
-    external venue, i.e. we can trade at any size
-    at the given price without market impact.
-    """
 
-    def __init__(self, sim_assets, data_source, clock):
-        ...
-
-    def price(self, coin_in, coin_out, timestep):
-        ...
+class ReferenceMarketFactory(ABC):
+    def create(
+        self,
+        asset_sources: List[AssetSource],
+        *args,
+        **kwargs,
+    ) -> ReferenceMarket:
+        raise NotImplementedError
 
 
 @dataclass
@@ -122,26 +161,34 @@ class SimMarketParameters:
 
 @dataclass
 class RunConfig(ABC):
-    sim_assets: List[SimAsset]
-    clock: Clock
-    data_sources: List[DataSource]
-    asset_to_source: Dict[SimAsset, DataSource]
-    sim_market_parameters
+    time_sequence: TimeSequence
+    asset_sources: List[AssetSource]
+    sim_market_parameters: SimMarketParameters
 
 
 class AutoConfig(RunConfig):
     """
-    Convenience class to autogenerate the SimAssets from Curve pool metadata.
+    Convenience class to autogenerate the SimAssets from Curve pool metadata
+    and create appropriate AssetSources based on some config file.
     """
 
-    def __init__(self, pool_metadata, source_config):
+    def __init__(self, pool_metadata, data_config_file):
         self._pool_metadata = pool_metadata
+
+    @property
+    def sim_assets(self):
+        ...
+
+    @property
+    def asset_sources(self):
+        ...
 
 
 @dataclass
 class StrategyConfig(ABC):
-    sim_market_factory: Callable
-    reference_market_factory: Type[ReferenceMarket]
+    sim_assets: List[SimAsset]
+    reference_market_factory: Type[ReferenceMarketFactory]
+    sim_market_factory: Type[SimMarketFactory]
     trader_class: Type[Trader]
     log_class: Type[Log]
     metrics: List[Metric]
@@ -168,10 +215,11 @@ class VolumeLimitedArbitrage(Simulation, VolumeLimitedArbitrageConfig, AutoConfi
         sim_assets = self.sim_assets
         clock = self.clock
         data_source = self.data_sources[0]
+        sim_market_parameters = self.sim_market_parameters
 
         reference_market = self.reference_market_factory(sim_assets, data_source, clock)
         configured_markets = configured_market_sequence(
-            sim_market_factory, sim_market_args, fixed_params, variable_params
+            sim_market_factory, sim_market_parameters
         )
 
         executor = self.execute_run
@@ -287,15 +335,8 @@ def wrapped_executor(executor, logging_queue, *args):
     return executor(*args)
 
 
-def configured_market_sequence(
-    sim_market_factory,
-    sim_market_args,
-    fixed_params,
-    variable_params,
-):
-    parameter_sequence = make_parameter_sequence(variable_params)
-    for parameters in parameter_sequence:
-        custom_kwargs = fixed_params.copy()
-        custom_kwargs.update(parameters)
-        sim_pool = sim_market_factory(sim_market_args, custom_kwargs)
-        yield sim_pool
+def configured_market_sequence(sim_market_factory, sim_market_parameters):
+    initial_params = sim_market_parameters.initial_parameters
+    for run_params in sim_market_parameters.run_parameters:
+        sim_market = sim_market_factory(initial_params, run_params)
+        yield sim_market
