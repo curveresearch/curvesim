@@ -560,6 +560,54 @@ def test_price_oracle(vyper_tricrypto, price_oracle, last_prices, time_delta):
     ]
 
 
+@given(lp_tokens)
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=5,
+    deadline=None,
+)
+def test_remove_liquidity(vyper_tricrypto, amount):
+    """Test `remove_liquidity` against vyper implementation."""
+    assume(amount < vyper_tricrypto.totalSupply())
+
+    pool = initialize_pool(vyper_tricrypto)
+
+    vyper_tricrypto.remove_liquidity(amount, [0, 0, 0])
+    expected_balances = [vyper_tricrypto.balances(i) for i in range(3)]
+    expected_lp_supply = vyper_tricrypto.totalSupply()
+    expected_D = vyper_tricrypto.D()
+
+    pool.remove_liquidity(amount)
+
+    assert pool.balances == expected_balances
+    assert pool.tokens == expected_lp_supply
+    assert pool.D == expected_D
+
+
+@given(lp_tokens, st.integers(min_value=0, max_value=2))
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=5,
+    deadline=None,
+)
+def test_remove_liquidity_one_coin(vyper_tricrypto, amount, i):
+    """Test `remove_liquidity_one_coin` against vyper implementation."""
+    assume(amount < vyper_tricrypto.totalSupply())
+
+    pool = initialize_pool(vyper_tricrypto)
+
+    vyper_tricrypto.remove_liquidity_one_coin(amount, i, 0)
+    expected_coin_balance = vyper_tricrypto.balances(i)
+    expected_lp_supply = vyper_tricrypto.totalSupply()
+
+    pool.remove_liquidity_one_coin(amount, i, 0)
+    coin_balance = pool.balances[i]
+    lp_supply = pool.tokens
+
+    assert coin_balance == expected_coin_balance
+    assert lp_supply == expected_lp_supply
+
+
 @given(lp_tokens, st.integers(min_value=0, max_value=2))
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],

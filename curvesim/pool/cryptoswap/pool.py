@@ -824,7 +824,7 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         self,
         _amount: int,
         min_amounts=None,
-    ):
+    ) -> List[int]:
         """
         Remove liquidity (burn LP tokens) to receive back part (or all) of
         the deposited funds.
@@ -840,22 +840,37 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         ----
         "This withdrawal method is very safe, does no complex math"
         """
-        min_amounts = min_amounts or [0, 0]
+        n_coins: int = self.n
+        min_amounts = min_amounts or [0] * n_coins
+
+        amount: int = _amount
+        balances: List[int] = self.balances
+        d_balances: List[int] = [0] * n_coins
 
         self._claim_admin_fees()
 
         total_supply: int = self.tokens
-        self.tokens -= _amount
-        balances: List[int] = self.balances
-        amount: int = _amount - 1  # Make rounding errors favoring other LPs a tiny bit
+        assert amount <= total_supply  # dev: token amount more than supply
+        self.tokens -= amount
 
-        for i in range(self.n):
-            d_balance: int = balances[i] * amount // total_supply
-            assert d_balance >= min_amounts[i]
-            self.balances[i] = balances[i] - d_balance
+        if amount == total_supply:  # case 1: withdrawal empties the pool
+
+            for i in range(n_coins):
+                d_balances[i] = balances[i]
+                self.balances[i] = 0
+
+        else:  # case 2: partial withdrawal
+            amount -= 1  # Make rounding errors favor other LPs a tiny bit
+
+            for i in range(n_coins):
+                d_balances[i] = balances[i] * amount // total_supply
+                assert d_balances[i] >= min_amounts[i]
+                self.balances[i] = balances[i] - d_balances[i]
 
         D: int = self.D
         self.D = D - D * amount // total_supply
+
+        return d_balances
 
     def remove_liquidity_one_coin(
         self, token_amount: int, i: int, min_amount: int
@@ -878,18 +893,20 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         int
             Amount of the `i`-th coin received.
         """
-        A = self.A
-        gamma = self.gamma
+        A: int = self.A
+        gamma: int = self.gamma
 
         dy: int = 0
         D: int = 0
         p: Optional[int] = None
-        xp = [0] * self.n
+        xp: List[int] = [0] * self.n
 
         self._claim_admin_fees()
 
+        calc_price: bool = self.n == 2
+
         dy, p, D, xp = self._calc_withdraw_one_coin(
-            A, gamma, token_amount, i, False, True
+            A, gamma, token_amount, i, False, calc_price
         )
         assert dy >= min_amount, "Slippage"
 
