@@ -18,8 +18,9 @@ returning its result metrics.
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from multiprocessing import Pool as cpu_pool
-from typing import Callable, Dict, List, Type
+from typing import Any, Callable, Dict, List, Type
 
+from curvesim.constants import Chain
 from curvesim.iterators.param_samplers.parameterized_pool_iterator import (
     ParameterizedPoolIterator,
 )
@@ -44,7 +45,7 @@ from curvesim.utils import dataclass
 logger = get_logger(__name__)
 
 
-class TimeSequence(ABC, Iterator):
+class TimeSequence(Iterator):
     """
     Time-like sequence generator.
 
@@ -82,11 +83,15 @@ class DataSource(ABC):
     """
 
     @abstractmethod
-    def query(self, params):
+    def query(self, params) -> Any:
         raise NotImplementedError
 
 
-class AssetSource(ABC):
+class SimAsset:
+    id: str
+
+
+class SimAssetSeries(ABC):
     """
     Pandas Series-like abstraction for a SimAsset's market data.
 
@@ -95,26 +100,27 @@ class AssetSource(ABC):
     to reduce complexity of dependent code.
     """
 
-
-class SimAsset:
-    id: str
+    sim_asset: SimAsset
 
 
-class AssetSourceFactory(ABC):
+class SimAssetSeriesFactory(ABC):
     """
-    Factory to product an AssetSource from its main components.
+    Factory to product an SimAssetSeries from its main components.
 
     Specific creation strategies for data sourcing/loading
     can be handled by subclassing this factory and choosing
     custom data sources.
+
+    DataSource can be per SimAssetSeries (or as a override/overlay)
+    with the "main" one being added at initialization of the factory.
     """
 
     def create(
         self,
-        asset: SimAsset,
+        sim_asset: SimAsset,
         time_sequence: TimeSequence,
         data_source: DataSource = None,
-    ) -> AssetSource:
+    ) -> SimAssetSeries:
         raise NotImplementedError
 
 
@@ -126,6 +132,7 @@ class CurrencyPair(SimAsset):
 
 @dataclass
 class PoolPair(CurrencyPair):
+    chain: Chain
     pool_address: str
     base_coin_address: str
     quote_coin_address: str
@@ -146,7 +153,7 @@ class ReferenceMarket(ABC):
 class ReferenceMarketFactory(ABC):
     def create(
         self,
-        asset_sources: List[AssetSource],
+        sim_asset_series: List[SimAssetSeries],
         *args,
         **kwargs,
     ) -> ReferenceMarket:
@@ -159,17 +166,23 @@ class SimMarketParameters:
     run_parameters: List[Dict]
 
 
+class SimMarketFactory:
+    @abstractmethod
+    def create(self, **init_kwargs):
+        raise NotImplementedError
+
+
 @dataclass
 class RunConfig(ABC):
     time_sequence: TimeSequence
-    asset_sources: List[AssetSource]
+    sim_asset_series: List[SimAssetSeries]
     sim_market_parameters: SimMarketParameters
 
 
-class AutoConfig(RunConfig):
+class SimPoolAutoConfig(RunConfig):
     """
     Convenience class to autogenerate the SimAssets from Curve pool metadata
-    and create appropriate AssetSources based on some config file.
+    and create appropriate SimAssetSeries based on some config file.
     """
 
     def __init__(self, pool_metadata, data_config_file):
@@ -180,70 +193,91 @@ class AutoConfig(RunConfig):
         ...
 
     @property
-    def asset_sources(self):
+    def sim_asset_series(self):
         ...
 
 
-@dataclass
-class StrategyConfig(ABC):
-    sim_assets: List[SimAsset]
+class Simulation:
+
+    # inject using Gin:
+    # (can use AutoConfig)
+    run_config: RunConfig
+
     reference_market_factory: Type[ReferenceMarketFactory]
     sim_market_factory: Type[SimMarketFactory]
     trader_class: Type[Trader]
     log_class: Type[Log]
     metrics: List[Metric]
+    # Gin injection config for volume-limited arbitrage
+    #
+    # sim_market_factory = get_sim_pool
+    # reference_market_factory = ReferenceMarketFactory
+    # trader_class = VolumeLimitedArbitrageur
+    # log_class = StateLog
+    # metrics = DEFAULT_METRICS
 
+    run_outputs: List
+    results: List
 
-class VolumeLimitedArbitrageConfig(StrategyConfig):
-    sim_market_factory = get_sim_pool
-    reference_market_factory = SingleSourceReferenceMarket
-    trader_class = VolumeLimitedArbitrageur
-    log_class = StateLog
-    metrics = DEFAULT_METRICS
+    @property
+    def sim_assets(self):
+        return self.run_config.sim_assets
 
+    @property
+    def sim_asset_series(self):
+        return self.run_config.sim_asset_series
 
-class Simulation:
-    pass
+    @property
+    def time_sequence(self):
+        return self.run_config.time_sequence
 
+    @property
+    def sim_market_parameters(self):
+        return self.run_config.sim_market_parameters
 
-class VolumeLimitedArbitrage(Simulation, VolumeLimitedArbitrageConfig, AutoConfig):
-    def run(self, variable_params, fixed_params, ncpu=4):
-        # strategy config
-        metrics = self.metrics
-        sim_market_factory = self.sim_market_factory
-        # run config
-        sim_assets = self.sim_assets
-        clock = self.clock
-        data_source = self.data_sources[0]
-        sim_market_parameters = self.sim_market_parameters
+    def __init__(self, *args, **kwargs):
+        sim_asset_series = self.sim_asset_series
+        time_sequence = self.time_sequence
 
-        reference_market = self.reference_market_factory(sim_assets, data_source, clock)
-        configured_markets = configured_market_sequence(
-            sim_market_factory, sim_market_parameters
+        self.reference_market = self.reference_market_factory(
+            sim_asset_series, time_sequence
         )
 
+    def configured_market_sequence(self):
+        sim_market_parameters = self.sim_market_parameters
+        initial_params = sim_market_parameters.initial_parameters
+
+        for run_params in sim_market_parameters.run_parameters:
+            init_kwargs = initial_params.copy()
+            init_kwargs.update(run_params)
+            sim_market = self.sim_market_factory.create(**init_kwargs)
+            yield sim_market, run_params
+
+    def run(self, variable_params, fixed_params, ncpu=4):
+
+        configured_markets = self.configured_market_sequence()
         executor = self.execute_run
+        reference_market = self.reference_market
 
         output = run_pipeline(configured_markets, reference_market, executor, ncpu)
-
-        data_per_run, data_per_trade, summary_data = output
         self.run_outputs.append(output)
 
+        metrics = self.metrics
         results = make_results(*output, metrics)
         self.results.append(results)
 
-    def execute_run(self, pool, parameters, reference_market, clock):
-        trader = self.trader_class(pool)
-        metrics = init_metrics(self.metrics, pool=pool)
-        log = self.log_class(pool, metrics)
+    def execute_run(self, sim_market, reference_market):
+        trader = self.trader_class(sim_market)
+        metrics = init_metrics(self.metrics, pool=sim_market)
+        log = self.log_class(sim_market, metrics)
 
         parameters = parameters or "no parameter changes"
         logger.info("[%s] Simulating with %s", pool.symbol, parameters)
 
-        pool.prepare_for_run(reference_market)
+        sim_market.prepare_for_run(reference_market)
 
-        for timestep in clock:
-            pool.prepare_for_trades(timestep)
+        for timestep in self.time_sequence:
+            sim_market.prepare_for_trades(timestep)
             sample = self._get_reference_sample(timestep)
             trader_args = self._get_trader_inputs(sample)
             trade_data = trader.process_time_sample(*trader_args)
@@ -262,13 +296,13 @@ class VolumeLimitedArbitrage(Simulation, VolumeLimitedArbitrageConfig, AutoConfi
     @abstractmethod
     def _get_reference_sample(self, timestep):
         prices = []
-        for asset in sim_assets:
-            price = reference_market.price(asset, timestep)
+        for asset in self.sim_assets:
+            price = self.reference_market.price(asset, timestep)
             prices.append(price)
         return prices
 
 
-def run_pipeline(configured_markets, price_sampler, executor, ncpu=4):
+def run_pipeline(sim_markets, reference_market, executor, ncpu=4):
     """
     Core function for running pipelines.
 
@@ -277,14 +311,14 @@ def run_pipeline(configured_markets, price_sampler, executor, ncpu=4):
 
     Parameters
     ----------
-    configured_markets : iterator
-        An iterator that returns pool parameters (see :mod:`.param_samplers`).
+    sim_markets : iterator
+        An iterator that yields a configured SimMarket
 
     price_sampler : iterator
         An iterator that returns (minimally) a time-series of prices
         (see :mod:`.price_samplers`).
 
-    strategy: callable
+    executor: callable
         A function dictating what happens at each timestep.
 
     ncpu : int, default=4
@@ -299,7 +333,7 @@ def run_pipeline(configured_markets, price_sampler, executor, ncpu=4):
     if ncpu > 1:
         with multiprocessing_logging_queue() as logging_queue:
             executor_args_list = [
-                (sim_pool, price_sampler) for sim_pool in configured_markets
+                (sim_market, reference_market) for sim_market in sim_markets
             ]
 
             wrapped_args_list = [
@@ -315,8 +349,8 @@ def run_pipeline(configured_markets, price_sampler, executor, ncpu=4):
 
     else:
         results = []
-        for sim_pool in configured_markets:
-            metrics = executor(sim_pool, price_sampler)
+        for sim_market in sim_markets:
+            metrics = executor(sim_market, reference_market)
             results.append(metrics)
         results = tuple(zip(*results))
 
@@ -333,10 +367,3 @@ def wrapped_executor(executor, logging_queue, *args):
     """
     configure_multiprocess_logging(logging_queue)
     return executor(*args)
-
-
-def configured_market_sequence(sim_market_factory, sim_market_parameters):
-    initial_params = sim_market_parameters.initial_parameters
-    for run_params in sim_market_parameters.run_parameters:
-        sim_market = sim_market_factory(initial_params, run_params)
-        yield sim_market
