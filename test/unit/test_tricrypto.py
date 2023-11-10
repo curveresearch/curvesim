@@ -145,7 +145,7 @@ def update_cached_values(vyper_tricrypto, tricrypto_math):
 
 D_UNIT = 10**18
 positive_balance = st.integers(min_value=10**5 * D_UNIT, max_value=10**11 * D_UNIT)
-lp_tokens = st.integers(min_value=1 * D_UNIT, max_value=2 * 10**4 * D_UNIT)
+lp_tokens = st.integers(min_value=1 * D_UNIT, max_value=5 * 10**4 * D_UNIT)
 amplification_coefficient = st.integers(min_value=MIN_A, max_value=MAX_A)
 gamma_coefficient = st.integers(min_value=MIN_GAMMA, max_value=MAX_GAMMA)
 price = st.integers(min_value=10**12, max_value=10**25)
@@ -560,15 +560,75 @@ def test_price_oracle(vyper_tricrypto, price_oracle, last_prices, time_delta):
     ]
 
 
+@given(lp_tokens)
+@settings(
+    suppress_health_check=[
+        HealthCheck.function_scoped_fixture,
+        HealthCheck.filter_too_much,
+    ],
+    max_examples=5,
+    deadline=None,
+)
+def test_remove_liquidity(vyper_tricrypto, amount):
+    """Test `remove_liquidity` against vyper implementation."""
+    assume(amount <= vyper_tricrypto.totalSupply())
+
+    pool = initialize_pool(vyper_tricrypto)
+
+    vyper_tricrypto.remove_liquidity(amount, [0, 0, 0])
+    expected_balances = [vyper_tricrypto.balances(i) for i in range(3)]
+    expected_lp_supply = vyper_tricrypto.totalSupply()
+    expected_D = vyper_tricrypto.D()
+
+    pool.remove_liquidity(amount)
+
+    assert pool.balances == expected_balances
+    assert pool.tokens == expected_lp_supply
+    assert pool.D == expected_D
+
+
 @given(lp_tokens, st.integers(min_value=0, max_value=2))
 @settings(
-    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    suppress_health_check=[
+        HealthCheck.function_scoped_fixture,
+        HealthCheck.filter_too_much,
+    ],
+    max_examples=5,
+    deadline=None,
+)
+def test_remove_liquidity_one_coin(vyper_tricrypto, amount, i):
+    """Test `remove_liquidity_one_coin` against vyper implementation."""
+    assume(amount <= vyper_tricrypto.totalSupply())
+
+    pool = initialize_pool(vyper_tricrypto)
+
+    vyper_tricrypto.remove_liquidity_one_coin(amount, i, 0)
+    expected_balances = [vyper_tricrypto.balances(i) for i in range(3)]
+    expected_lp_supply = vyper_tricrypto.totalSupply()
+    expected_D = vyper_tricrypto.D()
+
+    pool.remove_liquidity_one_coin(amount, i, 0)
+    balances = pool.balances
+    lp_supply = pool.tokens
+    D = pool.D
+
+    assert balances == expected_balances
+    assert lp_supply == expected_lp_supply
+    assert D == expected_D
+
+
+@given(lp_tokens, st.integers(min_value=0, max_value=2))
+@settings(
+    suppress_health_check=[
+        HealthCheck.function_scoped_fixture,
+        HealthCheck.filter_too_much,
+    ],
     max_examples=25,
     deadline=None,
 )
 def test_calc_withdraw_one_coin(vyper_tricrypto, amount, i):
     """Test `calc_withdraw_one_coin` against vyper implementation."""
-    assume(amount < vyper_tricrypto.totalSupply())
+    assume(amount <= vyper_tricrypto.totalSupply())
 
     n_coins = 3
 

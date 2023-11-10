@@ -731,9 +731,10 @@ def remove_liquidity(
     #                                                             D will be 0.
 
     # ---------------------------------- Transfers ---------------------------
-
-    for i in range(N_COINS):
-        self._transfer_out(coins[i], d_balances[i], use_eth, receiver)
+    
+    # curvesim: comment out unneeded coin transfer logic
+    # for i in range(N_COINS):
+    #     self._transfer_out(coins[i], d_balances[i], use_eth, receiver)
 
     log RemoveLiquidity(msg.sender, balances, total_supply - _amount)
 
@@ -787,7 +788,8 @@ def remove_liquidity_one_coin(
 
     self.balances[i] -= dy
     self.burnFrom(msg.sender, token_amount)
-    self._transfer_out(coins[i], dy, use_eth, receiver)
+    # curvesim: comment out unneeded coin transfer logic
+    # self._transfer_out(coins[i], dy, use_eth, receiver)
 
     packed_price_scale: uint256 = self.tweak_price(A_gamma, xp, D, 0)
     #        Safe to use D from _calc_withdraw_one_coin here ---^
@@ -1657,7 +1659,8 @@ def burnFrom(_to: address, _value: uint256) -> bool:
     @return bool Success.
     """
     self.totalSupply -= _value
-    self.balanceOf[_to] -= _value
+    # curvesim: comment out unused mapping
+    # self.balanceOf[_to] -= _value
 
     log Transfer(_to, empty(address), _value)
     return True
