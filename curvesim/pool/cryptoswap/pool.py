@@ -836,6 +836,11 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         min_amounts: List[int], optional
             Minimum required amounts for each coin.  Default is 0 each.
 
+        Returns
+        -------
+        List[int]
+            The amounts of each coin received.
+
         Note
         ----
         "This withdrawal method is very safe, does no complex math"
@@ -845,32 +850,26 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
 
         amount: int = _amount
         balances: List[int] = self.balances
-        d_balances: List[int] = [0] * n_coins
+        withdraw_amounts: List[int] = [0] * n_coins
 
         self._claim_admin_fees()
 
         total_supply: int = self.tokens
-        assert amount <= total_supply  # dev: token amount more than supply
+        assert amount <= total_supply
         self.tokens -= amount
 
-        if amount == total_supply:  # case 1: withdrawal empties the pool
-
-            for i in range(n_coins):
-                d_balances[i] = balances[i]
-                self.balances[i] = 0
-
-        else:  # case 2: partial withdrawal
+        if amount != total_supply:
             amount -= 1  # Make rounding errors favor other LPs a tiny bit
 
-            for i in range(n_coins):
-                d_balances[i] = balances[i] * amount // total_supply
-                assert d_balances[i] >= min_amounts[i]
-                self.balances[i] = balances[i] - d_balances[i]
+        for i in range(n_coins):
+            withdraw_amounts[i] = balances[i] * amount // total_supply
+            assert withdraw_amounts[i] >= min_amounts[i]
+            self.balances[i] = balances[i] - withdraw_amounts[i]
 
         D: int = self.D
         self.D = D - D * amount // total_supply
 
-        return d_balances
+        return withdraw_amounts
 
     def remove_liquidity_one_coin(
         self, token_amount: int, i: int, min_amount: int
@@ -967,8 +966,8 @@ class CurveCryptoPool(Pool):  # pylint: disable=too-many-instance-attributes
         This is a "view" function; it doesn't change the state of the pool.
         """
         token_supply: int = self.tokens
-        assert token_amount <= token_supply  # dev: token amount more than supply
-        assert i < self.n  # dev: coin out of range
+        assert token_amount <= token_supply
+        assert i < self.n, "Index out of bounds"
 
         xx: List[int] = self.balances.copy()
         precisions: List[int] = self.precisions
