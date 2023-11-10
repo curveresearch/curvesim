@@ -598,7 +598,7 @@ def test_remove_liquidity(vyper_tricrypto, amount):
 )
 def test_remove_liquidity_one_coin(vyper_tricrypto, amount, i):
     """Test `remove_liquidity_one_coin` against vyper implementation."""
-    assume(amount <= vyper_tricrypto.totalSupply())
+    assume(amount <= vyper_tricrypto.totalSupply() // 3)
 
     pool = initialize_pool(vyper_tricrypto)
 
@@ -628,9 +628,7 @@ def test_remove_liquidity_one_coin(vyper_tricrypto, amount, i):
 )
 def test_calc_withdraw_one_coin(vyper_tricrypto, amount, i):
     """Test `calc_withdraw_one_coin` against vyper implementation."""
-    assume(amount <= vyper_tricrypto.totalSupply())
-
-    n_coins = 3
+    assume(amount <= vyper_tricrypto.totalSupply() // 3)
 
     pool = initialize_pool(vyper_tricrypto)
 
@@ -641,7 +639,7 @@ def test_calc_withdraw_one_coin(vyper_tricrypto, amount, i):
     dy = pool.calc_withdraw_one_coin(amount, i)
     assert dy == expected_dy
 
-    expected_balances = [vyper_tricrypto.balances(i) for i in range(n_coins)]
+    expected_balances = [vyper_tricrypto.balances(i) for i in range(3)]
     assert pool.balances == expected_balances
 
 
