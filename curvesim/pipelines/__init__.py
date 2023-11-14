@@ -1,24 +1,32 @@
 """
 Tools for implementing and running simulation pipelines.
 
-The basic model for a pipeline is demonstrated in the implementation of
-:func:`run_pipeline`.  It takes in a `param_sampler`, `price_sampler`, and
-`strategy`.
 
-Pipelines iterate over pools with parameters set by
-:mod:`curvesim.iterators.param_samplers` and time-series data produced by
-:mod:`curvesim.iterators.price_samplers`.  At each timestemp, the
-the :class:`~curvesim.pipelines.templates.Strategy` dictates what is done.
+# inside Gin config
+# config.py
 
-A typical pipeline implementation is a function taking in whatever market data needed;
-pool data such as :class:`~curvesim.pool_data.metadata.PoolMetaDataInterface`;
-instantiates a param_sampler, price_sampler, and strategy; and invokes `run_pipeline`,
-returning its result metrics.
+sim_market_parameters = {
+    initial_parameters = {
+
+    },
+    run_parameters = {
+
+    },
+}
+Simulation.configured_market_sequence.sim_market_parameters = sim_market_parameters
+
+
+from curvesim.pipelines.common import DEFAULT_METRICS
+Simulation.init_metrics.metrics = DEFAULT_METRICS
+
 """
+import os
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from multiprocessing import Pool as cpu_pool
 from typing import Any, Callable, Dict, List, Type
+
+import gin
 
 from curvesim.constants import Chain
 from curvesim.iterators.param_samplers.parameterized_pool_iterator import (
@@ -140,13 +148,18 @@ class PoolPair(CurrencyPair):
 
 class ReferenceMarket(ABC):
     @abstractmethod
-    def price(self, sim_asset: SimAsset, timestep):
+    def price(self, sim_asset: SimAsset, timestep) -> float:
         """
         This signature supposes:
         - an infinite-depth external venue, i.e. we can trade at any size
           at the given price without market impact.
         - the "orderbook" is symmetric, i.e. trade direction doesn't matter.
         """
+        raise NotImplementedError
+
+    @abstractmethod
+    def prices(self, sim_assets: List[SimAsset], timestep) -> List[float]:
+        """Same as `price` but retrieves prices for multiple assets in one call."""
         raise NotImplementedError
 
 
@@ -197,112 +210,86 @@ class SimPoolAutoConfig(RunConfig):
         ...
 
 
+@gin.configurable
 class Simulation:
 
-    # inject using Gin:
-    # (can use AutoConfig)
-    run_config: RunConfig
+    sim_assets: List[SimAsset]
+    sim_assets_series: List[SimAssetSeries]
+
+    time_sequence: TimeSequence
 
     reference_market_factory: Type[ReferenceMarketFactory]
     sim_market_factory: Type[SimMarketFactory]
-    trader_class: Type[Trader]
-    log_class: Type[Log]
+    trader_factory: Type[Trader]
+    log_factory: Type[Log]
     metrics: List[Metric]
     # Gin injection config for volume-limited arbitrage
     #
     # sim_market_factory = get_sim_pool
     # reference_market_factory = ReferenceMarketFactory
-    # trader_class = VolumeLimitedArbitrageur
-    # log_class = StateLog
+    # trader_factory = VolumeLimitedArbitrageur
+    # log_factory = StateLog
     # metrics = DEFAULT_METRICS
 
     run_outputs: List
     results: List
 
-    @property
-    def sim_assets(self):
-        return self.run_config.sim_assets
 
-    @property
-    def sim_asset_series(self):
-        return self.run_config.sim_asset_series
+@gin.register
+def configured_sim_markets(self, sim_market_factory, sim_market_parameters):
+    sim_market_parameters = sim_market_parameters
+    initial_params = sim_market_parameters.initial_parameters
+    all_run_params = sim_market_parameters.run_parameters
 
-    @property
-    def time_sequence(self):
-        return self.run_config.time_sequence
-
-    @property
-    def sim_market_parameters(self):
-        return self.run_config.sim_market_parameters
-
-    def __init__(self, *args, **kwargs):
-        sim_asset_series = self.sim_asset_series
-        time_sequence = self.time_sequence
-
-        self.reference_market = self.reference_market_factory(
-            sim_asset_series, time_sequence
-        )
-
-    def configured_market_sequence(self):
-        sim_market_parameters = self.sim_market_parameters
-        initial_params = sim_market_parameters.initial_parameters
-
-        for run_params in sim_market_parameters.run_parameters:
-            init_kwargs = initial_params.copy()
-            init_kwargs.update(run_params)
-            sim_market = self.sim_market_factory.create(**init_kwargs)
-            yield sim_market, run_params
-
-    def run(self, variable_params, fixed_params, ncpu=4):
-
-        configured_markets = self.configured_market_sequence()
-        executor = self.execute_run
-        reference_market = self.reference_market
-
-        output = run_pipeline(configured_markets, reference_market, executor, ncpu)
-        self.run_outputs.append(output)
-
-        metrics = self.metrics
-        results = make_results(*output, metrics)
-        self.results.append(results)
-
-    def execute_run(self, sim_market, reference_market):
-        trader = self.trader_class(sim_market)
-        metrics = init_metrics(self.metrics, pool=sim_market)
-        log = self.log_class(sim_market, metrics)
-
-        parameters = parameters or "no parameter changes"
-        logger.info("[%s] Simulating with %s", pool.symbol, parameters)
-
-        sim_market.prepare_for_run(reference_market)
-
-        for timestep in self.time_sequence:
-            sim_market.prepare_for_trades(timestep)
-            sample = self._get_reference_sample(timestep)
-            trader_args = self._get_trader_inputs(sample)
-            trade_data = trader.process_time_sample(*trader_args)
-            log.update(price_sample=sample, trade_data=trade_data)
-
-        return log.compute_metrics()
-
-    @abstractmethod
-    def _get_trader_inputs(self, sample):
-        """
-        Process the price sample into appropriate inputs for the
-        trader instance.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def _get_reference_sample(self, timestep):
-        prices = []
-        for asset in self.sim_assets:
-            price = self.reference_market.price(asset, timestep)
-            prices.append(price)
-        return prices
+    for run_params in all_run_params:
+        init_kwargs = initial_params.copy()
+        init_kwargs.update(run_params)
+        sim_market = sim_market_factory.create(**init_kwargs)
+        yield sim_market
 
 
-def run_pipeline(sim_markets, reference_market, executor, ncpu=4):
+@gin.register
+def init_metrics(metric_classes, sim_market):
+    return [Metric(pool=sim_market) for Metric in metric_classes]
+
+
+@gin.register
+def run_simulation(
+    initial_parameters,
+    run_parameters,
+    executor,
+    reference_market,
+    configured_sim_markets,
+    ncpu=None,
+):
+    output = run_pipeline(configured_sim_markets, reference_market, executor, ncpu)
+    metrics = init_metrics(sim_market)
+    results = make_results(*output, metrics)
+    return results
+
+
+def execute_run(
+    time_sequence,
+    sim_market,
+    reference_market,
+    trader_factory,
+    log_factory,
+):
+    trader = trader_factory(sim_market)
+    log = log_factory(sim_market)
+
+    sim_market.prepare_for_run(reference_market)
+
+    for timestep in time_sequence:
+        sim_market.prepare_for_trades(timestep)
+        sample = reference_market.prices(timestep)
+        trade_data = trader.process_time_sample(sample)
+        log.update(price_sample=sample, trade_data=trade_data)
+
+    return log.compute_metrics()
+
+
+def run_pipeline(sim_markets, reference_market, executor, ncpu=None):
     """
     Core function for running pipelines.
 
@@ -321,8 +308,8 @@ def run_pipeline(sim_markets, reference_market, executor, ncpu=4):
     executor: callable
         A function dictating what happens at each timestep.
 
-    ncpu : int, default=4
-        Number of cores to use.
+    ncpu : int, optional
+        Number of cores to use.  Defaults to number of available cores.
 
     Returns
     -------
@@ -330,6 +317,10 @@ def run_pipeline(sim_markets, reference_market, executor, ncpu=4):
         Contains the metrics produced by the strategy.
 
     """
+    if ncpu is None:
+        cpu_count = os.cpu_count()
+        ncpu = cpu_count if cpu_count is not None else 1
+
     if ncpu > 1:
         with multiprocessing_logging_queue() as logging_queue:
             executor_args_list = [
