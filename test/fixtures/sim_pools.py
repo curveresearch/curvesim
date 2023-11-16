@@ -15,6 +15,11 @@ def sim_curve_pool():
 
 
 @pytest.fixture(scope="function")
+def sim_curve_tripool():
+    return SimCurvePool(A=250, D=1000000 * 10**18, n=3, admin_fee=5 * 10**9)
+
+
+@pytest.fixture(scope="function")
 def sim_curve_meta_pool():
     basepool = SimCurvePool(A=250, D=1000000 * 10**18, n=2, admin_fee=5 * 10**9)
 
