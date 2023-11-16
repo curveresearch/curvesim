@@ -67,7 +67,7 @@
             <a id="nextFileLink" class="nav" href="d_9383505a383436af___init___py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.3.2">coverage.py v7.3.2</a>,
-            created at 2023-11-10 22:25 +0000
+            created at 2023-11-16 21:00 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"/>
@@ -1107,7 +1107,7 @@
     <p class="run"><span class="n"><a id="t1023" href="#t1023">1023</a></span><span class="t">                <span class="nam">S</span><span class="op">:</span> <span class="nam">int</span> <span class="op">=</span> <span class="nam">xx</span><span class="op">[</span><span class="nam">j</span><span class="op">]</span> <span class="op">*</span> <span class="nam">precisions</span><span class="op">[</span><span class="nam">j</span><span class="op">]</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t1024" href="#t1024">1024</a></span><span class="t">                <span class="nam">S</span> <span class="op">=</span> <span class="nam">S</span> <span class="op">*</span> <span class="nam">dD</span> <span class="op">//</span> <span class="nam">D0</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t1025" href="#t1025">1025</a></span><span class="t">                <span class="nam">p</span> <span class="op">=</span> <span class="nam">S</span> <span class="op">*</span> <span class="nam">PRECISION</span> <span class="op">//</span> <span class="op">(</span><span class="nam">dy</span> <span class="op">*</span> <span class="nam">precision</span> <span class="op">-</span> <span class="nam">dD</span> <span class="op">*</span> <span class="nam">xx</span><span class="op">[</span><span class="nam">i</span><span class="op">]</span> <span class="op">*</span> <span class="nam">precision</span> <span class="op">//</span> <span class="nam">D0</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t1026" href="#t1026">1026</a></span><span class="t">                <span class="key">if</span> <span class="nam">i</span> <span class="op">==</span> <span class="num">0</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p class="par run show_par"><span class="n"><a id="t1026" href="#t1026">1026</a></span><span class="t">                <span class="key">if</span> <span class="nam">i</span> <span class="op">==</span> <span class="num">0</span><span class="op">:</span>&nbsp;</span><span class="r"><span class="annotate short">1026&#x202F;&#x219B;&#x202F;1029</span><span class="annotate long">line 1026 didn't jump to line 1029, because the condition on line 1026 was never false</span></span></p>
     <p class="run"><span class="n"><a id="t1027" href="#t1027">1027</a></span><span class="t">                    <span class="nam">p</span> <span class="op">=</span> <span class="op">(</span><span class="num">10</span><span class="op">**</span><span class="num">18</span><span class="op">)</span> <span class="op">**</span> <span class="num">2</span> <span class="op">//</span> <span class="nam">p</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t1028" href="#t1028">1028</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t1029" href="#t1029">1029</a></span><span class="t">        <span class="key">return</span> <span class="nam">dy</span><span class="op">,</span> <span class="nam">p</span><span class="op">,</span> <span class="nam">D</span><span class="op">,</span> <span class="nam">xp</span>&nbsp;</span><span class="r"></span></p>
@@ -1334,7 +1334,7 @@
     <p class="run"><span class="n"><a id="t1250" href="#t1250">1250</a></span><span class="t">            <span class="nam">price_scale</span> <span class="op">=</span> <span class="nam">self</span><span class="op">.</span><span class="nam">price_scale</span><span class="op">[</span><span class="nam">i</span> <span class="op">-</span> <span class="num">1</span><span class="op">]</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t1251" href="#t1251">1251</a></span><span class="t">            <span class="nam">dydx</span> <span class="op">=</span> <span class="nam">dydx</span> <span class="op">*</span> <span class="nam">price_scale</span> <span class="op">/</span> <span class="num">10</span><span class="op">**</span><span class="num">18</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t1252" href="#t1252">1252</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="par run show_par"><span class="n"><a id="t1253" href="#t1253">1253</a></span><span class="t">        <span class="key">if</span> <span class="nam">use_fee</span><span class="op">:</span>&nbsp;</span><span class="r"><span class="annotate short">1253&#x202F;&#x219B;&#x202F;1257</span><span class="annotate long">line 1253 didn't jump to line 1257, because the condition on line 1253 was never false</span></span></p>
+    <p class="run"><span class="n"><a id="t1253" href="#t1253">1253</a></span><span class="t">        <span class="key">if</span> <span class="nam">use_fee</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t1254" href="#t1254">1254</a></span><span class="t">            <span class="nam">fee</span> <span class="op">=</span> <span class="nam">self</span><span class="op">.</span><span class="nam">_fee</span><span class="op">(</span><span class="nam">xp</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t1255" href="#t1255">1255</a></span><span class="t">            <span class="nam">dydx</span> <span class="op">=</span> <span class="nam">dydx</span> <span class="op">-</span> <span class="nam">dydx</span> <span class="op">*</span> <span class="nam">fee</span> <span class="op">/</span> <span class="num">10</span><span class="op">**</span><span class="num">10</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t1256" href="#t1256">1256</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
@@ -1353,7 +1353,7 @@
             <a id="nextFileLink" class="nav" href="d_9383505a383436af___init___py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.3.2">coverage.py v7.3.2</a>,
-            created at 2023-11-10 22:25 +0000
+            created at 2023-11-16 21:00 +0000
         </p>
     </div>
 </footer>

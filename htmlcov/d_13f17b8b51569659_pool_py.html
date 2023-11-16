@@ -56,10 +56,10 @@
         </aside>
         <h2>
             <span class="text">246 statements &nbsp;</span>
-            <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">241<span class="text"> run</span></button>
-            <button type="button" class="mis show_mis button_toggle_mis" value="mis" data-shortcut="m" title="Toggle lines missing">5<span class="text"> missing</span></button>
+            <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">242<span class="text"> run</span></button>
+            <button type="button" class="mis show_mis button_toggle_mis" value="mis" data-shortcut="m" title="Toggle lines missing">4<span class="text"> missing</span></button>
             <button type="button" class="exc show_exc button_toggle_exc" value="exc" data-shortcut="x" title="Toggle lines excluded">0<span class="text"> excluded</span></button>
-            <button type="button" class="par run show_par button_toggle_par" value="par" data-shortcut="p" title="Toggle lines partially run">5<span class="text"> partial</span></button>
+            <button type="button" class="par run show_par button_toggle_par" value="par" data-shortcut="p" title="Toggle lines partially run">4<span class="text"> partial</span></button>
         </h2>
         <p class="text">
             <a id="prevFileLink" class="nav" href="d_13f17b8b51569659_metapool_py.html">&#xab; prev</a> &nbsp; &nbsp;
@@ -67,7 +67,7 @@
             <a id="nextFileLink" class="nav" href="d_13f17b8b51569659_raipool_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.3.2">coverage.py v7.3.2</a>,
-            created at 2023-11-10 22:25 +0000
+            created at 2023-11-16 21:00 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"/>
@@ -794,13 +794,13 @@
     <p class="pln"><span class="n"><a id="t710" href="#t710">710</a></span><span class="t">            <span class="nam">xi</span> <span class="op">*</span> <span class="op">(</span><span class="nam">xj</span> <span class="op">*</span> <span class="nam">A_pow</span> <span class="op">*</span> <span class="nam">x_prod</span> <span class="op">+</span> <span class="nam">D_pow</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t711" href="#t711">711</a></span><span class="t">        <span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t712" href="#t712">712</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="par run show_par"><span class="n"><a id="t713" href="#t713">713</a></span><span class="t">        <span class="key">if</span> <span class="nam">use_fee</span><span class="op">:</span>&nbsp;</span><span class="r"><span class="annotate short">713&#x202F;&#x219B;&#x202F;719</span><span class="annotate long">line 713 didn't jump to line 719, because the condition on line 713 was never false</span></span></p>
+    <p class="run"><span class="n"><a id="t713" href="#t713">713</a></span><span class="t">        <span class="key">if</span> <span class="nam">use_fee</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t714" href="#t714">714</a></span><span class="t">            <span class="key">if</span> <span class="nam">self</span><span class="op">.</span><span class="nam">fee_mul</span> <span class="key">is</span> <span class="key">None</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t715" href="#t715">715</a></span><span class="t">                <span class="nam">fee_factor</span> <span class="op">=</span> <span class="nam">self</span><span class="op">.</span><span class="nam">fee</span> <span class="op">/</span> <span class="num">10</span><span class="op">**</span><span class="num">10</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t716" href="#t716">716</a></span><span class="t">            <span class="key">else</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t717" href="#t717">717</a></span><span class="t">                <span class="nam">fee_factor</span> <span class="op">=</span> <span class="nam">self</span><span class="op">.</span><span class="nam">dynamic_fee</span><span class="op">(</span><span class="nam">xi</span><span class="op">,</span> <span class="nam">xj</span><span class="op">)</span> <span class="op">/</span> <span class="num">10</span><span class="op">**</span><span class="num">10</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t718" href="#t718">718</a></span><span class="t">        <span class="key">else</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t719" href="#t719">719</a></span><span class="t">            <span class="nam">fee_factor</span> <span class="op">=</span> <span class="num">0</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t719" href="#t719">719</a></span><span class="t">            <span class="nam">fee_factor</span> <span class="op">=</span> <span class="num">0</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t720" href="#t720">720</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t721" href="#t721">721</a></span><span class="t">        <span class="nam">dydx</span> <span class="op">*=</span> <span class="num">1</span> <span class="op">-</span> <span class="nam">fee_factor</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t722" href="#t722">722</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
@@ -814,7 +814,7 @@
             <a id="nextFileLink" class="nav" href="d_13f17b8b51569659_raipool_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.3.2">coverage.py v7.3.2</a>,
-            created at 2023-11-10 22:25 +0000
+            created at 2023-11-16 21:00 +0000
         </p>
     </div>
 </footer>
