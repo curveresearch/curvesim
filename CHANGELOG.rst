@@ -23,6 +23,7 @@ Added
 - Added `PriceDepth` (liquidity density) metric for Cryptoswap pools.
 
 - Fully enabled 3-coin cryptoswap functionality based on Tricrypto-NG code:
+
   - NG oracle behavior
   - `lp_price`
   - `get_dy`
@@ -32,6 +33,7 @@ Added
   - `remove_liquidity_one_coin`
 
 - Stableswap pools now have:
+
   - `remove_liquidity`
   - `remove_liquidity_imbalance`
 
