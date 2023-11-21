@@ -1,0 +1,35 @@
+from curvesim.pipelines.common import DEFAULT_METRICS
+
+
+# ----- DATA (TimeSequence/ReferenceMarket) ----- #
+
+SimAssetSeriesFactory.create.sim_assets
+ReferenceMarketFactory.create.sim_asset_series_list = 
+
+
+# ----- SIM MARKET ----- #
+sim_market_factory = 
+
+sim_market_parameters = {
+    initial_parameters = {
+
+    },
+    run_parameters = {
+
+    },
+}
+
+
+# ----- SIMULATION CONTEXT ----- #
+
+# constructor
+SimulationContext.time_sequence = 
+SimulationContext.reference_market = @ReferenceMarketFactory.create()
+SimulationContext.sim_market_factory = sim_market_factory
+SimulationContext.sim_market_parameters = sim_market_parameters
+SimulationContext.trader_class = @VolumeLimitedArbitrageur
+SimulationContext.log_class = @StateLog
+SimulationContext.metric_classes = DEFAULT_METRICS
+
+# auto-wire the other "beans"
+
