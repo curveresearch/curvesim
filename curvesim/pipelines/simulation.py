@@ -1,6 +1,8 @@
+import os
+
 import gin
 
-from curvesim.metrics.results import make_results
+from curvesim.metrics.results import SimResults, make_results
 from curvesim.pipelines import run_pipeline
 
 
@@ -12,6 +14,13 @@ class SimulationContext:
 
     While Gin doesn't require such a container, this makes configuration
     more explicit.
+
+    Example usage
+    -------------
+    >>> import gin
+    >>> gin.parse_config_file("config.gin")
+    >>> sim_context = SimulationContext()
+    >>> sim_context.run_simulation()
     """
 
     def __init__(
@@ -76,10 +85,24 @@ class SimulationContext:
             sim_market = sim_market_factory.create(**init_kwargs)
             yield sim_market
 
-    def run_simulation(
-        self,
-        ncpu=None,
-    ):
+    def run_simulation(self, ncpu=None) -> SimResults:
+        """
+        Parameters
+        ----------
+        ncpu : int, optional
+            Number of cores to use.  Defaults to `os.cpu_count()`.
+            Use `ncpu==1` for profiling or debugging.
+
+        Returns
+        -------
+        results : SimResults
+            Contains the metrics produced by the strategy.
+
+        """
+        if ncpu is None:
+            cpu_count = os.cpu_count()
+            ncpu = cpu_count if cpu_count is not None else 1
+
         configured_sim_markets = self.configured_sim_markets
         initial_sim_market = next(configured_sim_markets)
         output = run_pipeline(configured_sim_markets, self.executor, ncpu)
