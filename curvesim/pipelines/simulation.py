@@ -44,10 +44,7 @@ class SimulationContext:
         self.log_class = log_class
         self.metric_classes = metric_classes
 
-    def executor(
-        self,
-        sim_market,
-    ):
+    def executor(self, sim_market):
         """
         Executes a trading strategy for the given sim market
         and time sequence.
@@ -63,14 +60,16 @@ class SimulationContext:
             sim_market.prepare_for_trades(timestep)
             sample = self.reference_market.prices(timestep)
             trade_data = trader.process_time_sample(sample, sim_market)
-            log.update(price_sample=sample, trade_data=trade_data)
+            log.update(
+                price_sample=sample,
+                trade_data=trade_data,
+                sim_market=sim_market,
+            )
 
         return log.compute_metrics()
 
     @property
-    def configured_sim_markets(
-        self,
-    ):
+    def configured_sim_markets(self):
         sim_market_parameters = self.sim_market_parameters
         sim_market_factory = self.sim_market_factory
 
