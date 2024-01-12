@@ -63,10 +63,9 @@ class Strategy(ABC):
         Returns
         -------
         metrics : tuple of lists
-
         """
         # pylint: disable=not-callable
-        trader = self.trader_class(pool)
+        trader = self.trader_class()
         log = self.log_class(pool, self.metrics)
 
         parameters = parameters or "no parameter changes"
@@ -77,7 +76,7 @@ class Strategy(ABC):
         for sample in price_sampler:
             pool.prepare_for_trades(sample.timestamp)
             trader_args = self._get_trader_inputs(sample)
-            trade_data = trader.process_time_sample(*trader_args)
+            trade_data = trader.process_time_sample(pool, *trader_args)
             log.update(price_sample=sample, trade_data=trade_data)
 
         return log.compute_metrics()

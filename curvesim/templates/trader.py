@@ -61,20 +61,15 @@ class Trader(ABC):
     Computes, executes, and reports out arbitrage trades.
     """
 
-    def __init__(self, pool):
-        """
-        Parameters
-        ----------
-        pool :
-            Simulation interface to a subclass of :class:`.Pool`.
-
-        """
-        self.pool = pool
-
     @abstractmethod
-    def compute_trades(self, *args):
+    def compute_trades(self, pool, *args):
         """
         Computes trades to execute on the pool.
+
+        Parameters
+        ----------
+        pool : :class:`~curvesim.pipelines.templates.SimPool`
+            Simulation interface to a subclass of :class:`.Pool`.
 
         Returns
         -------
@@ -86,12 +81,15 @@ class Trader(ABC):
         """
         raise NotImplementedError
 
-    def do_trades(self, trades):
+    def do_trades(self, pool, trades):
         """
         Executes a series of trades.
 
         Parameters
         ----------
+        pool : :class:`~curvesim.pipelines.templates.SimPool`
+            Simulation interface to a subclass of :class:`.Pool`.
+
         trades : list of :class:`Trade` objects
             Trades to execute.
 
@@ -99,25 +97,29 @@ class Trader(ABC):
         -------
         trades: list of :class:`TradeResult` objects
             The results of the trades.
-
         """
 
         trade_results = []
         for trade in trades:
-            dy, fee = self.pool.trade(trade.coin_in, trade.coin_out, trade.amount_in)
+            dy, fee = pool.trade(trade.coin_in, trade.coin_out, trade.amount_in)
             trade_results.append(TradeResult.from_trade(trade, amount_out=dy, fee=fee))
 
         return trade_results
 
-    def process_time_sample(self, *args):
+    def process_time_sample(self, pool, *args):
         """
         Process given tick data by computing and executing trades.
 
-        The input args must be properly formed and fed by the
-        parent `Strategy` object housing the trader class via its
+        Parameters
+        ----------
+        pool : :class:`~curvesim.pipelines.templates.SimPool`
+            Simulation interface to a subclass of :class:`.Pool`.
+
+        args must be properly formed by a :class:`Strategy` object and fed to its
+        injected :class:`Trader` instance via its method
         :meth:`~curvesim.pipelines.templates.Strategy._get_trader_inputs`.
         """
-        trades, additional_data = self.compute_trades(*args)
-        trade_results = self.do_trades(trades)
+        trades, additional_data = self.compute_trades(pool, *args)
+        trade_results = self.do_trades(pool, trades)
 
         return {"trades": trade_results, **additional_data}

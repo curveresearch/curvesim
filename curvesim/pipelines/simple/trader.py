@@ -12,7 +12,7 @@ class SimpleArbitrageur(Trader):
     """
 
     # pylint: disable-next=arguments-differ,too-many-locals
-    def compute_trades(self, prices):
+    def compute_trades(self, pool, prices):
         """
         Compute trades to arbitrage the pool, as follows:
             1. For each coin pair i and j, calculate size of coin i
@@ -23,6 +23,9 @@ class SimpleArbitrageur(Trader):
 
         Parameters
         ----------
+        pool : :class:`~curvesim.pipelines.templates.SimPool`
+            The pool to arbitrage.
+
         prices : pandas.Series
             Current market prices from the price_sampler.
 
@@ -34,7 +37,6 @@ class SimpleArbitrageur(Trader):
         additional_data: dict
             Dict of additional data to be passed to the state log as part of trade_data.
         """
-        pool = self.pool
         trades = get_arb_trades(pool, prices)
 
         max_profit = 0

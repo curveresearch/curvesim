@@ -16,12 +16,17 @@ class VolumeLimitedArbitrageur(Trader):
     Computes, executes, and reports out arbitrage trades.
     """
 
-    def compute_trades(self, prices, volume_limits):  # pylint: disable=arguments-differ
+    def compute_trades(
+        self, pool, prices, volume_limits
+    ):  # pylint: disable=arguments-differ
         """
         Computes trades to optimally arbitrage the pool, constrained by volume limits.
 
         Parameters
         ----------
+        pool : :class:`~curvesim.pipelines.templates.SimPool`
+            The pool to arbitrage.
+
         prices : dict
             Current market prices from the price_sampler.
 
@@ -38,9 +43,7 @@ class VolumeLimitedArbitrageur(Trader):
             Dict of additional data to be passed to the state log as part of trade_data.
         """
 
-        trades, errors, _ = multipair_optimal_arbitrage(
-            self.pool, prices, volume_limits
-        )
+        trades, errors, _ = multipair_optimal_arbitrage(pool, prices, volume_limits)
         return trades, {"price_errors": errors}
 
 
@@ -58,7 +61,7 @@ def multipair_optimal_arbitrage(  # noqa: C901  pylint: disable=too-many-locals
     prices : dict
         Current market prices from the price_sampler.
 
-    volume_limits : dict
+    limits : dict
         Current volume limits for each trading pair.
 
     Returns
