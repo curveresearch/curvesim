@@ -9,7 +9,7 @@ from pandas import DataFrame, to_datetime
 
 from curvesim.exceptions import ApiResultError, CurvesimValueError
 
-from .http import HTTP
+from . import http
 from .utils import sync
 
 URL = "https://prices.curve.fi/v1/"
@@ -40,7 +40,7 @@ async def _get_pool_pair_volume(
         "end": end_ts,
         "interval": interval,
     }
-    r = await HTTP.get(url, params=params)
+    r = await http.get(url, params=params)
 
     try:
         data = r["data"]
