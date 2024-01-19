@@ -10,7 +10,7 @@ import pandas as pd
 
 from curvesim.utils import get_pairs
 
-from .http import HTTP
+from . import http
 from .utils import sync
 
 URL = "https://api.coingecko.com/api/v3/"
@@ -31,7 +31,7 @@ async def _get_prices(coin_id, vs_currency, start, end):
     url = URL + f"coins/{coin_id}/market_chart/range"
     p = {"vs_currency": vs_currency, "from": start, "to": end}
 
-    r = await HTTP.get(url, params=p)
+    r = await http.get(url, params=p)
 
     return r
 
@@ -141,7 +141,7 @@ async def _coin_id_from_address(address, chain):
     chain = PLATFORMS[chain.lower()]
     url = URL + f"coins/{chain}/contract/{address}"
 
-    r = await HTTP.get(url)
+    r = await http.get(url)
 
     coin_id = r["id"]
 

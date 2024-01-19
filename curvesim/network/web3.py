@@ -9,7 +9,7 @@ from web3.eth import AsyncEth
 
 from curvesim.utils import get_env_var
 
-from .http import HTTP
+from . import http
 from .utils import sync
 
 ETHERSCAN_URL = "https://api.etherscan.io/api"
@@ -55,7 +55,7 @@ async def explorer(params):
 
     t_wait = 0.2
     while True:
-        r = await HTTP.get(ETHERSCAN_URL, params=params)
+        r = await http.get(ETHERSCAN_URL, params=params)
         result = r["result"]
 
         if result.startswith("Max rate limit reached"):

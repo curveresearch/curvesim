@@ -12,7 +12,7 @@ from curvesim.logging import get_logger
 
 from ..exceptions import CurvesimValueError, SubgraphResultError
 from ..overrides import override_subgraph_data
-from .http import HTTP
+from . import http
 from .utils import sync
 
 # pylint: disable=redefined-outer-name
@@ -37,7 +37,7 @@ async def query(url, q):
         The returned results.
 
     """
-    r = await HTTP.post(url, json={"query": q})
+    r = await http.post(url, json={"query": q})
     return r
 
 
