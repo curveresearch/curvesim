@@ -109,7 +109,7 @@ def pipeline(
     metrics = init_metrics(metrics, pool=pool)
     strategy = VolumeLimitedStrategy(metrics, vol_mult)
 
-    output = run_pipeline(param_sampler, price_sampler, strategy, ncpu=ncpu)
+    output = run_pipeline(param_sampler, price_sampler, strategy, metrics, ncpu=ncpu)
     results = make_results(*output, metrics)
 
     return results

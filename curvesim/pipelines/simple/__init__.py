@@ -97,6 +97,6 @@ def pipeline(  # pylint: disable=too-many-locals
     _metrics = init_metrics(DEFAULT_METRICS, pool=pool)
     strategy = SimpleStrategy(_metrics)
 
-    output = run_pipeline(param_sampler, price_sampler, strategy, ncpu=ncpu)
+    output = run_pipeline(param_sampler, price_sampler, strategy, _metrics, ncpu=ncpu)
     results = make_results(*output, _metrics)
     return results

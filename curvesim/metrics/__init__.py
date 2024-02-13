@@ -12,7 +12,7 @@ Metrics recorded during simulations. The submodule includes:
 
     2. :class:`.StateLog`:
         Logger that records simulation/pool state throughout a simulation and computes
-        metrics at the end of each simulation run.
+        metrics at the end of each simulation run. TODO: update
 
     3. :class:`.SimResults`:
         Container for simulation results with methods to plot or return recorded

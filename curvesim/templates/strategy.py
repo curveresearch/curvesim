@@ -62,11 +62,11 @@ class Strategy(ABC):
 
         Returns
         -------
-        metrics : tuple of lists
+        log: TODO: update
         """
         # pylint: disable=not-callable
         trader = self.trader_class()
-        log = self.log_class(pool, self.metrics)
+        log = self.log_class(pool)
 
         parameters = parameters or "no parameter changes"
         logger.info("[%s] Simulating with %s", pool.symbol, parameters)
@@ -77,9 +77,9 @@ class Strategy(ABC):
             pool.prepare_for_trades(sample.timestamp)
             trader_args = self._get_trader_inputs(sample)
             trade_data = trader.process_time_sample(pool, *trader_args)
-            log.update(price_sample=sample, trade_data=trade_data)
+            log.update(pool=pool, price_sample=sample, trade_data=trade_data)
 
-        return log.compute_metrics()
+        return log.get_logs()
 
     @abstractmethod
     def _get_trader_inputs(self, sample):

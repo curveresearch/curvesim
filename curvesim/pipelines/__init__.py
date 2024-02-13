@@ -17,6 +17,8 @@ returning its result metrics.
 """
 from multiprocessing import Pool as cpu_pool
 
+from pandas import concat
+
 from curvesim.logging import (
     configure_multiprocess_logging,
     get_logger,
@@ -26,7 +28,7 @@ from curvesim.logging import (
 logger = get_logger(__name__)
 
 
-def run_pipeline(param_sampler, price_sampler, strategy, ncpu=4):
+def run_pipeline(param_sampler, price_sampler, strategy, metrics, ncpu=4):
     """
     Core function for running pipelines.
 
@@ -45,6 +47,9 @@ def run_pipeline(param_sampler, price_sampler, strategy, ncpu=4):
     strategy: callable
         A function dictating what happens at each timestep.
 
+    metrics: List[metrics objects]
+        TODO: update
+
     ncpu : int, default=4
         Number of cores to use.
 
@@ -61,7 +66,7 @@ def run_pipeline(param_sampler, price_sampler, strategy, ncpu=4):
             ]
 
             wrapped_args_list = [
-                (strategy, logging_queue, *args) for args in strategy_args_list
+                (strategy, metrics, logging_queue, *args) for args in strategy_args_list
             ]
 
             with cpu_pool(ncpu) as clust:
@@ -74,14 +79,15 @@ def run_pipeline(param_sampler, price_sampler, strategy, ncpu=4):
     else:
         results = []
         for pool, params in param_sampler:
-            metrics = strategy(pool, params, price_sampler)
-            results.append(metrics)
+            state_log = strategy(pool, params, price_sampler)
+            run_metrics = compute_metrics(state_log, metrics)
+            results.append(run_metrics)
         results = tuple(zip(*results))
 
     return results
 
 
-def wrapped_strategy(strategy, logging_queue, *args):
+def wrapped_strategy(strategy, metrics, logging_queue, *args):
     """
     This wrapper ensures we configure logging to use the
     multiprocessing enqueueing logic within the new process.
@@ -90,4 +96,32 @@ def wrapped_strategy(strategy, logging_queue, *args):
     be pickled.
     """
     configure_multiprocess_logging(logging_queue)
-    return strategy(*args)
+    state_log = strategy(*args)
+    run_metrics = compute_metrics(state_log, metrics)
+
+    return run_metrics
+
+
+def compute_metrics(state_log, metrics):
+    """
+    Computes metrics from the accumulated log data.
+
+    Parameters TODO: write
+    ----------
+
+    Returns
+    -------
+    dataframes
+    """
+    data_per_run = state_log["data_per_run"]
+    metric_data = [metric.compute(state_log) for metric in metrics]
+    data_per_trade, summary_data = tuple(zip(*metric_data))  # transpose tuple list
+
+    data_per_trade = concat(data_per_trade, axis=1)
+    summary_data = concat(summary_data, axis=1)
+
+    return (
+        data_per_run,
+        data_per_trade,
+        summary_data,
+    )

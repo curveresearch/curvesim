@@ -7,5 +7,5 @@ class Log(ABC):
         """Updates log data with event data."""
 
     @abstractmethod
-    def compute_metrics(self):
-        """Computes metrics from the accumulated log data."""
+    def get_logs(self):
+        """Returns the accumulated log data."""
