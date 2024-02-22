@@ -1,4 +1,4 @@
-from curvesim.pool_data import get_pool_volume
+from curvesim.pool_data import get_pool_assets
 from curvesim.pool_data.metadata import PoolMetaData
 from curvesim.utils import get_pairs
 
@@ -10,8 +10,8 @@ from ..pool_metadata import (
 )
 
 
-def test_get_pool_volume():
-    """Test the volume query."""
+def test_get_pool_assets():
+    """Test get_pool_assets query."""
     metadata_list = [
         cryptopool_test_metadata,
         metapool_test_metadata,
@@ -21,19 +21,19 @@ def test_get_pool_volume():
 
     for metadata in metadata_list:
         pool_metadata = PoolMetaData(metadata)
+        asset_pairs = get_pairs(pool_metadata.coin_names)
 
         # Test using metadata
-        volumes1 = get_pool_volume(pool_metadata, start=1707696000, end=1707868800)
-        assert len(volumes1) == 2
-        assert volumes1.columns.to_list() == get_pairs(pool_metadata.coin_names)
+        assets1 = get_pool_assets(pool_metadata)
+        _pairs1 = [(asset.base.symbol, asset.quote.symbol) for asset in assets1]
+
+        assert _pairs1 == asset_pairs
 
         # Test using address and chain
         address = pool_metadata.address
         chain = pool_metadata.chain
-        volumes2 = get_pool_volume(
-            address, chain=chain, start=1707696000, end=1707868800
-        )
-        assert len(volumes2) == 2
-        assert volumes2.columns.to_list() == get_pairs(pool_metadata.coin_names)
+        assets2 = get_pool_assets(address, chain=chain)
+        _pairs2 = [(asset.base.symbol, asset.quote.symbol) for asset in assets2]
 
-        assert all(volumes1 == volumes2)
+        assert _pairs2 == asset_pairs
+        assert assets1 == assets2

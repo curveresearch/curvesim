@@ -1,8 +1,6 @@
-from curvesim.pool_data import get_metadata
-
 from curvesim.pool.sim_interface import SimCurveMetaPool, SimCurvePool
 from curvesim.pool.stableswap import CurveMetaPool, CurvePool
-
+from curvesim.pool_data import get_metadata
 
 properties = ["chain", "pool_type", "sim_pool_type", "coins", "coin_names", "n"]
 

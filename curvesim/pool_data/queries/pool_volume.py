@@ -2,27 +2,28 @@
 Functions to get historical volume for Curve pools.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime
 from math import comb
-from typing import List, Optional, Tuple, Union
+from typing import List, Tuple, Union
 
 from pandas import DataFrame, Series
 
+from curvesim.constants import Chain
 from curvesim.logging import get_logger
 from curvesim.network.curve_prices import get_pool_pair_volume_sync
 from curvesim.pool_data.metadata import PoolMetaDataInterface
 from curvesim.utils import get_event_loop, get_pairs
 
-from .metadata import Chain, get_metadata
+from .metadata import get_metadata
 
 logger = get_logger(__name__)
 
 
 def get_pool_volume(
     metadata_or_address: Union[PoolMetaDataInterface, str],
-    days: int = 60,
-    end: Optional[int] = None,
-    chain: Union[str, Chain] = "mainnet",
+    start: Union[int, datetime],
+    end: Union[int, datetime],
+    chain: Union[str, Chain] = Chain.MAINNET,
 ) -> DataFrame:
     """
     Gets historical daily volume for each pair of coins traded in a Curve pool.
@@ -32,11 +33,11 @@ def get_pool_volume(
     metadata_or_address: PoolMetaDataInterface or str
         Pool metadata or pool address to fetch metadata.
 
-    days: int, defaults to 60
-        Number of days to pull volume data for.
+    start: datetime.datetime or int (POSIX timestamp)
+        Timestamp of the last time to pull data for.
 
-    end: int, defaults to start of current date
-        Posix timestamp of the last time to pull data for.
+    end: datetime.datetime or int (POSIX timestamp)
+        Timestamp of the last time to pull data for.
 
     chain: str, default "mainnet"
         Chain to use if pool address is provided to fetch metadata.
@@ -56,7 +57,7 @@ def get_pool_volume(
         pool_metadata = metadata_or_address
 
     pair_data = _get_pair_data(pool_metadata)
-    start_ts, end_ts = _process_timestamps(days, end)
+    start_ts, end_ts = _process_timestamps(start, end)
     loop = get_event_loop()
 
     volumes: dict[Tuple[str, str], Series] = {}
@@ -71,7 +72,7 @@ def get_pool_volume(
         )
         volumes[pair_symbols] = data["volume"]
 
-    volume_df = _make_volume_df(volumes, days)
+    volume_df = _make_volume_df(volumes)
     return volume_df
 
 
@@ -108,21 +109,19 @@ def _get_metapool_addresses(pool_metadata) -> List[str]:
     return [address_meta] * n_pairs_meta + [address_base] * n_pairs_base
 
 
-def _process_timestamps(days, end) -> Tuple[int, int]:
-    end = end or int(
-        datetime.now(timezone.utc)
-        .replace(hour=0, minute=0, second=0, microsecond=0)
-        .timestamp()
-    )
-    start = end - days * 86400
+def _process_timestamps(start, end) -> Tuple[int, int]:
+    if isinstance(start, datetime):
+        start = int(start.timestamp())
+
+    if isinstance(end, datetime):
+        end = int(end.timestamp())
+
     return start, end
 
 
-def _make_volume_df(volumes, days) -> DataFrame:
+def _make_volume_df(volumes) -> DataFrame:
     df = DataFrame(volumes)
     df.columns = df.columns.to_flat_index()
-    if len(df) > days:
-        df = df[-days:]
     logger.info("Days of volume returned:\n%s", df.count().to_string())
-    df.fillna(0, inplace=True)
+    df.fillna(0.0, inplace=True)
     return df

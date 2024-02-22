@@ -12,8 +12,6 @@ from curvesim.utils import Address, get_event_loop, to_address
 
 def from_address(address, chain, env="prod", end_ts=None):
     """
-    Returns
-
     Parameters
     ----------
     address: str

@@ -1,12 +1,16 @@
 """
 Contains variables and functions common to the arbitrage pipelines.
 """
+__all__ = ["DEFAULT_METRICS", "get_arb_trades", "get_asset_data", "get_pool_data"]
 
 from scipy.optimize import root_scalar
 
 from curvesim.logging import get_logger
 from curvesim.metrics import metrics as Metrics
 from curvesim.templates.trader import ArbTrade
+
+from .get_asset_data import get_asset_data
+from .get_pool_data import get_pool_data
 
 logger = get_logger(__name__)
 DEFAULT_METRICS = [

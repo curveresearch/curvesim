@@ -4,6 +4,9 @@ name: Run volume limited arbitrage pipeline
 # events but only for the main and develop branches.
 on: workflow_dispatch
 
+env:
+  ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}
+
 jobs:
   build:
     runs-on: ubuntu-latest

@@ -88,7 +88,7 @@ class ArbMetrics(PricingMetric):
         }
 
     def __init__(self, pool, **kwargs):
-        super().__init__(pool.assets.symbols)
+        super().__init__(pool.asset_names)
 
     def compute_arb_metrics(self, **kwargs):
         """Computes all metrics for each timestamp in an individual run."""
@@ -218,7 +218,7 @@ class PoolVolume(PoolPricingMetric):
         """
         trade_data = kwargs["trade_data"]
 
-        meta_asset = self._pool.assets.symbols[0]
+        meta_asset = self._pool.asset_names[0]
 
         def per_timestamp_function(trade_data):
             volume = 0

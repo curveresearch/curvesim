@@ -1,3 +1,6 @@
+"""Contains various exceptions used in curvesim."""
+
+
 class CurvesimException(Exception):
     """Base exception class"""
 
@@ -25,6 +28,10 @@ class HttpClientError(CurvesimException):
 
     def __repr__(self):
         return f"HttpClientError({self.status}, {self.message}, url={self.url})"
+
+
+class CurvesimTypeError(CurvesimException, TypeError):
+    """Raised when an argument is the wrong type."""
 
 
 class CurvesimValueError(CurvesimException, ValueError):
@@ -77,3 +84,11 @@ class StateLogError(CurvesimException):
 
 class UnregisteredPoolError(StateLogError):
     """Error raised when a pool type is not recognized by the metrics framework."""
+
+
+class TimeSequenceError(CurvesimException):
+    """Error using a TimeSequence object."""
+
+
+class DataSourceError(CurvesimException):
+    """Error using a DataSource object."""

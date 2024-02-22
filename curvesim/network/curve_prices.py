@@ -108,7 +108,7 @@ async def get_pool_pair_volume(
         interval=interval,
     )
 
-    df = DataFrame(data, columns=["timestamp", "volume", "fees"])
+    df = DataFrame(data, columns=["timestamp", "volume", "fees"], dtype="float64")
     df["timestamp"] = to_datetime(df["timestamp"], unit="s")
     df.set_index("timestamp", inplace=True)
     return df

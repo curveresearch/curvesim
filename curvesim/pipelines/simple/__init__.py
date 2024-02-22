@@ -11,21 +11,19 @@ from curvesim.metrics import init_metrics
 from curvesim.metrics.results import make_results
 from curvesim.pipelines import run_pipeline
 from curvesim.pipelines.simple.strategy import SimpleStrategy
-from curvesim.pool import get_sim_pool
 
-from ..common import DEFAULT_METRICS
+from ..common import DEFAULT_METRICS, get_asset_data, get_pool_data
 
 
 def pipeline(  # pylint: disable=too-many-locals
-    pool_address,
-    chain,
+    metadata_or_address,
     *,
+    chain="mainnet",
     variable_params=None,
     fixed_params=None,
-    end_ts=None,
-    days=60,
     src="coingecko",
-    data_dir="data",
+    time_sequence=None,
+    pool_ts=None,
     ncpu=None,
     env="prod",
 ):
@@ -38,14 +36,13 @@ def pipeline(  # pylint: disable=too-many-locals
 
     Parameters
     ----------
-    pool_address : str
-        '0x'-prefixed string representing the pool address.
+    metadata_or_address: :class:`~curvesim.pool_data.metadata.PoolMetaDataInterface` or str
+        Pool metadata obect or address to fetch metadata for.
 
-    chain: str
-        Identifier for blockchain or layer2.  Supported values are:
-        "mainnet", "arbitrum", "optimism", "fantom", "avalanche", "matic", "xdai"
+    chain : str or :class:`curvesim.constants.Chain`, default="mainnet"
+        Chain to use if fetching metadata by address.
 
-    variable_params : dict, defaults to broad range of A/fee values
+    variable_params : dict
         Pool parameters to vary across simulations.
         keys: pool parameters, values: iterables of ints
 
@@ -61,18 +58,14 @@ def pipeline(  # pylint: disable=too-many-locals
         --------
         >>> fixed_params = {"D": 1000000*10**18}
 
-    end_ts : int, optional
-        End timestamp in Unix time.  Defaults to 30 minutes before midnight of the
-        current day in UTC.
-
-    days : int, default=60
-        Number of days to pull price/volume data for.
-
-    src : str, default="coingecko"
+    src : str or :class:`~curvesim.templates.DateSource`, default="coingecko"
         Source for price/volume data: "coingecko" or "local".
 
-    data_dir : str, default="data"
-        relative path to saved price data folder
+    time_sequence : :class:`~curvesim.templates.DateTimeSequence`, optional
+        Timepoints for price/volume data and simulated trades.
+
+    pool_ts : datetime.datetime or int, optional
+        Optional timestamp to use when fetching metadata by address.
 
     ncpu : int, default=os.cpu_count()
         Number of cores to use.
@@ -84,15 +77,12 @@ def pipeline(  # pylint: disable=too-many-locals
     """
     ncpu = ncpu or os.cpu_count()
 
-    pool = get_sim_pool(pool_address, chain, env=env, end_ts=end_ts)
-
-    sim_assets = pool.assets
-    price_sampler = PriceVolume(
-        sim_assets, days=days, end=end_ts, data_dir=data_dir, src=src
-    )
+    pool, pool_metadata = get_pool_data(metadata_or_address, chain, env, pool_ts)
+    asset_data, _ = get_asset_data(pool_metadata, time_sequence, src)
 
     # pylint: disable-next=abstract-class-instantiated
     param_sampler = ParameterizedPoolIterator(pool, variable_params, fixed_params)
+    price_sampler = PriceVolume(asset_data)
 
     _metrics = init_metrics(DEFAULT_METRICS, pool=pool)
     strategy = SimpleStrategy(_metrics)

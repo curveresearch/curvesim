@@ -7,59 +7,71 @@ Note
 Nomics data is deprecated.
 """
 
-from curvesim.exceptions import NetworkError
 
-from .sources import coingecko
+from typing import List, Union
+
+from pandas import concat
+
+from curvesim.exceptions import CurvesimTypeError
+from curvesim.templates import DataSource, SimAsset, TimeSequence
+
+from .data_sources import DataSourceEnum
 
 
-def get(
-    coins,
-    chain="mainnet",
-    *,
-    days=60,
-    data_dir="data",
-    src="coingecko",
-    end=None,
+def get_price_data(
+    sim_assets: List[SimAsset],
+    time_sequence: TimeSequence,
+    data_source: Union[str, DataSource, DataSourceEnum] = DataSourceEnum.COINGECKO,
 ):
     """
-    Pull price and volume data for given coins.
+    Pull price and volume data for each sim_asset.
 
-    Data is returned for all pairwise combinations of the input coins.
 
     Parameters
     ----------
-    coins : list of str
-        List of coin addresses.
+    sim_assets: List[SimAsset]
+        The assets to pull data for.
 
-    days : int, default=60
-        Number of days to pull data for.
+    time_sequence: TimeSequence
+        Timestamps to pull data for. If the specified source can't provide data for
+        the specified times, the data will be resampled.
 
-    data_dir : str, default="data"
-        Directory to load local data from.
-
-    src : str, default="coingecko"
-        Data source ("coingecko", "nomics", or "local").
-
+    data_source: str, DataSource, or DataSourceEnum
+        DataSource object to query.
 
     Returns
     -------
-    prices : pandas.DataFrame
-        Timestamped prices for each pair of coins.
-
-    volumes : pandas.DataFrame
-        Timestamped volumes for each pair of coins.
-
-    pzero : int or pandas.Series
-        Proportion of timestamps with zero volume.
+    pandas.DataFrame
 
     """
-    if src == "coingecko":
-        prices, volumes, pzero = coingecko(coins, chain=chain, days=days, end=end)
 
-    elif src == "nomics":
-        raise NetworkError("Nomics data is no longer supported.")
+    data_source_instance = _instantiate_data_source(data_source)
 
-    elif src == "local":
-        raise NetworkError("Local data currently not supported.")
+    data = []
+    for sim_asset in sim_assets:
+        _data = data_source_instance.query(sim_asset, time_sequence)
+        data.append(_data)
 
-    return prices, volumes, pzero
+    df = concat(data, axis=1)
+    return df
+
+
+def _instantiate_data_source(data_source):
+    if isinstance(data_source, str):
+        data_source_instance = DataSourceEnum[data_source.upper()].value()
+
+    elif isinstance(data_source, DataSourceEnum):
+        data_source_instance = data_source.value()
+
+    elif isinstance(data_source, DataSource):
+        data_source_instance = data_source
+
+    elif issubclass(data_source, DataSource):
+        data_source_instance = data_source()
+
+    else:
+        raise CurvesimTypeError(
+            "'data_source' must be str, DataSourceEnum, or DataSource subclass/instance"
+        )
+
+    return data_source_instance

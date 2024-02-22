@@ -2,6 +2,9 @@ name: Generate comparison results for CI test
 
 on: workflow_dispatch
 
+env:
+  ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
