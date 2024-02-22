@@ -8,11 +8,10 @@ from curvesim.iterators.param_samplers import ParameterizedPoolIterator
 from curvesim.iterators.price_samplers import PriceVolume
 from curvesim.logging import get_logger
 from curvesim.metrics import init_metrics, make_results
-from curvesim.pool import get_sim_pool
 from curvesim.pool_data import get_pool_volume
 
 from .. import run_pipeline
-from ..common import DEFAULT_METRICS
+from ..common import DEFAULT_METRICS, get_asset_data, get_pool_data
 from .strategy import VolumeLimitedStrategy
 
 logger = get_logger(__name__)
@@ -20,17 +19,18 @@ logger = get_logger(__name__)
 
 # pylint: disable-next=too-many-locals
 def pipeline(
-    pool_metadata,
+    metadata_or_address,
     *,
+    chain="mainnet",
     variable_params=None,
     fixed_params=None,
     metrics=None,
-    days=60,
     src="coingecko",
-    data_dir="data",
+    time_sequence=None,
     vol_mult=None,
+    pool_ts=None,
     ncpu=None,
-    end=None,
+    env="prod",
 ):
     """
     Implements the volume-limited arbitrage pipeline.
@@ -42,10 +42,13 @@ def pipeline(
 
     Parameters
     ----------
-    pool_metadata : :class:`~curvesim.pool_data.metadata.PoolMetaDataInterface`
-        Pool metadata object for the pool of interest.
+    metadata_or_address: :class:`~curvesim.pool_data.metadata.PoolMetaDataInterface` or str
+        Pool metadata obect or address to fetch metadata for.
 
-    variable_params : dict, defaults to broad range of A/fee values
+    chain : str or :class:`curvesim.constants.Chain`, default="mainnet"
+        Chain to use if fetching metadata by address.
+
+    variable_params : dict
         Pool parameters to vary across simulations.
         keys: pool parameters, values: iterables of ints
 
@@ -61,14 +64,15 @@ def pipeline(
         --------
         >>> fixed_params = {"D": 1000000*10**18}
 
-    days : int, default=60
-        Number of days to pull pool and price data for.
+    metrics : list of :class:`~curvesim.metrics.base.Metric` classes, optional
+        Metrics to compute for each simulation run.
+        Defaults to `curvesim.pipelines.common.DEFAULT_METRICS`
 
-    src : str, default="coingecko"
+    src : str or :class:`~curvesim.templates.DateSource`, default="coingecko"
         Source for price/volume data: "coingecko" or "local".
 
-    data_dir : str, default="data"
-        relative path to saved price data folder
+    time_sequence : :class:`~curvesim.templates.DateTimeSequence`, optional
+        Timepoints for price/volume data and simulated trades.
 
     vol_mult : dict, default computed from data
         Value(s) multiplied by market volume to specify volume limits
@@ -79,6 +83,9 @@ def pipeline(
         .. code-block::
 
             {('DAI', 'USDC'): 0.1, ('DAI', 'USDT'): 0.1, ('USDC', 'USDT'): 0.1}
+
+    pool_ts : datetime.datetime or int, optional
+        Optional timestamp to use when fetching metadata by address.
 
     ncpu : int, default=os.cpu_count()
         Number of cores to use.
@@ -91,16 +98,17 @@ def pipeline(
         cpu_count = os.cpu_count()
         ncpu = cpu_count if cpu_count is not None else 1
 
-    pool = get_sim_pool(pool_metadata)
+    pool, pool_metadata = get_pool_data(metadata_or_address, chain, env, pool_ts)
+    asset_data, time_sequence = get_asset_data(pool_metadata, time_sequence, src)
 
     # pylint: disable-next=abstract-class-instantiated
     param_sampler = ParameterizedPoolIterator(pool, variable_params, fixed_params)
-    price_sampler = PriceVolume(
-        pool.assets, days=days, data_dir=data_dir, src=src, end=end
-    )
+    price_sampler = PriceVolume(asset_data)
 
     if vol_mult is None:
-        pool_volume = get_pool_volume(pool_metadata, days=days, end=end)
+        pool_volume = get_pool_volume(
+            pool_metadata, time_sequence[0], time_sequence[-1]
+        )
         vol_mult = pool_volume.sum() / price_sampler.volumes.sum()
         logger.info("Volume Multipliers:\n%s", vol_mult.to_string())
         vol_mult = vol_mult.to_dict()

@@ -12,6 +12,7 @@ import pickle
 import pandas as pd
 
 from curvesim import autosim
+from curvesim.templates import DateTimeSequence
 
 TEST_PARAMS = {"A": [100, 1000], "fee": [3000000, 4000000]}
 TEST_CRYPTO_PARAMS = {
@@ -25,25 +26,22 @@ pools = [
     # 3CRV
     {
         "address": "0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7",
-        "end_timestamp": 1638316800,
         "params": TEST_PARAMS,
     },
     # aCRV
-    {
-        "address": "0xdebf20617708857ebe4f679508e7b7863a8a8eee",
-        "end_timestamp": 1622505600,
-        "params": TEST_PARAMS,
-    },
+    # Disabled pending fixes to lending pool volume queries
+    # {
+    #     "address": "0xdebf20617708857ebe4f679508e7b7863a8a8eee",
+    #     "params": TEST_PARAMS,
+    # },
     # # frax3CRV"
     {
         "address": "0xd632f22692fac7611d2aa1c0d552930d43caed3b",
-        "end_timestamp": 1643673600,
         "params": TEST_PARAMS,
     },
     # triCRV
     {
         "address": "0x4ebdf703948ddcea3b11f675b4d1fba9d2414a14",
-        "end_timestamp": 1692215156,
         "params": TEST_CRYPTO_PARAMS,
     },
 ]
@@ -69,7 +67,10 @@ def main(generate=False, ncpu=None):
 
     for pool in pools:
         pool_address = pool["address"]
-        end_ts = pool["end_timestamp"]
+        pool_ts = 1707868800
+        time_sequence = DateTimeSequence.from_range(
+            end=pool_ts * 1e9, freq="1h", periods=1440
+        )
         params = pool["params"]
         vol_mult = pool.get("vol_mult", None)
         env = pool.get("env", "prod")
@@ -78,7 +79,8 @@ def main(generate=False, ncpu=None):
             pool=pool_address,
             chain="mainnet",
             **params,
-            end=end_ts,
+            time_sequence=time_sequence,
+            pool_ts=pool_ts,
             vol_mult=vol_mult,
             ncpu=ncpu,
             env=env,

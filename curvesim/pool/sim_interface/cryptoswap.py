@@ -2,7 +2,6 @@
 from math import prod
 
 from curvesim.exceptions import SimPoolError
-from curvesim.templates import SimAssets
 from curvesim.templates.sim_pool import SimPool
 from curvesim.utils import cache, override
 
@@ -213,17 +212,3 @@ class SimCurveCryptoPool(SimPool, AssetIndicesMixin, CurveCryptoPool):
         self.virtual_price = self.get_virtual_price()
         self.xcp_profit = 10**18
         self.xcp_profit_a = 10**18
-
-    @property
-    @override
-    @cache
-    def assets(self):
-        """
-        Return :class:`.SimAssets` object with the properties of the pool's assets.
-
-        Returns
-        -------
-        SimAssets
-            SimAssets object that stores the properties of the pool's assets.
-        """
-        return SimAssets(self.coin_names, self.coin_addresses, self.chain)

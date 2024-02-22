@@ -1,5 +1,4 @@
 from curvesim.exceptions import CurvesimValueError, SimPoolError
-from curvesim.templates import SimAssets
 from curvesim.templates.sim_pool import SimPool
 from curvesim.utils import cache, override
 
@@ -214,20 +213,3 @@ class SimCurveMetaPool(SimPool, AssetIndicesMixin, CurveMetaPool):
             The minimal trade size
         """
         return 0
-
-    @property
-    @override
-    @cache
-    def assets(self):
-        """
-        Return :class:`.SimAssets` object with the properties of the pool's assets.
-
-        Returns
-        -------
-        SimAssets
-            SimAssets object that stores the properties of the pool's assets.
-        """
-        symbols = self.coin_names[:-1] + self.basepool.coin_names
-        addresses = self.coin_addresses[:-1] + self.basepool.coin_addresses
-
-        return SimAssets(symbols, addresses, self.chain)
