@@ -1,7 +1,12 @@
+"""
+Contains PriceVolume price sampler and PriceVolumeSample dataclass.
+"""
+
 from typing import Iterator
 
+from pandas import DataFrame
+
 from curvesim.logging import get_logger
-from curvesim.price_data import get
 from curvesim.templates.price_samplers import PriceSample, PriceSampler
 from curvesim.utils import dataclass, override
 
@@ -26,48 +31,22 @@ class PriceVolumeSample(PriceSample):
 
 class PriceVolume(PriceSampler):
     """
-    An iterator that retrieves price/volume and iterates over timepoints in the data.
+    Iterates over price and volume data in the provided DataFrame.
     """
 
-    def __init__(
-        self,
-        assets,
-        *,
-        days=60,
-        data_dir="data",
-        src="coingecko",
-        end=None,
-    ):
+    def __init__(self, data: DataFrame):
         """
-        Retrieves price/volume data and prepares it for iteration.
-
         Parameters
         ----------
-        assets: SimAssets
-            Object giving the properties of the assets for simulation
-            (e.g., symbols, addresses, chain)
+        data: DataFrame
+            DataFrame with prices and volumes for each asset pair.
 
-        days: int, defaults to 60
-            Number of days to pull data for.
-
-        data_dir: str, defaults to "data"
-            Relative path to saved data folder.
-
-        src: str, defaults to "coingecko"
-            Identifies pricing source: coingecko or local.
-
+            Format should match output of :fun:"curvesim.price_data.get_price_data".
+            Row indices: datetime.datetime or pandas.Timestamp.
+            Column indices: MultIndex with "price" and "volume" level 1 for each tuple
+            of symbols in level 2.
         """
-        prices, volumes, _ = get(
-            assets.addresses,
-            chain=assets.chain,
-            days=days,
-            data_dir=data_dir,
-            src=src,
-            end=end,
-        )
-
-        self.prices = prices.set_axis(assets.symbol_pairs, axis="columns")
-        self.volumes = volumes.set_axis(assets.symbol_pairs, axis="columns")
+        self.data = data
 
     @override
     def __iter__(self) -> Iterator[PriceVolumeSample]:
@@ -76,16 +55,32 @@ class PriceVolume(PriceSampler):
         -------
         :class:`PriceVolumeSample`
         """
-        for price_row, volume_row in zip(
-            self.prices.iterrows(), self.volumes.iterrows()
-        ):
-            price_timestamp, prices = price_row
-            volume_timestamp, volumes = volume_row
-            assert (
-                price_timestamp == volume_timestamp
-            ), "Price/volume timestamps don't match"
+        for row in self.data.iterrows():
+            timestamp, row_data = row
 
-            prices = prices.to_dict()
-            volumes = volumes.to_dict()
+            prices = row_data["price"].to_dict()
+            volumes = row_data["volume"].to_dict()
 
-            yield PriceVolumeSample(price_timestamp, prices, volumes)  # type:ignore
+            yield PriceVolumeSample(timestamp, prices, volumes)  # type:ignore
+
+    @property
+    def prices(self):
+        """
+        Returns price data for all asset pairs.
+
+        Returns
+        -------
+        pandas.DataFrame
+        """
+        return self.data["price"]
+
+    @property
+    def volumes(self):
+        """
+        Returns volume data for all asset pairs.
+
+        Returns
+        -------
+        pandas.DataFrame
+        """
+        return self.data["volume"]

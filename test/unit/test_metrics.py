@@ -92,7 +92,6 @@ def _test_pricing_metric_class_init(metric, coin_names, prices):
     """Test attributes and methods specific to PricingMetric (sub)class."""
 
     # Test PricingMetric attributes
-    assert metric.coin_names == coin_names
     assert metric.numeraire == coin_names[0]
 
     # Test get_market_price

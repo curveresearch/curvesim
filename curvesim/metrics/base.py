@@ -312,8 +312,6 @@ class PricingMixin:
             Symbols for the coins used in a simulation. A numeraire is selected from
             the specified coins.
         """
-
-        self.coin_names = coin_names
         self.numeraire = get_numeraire(coin_names)
         super().__init__(**kwargs)
 
@@ -346,9 +344,6 @@ class PricingMixin:
             return 1 / prices[(quote, base)]
 
         return prices[(base, quote)]
-
-
-pandas_coin_pair_attr = {DataFrame: "columns", Series: "index"}
 
 
 def get_coin_pairs(prices):
@@ -418,4 +413,4 @@ class PoolPricingMetric(PricingMixin, PoolMetric):
             :func:`pool_config` and stored as :python:`self._pool` for access during
             metric computations. Number and names of coins derived from pool metadata.
         """
-        super().__init__(pool.assets.symbols, pool=pool)
+        super().__init__(pool.asset_names, pool=pool)
