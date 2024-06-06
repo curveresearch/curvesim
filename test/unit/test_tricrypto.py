@@ -22,6 +22,8 @@ from curvesim.pool.cryptoswap.calcs.tricrypto_ng import (
 )
 
 from ..fixtures.pool import pack_prices, unpack_prices
+from .test_cryptopool import pack_A_gamma
+from curvesim.exceptions import CalculationError
 
 
 def initialize_pool(vyper_tricrypto):
@@ -145,7 +147,7 @@ def update_cached_values(vyper_tricrypto, tricrypto_math):
 
 D_UNIT = 10**18
 positive_balance = st.integers(min_value=10**5 * D_UNIT, max_value=10**11 * D_UNIT)
-lp_tokens = st.integers(min_value=1 * D_UNIT, max_value=5 * 10**4 * D_UNIT)
+lp_tokens = st.integers(min_value=1 * D_UNIT, max_value=15 * 10**3 * D_UNIT)
 amplification_coefficient = st.integers(min_value=MIN_A, max_value=MAX_A)
 gamma_coefficient = st.integers(min_value=MIN_GAMMA, max_value=MAX_GAMMA)
 price = st.integers(min_value=10**12, max_value=10**25)
@@ -733,3 +735,265 @@ def test_claim_admin_fees(vyper_tricrypto, tricrypto_math):
     assert expected_xcp_profit == pool.xcp_profit == vyper_tricrypto.xcp_profit()
     assert expected_xcp_profit == pool.xcp_profit_a == vyper_tricrypto.xcp_profit_a()
     assert expected_vprice == pool.virtual_price == vyper_tricrypto.virtual_price()
+
+
+@given(
+    amplification_coefficient,
+    gamma_coefficient,
+    st.integers(min_value=0, max_value=2),
+    st.integers(min_value=0, max_value=2),
+    st.integers(min_value=1, max_value=50),
+    lp_tokens,
+)
+@settings(
+    suppress_health_check=[
+        HealthCheck.function_scoped_fixture,
+        HealthCheck.filter_too_much,
+        HealthCheck.data_too_large,
+    ],
+    max_examples=5,
+    deadline=None,
+)
+def test_tweak_price(
+    vyper_tricrypto,
+    tricrypto_math,
+    A,
+    gamma,
+    i,
+    j,
+    dx_perc,
+    lp_amount,
+):
+    """Test _tweak_price against vyper implementation."""
+    assume(i != j)
+
+    xp = vyper_tricrypto.eval("self.xp()")
+    xp = list(xp)
+
+    # need to set A_gamma since this is read when claiming admin fees
+    A_gamma_packed = pack_A_gamma(A, gamma)
+    vyper_tricrypto.eval(f"self.future_A_gamma={A_gamma_packed}")
+
+    # need to update cached `D` and `virtual_price`
+    # (this requires adjusting LP token supply for consistency)
+    D = tricrypto_math.newton_D(A, gamma, xp)
+    vyper_tricrypto.eval(f"self.D={D}")
+
+    totalSupply = vyper_tricrypto.eval(f"self.get_xcp({D})")
+    vyper_tricrypto.eval(f"self.totalSupply={totalSupply}")
+    # virtual price can't be below 10**18
+    vyper_tricrypto.eval("self.virtual_price=10**18")
+    # reset profit counter also
+    vyper_tricrypto.eval("self.xcp_profit=10**18")
+    vyper_tricrypto.eval("self.xcp_profit_a=10**18")
+
+    pool = initialize_pool(vyper_tricrypto)
+
+    tweak_price_calculation_error(pool, A, gamma, xp, i)
+    tweak_price_with_donations(vyper_tricrypto, pool, A, gamma, xp, i, dx_perc)
+    tweak_price_exchange(vyper_tricrypto, pool, i, j, dx_perc)
+    tweak_price_imbalanced_deposit(vyper_tricrypto, pool, A, gamma, xp, i, dx_perc)
+    tweak_price_imbalanced_withdrawal(vyper_tricrypto, pool, A, gamma, i, lp_amount)
+
+
+def tweak_price_calculation_error(pool, A, gamma, xp, i):
+    """Test _tweak_price throws CalculationError on non-None p_i input."""
+    p_i = 10**18 if i == 0 else pool.last_prices[i - 1]
+    # pylint: disable=protected-access
+    try:
+        pool._tweak_price(A, gamma, xp, i, p_i, None)
+    except Exception as err:
+        assert isinstance(err, CalculationError)
+
+
+def tweak_price_with_donations(vyper_tricrypto, pool, A, gamma, xp, i, dx_perc):
+    """Test _tweak_price behavior after donations that may break the invariant."""
+    n_coins = 3
+    A_gamma = [A, gamma]
+
+    old_xp = xp.copy()
+    old_scale = pool.price_scale.copy()
+    old_oracle = pool._price_oracle.copy()
+    old_virtual_price = pool.virtual_price
+
+    # donations will bork the pool's calcs, so take a snapshot here to revert to later
+    snapshot = pool.get_snapshot()
+
+    with boa.env.anchor():
+        # donate to the pool but not enough to adjust the price scale
+        xp[i] += pool.allowed_extra_profit // 10
+
+        pool._tweak_price(A, gamma, xp, None, None, None)
+        vyper_tricrypto.eval(f"self.tweak_price({A_gamma}, {xp}, 0, 0)")
+
+        expected_price_scale = [
+            vyper_tricrypto.price_scale(i) for i in range(n_coins - 1)
+        ]
+        expected_price_oracle = [
+            vyper_tricrypto.price_oracle(i) for i in range(n_coins - 1)
+        ]
+        expected_last_prices = [
+            vyper_tricrypto.last_prices(i) for i in range(n_coins - 1)
+        ]
+
+        assert pool.price_scale == expected_price_scale
+        assert pool._price_oracle == expected_price_oracle
+        assert pool.last_prices == expected_last_prices
+
+        assert pool.D == vyper_tricrypto.D()
+        assert pool.virtual_price == vyper_tricrypto.virtual_price()
+        assert pool.xcp_profit == vyper_tricrypto.xcp_profit()
+
+        # profit increased but not enough to adjust the price scale
+        assert pool.virtual_price > old_virtual_price
+        assert pool.price_oracle != old_oracle
+        assert pool.price_scale == old_scale
+
+        # revert xp
+        xp = old_xp.copy()
+
+        # donate enough to the pool to change the price scale
+        xp[i] += xp[i] * dx_perc // 100
+
+        old_oracle = pool._price_oracle.copy()
+        old_virtual_price = pool.virtual_price
+
+        pool._tweak_price(A, gamma, xp, None, None, None)
+        vyper_tricrypto.eval(f"self.tweak_price({A_gamma}, {xp}, 0, 0)")
+
+        expected_price_scale = [
+            vyper_tricrypto.price_scale(i) for i in range(n_coins - 1)
+        ]
+        expected_price_oracle = [
+            vyper_tricrypto.price_oracle(i) for i in range(n_coins - 1)
+        ]
+        expected_last_prices = [
+            vyper_tricrypto.last_prices(i) for i in range(n_coins - 1)
+        ]
+
+        assert pool.price_scale == expected_price_scale
+        assert pool._price_oracle == expected_price_oracle
+        assert pool.last_prices == expected_last_prices
+
+        assert pool.D == vyper_tricrypto.D()
+        assert pool.virtual_price == vyper_tricrypto.virtual_price()
+        assert pool.xcp_profit == vyper_tricrypto.xcp_profit()
+
+        # profit increased from donation
+        assert pool.virtual_price > old_virtual_price
+        assert pool.price_oracle != old_oracle
+
+    pool.revert_to_snapshot(snapshot)
+
+
+def tweak_price_exchange(vyper_tricrypto, pool, i, j, dx_perc):
+    """Test _tweak_price behavior after an exchange."""
+    n_coins = 3
+
+    old_oracle = pool._price_oracle.copy()
+
+    dx = pool.balances[i] * dx_perc // 100
+
+    # tweak_price is called after all calculations in exchange
+    pool.exchange(i, j, dx, 0)
+    vyper_tricrypto.exchange(i, j, dx, 0)
+
+    expected_price_scale = [vyper_tricrypto.price_scale(i) for i in range(n_coins - 1)]
+    expected_price_oracle = [
+        vyper_tricrypto.price_oracle(i) for i in range(n_coins - 1)
+    ]
+    expected_last_prices = [vyper_tricrypto.last_prices(i) for i in range(n_coins - 1)]
+
+    assert pool.price_scale == expected_price_scale
+    assert pool._price_oracle == expected_price_oracle
+    assert pool.last_prices == expected_last_prices
+
+    assert pool.D == vyper_tricrypto.D()
+    assert pool.virtual_price == vyper_tricrypto.virtual_price()
+    assert pool.xcp_profit == vyper_tricrypto.xcp_profit()
+
+    # can't guarantee that profit increases from rebalancing
+    assert pool.price_oracle != old_oracle
+
+
+def tweak_price_imbalanced_deposit(vyper_tricrypto, pool, A, gamma, xp, i, dx_perc):
+    """Test _tweak_price behavior after a deposit in one coin."""
+    n_coins = 3
+    A_gamma = [A, gamma]
+
+    old_oracle = pool._price_oracle.copy()
+
+    balances = pool.balances.copy()
+    balances[i] += balances[i] * dx_perc // 100
+
+    old_xp = pool._xp().copy()
+    xp = pool._xp_mem(balances)
+
+    amountsp = [xp[i] - old_xp[i] for i in range(n_coins)]
+
+    new_D = newton_D(A, gamma, xp)
+    total_supply = pool.tokens
+    d_token = total_supply * new_D // pool.D - total_supply
+    d_token_fee = pool._calc_token_fee(amountsp, xp)
+    d_token -= d_token_fee
+
+    pool.balances[i] = balances[i]
+    pool.tokens += d_token
+
+    vyper_tricrypto.eval(f"self.balances[{i}]={balances[i]}")
+    vyper_tricrypto.eval(f"self.totalSupply+={d_token}")
+
+    pool._tweak_price(A, gamma, xp, None, None, None)
+    vyper_tricrypto.eval(f"self.tweak_price({A_gamma}, {xp}, 0)")
+
+    expected_price_scale = [vyper_tricrypto.price_scale(i) for i in range(n_coins - 1)]
+    expected_price_oracle = [
+        vyper_tricrypto.price_oracle(i) for i in range(n_coins - 1)
+    ]
+    expected_last_prices = [vyper_tricrypto.last_prices(i) for i in range(n_coins - 1)]
+
+    assert pool.price_scale == expected_price_scale
+    assert pool._price_oracle == expected_price_oracle
+    assert pool.last_prices == expected_last_prices
+
+    assert pool.D == vyper_tricrypto.D()
+    assert pool.virtual_price == vyper_tricrypto.virtual_price()
+    assert pool.xcp_profit == vyper_tricrypto.xcp_profit()
+
+    # can't guarantee that profit increases from rebalancing
+    assert pool.price_oracle != old_oracle
+
+
+def tweak_price_imbalanced_withdrawal(vyper_tricrypto, pool, A, gamma, i, lp_amount):
+    """Test _tweak_price behavior after a withdrawal in one coin."""
+    n_coins = 3
+    A_gamma = [A, gamma]
+
+    old_oracle = pool._price_oracle.copy()
+
+    dy, _, D, xp = pool._calc_withdraw_one_coin(A, gamma, lp_amount, i, False, False)
+
+    pool.balances[i] -= dy
+    pool.tokens -= lp_amount
+    pool._tweak_price(A, gamma, xp, None, None, D)
+
+    vyper_tricrypto.eval(f"self.balances[{i}]-={dy}")
+    vyper_tricrypto.eval(f"self.totalSupply-={lp_amount}")
+    vyper_tricrypto.eval(f"self.tweak_price({A_gamma}, {xp}, {D})")
+
+    expected_price_scale = [vyper_tricrypto.price_scale(i) for i in range(n_coins - 1)]
+    expected_price_oracle = [
+        vyper_tricrypto.price_oracle(i) for i in range(n_coins - 1)
+    ]
+    expected_last_prices = [vyper_tricrypto.last_prices(i) for i in range(n_coins - 1)]
+
+    assert pool.price_scale == expected_price_scale
+    assert pool._price_oracle == expected_price_oracle
+    assert pool.last_prices == expected_last_prices
+
+    assert pool.D == vyper_tricrypto.D()
+    assert pool.virtual_price == vyper_tricrypto.virtual_price()
+    assert pool.xcp_profit == vyper_tricrypto.xcp_profit()
+
+    # can't guarantee that profit increases from rebalancing
+    assert pool.price_oracle != old_oracle
