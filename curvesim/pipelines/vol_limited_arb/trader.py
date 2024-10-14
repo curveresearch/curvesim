@@ -1,5 +1,7 @@
 from pprint import pformat
 
+import gin
+
 from numpy import isnan
 from scipy.optimize import least_squares
 
@@ -11,17 +13,21 @@ from ..common import get_arb_trades
 logger = get_logger(__name__)
 
 
+@gin.register
 class VolumeLimitedArbitrageur(Trader):
     """
     Computes, executes, and reports out arbitrage trades.
     """
 
-    def compute_trades(self, prices, volume_limits):  # pylint: disable=arguments-differ
+    def compute_trades(self, pool, prices, volume_limits):  # pylint: disable=arguments-differ # add * args at end - those get ignored
         """
         Computes trades to optimally arbitrage the pool, constrained by volume limits.
 
         Parameters
         ----------
+        pool : :class:`~curvesim.pipelines.templates.SimPool`
+            The pool to arbitrage.
+
         prices : dict
             Current market prices from the price_sampler.
 
@@ -37,9 +43,9 @@ class VolumeLimitedArbitrageur(Trader):
         additional_data: dict
             Dict of additional data to be passed to the state log as part of trade_data.
         """
-
+        # make volume_limits volumes + volume_multiples instead and move VolumeLimitedStrategy compute volume limits + get trader inputs to this class
         trades, errors, _ = multipair_optimal_arbitrage(
-            self.pool, prices, volume_limits
+            pool, prices, volume_limits
         )
         return trades, {"price_errors": errors}
 
@@ -58,7 +64,7 @@ def multipair_optimal_arbitrage(  # noqa: C901  pylint: disable=too-many-locals
     prices : dict
         Current market prices from the price_sampler.
 
-    volume_limits : dict
+    limits : dict
         Current volume limits for each trading pair.
 
     Returns
@@ -143,7 +149,10 @@ def _apply_volume_limits(arb_trades, limits, pool):
     excluded_trades = []
     for trade in arb_trades:
         pair = trade.coin_in, trade.coin_out
-        limited_amount_in = min(limits[pair], trade.amount_in)
+        try:
+            limited_amount_in = min(limits[pair], trade.amount_in)
+        except KeyError:
+            limited_amount_in = min(limits[pair[::-1]], trade.amount_in)
         lim_trade = trade.replace_amount_in(limited_amount_in)
 
         if lim_trade.amount_in > pool.get_min_trade_size(lim_trade.coin_in):

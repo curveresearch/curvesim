@@ -1,7 +1,9 @@
 """
-Network connector for subgraphs
-"""
+Network connector for subgraphs.
 
+2024/09 - THE SUBGRAPH IS DEPRECATED
+"""
+# TODO: deprecate all
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 

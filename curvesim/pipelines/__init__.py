@@ -26,7 +26,7 @@ from curvesim.logging import (
 logger = get_logger(__name__)
 
 
-def run_pipeline(param_sampler, price_sampler, strategy, ncpu=4):
+def run_pipeline(param_sampler, price_sampler, strategy, metrics, ncpu=4):
     """
     Core function for running pipelines.
 
@@ -45,6 +45,9 @@ def run_pipeline(param_sampler, price_sampler, strategy, ncpu=4):
     strategy: callable
         A function dictating what happens at each timestep.
 
+    metrics: List[metrics objects]
+        TODO: update
+
     ncpu : int, default=4
         Number of cores to use.
 
@@ -57,7 +60,7 @@ def run_pipeline(param_sampler, price_sampler, strategy, ncpu=4):
     if ncpu > 1:
         with multiprocessing_logging_queue() as logging_queue:
             strategy_args_list = [
-                (pool, params, price_sampler) for pool, params in param_sampler
+                (pool, params, price_sampler, metrics) for pool, params in param_sampler
             ]
 
             wrapped_args_list = [
@@ -74,8 +77,8 @@ def run_pipeline(param_sampler, price_sampler, strategy, ncpu=4):
     else:
         results = []
         for pool, params in param_sampler:
-            metrics = strategy(pool, params, price_sampler)
-            results.append(metrics)
+            computed_metrics = strategy(pool, params, price_sampler, metrics)
+            results.append(computed_metrics)
         results = tuple(zip(*results))
 
     return results

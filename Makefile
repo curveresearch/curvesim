@@ -89,7 +89,7 @@ format:
 black:
 	@echo "$(REVERSE)Running$(RESET) $(BOLD)black$(RESET)..."
 	@black --version
-	@black .
+	@black --extend-exclude "/(lib|bin)" .
 	@echo "$(REVERSE)Running$(RESET) $(BOLD)isort$(RESET)..."
 	@isort --version-number
 	@isort curvesim

@@ -1,3 +1,4 @@
+# TODO: deprecated
 import pytest
 
 from curvesim.exceptions import SubgraphError

@@ -179,7 +179,7 @@ class SimCurveCryptoPool(SimPool, AssetIndicesMixin, CurveCryptoPool):
 
         Parameters
         ----------
-        timestamp : pandas.DataFrame
+        prices : pandas.DataFrame
             The price time_series, price_sampler.prices.
         """
         xcp = self._get_xcp(self.D)

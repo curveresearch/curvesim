@@ -13,3 +13,4 @@ class DataSourceEnum(Enum):
 
     COINGECKO = CoinGeckoPriceVolumeSource
     LOCAL = CsvDataSource
+    #CurvePriceVolumeSource?

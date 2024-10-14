@@ -50,7 +50,22 @@ def _reindex_to_time_sequence(df, time_sequence, asset_id):
     )
 
     if any(nan_count > 0):
-        df_reindexed["price"] = df_reindexed["price"].ffill()
+        df_reindexed["price"] = df_reindexed["price"].ffill().bfill()
         df_reindexed["volume"] = df_reindexed["volume"].fillna(0)
 
     return df_reindexed
+
+
+"""
+Some problems:
+no documentation on expected format for price-volume data inside file
+
+no interface to rename csv files (base-quote) based on an AssetPair's symbols (so can work with default read func)
+    or at least provide a macro/function for converting curvesim's expected naming convention to a user-supplied naming convention for specifying file name in the dir
+
+unzip zipped csv file directory?
+
+no dedicated dir - let users use wherever
+
+save price volume data to csv (by supplying file path) on demand? - no, this is not datasource functionality
+"""

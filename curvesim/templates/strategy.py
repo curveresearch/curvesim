@@ -6,9 +6,11 @@ from curvesim.logging import get_logger
 from .log import Log
 from .trader import Trader
 
+#from curvesim.pipelines.simulation import compute_metrics
+
 logger = get_logger(__name__)
 
-
+# TODO: remove this and all child classes
 class Strategy(ABC):
     """
     A Strategy defines the trading approach used during each step of a simulation.
@@ -33,6 +35,7 @@ class Strategy(ABC):
     trader_class: Optional[Type[Trader]] = None
     log_class: Optional[Type[Log]] = None
 
+    # TODO: no need for metrics param anymore (child classes too)
     def __init__(self, metrics):
         """
         Parameters
@@ -42,7 +45,7 @@ class Strategy(ABC):
         """
         self.metrics = metrics
 
-    def __call__(self, pool, parameters, price_sampler):
+    def __call__(self, pool, parameters, price_sampler, metrics):
         """
         Computes and executes trades at each timestep.
 
@@ -66,8 +69,8 @@ class Strategy(ABC):
 
         """
         # pylint: disable=not-callable
-        trader = self.trader_class(pool)
-        log = self.log_class(pool, self.metrics)
+        trader = self.trader_class()
+        log = self.log_class(pool)
 
         parameters = parameters or "no parameter changes"
         logger.info("[%s] Simulating with %s", pool.symbol, parameters)
@@ -77,10 +80,12 @@ class Strategy(ABC):
         for sample in price_sampler:
             pool.prepare_for_trades(sample.timestamp)
             trader_args = self._get_trader_inputs(sample)
-            trade_data = trader.process_time_sample(*trader_args)
-            log.update(price_sample=sample, trade_data=trade_data)
+            trade_data = trader.process_time_sample(pool, *trader_args)
+            log.update(pool=pool, price_sample=sample, trade_data=trade_data)
 
-        return log.compute_metrics()
+        run_logs = log.get_logs()
+
+        return compute_metrics(run_logs, metrics)
 
     @abstractmethod
     def _get_trader_inputs(self, sample):

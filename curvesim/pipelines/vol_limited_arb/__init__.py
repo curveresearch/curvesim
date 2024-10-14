@@ -13,6 +13,7 @@ from curvesim.pool_data import get_pool_volume
 from .. import run_pipeline
 from ..common import DEFAULT_METRICS, get_asset_data, get_pool_data
 from .strategy import VolumeLimitedStrategy
+from .trader import VolumeLimitedArbitrageur # import trade class to top level?
 
 logger = get_logger(__name__)
 
@@ -115,9 +116,9 @@ def pipeline(
 
     metrics = metrics or DEFAULT_METRICS
     metrics = init_metrics(metrics, pool=pool)
-    strategy = VolumeLimitedStrategy(metrics, vol_mult)
+    strategy = VolumeLimitedStrategy(metrics, vol_mult) # might be deprecated - center pipeline() around a SimContext object?
 
-    output = run_pipeline(param_sampler, price_sampler, strategy, ncpu=ncpu)
+    output = run_pipeline(param_sampler, price_sampler, strategy, metrics, ncpu=ncpu)
     results = make_results(*output, metrics)
 
     return results

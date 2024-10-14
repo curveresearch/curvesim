@@ -9,6 +9,7 @@ properties = ["chain", "pool_type", "sim_pool_type", "coins", "coin_names", "n"]
 # for p in properties:
 #      stored_properties[p] = getattr(metadata, p)
 
+# TODO: update to reflect switch to curve-prices
 
 def _test_pool_metadata(address, chain, stored_properties, stored_dict):
     metadata = get_metadata(address, chain)

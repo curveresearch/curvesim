@@ -84,9 +84,9 @@ def pipeline(  # pylint: disable=too-many-locals
     param_sampler = ParameterizedPoolIterator(pool, variable_params, fixed_params)
     price_sampler = PriceVolume(asset_data)
 
-    _metrics = init_metrics(DEFAULT_METRICS, pool=pool)
-    strategy = SimpleStrategy(_metrics)
+    metrics = init_metrics(DEFAULT_METRICS, pool=pool)
+    strategy = SimpleStrategy(metrics)
 
-    output = run_pipeline(param_sampler, price_sampler, strategy, ncpu=ncpu)
-    results = make_results(*output, _metrics)
+    output = run_pipeline(param_sampler, price_sampler, strategy, metrics, ncpu=ncpu) # might be deprecated - center pipeline() around a SimContext object?
+    results = make_results(*output, metrics)
     return results

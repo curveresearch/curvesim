@@ -2,7 +2,7 @@
 Tools for fetching pool metadata and volume.
 
 Currently supports stableswap pools, metapools, rebasing (RAI) metapools,
-and 2-token cryptopools.
+and 2 or 3-token cryptopools.
 """
 
 __all__ = ["get_metadata", "get_pool_assets", "get_pool_volume"]

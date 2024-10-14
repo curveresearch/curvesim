@@ -60,6 +60,7 @@ class CoinGeckoPriceVolumeSource(ApiDataSource):
             _data = _reindex_to_time_sequence(_data, time_sequence, asset.id)
             data.append(_data)
 
+        # data will have length 2 by now
         # divide prices: (usd/base) / (usd/quote) = quote/base
         # sum volumes and convert to base: usd / (usd/base) = base
         base_data, quote_data = data
@@ -127,7 +128,7 @@ def _reindex_to_time_sequence(df, time_sequence, asset_id):
     )
 
     if any(nan_count > 0):
-        df_reindexed["price"] = df_reindexed["price"].ffill()
+        df_reindexed["price"] = df_reindexed["price"].ffill().bfill()
         df_reindexed["volume"] = df_reindexed["volume"].fillna(0)
 
     return df_reindexed

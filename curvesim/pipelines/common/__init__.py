@@ -2,6 +2,7 @@
 Contains variables and functions common to the arbitrage pipelines.
 """
 __all__ = ["DEFAULT_METRICS", "get_arb_trades", "get_asset_data", "get_pool_data"]
+import gin
 
 from scipy.optimize import root_scalar
 
@@ -21,6 +22,7 @@ DEFAULT_METRICS = [
     Metrics.PoolVolume,
     Metrics.ArbMetrics,
 ]
+gin.constant("curvesim.pipelines.common.DEFAULT_METRICS", DEFAULT_METRICS)
 
 
 def get_arb_trades(pool, prices):

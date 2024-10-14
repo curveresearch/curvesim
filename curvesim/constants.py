@@ -35,6 +35,8 @@ class Chain(StrEnum):
     AVALANCHE = "avalanche"
     MATIC = "matic"
     XDAI = "xdai"
+    BASE = "base"
+    FRAXTAL = "fraxtal"
 
 
 class Env(StrEnum):
@@ -42,3 +44,19 @@ class Env(StrEnum):
 
     PROD = "prod"
     STAGING = "staging"
+
+
+class CurvePreset(StrEnum):
+    """Names for presets within Curve.fi's pool creation UI."""
+    # Stableswap
+    FIAT_REDEEMDABLE_STABLECOINS = "fiat redeemable stablecoins"
+    CRYPTO_COLLATERALIZED_STABLECOINS = "crypto collateralized stablecoins"
+    STABLESWAP_LIQUID_RESTAKING_TOKENS = "stableswap liquid restaking tokens"
+    # Cryptoswap
+    CRYPTO = "crypto"
+    FOREX = "forex"
+    LIQUID_STAKING_DERIVATIVES = "liquid staking derivatives"
+    CRYPTOSWAP_LIQUID_RESTAKING_TOKENS = "cryptoswap liquid restaking tokens"
+    # Tricrypto
+    TRICRYPTO = "tricrypto" # USD-wrapped BTC-ETH
+    THREE_COIN_VOLATILE = "three coin volatile" # USD-ETH-any volatile token

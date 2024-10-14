@@ -1,5 +1,6 @@
 import json
 
+# TODO: update to reflect switch to curve-prices
 POOL_TEST_METADATA_JSON = """
 {
     "name": "Curve.fi DAI/USDC/USDT",
