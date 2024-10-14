@@ -1,35 +1,70 @@
-from curvesim.pipelines.common import DEFAULT_METRICS
+import curvesim.pipelines.common
+import curvesim.pipelines.simulation
+import curvesim.pipelines.simple.trader
+import curvesim.pipelines.vol_limited_arb.trader
+import curvesim.metrics.state_log
+import curvesim.templates.time_sequence
+import curvesim.templates.reference_market
+import curvesim.pool_data.metadata.sim_market_config
+
+# clean up imports if can make improvements to import paths
 
 
-# ----- DATA (TimeSequence/ReferenceMarket) ----- #
-
-FrequencyTimePeriod.start = 
-FrequencyTimePeriod.end = 
-FrequencyTimePeriod.freq = 
-
-SimpleReferenceMarket.sim_asset_series_list = 
+# put this file at the base of the directory? (for easier finding for users)
 
 
-# ----- SIM MARKET ----- #
-sim_market_factory = 
+# {scope (instance) name}/{configurable reference}.{attribute name}
+# THE BELOW SYNTAX IS ONLY SUPPORTED FOR SimMarketConfig
 
-sim_market_parameters = {
-    initial_parameters = {
+data = {'name': 'Curve.fi DAI/USDC/USDT', 'address': '0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7', 'chain': 'mainnet', 'symbol': '3Crv', 'version': 1, 'pool_type': 'REGISTRY_V1', 'params': {'A': 2000, 'fee': 1000000, 'fee_mul': None, 'admin_fee': 5000000000, 'virtual_price': 1025499623208090719}, 'coins': {'names': ['DAI', 'USDC', 'USDT'], 'addresses': ['0x6B175474E89094C44Da98b954EedeAC495271d0F', '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', '0xdAC17F958D2ee523a2206206994597C13D831ec7'], 'decimals': [18, 6, 6]}, 'reserves': {'by_coin': [171485829393046867353492287, 175414686134396000000000000, 88973989934190000000000000], 'unnormalized_by_coin': [171485829393046867353492287, 175414686134396, 88973989934190]}, 'basepool': None, 'timestamp': 1677628800}
 
-    },
-    run_parameters = {
+pool/SimMarketConfig.key_metadata = %data
+pool/SimMarketConfig.overrides = {"A": [100, 200],}
 
-    },
-}
 
+#datab = {'name': 'cvxeth', 'address': '0xB576491F1E6e5E62f1d8F26062Ee822B40B0E0d4', 'chain': 'mainnet', 'symbol': 'cvxeth', 'pool_type': 'crypto', 'params': {'A': 400000, 'gamma': 145000000000000, 'fee_gamma': 230000000000000, 'mid_fee': 26000000, 'out_fee': 45000000, 'allowed_extra_profit': 2000000000000, 'adjustment_step': 146000000000000, 'ma_half_time': 600, 'price_scale': [890717172798033], 'price_oracle': [912781912171728], 'last_prices': [911650717716804], 'last_prices_timestamp': 1725840000, 'admin_fee': 5000000000, 'xcp_profit': 1115427318126171392, 'xcp_profit_a': 1115427318126171392, 'virtual_price': 1057723648237714816}, 'coins': {'names': ['WETH', 'CVX'], 'addresses': ['0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', '0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B'], 'decimals': [18, 18]}, 'reserves': {'by_coin': [1639768592332589891584, 1753351707501938467667968], 'unnormalized_by_coin': [1639768592332589891584, 1753351707501938467667968]}, 'basepool': None, 'timestamp': 1725915137}
+
+datab = {'name': 'USD0/USDC', 'address': '0x14100f81e33C33Ecc7CDac70181Fb45B6E78569F', 'chain': 'mainnet', 'symbol': 'USD0/USDC', 'pool_type': 'stableswapng', 'params': {'A': 250, 'fee': 4000000, 'fee_mul': 20000000000, 'admin_fee': 5000000000, 'virtual_price': 1010404616597260544}, 'coins': {'names': ['USD0', 'USDC'], 'addresses': ['0x73A15FeD60Bf67631dC6cd7Bc5B6e8da8190aCF5', '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'], 'decimals': [18, 6]}, 'reserves': {'by_coin': [5526802210101440083394560, 6484456300067744800309248], 'unnormalized_by_coin': [5526802210101440083394560, 6484456300067]}, 'basepool': None, 'timestamp': 1727994703}
+
+poolb/SimMarketConfig.key_metadata = %datab
+#poolb/SimMarketConfig.overrides = {"A": [1000,], "fee": [2000000,], "fee_mul": [50000000000,]}
+
+datac = {'name': 'USD0/USDC', 'address': '0x14100f81e33C33Ecc7CDac70181Fb45B6E78569F', 'chain': 'mainnet', 'symbol': 'USD0/USDC', 'pool_type': 'stableswapng', 'params': {'A': 1000, 'fee': 2000000, 'fee_mul': 50000000000, 'admin_fee': 5000000000, 'virtual_price': 1010404616597260544}, 'coins': {'names': ['USD0', 'USDC'], 'addresses': ['0x73A15FeD60Bf67631dC6cd7Bc5B6e8da8190aCF5', '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'], 'decimals': [18, 6]}, 'reserves': {'by_coin': [5526802210101440083394560, 6484456300067744800309248], 'unnormalized_by_coin': [5526802210101440083394560, 6484456300067]}, 'basepool': None, 'timestamp': 1727994703}
+
+poolc/SimMarketConfig.key_metadata = %datac
 
 # ----- SIMULATION CONTEXT ----- #
+time_sequence = "DateTimeSequence.from_range(start='2024-05-01', end='2024-08-07', freq='1h')"
+SimulationContext.time_sequence = %time_sequence
+#SimulationContext.reference_market = @SimpleReferenceMarket()
+#SimulationContext.sim_market_factory = sim_market_factory # REMOVE
+#SimulationContext.sim_market_parameters = sim_market_parameters # REMOVE
+SimulationContext.trader_class = "VolumeLimitedArbitrageur" #@VolumeLimitedArbitrageur()
+SimulationContext.log_class = "StateLog" #@StateLog
+SimulationContext.metric_classes = %curvesim.pipelines.common.DEFAULT_METRICS # "DEFAULT_METRICS"?
+# simulation_layout?
+SimulationContext.simulation_runs = {
+    "Protocol X Token Y/Token Z Pool": {
+        "markets": [
+            @pool/SimMarketConfig(),
+        ],
+        "vol_mult": None,
+    },
+    "Sim run #2": {
+        "markets": [
+            @poolb/SimMarketConfig(),
+        ],
+        "vol_mult": None,
+    },
+    "USDC/USD0 change": {
+        "markets" : [
+            @poolc/SimMarketConfig(),
+        ],
+        "vol_mult": None,
+    }
+}
+#SimulationContext.vol_mult = None # remove
 
-SimulationContext.time_sequence = @FrequencyTimePeriod()
-SimulationContext.reference_market = @SimpleReferenceMarket()
-SimulationContext.sim_market_factory = sim_market_factory
-SimulationContext.sim_market_parameters = sim_market_parameters
-SimulationContext.trader_class = @VolumeLimitedArbitrageur
-SimulationContext.log_class = @StateLog
-SimulationContext.metric_classes = DEFAULT_METRICS
+# annotate these and import their modules above: sim_market_factory = curvesim.pipelines.simulation.config_to_sim_market? (don't register?), trader_class = VolumeLimitedArbitrageur and SimpleArbitrageur, log_class = StateLog, metric_classes = curvesim.pipelines.common.DEFAULT_METRICS, time_sequence = curvesim.templates.time_sequence TimeSequence and DateTimeSequence
+# not added yet: ReferenceMarket,
 

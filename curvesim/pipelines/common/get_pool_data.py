@@ -10,7 +10,7 @@ from curvesim.pool_data import get_metadata
 from curvesim.pool_data.metadata import PoolMetaDataInterface
 
 
-def get_pool_data(metadata_or_address, chain, env, pool_ts):
+def get_pool_data(metadata_or_address, chain, env, pool_ts): # TODO remove env
     """
     Gets sim pool and (if needed) pool metadata.
     """

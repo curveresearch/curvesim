@@ -19,6 +19,7 @@ from curvesim.utils import get_pairs
 logger = get_logger(__name__)
 
 
+# TODO: deprecate
 def autosim(
     pool=None,
     chain="mainnet",

@@ -23,9 +23,9 @@ class CryptoswapMetaData(PoolMetaDataBase):
             "price_scale": data["params"]["price_scale"],
             "admin_fee": data["params"]["admin_fee"],
             "ma_half_time": data["params"]["ma_half_time"],
-            "virtual_price": data["reserves"]["virtual_price"],
             "xcp_profit": data["params"]["xcp_profit"],
             "xcp_profit_a": data["params"]["xcp_profit_a"],
+            "virtual_price": data["params"]["virtual_price"],
         }
         n = kwargs["n"]
 

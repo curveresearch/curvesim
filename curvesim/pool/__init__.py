@@ -144,7 +144,7 @@ def get_pool(
     *,
     normalize=False,
     end_ts=None,
-    env="prod",
+    env="prod", # TODO deprecate
 ):
     """
     Factory function for creating a pool based on metadata pulled from on-chain.
@@ -180,7 +180,7 @@ def get_pool(
         raise CurvesimValueError("`end_ts` has no effect unless pool address is used.")
 
     if isinstance(pool_metadata, str):
-        pool_metadata = get_metadata(pool_metadata, chain=chain, env=env, end_ts=end_ts)
+        pool_metadata = get_metadata(pool_metadata, chain=chain, end_ts=end_ts)
     elif isinstance(pool_metadata, dict):
         pool_metadata = PoolMetaData(pool_metadata)
 
@@ -211,7 +211,7 @@ def get_sim_pool(
     balanced_base=True,
     custom_kwargs=None,
     end_ts=None,
-    env="prod",
+    env="prod", # TODO deprecate
 ):
     """
     Factory function for creating a sim pool based on metadata pulled from on-chain.
@@ -259,7 +259,7 @@ def get_sim_pool(
         raise CurvesimValueError("`end_ts` has no effect unless pool address is used.")
 
     if isinstance(pool_metadata, str):
-        pool_metadata = get_metadata(pool_metadata, chain=chain, env=env, end_ts=end_ts)
+        pool_metadata = get_metadata(pool_metadata, chain=chain, end_ts=end_ts)
     elif isinstance(pool_metadata, dict):
         pool_metadata = PoolMetaData(pool_metadata)
 

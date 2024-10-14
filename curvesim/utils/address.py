@@ -47,4 +47,4 @@ def is_address(address_string: str, checksum=True) -> bool:
     if checksum:  # pylint: disable=no-else-return
         return is_checksum_address(address_string)
     else:
-        return is_normalized_address(address_string)
+        return is_normalized_address(address_string) or is_checksum_address(address_string)

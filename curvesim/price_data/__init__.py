@@ -58,9 +58,17 @@ def get_price_data(
 
 def _instantiate_data_source(data_source):
     if isinstance(data_source, str):
-        data_source_instance = DataSourceEnum[data_source.upper()].value()
+        if data_source.upper() == "LOCAL":
+            raise Exception(f"") # TODO 
+        try:
+            data_source_instance = DataSourceEnum[data_source.upper()].value()
+        except KeyError:
+            filepaths = data_source
+            data_source_instance = DataSourceEnum["LOCAL"].value(filepaths)
 
     elif isinstance(data_source, DataSourceEnum):
+        if data_source == DataSourceEnum.LOCAL:
+            raise Exception(f"") # TODO
         data_source_instance = data_source.value()
 
     elif isinstance(data_source, DataSource):

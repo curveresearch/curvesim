@@ -1,13 +1,21 @@
 """
 Network connector for Coingecko.
 """
+import os
+
 # pylint: disable=redefined-outer-name
 import pandas as pd
+
+from curvesim.utils import get_env_var
 
 from .http import HTTP
 from .utils import sync
 
 URL = "https://api.coingecko.com/api/v3/"
+
+# Creating a free API key on Coingecko enables increased response speed and rate limits
+# https://www.coingecko.com/en/api/pricing
+API_KEY = get_env_var("COINGECKO_API_KEY", default=None)
 
 PLATFORMS = {
     "mainnet": "ethereum",
@@ -24,6 +32,7 @@ PLATFORMS = {
 async def _get_prices(coin_id, vs_currency, start, end):
     url = URL + f"coins/{coin_id}/market_chart/range"
     p = {"vs_currency": vs_currency, "from": start, "to": end}
+    p = _add_api_key_param(p)
 
     r = await HTTP.get(url, params=p)
 
@@ -46,12 +55,21 @@ async def coin_id_from_address(address, chain):
     address = address.lower()
     chain = PLATFORMS[chain.lower()]
     url = URL + f"coins/{chain}/contract/{address}"
+    p = _add_api_key_param({})
 
-    r = await HTTP.get(url)
+    r = await HTTP.get(url, params=p)
 
     coin_id = r["id"]
 
     return coin_id
+
+
+def _add_api_key_param(query_params: dict) -> dict:
+    api_key_param = "x_cg_demo_api_key"
+    if (API_KEY != None) and (api_key_param not in query_params):
+        query_params.update({api_key_param: API_KEY})
+
+    return query_params
 
 
 # Sync

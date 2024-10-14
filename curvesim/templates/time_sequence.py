@@ -1,8 +1,8 @@
 """Interfaces for TimeSequences, used to track time within simulations."""
-
-
 from datetime import datetime, timezone
 from typing import Generic, Iterable, Optional, TypeVar, Union
+
+import gin
 
 from pandas import DateOffset, date_range
 from pandas.tseries.frequencies import to_offset
@@ -12,6 +12,7 @@ from curvesim.exceptions import TimeSequenceError
 T = TypeVar("T")
 
 
+@gin.register
 class TimeSequence(Generic[T]):
     """
     Generic class for time-like sequences.
@@ -38,6 +39,7 @@ class TimeSequence(Generic[T]):
         return f"<{self.__class__.__name__} start={self[0]} end={self[-1]}>"
 
 
+@gin.register
 class DateTimeSequence(TimeSequence[datetime]):
     """
     TimeSequence composed of datetimes.
