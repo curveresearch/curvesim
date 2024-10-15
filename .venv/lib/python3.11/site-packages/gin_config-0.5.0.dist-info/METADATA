@@ -1,0 +1,66 @@
+Metadata-Version: 2.1
+Name: gin-config
+Version: 0.5.0
+Summary: Gin-Config: A lightweight configuration library for Python
+Home-page: https://github.com/google/gin-config
+Author: The Gin-Config Team
+License: Apache 2.0
+Project-URL: Documentation, https://github.com/google/gin-config/docs
+Project-URL: Bug Reports, https://github.com/google/gin-config/issues
+Project-URL: Source, https://github.com/google/gin-config
+Keywords: gin-config gin python configuration machine learning
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Education
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Topic :: Scientific/Engineering
+Classifier: Topic :: Scientific/Engineering :: Mathematics
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Classifier: Topic :: Software Development
+Classifier: Topic :: Software Development :: Libraries
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Description-Content-Type: text/markdown
+License-File: LICENSE
+License-File: AUTHORS
+Provides-Extra: pytorch-nightly
+Requires-Dist: pytorch-nightly ; extra == 'pytorch-nightly'
+Provides-Extra: tensorflow
+Requires-Dist: tensorflow (>=1.13.0) ; extra == 'tensorflow'
+Provides-Extra: tensorflow-gpu
+Requires-Dist: tensorflow-gpu (>=1.13.0) ; extra == 'tensorflow-gpu'
+Provides-Extra: testing
+Requires-Dist: absl-py (>=0.1.6) ; extra == 'testing'
+Requires-Dist: mock (>=3.0.5) ; extra == 'testing'
+Requires-Dist: nose ; extra == 'testing'
+Provides-Extra: tf-nightly
+Requires-Dist: tf-nightly ; extra == 'tf-nightly'
+Provides-Extra: torch
+Requires-Dist: torch (>=1.3.0) ; extra == 'torch'
+
+
+# Gin
+
+Gin provides a lightweight configuration framework for Python, based on
+dependency injection. Functions or classes can be decorated with
+`@gin.configurable`, allowing default parameter values to be supplied from a
+config file (or passed via the command line) using a simple but powerful syntax.
+This removes the need to define and maintain configuration objects (e.g.
+protos), or write boilerplate parameter plumbing and factory code, while often
+dramatically expanding a project's flexibility and configurability.
+
+Gin is particularly well suited for machine learning experiments (e.g. using
+TensorFlow), which tend to have many parameters, often nested in complex ways.
+
+
+**Authors**: Dan Holtmann-Rice, Sergio Guadarrama, Nathan Silberman
+**Contributors**: Oscar Ramirez, Marek Fiser
+
+

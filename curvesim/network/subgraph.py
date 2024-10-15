@@ -19,11 +19,13 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
-api_key = os.getenv('GRAPH_API_KEY')
+api_key = os.getenv("GRAPH_API_KEY")
+GRAPH_API_KEY = api_key
 
 # pylint: disable=redefined-outer-name
 
 logger = get_logger(__name__)
+
 
 async def query(url, q):
     """
@@ -44,6 +46,7 @@ async def query(url, q):
     r = await HTTP.post(url, json={"query": q})
     return r
 
+
 query_sync = sync(query)
 
 # Subgraph URLs for different chains
@@ -55,7 +58,8 @@ OPTIMISM_URL = f"https://gateway-arbitrum.network.thegraph.com/api/{GRAPH_API_KE
 # CONVEX_COMMUNITY_URL = "https://api.thegraph.com/subgraphs/name/convex-community/volume-%s"
 # STAGING_CONVEX_COMMUNITY_URL = "https://api.thegraph.com/subgraphs/name/convex-community/volume-%s-staging"
 
-def _get_subgraph_url(chain, env="prod"):    
+
+def _get_subgraph_url(chain, env="prod"):
     if env.lower() == "prod":
         if chain == "mainnet":
             url = MAINNET_URL
@@ -64,12 +68,13 @@ def _get_subgraph_url(chain, env="prod"):
         elif chain == "optimism":
             url = OPTIMISM_URL
         else:
-            url = ''   
+            url = ""
     elif env.lower() == "staging":
-        url = ''   
+        url = ""
     else:
         raise CurvesimValueError("'env' must be 'prod' or 'staging'")
     return url
+
 
 async def convex(chain, q, env):
     """
@@ -97,10 +102,9 @@ async def convex(chain, q, env):
     url = _get_subgraph_url(chain, env)
     r = await query(url, q)
     if "data" not in r:
-        raise SubgraphResultError(
-            f"No data returned from Convex: chain: {chain}, query: {q}"
-        )
+        raise SubgraphResultError(f"No data returned from Convex: chain: {chain}, query: {q}")
     return r["data"]
+
 
 async def symbol_address(symbol, chain, env="prod"):
     """
@@ -151,15 +155,14 @@ async def symbol_address(symbol, chain, env="prod"):
         for pool in data["pools"]:
             pool_list += f"\"{pool['symbol']}\": {pool['address']}\n"
 
-        raise SubgraphResultError(
-            "Multiple pools returned for symbol query:" + pool_list
-        )
+        raise SubgraphResultError("Multiple pools returned for symbol query:" + pool_list)
     if len(data["pools"]) < 1:
         raise SubgraphResultError("No pools found for symbol query.")
 
     addr = to_checksum_address(data["pools"][0]["address"])
 
     return addr
+
 
 async def _pool_snapshot(address, chain, env, end_ts=None):
     if not end_ts:
@@ -225,11 +228,10 @@ async def _pool_snapshot(address, chain, env, end_ts=None):
     try:
         r = r["dailyPoolSnapshots"][0]
     except IndexError as e:
-        raise SubgraphResultError(
-            f"No daily snapshot for this pool: {address}, {chain}"
-        ) from e
+        raise SubgraphResultError(f"No daily snapshot for this pool: {address}, {chain}") from e
 
     return r
+
 
 async def pool_snapshot(address, chain, env="prod", end_ts=None):
     """
@@ -356,6 +358,7 @@ async def pool_snapshot(address, chain, env="prod", end_ts=None):
 
     return override_subgraph_data(data, "pool_snapshot", (address, chain))
 
+
 convex_sync = sync(convex)
 symbol_address_sync = sync(symbol_address)
 pool_snapshot_sync = sync(pool_snapshot)
@@ -363,11 +366,13 @@ pool_snapshot_sync = sync(pool_snapshot)
 # Reflexer Subgraph
 RAI_ADDR = ("0x618788357D0EBd8A37e763ADab3bc575D54c2C7d", "mainnet")
 
+
 def has_redemption_prices(address, chain):
     """
     Return True if the given pool has RAI redemption prices available.
     """
     return (address, chain) == RAI_ADDR
+
 
 async def _redemption_prices(address, chain, t_start, t_end, n):
     if not has_redemption_prices(address, chain):
@@ -398,9 +403,8 @@ async def _redemption_prices(address, chain, t_start, t_end, n):
         t_earliest = int(data[-1]["timestamp"])
     return data
 
-async def redemption_prices(
-    address=RAI_ADDR[0], chain=RAI_ADDR[1], days=60, n=1000, end=None
-):
+
+async def redemption_prices(address=RAI_ADDR[0], chain=RAI_ADDR[1], days=60, n=1000, end=None):
     """
     Async function to pull RAI redemption prices.
     Returns None if input pool is not RAI3CRV.
@@ -427,9 +431,7 @@ async def redemption_prices(
         A formatted dict of pool state/metadata information.
     """
     if end is None:
-        t_end = datetime.now(timezone.utc).replace(
-            hour=0, minute=0, second=0, microsecond=0
-        )
+        t_end = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     else:
         t_end = datetime.fromtimestamp(end, tz=timezone.utc)
     t_end = t_end.replace(tzinfo=timezone.utc)
@@ -451,6 +453,7 @@ async def redemption_prices(
     t0 = data.index.asof(t_start)
 
     return data[data.index >= t0]
+
 
 redemption_prices_sync = sync(redemption_prices)
 

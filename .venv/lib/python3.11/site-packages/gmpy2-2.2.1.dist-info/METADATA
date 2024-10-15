@@ -1,0 +1,74 @@
+Metadata-Version: 2.1
+Name: gmpy2
+Version: 2.2.1
+Summary: gmpy2 interface to GMP, MPFR, and MPC for Python 3.7+
+Author: Case Van Horsen
+Maintainer-email: Case Van Horsen <casevh@gmail.com>
+License: LGPL-3.0+
+Project-URL: Homepage, https://github.com/aleaxit/gmpy
+Keywords: gmp,mpfr,mpc,multiple-precision,arbitrary-precision,precision,bignum
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)
+Classifier: Natural Language :: English
+Classifier: Operating System :: MacOS :: MacOS X
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Operating System :: POSIX
+Classifier: Programming Language :: C
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: 3.13
+Classifier: Programming Language :: Python :: Implementation :: CPython
+Classifier: Topic :: Scientific/Engineering :: Mathematics
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Requires-Python: >=3.7
+Description-Content-Type: text/x-rst
+License-File: COPYING
+License-File: COPYING.LESSER
+Provides-Extra: docs
+Requires-Dist: sphinx >=4 ; extra == 'docs'
+Requires-Dist: sphinx-rtd-theme >=1 ; extra == 'docs'
+Provides-Extra: tests
+Requires-Dist: pytest ; extra == 'tests'
+Requires-Dist: hypothesis ; extra == 'tests'
+Requires-Dist: cython ; extra == 'tests'
+Requires-Dist: mpmath ; extra == 'tests'
+Requires-Dist: setuptools ; extra == 'tests'
+
+gmpy2 is an optimized, C-coded Python extension module that supports fast
+multiple-precision arithmetic.  gmpy2 is based on the original gmpy module.
+gmpy2 adds support for correctly rounded multiple-precision real arithmetic
+(using the MPFR library) and complex arithmetic (using the MPC library).
+
+Version 2.2
+-----------
+
+gmpy2 2.2.1
+-----------
+
+* Bug fix: use C int instead of C char for some internal code. Issue
+* Bug fix: add xmpz.bit_count method.
+
+gmpy2 2.2.0
+-----------
+
+gmpy2 2.2.0 is now available with support for Python 3.7 to 3.13.
+
+* Support for thread-safe contexts and context methods has been improved.
+* Interoperability with Cython extensions has been updated.
+* Extensive improvements have been made to the build and testing processes.
+* Many bug fixes.
+* Extensive documentation cleanup.
+
+Availability
+------------
+
+gmpy2 is available at https://pypi.python.org/pypi/gmpy2/
+
+Documentation is available at https://gmpy2.readthedocs.io/en/latest/

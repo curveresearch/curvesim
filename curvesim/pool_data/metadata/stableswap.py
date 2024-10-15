@@ -10,13 +10,14 @@ class StableswapMetaData(PoolMetaDataBase):
         data = self._dict
 
         def process_to_kwargs(data, normalize):
+            virtual_price = data["params"].get("virtual_price") or data["reserves"]["virtual_price"]
             kwargs = {
                 "A": data["params"]["A"],
                 "n": len(data["coins"]["names"]),
                 "fee": data["params"]["fee"],
                 "fee_mul": data["params"]["fee_mul"],
                 "admin_fee": data["params"]["admin_fee"],
-                "virtual_price": data["reserves"]["virtual_price"],
+                "virtual_price": virtual_price,
             }
 
             if normalize:
@@ -28,9 +29,7 @@ class StableswapMetaData(PoolMetaDataBase):
                     d = data["coins"]["decimals"][0]
                     kwargs["rate_multiplier"] = 10 ** (36 - d)
                 else:
-                    kwargs["rates"] = [
-                        10 ** (36 - d) for d in data["coins"]["decimals"]
-                    ]
+                    kwargs["rates"] = [10 ** (36 - d) for d in data["coins"]["decimals"]]
 
             kwargs["D"] = coin_balances
 
@@ -52,10 +51,7 @@ class StableswapMetaData(PoolMetaDataBase):
         if not self._dict["basepool"]:
             c = self._dict["coins"]["addresses"]
         else:
-            c = (
-                self._dict["coins"]["addresses"][:-1]
-                + self._dict["basepool"]["coins"]["addresses"]
-            )
+            c = self._dict["coins"]["addresses"][:-1] + self._dict["basepool"]["coins"]["addresses"]
         return c
 
     @property
@@ -63,10 +59,7 @@ class StableswapMetaData(PoolMetaDataBase):
         if not self._dict["basepool"]:
             c = self._dict["coins"]["names"]
         else:
-            c = (
-                self._dict["coins"]["names"][:-1]
-                + self._dict["basepool"]["coins"]["names"]
-            )
+            c = self._dict["coins"]["names"][:-1] + self._dict["basepool"]["coins"]["names"]
         return c
 
     @property
