@@ -14,6 +14,7 @@ __pycache__/
 
 # env vars file
 /.env
+/.venv
 
 # hypothesis
 /.hypothesis
@@ -32,3 +33,4 @@ __pycache__/
 test/data/*-simple_results_*.pickle
 
 /.pdbrc
+
