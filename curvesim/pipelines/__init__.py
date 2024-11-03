@@ -15,7 +15,8 @@ pool data such as :class:`~curvesim.pool_data.metadata.PoolMetaDataInterface`;
 instantiates a param_sampler, price_sampler, and strategy; and invokes `run_pipeline`,
 returning its result metrics.
 """
-from multiprocessing import Pool as cpu_pool
+
+from billiard import Pool as BilliardPool
 
 from curvesim.logging import (
     configure_multiprocess_logging,
@@ -56,18 +57,12 @@ def run_pipeline(param_sampler, price_sampler, strategy, ncpu=4):
     """
     if ncpu > 1:
         with multiprocessing_logging_queue() as logging_queue:
-            strategy_args_list = [
-                (pool, params, price_sampler) for pool, params in param_sampler
-            ]
+            strategy_args_list = [(pool, params, price_sampler) for pool, params in param_sampler]
 
-            wrapped_args_list = [
-                (strategy, logging_queue, *args) for args in strategy_args_list
-            ]
+            wrapped_args_list = [(strategy, logging_queue, *args) for args in strategy_args_list]
 
-            with cpu_pool(ncpu) as clust:
-                results = tuple(
-                    zip(*clust.starmap(wrapped_strategy, wrapped_args_list))
-                )
+            with BilliardPool(ncpu) as clust:
+                results = tuple(zip(*clust.starmap(wrapped_strategy, wrapped_args_list)))
                 clust.close()
                 clust.join()  # coverage needs this
 

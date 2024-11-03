@@ -2,7 +2,6 @@
 Coingecko price/volume Data Source and helper functions.
 """
 
-
 from datetime import datetime
 
 from pandas import DataFrame, concat
@@ -14,6 +13,7 @@ from curvesim.templates import (
     ApiDataSource,
     DateTimeSequence,
     OnChainAssetPair,
+    OnChainAsset,
     TimeSequence,
 )
 from curvesim.utils import cache, get_event_loop
@@ -26,9 +26,7 @@ class CoinGeckoPriceVolumeSource(ApiDataSource):
     DataSource for Coingecko price/volume data.
     """
 
-    def query(
-        self, sim_asset: OnChainAssetPair, time_sequence: TimeSequence[datetime]
-    ) -> DataFrame:
+    def query(self, sim_asset: OnChainAssetPair, time_sequence: TimeSequence[datetime]) -> DataFrame:
         """
         Fetches asset data for a particular range of times. Timestamps are matched with
         a tolerance of 10 minutes, then missing prices are frontfilled and missing
@@ -47,7 +45,24 @@ class CoinGeckoPriceVolumeSource(ApiDataSource):
         pandas.DataFrame
         """
 
+        # # test
+        # new_sim_assets = []
+        # for asset in sim_asset:
+        #     id = asset.id if asset.id != "0xeeee" else "ETH"
+        #     address = (
+        #         asset.address
+        #         if asset.address != "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
+        #         else "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+        #     )
+        #     asset = OnChainAsset(id, id, address, asset.chain)
+        #     new_sim_assets.append(asset)
+
+        # new_sim_assets = OnChainAssetPair(new_sim_assets[0], new_sim_assets[1])
+        # sim_asset = new_sim_assets
+        # # test
+
         symbol_pair = (sim_asset.base.symbol, sim_asset.quote.symbol)
+
         logger.info("Fetching CoinGecko price data for %s...", "-".join(symbol_pair))
 
         _validate_arguments(sim_asset, time_sequence)
@@ -91,15 +106,11 @@ class CoinGeckoPriceVolumeSource(ApiDataSource):
 def _validate_arguments(sim_asset, time_sequence):
     if not isinstance(sim_asset, OnChainAssetPair):
         _type = type(sim_asset).__name__
-        raise DataSourceError(
-            f"For CoinGecko, sim_asset must be 'OnChainAssetPair', not '{_type}'."
-        )
+        raise DataSourceError(f"For CoinGecko, sim_asset must be 'OnChainAssetPair', not '{_type}'.")
 
     if not isinstance(time_sequence, DateTimeSequence):
         _type = type(time_sequence).__name__
-        raise DataSourceError(
-            f"For CoinGecko, time_sequence must be 'DateTimeSequence', not '{_type}'."
-        )
+        raise DataSourceError(f"For CoinGecko, time_sequence must be 'DateTimeSequence', not '{_type}'.")
 
 
 def _get_time_endpoints(time_sequence, buffer=3600):
@@ -114,12 +125,7 @@ def _reindex_to_time_sequence(df, time_sequence, asset_id):
     nan_count = df_reindexed.isna().sum()
 
     logger.info(
-        (
-            "\nResampling '%s'...\n"
-            "Average data frequency: %s\n"
-            "Resampling to: %s\n"
-            "Filling NaN values:\n%s"
-        ),
+        ("\nResampling '%s'...\n" "Average data frequency: %s\n" "Resampling to: %s\n" "Filling NaN values:\n%s"),
         asset_id,
         df.index.to_series().diff().mean(),
         time_sequence.freq,

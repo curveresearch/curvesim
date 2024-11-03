@@ -5,11 +5,12 @@ __all__ = ["get_logger", "multiprocessing_logging_queue"]
 import datetime
 import logging
 import logging.config
-import multiprocessing as mp
 import os
 from contextlib import contextmanager
 from logging.handlers import QueueHandler, QueueListener
 from typing import Dict, List
+from billiard import Manager, Queue
+from billiard.context import Process
 
 # -- convenient parameters to adjust for debugging -- #
 DEFAULT_LEVEL = "info"
@@ -34,9 +35,7 @@ __dt_string = datetime.datetime.now().strftime("%Y%m%d")
 LOG_FILEPATH = os.path.join(LOG_DIR, __dt_string + ".log")
 
 LOGGING_FORMAT = "[%(levelname)s][%(asctime)s][%(name)s]: %(message)s"
-MULTIPROCESS_LOGGING_FORMAT = (
-    "[%(levelname)s][%(asctime)s][%(name)s]-%(process)d: %(message)s"
-)
+MULTIPROCESS_LOGGING_FORMAT = "[%(levelname)s][%(asctime)s][%(name)s]-%(process)d: %(message)s"
 
 
 # FIXME: need a function to update the config after module initialization
@@ -104,9 +103,9 @@ def get_logger(logger_name, level=DEFAULT_LEVEL):
 def multiprocessing_logging_queue():
     """
     Context manager for a logging queue that can be shared
-    across multiple processes.
+    across multiple processes using billiard instead of multiprocessing.
     """
-    with mp.Manager() as manager:
+    with Manager() as manager:
         try:
             logging_queue = manager.Queue()
             root_logger = get_logger("")
