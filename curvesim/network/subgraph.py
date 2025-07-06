@@ -15,6 +15,13 @@ from ..overrides import override_subgraph_data
 from .http import HTTP
 from .utils import sync
 
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+api_key = os.getenv("GRAPH_API_KEY")
+GRAPH_API_KEY = api_key
+
 # pylint: disable=redefined-outer-name
 
 logger = get_logger(__name__)
@@ -35,7 +42,6 @@ async def query(url, q):
     -------
     str
         The returned results.
-
     """
     r = await HTTP.post(url, json={"query": q})
     return r
@@ -43,24 +49,30 @@ async def query(url, q):
 
 query_sync = sync(query)
 
+# Subgraph URLs for different chains
+MAINNET_URL = f"https://gateway-arbitrum.network.thegraph.com/api/{GRAPH_API_KEY}/subgraphs/id/6NkLKJQbjtpYir45Pvj61gvTkLeunEeEBFXGwisC35TB"
+ARBITRUM_URL = f"https://gateway-arbitrum.network.thegraph.com/api/{GRAPH_API_KEY}/subgraphs/id/6okUrfq2HYokFytJd2JDhXW2kdyViy5gXWWpZkTnSL8w"
+OPTIMISM_URL = f"https://gateway-arbitrum.network.thegraph.com/api/{GRAPH_API_KEY}/subgraphs/id/7cXBpS75ThtbYwtCD8B277vUfWptmz6vbhk9BKgYrEvQ"
 
 # Convex Community subgraphs
-CONVEX_COMMUNITY_URL = (
-    "https://api.thegraph.com/subgraphs/name/convex-community/volume-%s"
-)
-STAGING_CONVEX_COMMUNITY_URL = (
-    "https://api.thegraph.com/subgraphs/name/convex-community/volume-%s-staging"
-)
+# CONVEX_COMMUNITY_URL = "https://api.thegraph.com/subgraphs/name/convex-community/volume-%s"
+# STAGING_CONVEX_COMMUNITY_URL = "https://api.thegraph.com/subgraphs/name/convex-community/volume-%s-staging"
 
 
 def _get_subgraph_url(chain, env="prod"):
     if env.lower() == "prod":
-        url = CONVEX_COMMUNITY_URL % chain
+        if chain == "mainnet":
+            url = MAINNET_URL
+        elif chain == "arbitrum":
+            url = ARBITRUM_URL
+        elif chain == "optimism":
+            url = OPTIMISM_URL
+        else:
+            url = ""
     elif env.lower() == "staging":
-        url = STAGING_CONVEX_COMMUNITY_URL % chain
+        url = ""
     else:
         raise CurvesimValueError("'env' must be 'prod' or 'staging'")
-
     return url
 
 
@@ -86,14 +98,11 @@ async def convex(chain, q, env):
     -------
     str
         The returned results.
-
     """
     url = _get_subgraph_url(chain, env)
     r = await query(url, q)
     if "data" not in r:
-        raise SubgraphResultError(
-            f"No data returned from Convex: chain: {chain}, query: {q}"
-        )
+        raise SubgraphResultError(f"No data returned from Convex: chain: {chain}, query: {q}")
     return r["data"]
 
 
@@ -118,14 +127,11 @@ async def symbol_address(symbol, chain, env="prod"):
         Currently supports:
         ”mainnet”, “arbitrum”, “optimism”, “fantom”, “avalanche” “matic”, “xdai”
 
-
     Returns
     -------
     str
         Pool address.
-
     """
-    # pylint: disable=consider-using-f-string
     q = (
         """
         {
@@ -149,9 +155,7 @@ async def symbol_address(symbol, chain, env="prod"):
         for pool in data["pools"]:
             pool_list += f"\"{pool['symbol']}\": {pool['address']}\n"
 
-        raise SubgraphResultError(
-            "Multiple pools returned for symbol query:" + pool_list
-        )
+        raise SubgraphResultError("Multiple pools returned for symbol query:" + pool_list)
     if len(data["pools"]) < 1:
         raise SubgraphResultError("No pools found for symbol query.")
 
@@ -165,7 +169,6 @@ async def _pool_snapshot(address, chain, env, end_ts=None):
         end_date = datetime.now(timezone.utc)
         end_ts = int(end_date.timestamp())
 
-    # pylint: disable=consider-using-f-string
     q = """
         {
           dailyPoolSnapshots(
@@ -225,14 +228,11 @@ async def _pool_snapshot(address, chain, env, end_ts=None):
     try:
         r = r["dailyPoolSnapshots"][0]
     except IndexError as e:
-        raise SubgraphResultError(
-            f"No daily snapshot for this pool: {address}, {chain}"
-        ) from e
+        raise SubgraphResultError(f"No daily snapshot for this pool: {address}, {chain}") from e
 
     return r
 
 
-# pylint: disable-next=too-many-locals
 async def pool_snapshot(address, chain, env="prod", end_ts=None):
     """
     Async function to pull pool state and metadata from daily snapshots.
@@ -249,7 +249,6 @@ async def pool_snapshot(address, chain, env="prod", end_ts=None):
     -------
     dict
         A formatted dict of pool state/metadata information.
-
     """
     r = await _pool_snapshot(address, chain, env, end_ts)
     logger.debug("Pool snapshot: %s", r)
@@ -312,11 +311,6 @@ async def pool_snapshot(address, chain, env="prod", end_ts=None):
             "timestamp": int(r["timestamp"]),
         }
     else:
-        # Until mainnet subgraph is fixed (or we use the new curve-prices API),
-        # 2-coin crypto pools will have an integer instead of list and
-        # 3-coin crypto pools actually return a zero.
-        #
-        # So we fix the outer type here.
         if not isinstance(r["priceScale"], list):
             r["priceScale"] = [r["priceScale"]]
         if not isinstance(r["priceOracle"], list):
@@ -325,7 +319,7 @@ async def pool_snapshot(address, chain, env="prod", end_ts=None):
             r["lastPrices"] = [r["lastPrices"]]
 
         ma_half_time = r["maHalfTime"]
-        if ma_half_time:  # subgraph bug returns None
+        if ma_half_time:
             ma_half_time = int(ma_half_time)
 
         data = {
@@ -369,7 +363,6 @@ convex_sync = sync(convex)
 symbol_address_sync = sync(symbol_address)
 pool_snapshot_sync = sync(pool_snapshot)
 
-
 # Reflexer Subgraph
 RAI_ADDR = ("0x618788357D0EBd8A37e763ADab3bc575D54c2C7d", "mainnet")
 
@@ -411,9 +404,7 @@ async def _redemption_prices(address, chain, t_start, t_end, n):
     return data
 
 
-async def redemption_prices(
-    address=RAI_ADDR[0], chain=RAI_ADDR[1], days=60, n=1000, end=None
-):
+async def redemption_prices(address=RAI_ADDR[0], chain=RAI_ADDR[1], days=60, n=1000, end=None):
     """
     Async function to pull RAI redemption prices.
     Returns None if input pool is not RAI3CRV.
@@ -434,17 +425,13 @@ async def redemption_prices(
 
         Note: the function will re-query until the requested time range is complete.
 
-
     Returns
     -------
     dict
         A formatted dict of pool state/metadata information.
-
     """
     if end is None:
-        t_end = datetime.now(timezone.utc).replace(
-            hour=0, minute=0, second=0, microsecond=0
-        )
+        t_end = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     else:
         t_end = datetime.fromtimestamp(end, tz=timezone.utc)
     t_end = t_end.replace(tzinfo=timezone.utc)

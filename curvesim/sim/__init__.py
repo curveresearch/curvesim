@@ -11,6 +11,7 @@ Most users will want to use the `autosim` function, which supports
 The primary use-case is to determine optimal amplitude (A) and fee
 parameters given historical price and volume feeds.
 """
+
 from curvesim.logging import get_logger
 from curvesim.pipelines.vol_limited_arb import pipeline as volume_limited_arbitrage
 from curvesim.pool_data import get_metadata
@@ -142,6 +143,8 @@ def autosim(
     pool_metadata = pool_metadata or get_metadata(pool, chain, env)
     p_var, p_fixed, kwargs = _parse_arguments(pool_metadata, **kwargs)
 
+    pool_metadata = _validate_metadata(pool_metadata)
+
     results = volume_limited_arbitrage(
         pool_metadata,
         variable_params=p_var,
@@ -150,6 +153,17 @@ def autosim(
     )
 
     return results
+
+
+def _validate_metadata(pool_metadata):
+    coins_address = [
+        "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2" if coin == "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE" else coin
+        for coin in pool_metadata.coins
+    ]
+    coin_names = ["WETH" if name == "0xeeee" else name for name in pool_metadata.coin_names]
+    pool_metadata._dict["coins"]["addresses"] = coins_address
+    pool_metadata._dict["coins"]["names"] = coin_names
+    return pool_metadata
 
 
 def _parse_arguments(pool_metadata, **kwargs):

@@ -100,15 +100,14 @@ def pipeline(
 
     pool, pool_metadata = get_pool_data(metadata_or_address, chain, env, pool_ts)
     asset_data, time_sequence = get_asset_data(pool_metadata, time_sequence, src)
+    asset_data = asset_data.dropna()
 
     # pylint: disable-next=abstract-class-instantiated
     param_sampler = ParameterizedPoolIterator(pool, variable_params, fixed_params)
     price_sampler = PriceVolume(asset_data)
 
     if vol_mult is None:
-        pool_volume = get_pool_volume(
-            pool_metadata, time_sequence[0], time_sequence[-1]
-        )
+        pool_volume = get_pool_volume(pool_metadata, time_sequence[0], time_sequence[-1])
         vol_mult = pool_volume.sum() / price_sampler.volumes.sum()
         logger.info("Volume Multipliers:\n%s", vol_mult.to_string())
         vol_mult = vol_mult.to_dict()

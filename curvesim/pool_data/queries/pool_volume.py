@@ -62,9 +62,19 @@ def get_pool_volume(
 
     volumes: dict[Tuple[str, str], Series] = {}
     for pool_address, pair_addresses, pair_symbols in pair_data:
+
+        # to remove
+        pair_addresses_0 = (
+            "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
+            if pair_addresses[0] == "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+            else pair_addresses[0]
+        )
+        pair_addresses_1 = pair_addresses[1]
+        pair_addresses_to_use = (pair_addresses_0, pair_addresses_1)
+
         data: DataFrame = get_pool_pair_volume_sync(
             pool_address,
-            *pair_addresses,
+            *pair_addresses_to_use,
             start_ts,
             end_ts,
             chain=pool_metadata.chain,

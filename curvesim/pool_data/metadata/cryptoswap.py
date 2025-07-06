@@ -10,6 +10,11 @@ class CryptoswapMetaData(PoolMetaDataBase):
 
     def init_kwargs(self, normalize=True):
         data = self._dict
+        logger.info(data)
+        try:
+            virtual_price = data["reserves"]["virtual_price"]  # subgraph format
+        except:
+            virtual_price = data["params"]["virtual_price"]  # curve prices format
 
         kwargs = {
             "A": data["params"]["A"],
@@ -23,7 +28,7 @@ class CryptoswapMetaData(PoolMetaDataBase):
             "price_scale": data["params"]["price_scale"],
             "admin_fee": data["params"]["admin_fee"],
             "ma_half_time": data["params"]["ma_half_time"],
-            "virtual_price": data["reserves"]["virtual_price"],
+            "virtual_price": virtual_price,
             "xcp_profit": data["params"]["xcp_profit"],
             "xcp_profit_a": data["params"]["xcp_profit_a"],
         }
