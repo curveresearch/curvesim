@@ -147,6 +147,7 @@ async def _pool_tvl_snapshots(
     return response["data"]
 
 
+# pylint: disable-next=too-many-locals
 async def pool_snapshot(
     address: str, chain: str = "ethereum", end_ts: Optional[int] = None
 ) -> Dict:
