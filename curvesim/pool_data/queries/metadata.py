@@ -4,6 +4,9 @@ Functions to get pool metadata for Curve pools.
 from typing import Optional, Union
 
 from curvesim.constants import Chain, Env
+from curvesim.network.curve_prices import (
+    pool_snapshot_sync as curve_prices_pool_snapshot,
+)
 from curvesim.network.subgraph import pool_snapshot_sync, symbol_address_sync
 from curvesim.network.web3 import underlying_coin_info_sync
 from curvesim.pool_data.metadata import PoolMetaData
@@ -19,18 +22,25 @@ def from_address(address, chain, env="prod", end_ts=None):
     chain: str
         Chain name
     env: str
-        Environment name for subgraph: 'prod' or 'staging'
+        Environment name for the fallback subgraph: 'prod' or 'staging'
 
     Returns
     -------
     Pool snapshot dictionary in the format returned by
-    :func:`curvesim.network.subgraph.pool_snapshot`.
+    :func:`curvesim.network.curve_prices.pool_snapshot`.
     """
     loop = get_event_loop()
-    data = pool_snapshot_sync(address, chain, env=env, end_ts=end_ts, event_loop=loop)
+    try:
+        data = curve_prices_pool_snapshot(
+            address, chain, end_ts=end_ts, event_loop=loop
+        )
+    except Exception:
+        data = pool_snapshot_sync(
+            address, chain, env=env, end_ts=end_ts, event_loop=loop
+        )
 
     # Get underlying token addresses
-    if data["pool_type"] == "LENDING":
+    if data["pool_type"] == "LENDING" and "wrapper" not in data["coins"]:
         u_addrs, u_decimals = underlying_coin_info_sync(
             data["coins"]["addresses"], event_loop=loop
         )
@@ -63,7 +73,7 @@ def get_metadata(
     end_ts: Optional[int] = None,
 ):
     """
-    Pulls pool state and metadata from daily snapshot.
+    Pulls pool state and metadata from the latest available pool snapshot.
 
     Parameters
     ----------
@@ -74,8 +84,8 @@ def get_metadata(
         Chain/layer2 identifier, e.g. “mainnet”, “arbitrum”, “optimism".
 
     end_ts : int, optional
-        Datetime cutoff, given as Unix timestamp, to pull last snapshot before.
-        The default value is current datetime, which will pull the most recent snapshot.
+        Datetime cutoff, given as Unix timestamp, to pull the latest snapshot
+        at or before. The default value is current datetime.
 
     Returns
     -------

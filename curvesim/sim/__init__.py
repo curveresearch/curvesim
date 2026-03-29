@@ -11,9 +11,12 @@ Most users will want to use the `autosim` function, which supports
 The primary use-case is to determine optimal amplitude (A) and fee
 parameters given historical price and volume feeds.
 """
+from datetime import datetime, timedelta, timezone
+
 from curvesim.logging import get_logger
 from curvesim.pipelines.vol_limited_arb import pipeline as volume_limited_arbitrage
 from curvesim.pool_data import get_metadata
+from curvesim.templates import DateTimeSequence
 from curvesim.utils import get_pairs
 
 logger = get_logger(__name__)
@@ -33,8 +36,8 @@ def autosim(
     The function fetches pool properties (e.g., current pool size) and 2
     months of price/volume data and runs multiple simulations in parallel.
 
-    Curve pools from any chain supported by the Convex Community Subgraphs
-    can be simulated directly by inputting the pool's address.
+    Curve pools from supported chains can be simulated directly by inputting
+    the pool's address.
 
     Parameters
     ----------
@@ -130,7 +133,8 @@ def autosim(
         Number of cores to use.
 
     env: str, default='prod'
-        Environment for the Curve subgraph, which pulls pool and volume snapshots.
+        Environment for the fallback subgraph path used when pool metadata
+        cannot be retrieved from the primary Curve API path.
 
     Returns
     -------
@@ -139,6 +143,7 @@ def autosim(
     """
     assert any([pool, pool_metadata]), "Must input 'pool' or 'pool_metadata'"
 
+    kwargs = _apply_compat_defaults(kwargs)
     pool_metadata = pool_metadata or get_metadata(pool, chain, env)
     p_var, p_fixed, kwargs = _parse_arguments(pool_metadata, **kwargs)
 
@@ -150,6 +155,27 @@ def autosim(
     )
 
     return results
+
+
+def _apply_compat_defaults(kwargs):
+    kwargs = dict(kwargs)
+
+    if kwargs.pop("test", False):
+        kwargs["A"] = [100, 1000]
+        kwargs["fee"] = [3000000, 4000000]
+
+    days = kwargs.pop("days", None)
+    if days is not None and "time_sequence" not in kwargs:
+        kwargs["time_sequence"] = _make_time_sequence(days)
+
+    return kwargs
+
+
+def _make_time_sequence(days):
+    t_end = datetime.now(timezone.utc) - timedelta(days=1)
+    t_end = t_end.replace(hour=23, minute=0, second=0, microsecond=0)
+    t_start = t_end - timedelta(days=days) + timedelta(hours=1)
+    return DateTimeSequence.from_range(start=t_start, end=t_end, freq="1h")
 
 
 def _parse_arguments(pool_metadata, **kwargs):
