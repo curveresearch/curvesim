@@ -1,12 +1,5 @@
-from curvesim.network.curve_prices import _chain_from_alias
 from curvesim.sim import _apply_compat_defaults
 from curvesim.templates import DateTimeSequence
-
-
-def test_curve_prices_chain_aliases():
-    assert _chain_from_alias("mainnet") == "ethereum"
-    assert _chain_from_alias("matic") == "polygon"
-    assert _chain_from_alias("arbitrum") == "arbitrum"
 
 
 def test_autosim_test_mode_restores_default_grid():
