@@ -36,8 +36,8 @@ def autosim(
     The function fetches pool properties (e.g., current pool size) and 2
     months of price/volume data and runs multiple simulations in parallel.
 
-    Curve pools from any chain supported by the Convex Community Subgraphs
-    can be simulated directly by inputting the pool's address.
+    Curve pools from supported chains can be simulated directly by inputting
+    the pool's address.
 
     Parameters
     ----------
@@ -133,7 +133,8 @@ def autosim(
         Number of cores to use.
 
     env: str, default='prod'
-        Environment for the Curve subgraph, which pulls pool and volume snapshots.
+        Environment for the fallback subgraph path used when pool metadata
+        cannot be retrieved from the primary Curve API path.
 
     Returns
     -------

@@ -22,12 +22,12 @@ def from_address(address, chain, env="prod", end_ts=None):
     chain: str
         Chain name
     env: str
-        Environment name for subgraph: 'prod' or 'staging'
+        Environment name for the fallback subgraph: 'prod' or 'staging'
 
     Returns
     -------
     Pool snapshot dictionary in the format returned by
-    :func:`curvesim.network.subgraph.pool_snapshot`.
+    :func:`curvesim.network.curve_prices.pool_snapshot`.
     """
     loop = get_event_loop()
     try:
@@ -73,7 +73,7 @@ def get_metadata(
     end_ts: Optional[int] = None,
 ):
     """
-    Pulls pool state and metadata from daily snapshot.
+    Pulls pool state and metadata from the latest available pool snapshot.
 
     Parameters
     ----------
@@ -84,8 +84,8 @@ def get_metadata(
         Chain/layer2 identifier, e.g. “mainnet”, “arbitrum”, “optimism".
 
     end_ts : int, optional
-        Datetime cutoff, given as Unix timestamp, to pull last snapshot before.
-        The default value is current datetime, which will pull the most recent snapshot.
+        Datetime cutoff, given as Unix timestamp, to pull the latest snapshot
+        at or before. The default value is current datetime.
 
     Returns
     -------
