@@ -3,7 +3,7 @@ Network connector for Curve Prices API.
 """
 
 from time import time
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from eth_utils import to_checksum_address
 from pandas import DataFrame, to_datetime
@@ -193,7 +193,7 @@ async def pool_snapshot(
     balance_count = len(latest_tvl["balances"])
 
     basepool = None
-    wrapper = None
+    wrapper: Optional[Dict[str, Any]] = None
 
     if meta["metapool"]:
         selected_coins = sorted_coins[:balance_count]
@@ -211,7 +211,7 @@ async def pool_snapshot(
     else:
         selected_coins = sorted_coins[:balance_count]
 
-    coins = {
+    coins: Dict[str, Any] = {
         "names": [coin["symbol"] for coin in selected_coins],
         "addresses": [to_checksum_address(coin["address"]) for coin in selected_coins],
         "decimals": [coin["decimals"] for coin in selected_coins],
@@ -275,8 +275,8 @@ def _pool_type(meta: Dict, snapshot: Dict) -> str:
     return "STABLE_FACTORY" if meta["registry_type"] == "factory" else "REGISTRY_V1"
 
 
-def _pool_params(snapshot: Dict, tvl_snapshot: Dict) -> Dict:
-    params = {
+def _pool_params(snapshot: Dict, tvl_snapshot: Dict) -> Dict[str, Any]:
+    params: Dict[str, Any] = {
         "A": int(snapshot["a"]),
         "admin_fee": int(snapshot["admin_fee"]),
     }
