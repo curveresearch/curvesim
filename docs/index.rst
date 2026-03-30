@@ -96,6 +96,7 @@ Contributor Guide
    :maxdepth: 2
 
    contributing
+   simulation_redesign
 
 
 Support
