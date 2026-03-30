@@ -138,20 +138,39 @@ Objectives:
 
 - Continue the refactor without breaking current users.
 - Land architectural improvements in a sequence that preserves reviewability.
+- Use a broker-centered runtime model so execution, logging, and future
+  multi-venue behavior can be introduced incrementally.
+
+See also:
+
+- ``docs/simulation_redesign.rst`` for the current runtime design note and
+  phased execution model.
 
 Proposed slice order:
 
-1. Complete issue ``#287`` by wiring ``DataSource`` and ``FileDataSource`` into the
-   existing pipeline with compatibility defaults.
-2. Complete issue ``#288`` by making ``Trader`` and ``StateLog`` stateless.
-3. Introduce a ``ReferenceMarket`` adapter behind existing pipeline behavior.
-4. Extract a reusable simulation runner / orchestration layer from the current pipeline.
-5. Deprecate ``autosim`` only after the new path has parity, docs, and tests.
+1. Introduce broker-side execution objects and a thin venue adapter around the
+   current pool simulation path, keeping the current volume-limited arbitrage
+   pipeline largely intact.
+2. Complete issue ``#288`` by making ``Trader`` and ``StateLog`` stateless and
+   routing execution through the broker rather than directly through the trader.
+3. Add an adapter from broker output to the current metric and results path so
+   existing metrics remain usable during the transition.
+4. Introduce a native ``Simulation`` runtime that owns the event loop and
+   re-expresses current pipeline entrypoints as wrappers over that runtime.
+5. Continue broader abstractions such as multi-venue execution or richer market
+   models only after the brokered immediate-execution path is stable.
+6. Deprecate ``autosim`` only after the new path has parity, docs, and tests.
 
 Checklist:
 
+- [ ] Write down the minimal broker order, execution, and event contracts before
+  changing core pipeline code.
+- [ ] Introduce a thin venue adapter for the current pool execution path.
 - [ ] Finish ``DataSource`` integration without removing current public APIs.
 - [ ] Remove ``pool`` state from trader and state-log components.
+- [ ] Add a compatibility layer from broker output to today's metrics.
+- [ ] Introduce ``Simulation`` as the native runtime without removing current
+  pipeline entrypoints.
 - [ ] Keep public pipeline entrypoints backward-compatible during the migration.
 - [ ] Add tests for each slice before deprecating old behavior.
 - [ ] Document the migration path before changing the default entrypoint.
