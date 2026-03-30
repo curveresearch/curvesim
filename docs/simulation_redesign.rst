@@ -141,6 +141,39 @@ Why this phase matters:
 * the broker becomes the single place to add delayed execution later
 * the public APIs can remain largely unchanged
 
+Illustrative code sketch:
+
+.. code-block:: python
+
+   pool, pool_metadata = get_pool_data(metadata_or_address, chain, env, pool_ts)
+   asset_data, time_sequence = get_asset_data(pool_metadata, time_sequence, src)
+   price_volume = PriceVolume(asset_data)
+
+   venue = CurveVenue("curve_pool", pool)
+   broker = Broker({"curve_pool": venue})
+   agent = VolumeLimitedArbAgent(
+       agent_id="arb_1",
+       venue_id="curve_pool",
+       vol_mult=vol_mult,
+   )
+
+   for sample in price_volume:
+       venue.prepare_for_time(sample.timestamp)
+       context = broker.make_context(
+           agent_id=agent.agent_id,
+           timestamp=sample.timestamp,
+           observation=sample,
+           venue_snapshots={"curve_pool": venue.snapshot()},
+       )
+       intents = agent.act(context)
+       broker.submit(sample.timestamp, intents)
+
+   results = adapt_broker_output_to_results(broker, metrics)
+
+This is intentionally close to today's volume-limited arbitrage path.  The
+important shift is only that agents emit intents and the broker owns execution
+and logging.
+
 
 Phase 2: Native ``Simulation`` Runtime
 --------------------------------------
@@ -180,6 +213,43 @@ Old entrypoints remain as wrappers:
 * ``autosim()`` builds a default ``Simulation``
 * ``simple.pipeline()`` builds a simple-arbitrage ``Simulation``
 * ``vol_limited_arb.pipeline()`` builds a volume-limited ``Simulation``
+
+Illustrative code sketch:
+
+.. code-block:: python
+
+   curve_3pool = CurvePoolVenue.from_address(
+       address="0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7",
+       chain="mainnet",
+       pool_ts=1707868800,
+       id="curve:3pool",
+   )
+
+   price_volume_feed = PriceVolumeFeed(
+       id="market:3pool",
+       venue_id="curve:3pool",
+       source="coingecko",
+   )
+
+   volume_limited_arb_agent = VolumeLimitedArbitrageAgent(
+       id="arb:1",
+       venue_id="curve:3pool",
+       feed_id="market:3pool",
+       volume_limit_model="pool_market_proportional",
+   )
+
+   sim = Simulation(
+       time_sequence=time_sequence,
+       venues=[curve_3pool],
+       feeds=[price_volume_feed],
+       agents=[volume_limited_arb_agent],
+       metrics=DEFAULT_METRICS,
+   )
+   results = sim.run()
+
+At this stage the transitional wiring is hidden inside the runtime.  The
+current pipeline entrypoints become convenience wrappers that construct these
+runtime objects and call ``Simulation.run()``.
 
 
 Phase 3: Order Lifecycle and Delayed Execution
