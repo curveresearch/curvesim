@@ -139,7 +139,7 @@ to confirm this is not a duplicate issue.  Next, be sure to properly describe th
 issue, providing the requested details and any appropriate code snippet, as
 requested in the "bug report" template.
 
-.. _GitHub issues: https://github.com/psf/requests/issues
+.. _GitHub issues: https://github.com/curveresearch/curvesim/issues
 
 
 Feature Requests
