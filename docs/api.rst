@@ -124,10 +124,12 @@ Subgraph
 
 Curve
 ******
-Used to pull pool state data and historical volume data.
+Used to pull pool state data.
 
 .. autofunction:: curvesim.network.subgraph.pool_snapshot
-.. autofunction:: curvesim.network.subgraph.volume
+
+Historical pool volume is available through
+:func:`curvesim.pool_data.get_pool_volume`.
 
 Reflexer
 ********
@@ -144,7 +146,7 @@ Price Data
 
 .. automodule:: curvesim.price_data
 
-.. autofunction:: curvesim.price_data.get()
+.. autofunction:: curvesim.price_data.get_price_data
 
 
 Iterators
